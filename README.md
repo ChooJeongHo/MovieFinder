@@ -2,6 +2,12 @@
 
 TMDB API를 활용한 영화 검색 Android 앱
 
+## Screenshots
+
+| Home | Search | Detail | Favorite |
+|:----:|:------:|:------:|:--------:|
+| <img src="screenshots/home.png" width="200"/> | <img src="screenshots/search.png" width="200"/> | <img src="screenshots/detail.png" width="200"/> | <img src="screenshots/favorite.png" width="200"/> |
+
 ## Features
 
 - **영화 탐색** - 현재 상영작 / 인기 영화 무한 스크롤
