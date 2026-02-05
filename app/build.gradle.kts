@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
     alias(libs.plugins.navigation.safeargs)
+    alias(libs.plugins.baseline.profile)
 }
 
 val localProperties = Properties().apply {
@@ -59,6 +60,10 @@ room {
     schemaDirectory("$projectDir/schemas")
 }
 
+baselineProfile {
+    dexLayoutOptimization = true
+}
+
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
@@ -83,6 +88,7 @@ dependencies {
     // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.process)
 
     // Navigation
     implementation(libs.androidx.navigation.fragment.ktx)
@@ -122,6 +128,12 @@ dependencies {
 
     // Splash Screen
     implementation(libs.androidx.splashscreen)
+
+    // Baseline Profiles
+    implementation(libs.androidx.profileinstaller)
+
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
 
     // Testing
     testImplementation(libs.junit)

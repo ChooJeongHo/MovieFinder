@@ -21,4 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "MovieFinder"
 include(":app")
+include(":baselineprofile")
  

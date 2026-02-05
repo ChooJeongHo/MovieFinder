@@ -34,6 +34,10 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | android-youtube-player | 12.1.1 | YouTube IFrame Player (인앱 예고편 재생) |
 | Splash Screen API | 1.0.1 | 스플래시 화면 |
 | SwipeRefreshLayout | 1.1.0 | 당겨서 새로고침 |
+| DataStore Preferences | 1.1.4 | 사용자 설정 저장 (테마 등) |
+| Lifecycle Process | 2.10.0 | ProcessLifecycleOwner (앱 수준 생명주기) |
+| ProfileInstaller | 1.4.1 | Baseline Profiles 설치 |
+| Benchmark Macro | 1.5.0-alpha02 | Baseline Profile 생성 |
 
 ### 테스트 라이브러리
 | 라이브러리 | 버전 | 용도 |
@@ -53,9 +57,12 @@ app/src/main/java/com/choo/moviefinder/
 │   └── util/
 │       ├── ImageUrlProvider.kt    # 이미지 URL 빌더
 │       └── ErrorMessageProvider.kt # 예외 → 사용자 메시지 매핑
+├── baselineprofile/       # Baseline Profile 생성 모듈
+│   └── BaselineProfileGenerator.kt # 앱 시작 시나리오
 ├── data/                  # 데이터 레이어
 │   ├── local/
 │   │   ├── MovieDatabase.kt       # Room DB (version 3)
+│   │   ├── PreferencesRepositoryImpl.kt # DataStore 기반 설정 저장소
 │   │   ├── dao/                   # DAO 인터페이스 (4개)
 │   │   │   ├── FavoriteMovieDao.kt
 │   │   │   ├── RecentSearchDao.kt
@@ -74,12 +81,13 @@ app/src/main/java/com/choo/moviefinder/
 │   └── util/              # 상수 정의 (PAGE_SIZE)
 ├── di/                    # Hilt DI 모듈
 │   ├── DatabaseModule.kt  # Room DB + DAO 제공 (destructive migration fallback)
-│   ├── NetworkModule.kt   # Retrofit/OkHttp 제공 (API key interceptor)
-│   └── RepositoryModule.kt # Repository 바인딩
+│   ├── DataStoreModule.kt # DataStore Preferences 제공
+│   ├── NetworkModule.kt   # Retrofit/OkHttp 제공 (API key interceptor, Certificate Pinning)
+│   └── RepositoryModule.kt # Repository 바인딩 (Movie + Preferences)
 ├── domain/                # 도메인 레이어
-│   ├── model/             # 도메인 모델 (Movie, MovieDetail, Cast)
+│   ├── model/             # 도메인 모델 (Movie, MovieDetail, Cast, ThemeMode)
 │   ├── repository/        # Repository 인터페이스
-│   └── usecase/           # UseCase 클래스 (13개)
+│   └── usecase/           # UseCase 클래스 (15개, 테마 설정 포함)
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 (6개)
 │   ├── common/            # CircularRatingView (커스텀 뷰)
@@ -115,6 +123,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 ## 주요 기능
 
 ### 1. 홈 화면 (HomeFragment)
+- 툴바 메뉴에서 **테마 설정** (라이트/다크/시스템 전환, DataStore 저장)
 - TabLayout으로 "현재 상영작" / "인기 영화" 전환
 - Paging 3 무한 스크롤 (페이지당 20개)
 - **오프라인 지원**: RemoteMediator + Room 캐시 (네트워크 오류 시 캐시 데이터 표시)
@@ -191,6 +200,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 - OkHttp Interceptor를 통해 모든 요청에 자동으로 `api_key` 쿼리 파라미터 추가
 - API Service 메서드에서는 API 키 파라미터 불필요
 - **HttpLoggingInterceptor**: 디버그 빌드에서만 생성/추가 (릴리스 빌드 시 객체 자체 미생성)
+- **CertificatePinner**: `api.themoviedb.org` leaf + intermediate 인증서 SHA-256 핀 적용 (중간자 공격 방지)
 
 ### 사용 엔드포인트
 | 엔드포인트 | 용도 |
@@ -222,7 +232,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 
 ## 테스트
 
-### 유닛 테스트 (42개)
+### 유닛 테스트 (44개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -232,7 +242,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 | `MovieRepositoryImplTest` | 20 | 영화 상세, 출연진, 비슷한 영화, 예고편 키(5개), 즐겨찾기 토글/조회, 검색 기록 CRUD |
 | `DetailViewModelTest` | 9 | 초기 상태, 에러, 부분 실패, 즐겨찾기 토글, Snackbar, 재시도 |
 | `SearchViewModelTest` | 7 | 검색어 변경, 검색 저장, 빈 검색어, 삭제, 전체 삭제, 최근 검색어 |
-| `HomeViewModelTest` | 3 | UseCase 호출 검증 (nowPlaying, popular, 동시 호출) |
+| `HomeViewModelTest` | 5 | UseCase 호출 검증 (nowPlaying, popular, 동시 호출, 테마 기본값, 테마 변경) |
 | `FavoriteViewModelTest` | 3 | 즐겨찾기 목록, 빈 목록, 삭제 |
 
 ### 테스트 패턴
@@ -268,6 +278,20 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://movie/550"
 # TMDB 웹 URL
 adb shell am start -a android.intent.action.VIEW -d "https://www.themoviedb.org/movie/550"
 ```
+
+## CI/CD (GitHub Actions)
+
+### 워크플로우: `.github/workflows/android-ci.yml`
+- **트리거**: `push` / `pull_request` → `main` 브랜치
+- **빌드 환경**: Ubuntu + JDK 17 (Temurin) + Gradle 캐시
+- **실행 순서**: Lint → Debug Build → Unit Test
+- **Artifact 업로드**: Lint 결과 HTML + 테스트 결과 HTML
+- **API Key**: GitHub Secrets에서 `TMDB_API_KEY` 주입 → `local.properties` 생성
+- **Concurrency**: 동일 브랜치 중복 실행 시 이전 실행 자동 취소
+
+### GitHub Secrets 설정 필요
+Repository Settings > Secrets and variables > Actions에서:
+- `TMDB_API_KEY`: TMDB API 키 값 추가
 
 ## 주의사항
 
@@ -328,6 +352,26 @@ adb shell am start -a android.intent.action.VIEW -d "https://www.themoviedb.org/
 - `_binding` nullable + `binding` non-null getter 패턴
 - `onDestroyView()`에서 `_binding = null` 필수 (메모리 누수 방지)
 
+### DataStore
+- `preferencesDataStore(name = "settings")` — 파일 위치: `data/data/com.choo.moviefinder/files/datastore/settings.preferences_pb`
+- `DataStoreModule`에서 `@Singleton`으로 제공
+- `PreferencesRepository` 인터페이스 → `PreferencesRepositoryImpl` 구현
+- 테마 설정: `ThemeMode.LIGHT` / `DARK` / `SYSTEM` → `AppCompatDelegate.setDefaultNightMode()` 적용
+- `MovieFinderApp.onCreate()`에서 `runBlocking`으로 초기 테마 동기 적용 (깜빡임 방지)
+- `ProcessLifecycleOwner.lifecycleScope`로 이후 테마 변경 실시간 반영
+
+### Certificate Pinning
+- `NetworkModule.kt`에서 `CertificatePinner` 설정
+- `api.themoviedb.org`: leaf + intermediate SHA-256 핀
+- `image.tmdb.org`는 Coil이 별도 OkHttp 인스턴스 사용하므로 핀 미적용
+- 인증서 갱신 시 핀 업데이트 필요 (openssl 명령으로 새 해시 획득)
+
+### Baseline Profiles
+- `:baselineprofile` 모듈 (`com.android.test` 타입, minSdk 28)
+- `profileinstaller` 라이브러리가 앱에 포함되어 Play Store 설치 시 자동 최적화
+- 프로필 생성: 에뮬레이터/실기기 연결 후 `./gradlew :baselineprofile:connectedBenchmarkAndroidTest` 실행
+- Benchmark 플러그인 버전 `1.5.0-alpha02` (AGP 9.0.0 호환)
+
 ### ProGuard / R8
 - `proguard-rules.pro`에 Retrofit, OkHttp, kotlinx.serialization, Room, Coil 규칙 포함
 
@@ -349,6 +393,7 @@ adb shell am start -a android.intent.action.VIEW -d "https://www.themoviedb.org/
 | `layout_error.xml` | 에러 뷰 (include용) |
 | `layout_empty_state.xml` | 빈 상태 뷰 (include용) |
 | `dialog_trailer.xml` | YouTube 예고편 재생 다이얼로그 |
+| `menu_home.xml` | 홈 화면 툴바 메뉴 (테마 설정) |
 
 ## QA 완료 사항
 - [x] Navigation: Safe Args 기반 타입 안전 네비게이션
@@ -370,10 +415,15 @@ adb shell am start -a android.intent.action.VIEW -d "https://www.themoviedb.org/
 - [x] Coil 캐시: 메모리 25% + 디스크 5% 설정
 - [x] Room 인덱스: 자주 쿼리되는 컬럼에 인덱스 추가
 - [x] LoggingInterceptor: 릴리스 빌드에서 객체 미생성
-- [x] 유닛 테스트: 42개 (ViewModel 22개 + Repository 20개, MockK + Turbine)
+- [x] 유닛 테스트: 44개 (ViewModel 24개 + Repository 20개, MockK + Turbine)
 - [x] 다크 모드 아이콘: `@color/icon_default` + `values-night/colors.xml` 테마 대응
 - [x] Shared Element Transition: 포스터 이미지 공유 전환 (postponeEnterTransition 패턴)
 - [x] YouTube 예고편 재생: TrailerDialogFragment + android-youtube-player (인앱 재생)
+- [x] Certificate Pinning: OkHttp CertificatePinner (api.themoviedb.org leaf + intermediate 핀)
+- [x] DataStore: 다크모드 설정 저장 (Preferences DataStore)
+- [x] 테마 전환 UI: HomeFragment 툴바 메뉴 + MaterialAlertDialog (라이트/다크/시스템)
+- [x] Baseline Profiles: ProfileInstaller + 생성 모듈 구성
+- [x] GitHub Actions CI/CD: Lint + Build + Test 자동화 워크플로우
 
 ## 보너스 기능 구현 현황
 - [x] 다크 모드 지원 (MaterialComponents.DayNight 테마 + 테마 대응 아이콘/색상)
@@ -386,6 +436,10 @@ adb shell am start -a android.intent.action.VIEW -d "https://www.themoviedb.org/
 - [x] 딥링크 지원 (커스텀 스킴 + TMDB URL)
 - [x] 스와이프 삭제 + 실행취소
 - [x] 검색 연도 필터
-- [x] Unit Test 작성 (42개: ViewModel 22개 + Repository 20개)
+- [x] Unit Test 작성 (44개: ViewModel 24개 + Repository 20개)
 - [x] 영화 예고편 재생 (android-youtube-player 인앱 재생, TMDB Videos API 연동)
 - [x] Shared Element Transition (포스터 이미지 공유 전환)
+- [x] DataStore 기반 다크모드 설정 (라이트/다크/시스템 전환)
+- [x] OkHttp Certificate Pinning (TMDB API 보안 강화)
+- [x] Baseline Profiles (앱 시작 성능 최적화)
+- [x] GitHub Actions CI/CD (Lint + Build + Test 자동화)

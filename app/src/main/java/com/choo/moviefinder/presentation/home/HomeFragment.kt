@@ -17,8 +17,10 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.databinding.FragmentHomeBinding
+import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
@@ -48,10 +50,42 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupToolbarMenu()
         setupRecyclerView()
         setupTabs()
         observeLoadStates()
         collectMovies()
+    }
+
+    private fun setupToolbarMenu() {
+        binding.toolbar.inflateMenu(R.menu.menu_home)
+        binding.toolbar.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_theme -> {
+                    showThemeDialog()
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun showThemeDialog() {
+        val themes = arrayOf(
+            getString(R.string.theme_light),
+            getString(R.string.theme_dark),
+            getString(R.string.theme_system)
+        )
+        val currentIndex = viewModel.currentThemeMode.value.ordinal
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.theme_settings)
+            .setSingleChoiceItems(themes, currentIndex) { dialog, which ->
+                val selectedMode = ThemeMode.entries[which]
+                viewModel.setThemeMode(selectedMode)
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun setupRecyclerView() {
