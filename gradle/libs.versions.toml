@@ -31,6 +31,10 @@ coroutinesTest = "1.10.1"
 profileinstaller = "1.4.1"
 benchmark = "1.5.0-alpha02"
 datastore = "1.1.4"
+detekt = "2.0.0-alpha.2"
+leakcanary = "2.14"
+timber = "5.0.1"
+startup = "1.2.0"
 
 [libraries]
 # Core
@@ -113,6 +117,18 @@ androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchm
 # DataStore
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 
+# Detekt
+detekt-rules-ktlint = { group = "dev.detekt", name = "detekt-rules-ktlint-wrapper", version.ref = "detekt" }
+
+# LeakCanary
+leakcanary = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
+
+# Timber
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+
+# App Startup
+androidx-startup = { group = "androidx.startup", name = "startup-runtime", version.ref = "startup" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
@@ -122,3 +138,4 @@ room = { id = "androidx.room", version.ref = "room" }
 navigation-safeargs = { id = "androidx.navigation.safeargs.kotlin", version.ref = "navigation" }
 android-test = { id = "com.android.test", version.ref = "agp" }
 baseline-profile = { id = "androidx.baselineprofile", version.ref = "benchmark" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }

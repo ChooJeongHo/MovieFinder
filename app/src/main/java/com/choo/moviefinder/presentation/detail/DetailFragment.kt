@@ -136,10 +136,12 @@ class DetailFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.isFavorite.collect { isFavorite ->
-                    binding.fabFavorite.setImageResource(
-                        if (isFavorite) R.drawable.ic_favorite
-                        else R.drawable.ic_favorite_border
-                    )
+                    val icon = if (isFavorite) {
+                        R.drawable.ic_favorite
+                    } else {
+                        R.drawable.ic_favorite_border
+                    }
+                    binding.fabFavorite.setImageResource(icon)
                 }
             }
         }

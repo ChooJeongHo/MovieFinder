@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.room)
     alias(libs.plugins.navigation.safeargs)
     alias(libs.plugins.baseline.profile)
+    alias(libs.plugins.detekt)
+    jacoco
 }
 
 val localProperties = Properties().apply {
@@ -36,6 +38,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(
@@ -62,6 +67,58 @@ room {
 
 baselineProfile {
     dexLayoutOptimization = true
+}
+
+detekt {
+    config.setFrom("$rootDir/detekt.yml")
+    buildUponDefaultConfig = true
+    parallel = true
+    source.setFrom(
+        "src/main/java",
+        "src/test/java"
+    )
+}
+
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+    group = "Reporting"
+    description = "Generate JaCoCo test coverage report"
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+
+    val javaClasses = fileTree("${layout.buildDirectory.get()}/intermediates/javac/debug/classes") {
+        exclude(
+            "**/R.class", "**/R\$*.class",
+            "**/BuildConfig.*",
+            "**/Manifest*.*",
+            "**/*_Hilt*.*", "**/Hilt_*.*",
+            "**/*_Factory.*", "**/*_MembersInjector.*",
+            "**/*Directions*.*", "**/*Args*.*",
+            "**/*Database_Impl*.*", "**/*Dao_Impl*.*",
+            "**/*_Impl*.*"
+        )
+    }
+    val kotlinClasses = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+        exclude(
+            "**/R.class", "**/R\$*.class",
+            "**/BuildConfig.*",
+            "**/Manifest*.*",
+            "**/*_Hilt*.*", "**/Hilt_*.*",
+            "**/*_Factory.*", "**/*_MembersInjector.*",
+            "**/*Directions*.*", "**/*Args*.*",
+            "**/*Database_Impl*.*", "**/*Dao_Impl*.*",
+            "**/*_Impl*.*"
+        )
+    }
+
+    classDirectories.setFrom(files(javaClasses, kotlinClasses))
+    sourceDirectories.setFrom(files("src/main/java"))
+    executionData.setFrom(files("${layout.buildDirectory.get()}/jacoco/testDebugUnitTest.exec"))
 }
 
 dependencies {
@@ -134,6 +191,18 @@ dependencies {
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
+
+    // App Startup
+    implementation(libs.androidx.startup)
+
+    // Timber
+    implementation(libs.timber)
+
+    // LeakCanary (debug only)
+    debugImplementation(libs.leakcanary)
+
+    // Detekt (KtLint rules)
+    detektPlugins(libs.detekt.rules.ktlint)
 
     // Testing
     testImplementation(libs.junit)

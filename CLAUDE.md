@@ -38,6 +38,15 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | Lifecycle Process | 2.10.0 | ProcessLifecycleOwner (앱 수준 생명주기) |
 | ProfileInstaller | 1.4.1 | Baseline Profiles 설치 |
 | Benchmark Macro | 1.5.0-alpha02 | Baseline Profile 생성 |
+| Timber | 5.0.1 | 구조화 로깅 |
+| App Startup | 1.2.0 | 초기화 최적화 (Timber 등) |
+
+### 개발/디버그 도구
+| 도구 | 버전 | 용도 |
+|---|---|---|
+| Detekt | 2.0.0-alpha.2 | Kotlin 정적 분석 + KtLint 규칙 |
+| JaCoCo | (Gradle 내장) | 테스트 코드 커버리지 리포트 |
+| LeakCanary | 2.14 | 메모리 누수 감지 (debugImplementation) |
 
 ### 테스트 라이브러리
 | 라이브러리 | 버전 | 용도 |
@@ -54,6 +63,8 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ```
 app/src/main/java/com/choo/moviefinder/
 ├── core/                  # 공유 유틸리티
+│   ├── startup/
+│   │   └── TimberInitializer.kt   # App Startup Timber 초기화
 │   └── util/
 │       ├── ImageUrlProvider.kt    # 이미지 URL 빌더
 │       └── ErrorMessageProvider.kt # 예외 → 사용자 메시지 매핑
@@ -268,6 +279,13 @@ API 키 발급: https://www.themoviedb.org/settings/api
 
 # 유닛 테스트
 ./gradlew testDebugUnitTest
+
+# 정적 분석 (Detekt + KtLint)
+./gradlew :app:detekt
+
+# 테스트 커버리지 리포트
+./gradlew jacocoTestReport
+# 리포트: app/build/reports/jacoco/jacocoTestReport/html/index.html
 ```
 
 ### 딥링크 테스트 (adb)
@@ -283,8 +301,8 @@ adb shell am start -a android.intent.action.VIEW -d "https://www.themoviedb.org/
 
 ### 워크플로우: `.github/workflows/android-ci.yml`
 - **트리거**: `push` / `pull_request` → `main` 브랜치
-- **빌드 환경**: Ubuntu + JDK 17 (Temurin) + Gradle 캐시
-- **실행 순서**: Lint → Debug Build → Unit Test
+- **빌드 환경**: Ubuntu + JDK 21 (Temurin) + Gradle 캐시
+- **실행 순서**: Detekt → Lint → Debug Build → Unit Test
 - **Artifact 업로드**: Lint 결과 HTML + 테스트 결과 HTML
 - **API Key**: GitHub Secrets에서 `TMDB_API_KEY` 주입 → `local.properties` 생성
 - **Concurrency**: 동일 브랜치 중복 실행 시 이전 실행 자동 취소
@@ -424,6 +442,11 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 테마 전환 UI: HomeFragment 툴바 메뉴 + MaterialAlertDialog (라이트/다크/시스템)
 - [x] Baseline Profiles: ProfileInstaller + 생성 모듈 구성
 - [x] GitHub Actions CI/CD: Lint + Build + Test 자동화 워크플로우
+- [x] Detekt + KtLint: 정적 분석 (Detekt 2.0.0-alpha.2 + KtLint 규칙)
+- [x] JaCoCo: 테스트 코드 커버리지 리포트 (HTML + XML)
+- [x] App Startup: Timber 초기화 최적화 (TimberInitializer)
+- [x] LeakCanary: 디버그 빌드 메모리 누수 감지
+- [x] Timber: 구조화 로깅 (OkHttp 로깅 통합)
 
 ## 보너스 기능 구현 현황
 - [x] 다크 모드 지원 (MaterialComponents.DayNight 테마 + 테마 대응 아이콘/색상)
@@ -442,4 +465,9 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] DataStore 기반 다크모드 설정 (라이트/다크/시스템 전환)
 - [x] OkHttp Certificate Pinning (TMDB API 보안 강화)
 - [x] Baseline Profiles (앱 시작 성능 최적화)
-- [x] GitHub Actions CI/CD (Lint + Build + Test 자동화)
+- [x] GitHub Actions CI/CD (Detekt + Lint + Build + Test 자동화)
+- [x] Detekt + KtLint 정적 분석 (Kotlin 코드 품질 검사)
+- [x] JaCoCo 테스트 커버리지 리포트
+- [x] App Startup 초기화 최적화 (Timber)
+- [x] LeakCanary 메모리 누수 감지 (디버그 전용)
+- [x] Timber 구조화 로깅

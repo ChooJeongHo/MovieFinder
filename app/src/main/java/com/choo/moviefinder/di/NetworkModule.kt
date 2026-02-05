@@ -51,7 +51,9 @@ object NetworkModule {
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(
-                        HttpLoggingInterceptor().apply {
+                        HttpLoggingInterceptor { message ->
+                            timber.log.Timber.tag("OkHttp").d(message)
+                        }.apply {
                             level = HttpLoggingInterceptor.Level.BODY
                         }
                     )

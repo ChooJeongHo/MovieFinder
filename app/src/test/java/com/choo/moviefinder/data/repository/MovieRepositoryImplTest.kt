@@ -62,13 +62,29 @@ class MovieRepositoryImplTest {
     )
 
     private val testMovieDtos = listOf(
-        MovieDto(id = 10, title = "Similar 1", posterPath = "/s1.jpg", overview = "Overview 1", releaseDate = "2024-02-01", voteAverage = 7.0, voteCount = 500),
-        MovieDto(id = 11, title = "Similar 2", posterPath = "/s2.jpg", overview = "Overview 2", releaseDate = "2024-03-01", voteAverage = 6.5, voteCount = 300)
+        MovieDto(
+            id = 10, title = "Similar 1", posterPath = "/s1.jpg",
+            overview = "Overview 1", releaseDate = "2024-02-01",
+            voteAverage = 7.0, voteCount = 500
+        ),
+        MovieDto(
+            id = 11, title = "Similar 2", posterPath = "/s2.jpg",
+            overview = "Overview 2", releaseDate = "2024-03-01",
+            voteAverage = 6.5, voteCount = 300
+        )
     )
 
     private val testFavoriteEntities = listOf(
-        FavoriteMovieEntity(id = 1, title = "Fav 1", posterPath = "/f1.jpg", backdropPath = "/fb1.jpg", overview = "Fav overview 1", releaseDate = "2024-01-01", voteAverage = 8.0, voteCount = 100),
-        FavoriteMovieEntity(id = 2, title = "Fav 2", posterPath = "/f2.jpg", backdropPath = "/fb2.jpg", overview = "Fav overview 2", releaseDate = "2024-02-01", voteAverage = 7.5, voteCount = 200)
+        FavoriteMovieEntity(
+            id = 1, title = "Fav 1", posterPath = "/f1.jpg",
+            backdropPath = "/fb1.jpg", overview = "Fav overview 1",
+            releaseDate = "2024-01-01", voteAverage = 8.0, voteCount = 100
+        ),
+        FavoriteMovieEntity(
+            id = 2, title = "Fav 2", posterPath = "/f2.jpg",
+            backdropPath = "/fb2.jpg", overview = "Fav overview 2",
+            releaseDate = "2024-02-01", voteAverage = 7.5, voteCount = 200
+        )
     )
 
     @Before

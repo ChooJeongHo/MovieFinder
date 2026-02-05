@@ -70,7 +70,9 @@ class SearchFragment : Fragment() {
                     viewModel.onSearch(query)
                 }
                 true
-            } else false
+            } else {
+                false
+            }
         }
     }
 
@@ -132,7 +134,7 @@ class SearchFragment : Fragment() {
     private fun showYearFilterDialog() {
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
         val items = arrayOf(getString(R.string.filter_year_all)) +
-                (currentYear downTo 1950).map { it.toString() }.toTypedArray()
+            (currentYear downTo 1950).map { it.toString() }.toTypedArray()
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.filter_year))
