@@ -1,44 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Spacing -->
+    <!-- 여백 -->
     <dimen name="spacing_xs">4dp</dimen>
     <dimen name="spacing_sm">8dp</dimen>
     <dimen name="spacing_md">16dp</dimen>
     <dimen name="spacing_lg">24dp</dimen>
     <dimen name="spacing_xl">32dp</dimen>
 
-    <!-- Card -->
+    <!-- 카드 -->
     <dimen name="card_corner_radius">12dp</dimen>
     <dimen name="card_elevation">4dp</dimen>
 
-    <!-- Grid -->
+    <!-- 그리드 -->
     <integer name="grid_span_count">2</integer>
     <dimen name="grid_spacing">8dp</dimen>
 
-    <!-- Movie Card -->
+    <!-- 영화 카드 -->
     <dimen name="movie_card_horizontal_width">140dp</dimen>
     <dimen name="movie_card_horizontal_height">210dp</dimen>
 
-    <!-- Rating -->
+    <!-- 평점 -->
     <dimen name="rating_view_size">40dp</dimen>
     <dimen name="rating_view_size_large">48dp</dimen>
     <dimen name="rating_stroke_width">3dp</dimen>
     <dimen name="rating_text_size">12sp</dimen>
     <dimen name="rating_text_size_large">14sp</dimen>
 
-    <!-- Cast -->
+    <!-- 출연진 -->
     <dimen name="cast_item_width">100dp</dimen>
     <dimen name="cast_image_size">80dp</dimen>
 
-    <!-- Detail -->
+    <!-- 상세 화면 -->
     <dimen name="detail_backdrop_height">280dp</dimen>
     <dimen name="detail_poster_width">120dp</dimen>
     <dimen name="detail_poster_height">180dp</dimen>
     <dimen name="detail_fab_margin">16dp</dimen>
 
-    <!-- Shimmer -->
+    <!-- 로딩 Shimmer -->
     <dimen name="shimmer_card_height">260dp</dimen>
 
-    <!-- Search -->
+    <!-- 검색 -->
     <dimen name="search_bar_height">56dp</dimen>
 </resources>

@@ -184,7 +184,7 @@ class DetailFragment : Fragment() {
             binding.rvCast.isVisible = false
         }
 
-        // Similar movies
+        // 비슷한 영화
         if (state.similarMovies.isNotEmpty()) {
             binding.tvSimilarLabel.isVisible = true
             binding.rvSimilar.isVisible = true
@@ -224,7 +224,7 @@ class DetailFragment : Fragment() {
 
         binding.tvOverview.text = detail.overview
 
-        // Genres
+        // 장르 칩 동적 추가
         binding.chipGroupGenres.removeAllViews()
         detail.genres.forEach { genre ->
             val chip = Chip(requireContext()).apply {

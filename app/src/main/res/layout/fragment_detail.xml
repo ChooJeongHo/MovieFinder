@@ -60,7 +60,7 @@
             android:padding="@dimen/spacing_md"
             android:visibility="gone">
 
-            <!-- Title -->
+            <!-- 제목 -->
             <TextView
                 android:id="@+id/tv_title"
                 android:layout_width="match_parent"
@@ -69,7 +69,7 @@
                 android:textStyle="bold"
                 tools:text="영화 제목" />
 
-            <!-- Tagline -->
+            <!-- 태그라인 -->
             <TextView
                 android:id="@+id/tv_tagline"
                 android:layout_width="match_parent"
@@ -82,7 +82,7 @@
                 android:visibility="gone"
                 tools:text="태그라인" />
 
-            <!-- Rating + Info row -->
+            <!-- 평점 + 정보 행 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -113,14 +113,14 @@
 
             </LinearLayout>
 
-            <!-- Genres -->
+            <!-- 장르 -->
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chip_group_genres"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_md" />
 
-            <!-- Trailer button -->
+            <!-- 예고편 버튼 -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_trailer"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
@@ -131,7 +131,7 @@
                 android:visibility="gone"
                 app:icon="@drawable/ic_play" />
 
-            <!-- Overview -->
+            <!-- 줄거리 -->
             <TextView
                 android:id="@+id/tv_overview_label"
                 android:layout_width="match_parent"
@@ -150,7 +150,7 @@
                 android:textAppearance="?attr/textAppearanceBody1"
                 tools:text="줄거리 내용..." />
 
-            <!-- Cast -->
+            <!-- 출연진 -->
             <TextView
                 android:id="@+id/tv_cast_label"
                 android:layout_width="match_parent"
@@ -170,7 +170,7 @@
                 android:orientation="horizontal"
                 android:visibility="gone" />
 
-            <!-- Similar Movies -->
+            <!-- 비슷한 영화 -->
             <TextView
                 android:id="@+id/tv_similar_label"
                 android:layout_width="match_parent"
@@ -195,7 +195,7 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Loading -->
+    <!-- 로딩 -->
     <ProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="wrap_content"
@@ -203,13 +203,13 @@
         android:layout_gravity="center"
         android:visibility="gone" />
 
-    <!-- Error -->
+    <!-- 에러 -->
     <include
         android:id="@+id/error_view"
         layout="@layout/layout_error"
         android:visibility="gone" />
 
-    <!-- FAB -->
+    <!-- 즐겨찾기 FAB -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_favorite"
         android:layout_width="wrap_content"

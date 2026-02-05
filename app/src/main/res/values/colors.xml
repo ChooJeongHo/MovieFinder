@@ -3,14 +3,14 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- TMDB Brand Colors -->
+    <!-- TMDB 브랜드 색상 -->
     <color name="movie_primary">#FF032541</color>
     <color name="movie_primary_variant">#FF01B4E4</color>
     <color name="movie_accent">#FF90CEA1</color>
     <color name="movie_surface">#FF1A1A2E</color>
     <color name="movie_background">#FF0F0F23</color>
 
-    <!-- Light Theme -->
+    <!-- 라이트 테마 -->
     <color name="colorPrimary">#FF032541</color>
     <color name="colorPrimaryVariant">#FF021B2F</color>
     <color name="colorOnPrimary">#FFFFFFFF</color>
@@ -24,7 +24,7 @@
     <color name="colorError">#FFB3261E</color>
     <color name="colorOnError">#FFFFFFFF</color>
 
-    <!-- Dark Theme -->
+    <!-- 다크 테마 -->
     <color name="colorPrimaryDark">#FF90CEA1</color>
     <color name="colorPrimaryVariantDark">#FF032541</color>
     <color name="colorOnPrimaryDark">#FF003822</color>
@@ -35,38 +35,38 @@
     <color name="colorBackgroundDark">#FF0F0F23</color>
     <color name="colorOnBackgroundDark">#FFE6E1E5</color>
 
-    <!-- Rating Colors -->
+    <!-- 평점 색상 -->
     <color name="rating_green">#FF21D07A</color>
     <color name="rating_yellow">#FFD2D531</color>
     <color name="rating_red">#FFDB2360</color>
     <color name="rating_track">#33FFFFFF</color>
     <color name="rating_background">#FF081C22</color>
 
-    <!-- Shimmer -->
+    <!-- 로딩 Shimmer -->
     <color name="shimmer_base_light">#FFE0E0E0</color>
     <color name="shimmer_highlight_light">#FFF5F5F5</color>
     <color name="shimmer_base_dark">#FF2A2A3E</color>
     <color name="shimmer_highlight_dark">#FF3A3A4E</color>
 
-    <!-- Chip -->
+    <!-- 칩 -->
     <color name="chip_background_light">#FFF0F0F0</color>
     <color name="chip_background_dark">#FF2A2A3E</color>
 
-    <!-- Placeholder -->
+    <!-- 플레이스홀더 -->
     <color name="placeholder_light">#FFE0E0E0</color>
     <color name="placeholder_dark">#FF2A2A3E</color>
 
-    <!-- Divider -->
+    <!-- 구분선 -->
     <color name="divider_light">#1F000000</color>
     <color name="divider_dark">#1FFFFFFF</color>
 
-    <!-- Icon default (theme-aware) -->
+    <!-- 기본 아이콘 색상 (테마 대응) -->
     <color name="icon_default">#FF000000</color>
 
-    <!-- Backdrop overlay -->
+    <!-- 배경 이미지 오버레이 -->
     <color name="backdrop_overlay">#66000000</color>
 
-    <!-- Card overlay gradient -->
+    <!-- 카드 오버레이 그라디언트 -->
     <color name="card_gradient_start">#00000000</color>
     <color name="card_gradient_end">#CC000000</color>
 </resources>

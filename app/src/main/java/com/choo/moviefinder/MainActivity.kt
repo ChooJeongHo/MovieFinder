@@ -9,16 +9,27 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.databinding.ActivityMainBinding
 import com.choo.moviefinder.presentation.detail.DetailFragmentArgs
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
+    @Inject
+    lateinit var networkMonitor: NetworkMonitor
+
     private lateinit var binding: ActivityMainBinding
+    private var offlineSnackbar: Snackbar? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -34,14 +45,14 @@ class MainActivity : AppCompatActivity() {
 
         binding.bottomNav.setupWithNavController(navController)
 
-        // Handle window insets for bottom nav
+        // 하단 내비게이션 시스템 바 인셋 처리
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNav) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.updatePadding(bottom = systemBars.bottom)
             insets
         }
 
-        // Hide bottom nav on detail screen
+        // 상세 화면에서 하단 내비게이션 숨김
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
                 R.id.detailFragment -> binding.bottomNav.visibility = View.GONE
@@ -49,9 +60,27 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Handle TMDB web deep links on cold start
+        // 콜드 스타트 시 TMDB 웹 딥링크 처리
         if (savedInstanceState == null) {
             handleTmdbDeepLink(intent)
+        }
+
+        // 네트워크 연결 상태 감지 → 오프라인 시 Snackbar 표시
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                networkMonitor.isConnected.collect { isConnected ->
+                    if (!isConnected) {
+                        offlineSnackbar = Snackbar.make(
+                            binding.root,
+                            R.string.offline_message,
+                            Snackbar.LENGTH_INDEFINITE
+                        ).also { it.show() }
+                    } else {
+                        offlineSnackbar?.dismiss()
+                        offlineSnackbar = null
+                    }
+                }
+            }
         }
     }
 
@@ -61,9 +90,9 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val navController = navHostFragment.navController
 
-        // Custom scheme (moviefinder://) is handled by Navigation component
+        // 커스텀 스킴(moviefinder://)은 Navigation 컴포넌트가 자동 처리
         if (!navController.handleDeepLink(intent)) {
-            // TMDB web URL needs manual parsing
+            // TMDB 웹 URL은 수동 파싱 필요
             handleTmdbDeepLink(intent)
         }
     }
@@ -76,7 +105,7 @@ class MainActivity : AppCompatActivity() {
             uri.pathSegments.size >= 2 &&
             uri.pathSegments[0] == "movie"
         ) {
-            // TMDB URL format: /movie/550 or /movie/550-fight-club
+            // TMDB URL 형식: /movie/550 또는 /movie/550-fight-club
             val movieSegment = uri.pathSegments[1]
             val movieId = movieSegment.split("-").firstOrNull()?.toIntOrNull() ?: return
 

@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:name=".MovieFinderApp"
@@ -22,6 +23,9 @@
             tools:node="merge">
             <meta-data
                 android:name="com.choo.moviefinder.core.startup.TimberInitializer"
+                android:value="androidx.startup" />
+            <meta-data
+                android:name="com.choo.moviefinder.core.startup.StrictModeInitializer"
                 android:value="androidx.startup" />
         </provider>
 

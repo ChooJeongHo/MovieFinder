@@ -64,10 +64,12 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 app/src/main/java/com/choo/moviefinder/
 ├── core/                  # 공유 유틸리티
 │   ├── startup/
-│   │   └── TimberInitializer.kt   # App Startup Timber 초기화
+│   │   ├── TimberInitializer.kt   # App Startup Timber 초기화
+│   │   └── StrictModeInitializer.kt # App Startup StrictMode (디버그 전용)
 │   └── util/
 │       ├── ImageUrlProvider.kt    # 이미지 URL 빌더
-│       └── ErrorMessageProvider.kt # 예외 → 사용자 메시지 매핑
+│       ├── ErrorMessageProvider.kt # 예외 → 사용자 메시지 매핑
+│       └── NetworkMonitor.kt      # 실시간 네트워크 상태 모니터링 (StateFlow)
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 │   └── BaselineProfileGenerator.kt # 앱 시작 시나리오
 ├── data/                  # 데이터 레이어
@@ -93,7 +95,7 @@ app/src/main/java/com/choo/moviefinder/
 ├── di/                    # Hilt DI 모듈
 │   ├── DatabaseModule.kt  # Room DB + DAO 제공 (destructive migration fallback)
 │   ├── DataStoreModule.kt # DataStore Preferences 제공
-│   ├── NetworkModule.kt   # Retrofit/OkHttp 제공 (API key interceptor, Certificate Pinning)
+│   ├── NetworkModule.kt   # Retrofit/OkHttp 제공 (API key interceptor, Certificate Pinning, NetworkMonitor)
 │   └── RepositoryModule.kt # Repository 바인딩 (Movie + Preferences)
 ├── domain/                # 도메인 레이어
 │   ├── model/             # 도메인 모델 (Movie, MovieDetail, Cast, ThemeMode)
@@ -106,7 +108,7 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── favorite/          # 즐겨찾기 화면 (FavoriteFragment, FavoriteViewModel)
 │   ├── home/              # 홈 화면 (HomeFragment, HomeViewModel)
 │   └── search/            # 검색 화면 (SearchFragment, SearchViewModel)
-├── MainActivity.kt        # 진입점 (AppCompatActivity + NavHostFragment + 딥링크 처리)
+├── MainActivity.kt        # 진입점 (AppCompatActivity + NavHostFragment + 딥링크 처리 + 네트워크 Snackbar)
 └── MovieFinderApp.kt      # Application 클래스 (@HiltAndroidApp, Coil 캐시 설정)
 ```
 
@@ -390,6 +392,24 @@ Repository Settings > Secrets and variables > Actions에서:
 - 프로필 생성: 에뮬레이터/실기기 연결 후 `./gradlew :baselineprofile:connectedBenchmarkAndroidTest` 실행
 - Benchmark 플러그인 버전 `1.5.0-alpha02` (AGP 9.0.0 호환)
 
+### 네트워크 상태 모니터링
+- `NetworkMonitor` (core/util): `ConnectivityManager.registerDefaultNetworkCallback()` 기반
+- `isConnected: StateFlow<Boolean>` 노출 → `MainActivity`에서 `repeatOnLifecycle` 수집
+- 오프라인 시 indefinite Snackbar 표시, 온라인 복구 시 자동 dismiss
+- `NetworkModule`에서 `@Singleton`으로 제공
+- `ACCESS_NETWORK_STATE` 권한 필요 (AndroidManifest.xml)
+
+### StrictMode (디버그 전용)
+- `StrictModeInitializer` (core/startup): App Startup `Initializer` 패턴
+- **ThreadPolicy**: `detectDiskReads()`, `detectDiskWrites()`, `detectNetwork()` + `penaltyLog()`
+- **VmPolicy**: `detectLeakedClosableObjects()`, `detectLeakedSqlLiteObjects()` + `penaltyLog()`
+- `penaltyLog()` 전용 (앱 크래시 방지), Logcat에서 `StrictMode` 태그로 확인
+- `TimberInitializer` 의존 (Timber 초기화 후 실행)
+
+### Gradle Configuration Cache
+- `gradle.properties`에 `org.gradle.configuration-cache=true` 설정
+- 빌드 설정 단계를 캐시하여 반복 빌드 속도 개선
+
 ### ProGuard / R8
 - `proguard-rules.pro`에 Retrofit, OkHttp, kotlinx.serialization, Room, Coil 규칙 포함
 
@@ -447,6 +467,9 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] App Startup: Timber 초기화 최적화 (TimberInitializer)
 - [x] LeakCanary: 디버그 빌드 메모리 누수 감지
 - [x] Timber: 구조화 로깅 (OkHttp 로깅 통합)
+- [x] 네트워크 상태 모니터링: ConnectivityManager + StateFlow + Snackbar (오프라인 감지)
+- [x] StrictMode: 디버그 전용 디스크/네트워크 접근 감지 (App Startup)
+- [x] Gradle Configuration Cache: 빌드 속도 최적화
 
 ## 보너스 기능 구현 현황
 - [x] 다크 모드 지원 (MaterialComponents.DayNight 테마 + 테마 대응 아이콘/색상)
@@ -471,3 +494,6 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] App Startup 초기화 최적화 (Timber)
 - [x] LeakCanary 메모리 누수 감지 (디버그 전용)
 - [x] Timber 구조화 로깅
+- [x] 네트워크 상태 모니터링 (ConnectivityManager 콜백 + 오프라인 Snackbar)
+- [x] StrictMode 디버그 감지 (App Startup, penaltyLog)
+- [x] Gradle Configuration Cache (빌드 속도 최적화)

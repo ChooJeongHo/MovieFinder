@@ -1,10 +1,13 @@
 package com.choo.moviefinder.di
 
+import android.content.Context
 import com.choo.moviefinder.BuildConfig
+import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import okhttp3.CertificatePinner
@@ -79,5 +82,11 @@ object NetworkModule {
     @Singleton
     fun provideMovieApiService(retrofit: Retrofit): MovieApiService {
         return retrofit.create(MovieApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor {
+        return NetworkMonitor(context)
     }
 }

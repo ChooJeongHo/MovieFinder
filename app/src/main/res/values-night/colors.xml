@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Icon default (dark mode) -->
+    <!-- 기본 아이콘 색상 (다크 모드) -->
     <color name="icon_default">#FFFFFFFF</color>
 
-    <!-- Backdrop overlay (dark mode - slightly lighter) -->
+    <!-- 배경 이미지 오버레이 (다크 모드 - 약간 밝게) -->
     <color name="backdrop_overlay">#80000000</color>
 </resources>
