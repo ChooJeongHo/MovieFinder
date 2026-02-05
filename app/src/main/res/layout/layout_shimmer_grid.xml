@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.facebook.shimmer.ShimmerFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/shimmer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:shimmer_auto_start="true"
+    app:shimmer_duration="1200">
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="2">
+
+        <include layout="@layout/layout_shimmer_grid_item"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/shimmer_card_height"
+            android:layout_columnWeight="1" />
+
+        <include layout="@layout/layout_shimmer_grid_item"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/shimmer_card_height"
+            android:layout_columnWeight="1" />
+
+        <include layout="@layout/layout_shimmer_grid_item"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/shimmer_card_height"
+            android:layout_columnWeight="1" />
+
+        <include layout="@layout/layout_shimmer_grid_item"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/shimmer_card_height"
+            android:layout_columnWeight="1" />
+
+        <include layout="@layout/layout_shimmer_grid_item"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/shimmer_card_height"
+            android:layout_columnWeight="1" />
+
+        <include layout="@layout/layout_shimmer_grid_item"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/shimmer_card_height"
+            android:layout_columnWeight="1" />
+
+    </GridLayout>
+
+</com.facebook.shimmer.ShimmerFrameLayout>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Icon default (dark mode) -->
+    <color name="icon_default">#FFFFFFFF</color>
+
+    <!-- Backdrop overlay (dark mode - slightly lighter) -->
+    <color name="backdrop_overlay">#80000000</color>
+</resources>

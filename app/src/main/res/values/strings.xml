@@ -1,0 +1,63 @@
+<resources>
+    <string name="app_name">MovieFinder</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_home">홈</string>
+    <string name="nav_search">검색</string>
+    <string name="nav_favorite">즐겨찾기</string>
+
+    <!-- Home Screen -->
+    <string name="tab_now_playing">현재 상영작</string>
+    <string name="tab_popular">인기 영화</string>
+
+    <!-- Search Screen -->
+    <string name="search_hint">영화 검색</string>
+    <string name="recent_searches">최근 검색어</string>
+    <string name="clear_all">전체 삭제</string>
+    <string name="search_empty_title">검색 결과 없음</string>
+    <string name="search_empty_message">다른 검색어로 시도해 보세요</string>
+    <string name="search_initial_title">영화 검색</string>
+    <string name="search_initial_message">영화 제목을 입력하여 검색해 보세요</string>
+
+    <!-- Detail Screen -->
+    <string name="release_date_format">개봉일: %s</string>
+    <string name="runtime_format">%d분</string>
+    <string name="overview_title">줄거리</string>
+    <string name="cast_title">출연진</string>
+    <string name="similar_movies_title">비슷한 영화</string>
+    <string name="play_trailer">예고편 재생</string>
+    <string name="add_to_favorites">즐겨찾기 추가</string>
+    <string name="remove_from_favorites">즐겨찾기 제거</string>
+
+    <!-- Favorite Screen -->
+    <string name="favorite_title">즐겨찾기</string>
+    <string name="favorite_empty_title">즐겨찾기 없음</string>
+    <string name="favorite_empty_message">영화를 즐겨찾기에 추가해 보세요</string>
+    <string name="favorite_removed">즐겨찾기에서 삭제되었습니다</string>
+    <string name="undo">실행 취소</string>
+
+    <!-- Search Filter -->
+    <string name="filter_year">개봉 연도</string>
+    <string name="filter_year_value">%d년</string>
+    <string name="filter_year_all">전체</string>
+
+    <!-- Error -->
+    <string name="error_title">오류 발생</string>
+    <string name="error_network">네트워크 연결을 확인해 주세요</string>
+    <string name="error_timeout">서버 응답이 너무 느립니다. 잠시 후 다시 시도해 주세요</string>
+    <string name="error_server">서버에 문제가 발생했습니다. 잠시 후 다시 시도해 주세요</string>
+    <string name="error_unknown">알 수 없는 오류가 발생했습니다</string>
+    <string name="retry">다시 시도</string>
+
+    <!-- Content Descriptions -->
+    <string name="cd_movie_poster">영화 포스터</string>
+    <string name="cd_movie_backdrop">영화 배경 이미지</string>
+    <string name="cd_cast_profile">출연진 프로필</string>
+    <string name="cd_back">뒤로 가기</string>
+    <string name="cd_clear_search">검색어 지우기</string>
+    <string name="cd_delete_search">검색어 삭제</string>
+    <string name="cd_favorite">즐겨찾기</string>
+
+    <!-- Rating -->
+    <string name="rating_format">%.1f</string>
+</resources>

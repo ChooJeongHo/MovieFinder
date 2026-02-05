@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/cast_item_width"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/spacing_sm"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/iv_profile"
+        android:layout_width="@dimen/cast_image_size"
+        android:layout_height="@dimen/cast_image_size"
+        android:background="@drawable/bg_circle"
+        android:contentDescription="@string/cd_cast_profile"
+        android:scaleType="centerCrop"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.MovieFinder.Circle"
+        tools:background="#CCCCCC" />
+
+    <TextView
+        android:id="@+id/tv_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_xs"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceCaption"
+        android:textStyle="bold"
+        tools:text="배우 이름" />
+
+    <TextView
+        android:id="@+id/tv_character"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceCaption"
+        android:alpha="0.7"
+        tools:text="역할" />
+
+</LinearLayout>
