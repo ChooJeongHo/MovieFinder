@@ -62,7 +62,7 @@ TMDB_API_KEY=your_api_key_here
 ## Requirements
 
 - Android Studio (AGP 9.0.0+)
-- JDK 17+
+- JDK 21+
 - minSdk 24 / targetSdk 36
 
 ## License

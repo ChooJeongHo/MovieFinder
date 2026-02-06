@@ -15,25 +15,25 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ### 핵심 라이브러리
 | 라이브러리 | 버전 | 용도 |
 |---|---|---|
-| AppCompat | 1.7.0 | Android 하위 호환성 |
-| Material Components | 1.12.0 | Material Design XML 컴포넌트 |
+| AppCompat | 1.7.1 | Android 하위 호환성 |
+| Material Components | 1.13.0 | Material Design XML 컴포넌트 |
 | Navigation (Fragment) | 2.9.7 | Safe Args 기반 Fragment 네비게이션 |
-| Fragment KTX | 1.8.6 | Fragment 확장 함수 |
+| Fragment KTX | 1.8.9 | Fragment 확장 함수 |
 | ConstraintLayout | 2.2.1 | 유연한 레이아웃 |
 | RecyclerView | 1.4.0 | 리스트/그리드 표시 |
 | Hilt | 2.59.1 | 의존성 주입 (DI) |
 | Room | 2.8.4 | 로컬 SQLite 데이터베이스 |
 | Room Paging | 2.8.4 | Room + Paging 3 통합 (RemoteMediator) |
-| Paging 3 | 3.3.6 | 무한 스크롤 페이징 |
+| Paging 3 | 3.4.0 | 무한 스크롤 페이징 |
 | Retrofit 2 | 2.11.0 | REST API 통신 |
 | OkHttp | 4.12.0 | HTTP 클라이언트 + 로깅 |
 | kotlinx.serialization | 1.7.3 | JSON 직렬화/역직렬화 |
 | Coil 3 | 3.3.0 | 이미지 로딩 (View 버전, 메모리+디스크 캐시) |
 | Facebook Shimmer | 0.5.0 | 로딩 Shimmer 애니메이션 |
 | Lifecycle | 2.10.0 | 생명주기 인식 컴포넌트 |
-| Splash Screen API | 1.0.1 | 스플래시 화면 |
-| SwipeRefreshLayout | 1.1.0 | 당겨서 새로고침 |
-| DataStore Preferences | 1.1.4 | 사용자 설정 저장 (테마 등) |
+| Splash Screen API | 1.2.0 | 스플래시 화면 |
+| SwipeRefreshLayout | 1.2.0 | 당겨서 새로고침 |
+| DataStore Preferences | 1.2.0 | 사용자 설정 저장 (테마 등) |
 | Lifecycle Process | 2.10.0 | ProcessLifecycleOwner (앱 수준 생명주기) |
 | ProfileInstaller | 1.4.1 | Baseline Profiles 설치 |
 | Benchmark Macro | 1.5.0-alpha02 | Baseline Profile 생성 |
@@ -50,10 +50,10 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ### 테스트 라이브러리
 | 라이브러리 | 버전 | 용도 |
 |---|---|---|
-| MockK | 1.13.16 | Kotlin 모킹 프레임워크 |
-| Turbine | 1.2.0 | Flow 테스트 유틸리티 |
-| Coroutines Test | 1.10.1 | 코루틴 테스트 디스패처 |
-| Paging Testing | 3.3.6 | PagingData 테스트 유틸리티 |
+| MockK | 1.14.9 | Kotlin 모킹 프레임워크 |
+| Turbine | 1.2.1 | Flow 테스트 유틸리티 |
+| Coroutines Test | 1.10.2 | 코루틴 테스트 디스패처 |
+| Paging Testing | 3.4.0 | PagingData 테스트 유틸리티 |
 | JUnit 4 | 4.13.2 | 유닛 테스트 프레임워크 |
 
 ## 아키텍처
