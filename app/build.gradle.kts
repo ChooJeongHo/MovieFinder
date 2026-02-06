@@ -180,9 +180,6 @@ dependencies {
     // Shimmer
     implementation(libs.facebook.shimmer)
 
-    // YouTube Player
-    implementation(libs.youtube.player)
-
     // Splash Screen
     implementation(libs.androidx.splashscreen)
 

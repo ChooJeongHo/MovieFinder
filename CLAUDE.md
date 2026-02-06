@@ -31,7 +31,6 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | Coil 3 | 3.3.0 | 이미지 로딩 (View 버전, 메모리+디스크 캐시) |
 | Facebook Shimmer | 0.5.0 | 로딩 Shimmer 애니메이션 |
 | Lifecycle | 2.10.0 | 생명주기 인식 컴포넌트 |
-| android-youtube-player | 12.1.1 | YouTube IFrame Player (인앱 예고편 재생) |
 | Splash Screen API | 1.0.1 | 스플래시 화면 |
 | SwipeRefreshLayout | 1.1.0 | 당겨서 새로고침 |
 | DataStore Preferences | 1.1.4 | 사용자 설정 저장 (테마 등) |
@@ -104,7 +103,7 @@ app/src/main/java/com/choo/moviefinder/
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 (6개)
 │   ├── common/            # CircularRatingView (커스텀 뷰)
-│   ├── detail/            # 영화 상세 화면 (DetailFragment, DetailViewModel, TrailerDialogFragment)
+│   ├── detail/            # 영화 상세 화면 (DetailFragment, DetailViewModel)
 │   ├── favorite/          # 즐겨찾기 화면 (FavoriteFragment, FavoriteViewModel)
 │   ├── home/              # 홈 화면 (HomeFragment, HomeViewModel)
 │   └── search/            # 검색 화면 (SearchFragment, SearchViewModel)
@@ -159,7 +158,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - 출연진 (Cast) 가로 스크롤 RecyclerView (CastAdapter)
 - 비슷한 영화 추천 가로 스크롤 RecyclerView (SimilarMovieAdapter)
 - FAB으로 즐겨찾기 토글
-- **영화 예고편 재생**: TMDB Videos API로 YouTube 키 획득 → TrailerDialogFragment에서 인앱 재생 (android-youtube-player 라이브러리, API 키 불필요)
+- **영화 예고편 재생**: TMDB Videos API로 YouTube 키 획득 → YouTube 앱/웹 브라우저로 연결 (Intent.ACTION_VIEW)
 - **Shared Element Transition**: 홈/검색/즐겨찾기 → 상세 화면 포스터 이미지 공유 전환 (ChangeBounds + ChangeTransform + ChangeImageTransform)
 - 상세/출연진/비슷한 영화/예고편 4개 API를 async로 병렬 호출
 - **부분 실패 처리**: 출연진/비슷한 영화/예고편 API 실패 시 빈 리스트/null로 대체 (상세 정보는 유지)
@@ -365,8 +364,7 @@ Repository Settings > Secrets and variables > Actions에서:
 ### 영화 예고편 재생
 - TMDB `/movie/{id}/videos` API로 YouTube 키 획득
 - 우선순위: 공식 Trailer > 비공식 Trailer > YouTube 영상
-- `TrailerDialogFragment`: `DialogFragment` + `android-youtube-player` 라이브러리
-- YouTube IFrame Player API 사용 (API 키 불필요, TMDB에서 제공하는 video key만 사용)
+- `Intent.ACTION_VIEW`로 YouTube 앱/웹 브라우저 연결 (`https://www.youtube.com/watch?v={key}`)
 
 ### Fragment ViewBinding 패턴
 - `_binding` nullable + `binding` non-null getter 패턴
@@ -430,7 +428,6 @@ Repository Settings > Secrets and variables > Actions에서:
 | `layout_shimmer_grid.xml` | Shimmer placeholder 그리드 |
 | `layout_error.xml` | 에러 뷰 (include용) |
 | `layout_empty_state.xml` | 빈 상태 뷰 (include용) |
-| `dialog_trailer.xml` | YouTube 예고편 재생 다이얼로그 |
 | `menu_home.xml` | 홈 화면 툴바 메뉴 (테마 설정) |
 
 ## QA 완료 사항
@@ -456,7 +453,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 유닛 테스트: 44개 (ViewModel 24개 + Repository 20개, MockK + Turbine)
 - [x] 다크 모드 아이콘: `@color/icon_default` + `values-night/colors.xml` 테마 대응
 - [x] Shared Element Transition: 포스터 이미지 공유 전환 (postponeEnterTransition 패턴)
-- [x] YouTube 예고편 재생: TrailerDialogFragment + android-youtube-player (인앱 재생)
+- [x] YouTube 예고편 재생: YouTube 앱/웹 브라우저 연결 (Intent.ACTION_VIEW)
 - [x] Certificate Pinning: OkHttp CertificatePinner (api.themoviedb.org leaf + intermediate 핀)
 - [x] DataStore: 다크모드 설정 저장 (Preferences DataStore)
 - [x] 테마 전환 UI: HomeFragment 툴바 메뉴 + MaterialAlertDialog (라이트/다크/시스템)
@@ -483,7 +480,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 스와이프 삭제 + 실행취소
 - [x] 검색 연도 필터
 - [x] Unit Test 작성 (44개: ViewModel 24개 + Repository 20개)
-- [x] 영화 예고편 재생 (android-youtube-player 인앱 재생, TMDB Videos API 연동)
+- [x] 영화 예고편 재생 (YouTube 앱/웹 연결, TMDB Videos API 연동)
 - [x] Shared Element Transition (포스터 이미지 공유 전환)
 - [x] DataStore 기반 다크모드 설정 (라이트/다크/시스템 전환)
 - [x] OkHttp Certificate Pinning (TMDB API 보안 강화)

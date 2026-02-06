@@ -240,8 +240,12 @@ class DetailFragment : Fragment() {
         if (trailerKey != null) {
             binding.btnTrailer.isVisible = true
             binding.btnTrailer.setOnClickListener {
-                TrailerDialogFragment.newInstance(trailerKey)
-                    .show(childFragmentManager, "trailer")
+                // YouTube 앱 또는 웹으로 연결
+                val intent = android.content.Intent(
+                    android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://www.youtube.com/watch?v=$trailerKey")
+                )
+                startActivity(intent)
             }
         } else {
             binding.btnTrailer.isVisible = false

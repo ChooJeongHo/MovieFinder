@@ -45,11 +45,4 @@
         <item name="boxCornerRadiusBottomStart">28dp</item>
         <item name="boxCornerRadiusBottomEnd">28dp</item>
     </style>
-
-    <style name="Theme.MovieFinder.TrailerDialog" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
-        <item name="android:windowFullscreen">false</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowBackground">@android:color/black</item>
-        <item name="android:windowIsFloating">true</item>
-    </style>
 </resources>

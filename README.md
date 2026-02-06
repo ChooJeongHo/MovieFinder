@@ -31,7 +31,6 @@ TMDB API를 활용한 영화 검색 Android 앱
 | Async | Coroutines, Flow |
 | Paging | Paging 3, RemoteMediator |
 | Image | Coil |
-| Video | android-youtube-player |
 | Navigation | Navigation Component, Safe Args |
 | Test | JUnit 4, MockK, Turbine |
 
