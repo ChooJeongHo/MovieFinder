@@ -26,7 +26,7 @@ object DatabaseModule {
             MovieDatabase::class.java,
             "movie_finder_db"
         )
-            // TODO: 프로덕션 배포 전 적절한 Migration으로 교체 필요 (즐겨찾기/검색 기록 보존)
+            // 프로덕션 배포 전 적절한 Migration으로 교체 필요 (즐겨찾기/검색 기록 보존)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
