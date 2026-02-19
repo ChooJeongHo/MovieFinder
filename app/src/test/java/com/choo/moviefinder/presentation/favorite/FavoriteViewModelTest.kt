@@ -76,13 +76,13 @@ class FavoriteViewModelTest {
     }
 
     @Test
-    fun `removeFavorite calls toggle use case`() = runTest {
+    fun `toggleFavorite calls toggle use case`() = runTest {
         every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
         coEvery { toggleFavoriteUseCase(any()) } returns Unit
 
         val viewModel = FavoriteViewModel(getFavoriteMoviesUseCase, toggleFavoriteUseCase)
 
-        viewModel.removeFavorite(testMovies[0])
+        viewModel.toggleFavorite(testMovies[0])
         advanceUntilIdle()
 
         coVerify { toggleFavoriteUseCase(testMovies[0]) }

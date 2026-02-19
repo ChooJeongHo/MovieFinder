@@ -4,6 +4,8 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
+import androidx.room.withTransaction
+import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
 import com.choo.moviefinder.data.local.entity.CachedMovieEntity
@@ -15,6 +17,7 @@ import com.choo.moviefinder.data.local.entity.toCachedEntity
 @OptIn(ExperimentalPagingApi::class)
 class MovieRemoteMediator(
     private val apiService: MovieApiService,
+    private val database: MovieDatabase,
     private val cachedMovieDao: CachedMovieDao,
     private val remoteKeyDao: RemoteKeyDao,
     private val category: String
@@ -46,18 +49,20 @@ class MovieRemoteMediator(
 
             val endOfPaginationReached = page >= response.totalPages
 
-            if (loadType == LoadType.REFRESH) {
-                cachedMovieDao.clearByCategory(category)
-                remoteKeyDao.clearByCategory(category)
-            }
+            database.withTransaction {
+                if (loadType == LoadType.REFRESH) {
+                    cachedMovieDao.clearByCategory(category)
+                    remoteKeyDao.clearByCategory(category)
+                }
 
-            cachedMovieDao.insertAll(movies)
-            remoteKeyDao.insert(
-                RemoteKeyEntity(
-                    category = category,
-                    nextKey = if (endOfPaginationReached) null else page + 1
+                cachedMovieDao.insertAll(movies)
+                remoteKeyDao.insert(
+                    RemoteKeyEntity(
+                        category = category,
+                        nextKey = if (endOfPaginationReached) null else page + 1
+                    )
                 )
-            )
+            }
 
             MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
         } catch (e: Exception) {

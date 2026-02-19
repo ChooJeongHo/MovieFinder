@@ -99,8 +99,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
             "**/*_Hilt*.*", "**/Hilt_*.*",
             "**/*_Factory.*", "**/*_MembersInjector.*",
             "**/*Directions*.*", "**/*Args*.*",
-            "**/*Database_Impl*.*", "**/*Dao_Impl*.*",
-            "**/*_Impl*.*"
+            "**/*Database_Impl*.*", "**/*Dao_Impl*.*"
         )
     }
     val kotlinClasses = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
@@ -111,8 +110,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
             "**/*_Hilt*.*", "**/Hilt_*.*",
             "**/*_Factory.*", "**/*_MembersInjector.*",
             "**/*Directions*.*", "**/*Args*.*",
-            "**/*Database_Impl*.*", "**/*Dao_Impl*.*",
-            "**/*_Impl*.*"
+            "**/*Database_Impl*.*", "**/*Dao_Impl*.*"
         )
     }
 

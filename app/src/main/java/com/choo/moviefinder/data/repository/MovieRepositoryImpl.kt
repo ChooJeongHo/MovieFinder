@@ -5,6 +5,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
@@ -12,7 +13,6 @@ import com.choo.moviefinder.data.local.dao.RemoteKeyDao
 import com.choo.moviefinder.data.local.entity.RecentSearchEntity
 import com.choo.moviefinder.data.local.entity.toDomain
 import com.choo.moviefinder.data.local.entity.toEntity
-import com.choo.moviefinder.data.paging.MovieListType
 import com.choo.moviefinder.data.paging.MoviePagingSource
 import com.choo.moviefinder.data.paging.MovieRemoteMediator
 import com.choo.moviefinder.data.remote.api.MovieApiService
@@ -29,6 +29,7 @@ import javax.inject.Inject
 
 class MovieRepositoryImpl @Inject constructor(
     private val apiService: MovieApiService,
+    private val database: MovieDatabase,
     private val favoriteMovieDao: FavoriteMovieDao,
     private val recentSearchDao: RecentSearchDao,
     private val cachedMovieDao: CachedMovieDao,
@@ -44,6 +45,7 @@ class MovieRepositoryImpl @Inject constructor(
             ),
             remoteMediator = MovieRemoteMediator(
                 apiService = apiService,
+                database = database,
                 cachedMovieDao = cachedMovieDao,
                 remoteKeyDao = remoteKeyDao,
                 category = MovieRemoteMediator.CATEGORY_NOW_PLAYING
@@ -63,6 +65,7 @@ class MovieRepositoryImpl @Inject constructor(
             ),
             remoteMediator = MovieRemoteMediator(
                 apiService = apiService,
+                database = database,
                 cachedMovieDao = cachedMovieDao,
                 remoteKeyDao = remoteKeyDao,
                 category = MovieRemoteMediator.CATEGORY_POPULAR
@@ -80,7 +83,7 @@ class MovieRepositoryImpl @Inject constructor(
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {
-                MoviePagingSource(apiService, MovieListType.SEARCH, query, year)
+                MoviePagingSource(apiService, query, year)
             }
         ).flow
     }

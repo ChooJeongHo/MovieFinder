@@ -82,10 +82,10 @@ class FavoriteFragment : Fragment() {
                 val position = viewHolder.bindingAdapterPosition
                 if (position == RecyclerView.NO_POSITION) return
                 val movie = movieAdapter.currentList[position]
-                viewModel.removeFavorite(movie)
+                viewModel.toggleFavorite(movie)
                 Snackbar.make(binding.root, getString(R.string.favorite_removed), Snackbar.LENGTH_LONG)
                     .setAction(getString(R.string.undo)) {
-                        viewModel.removeFavorite(movie)
+                        viewModel.toggleFavorite(movie)
                     }
                     .show()
             }

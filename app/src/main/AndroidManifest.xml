@@ -24,9 +24,6 @@
             <meta-data
                 android:name="com.choo.moviefinder.core.startup.TimberInitializer"
                 android:value="androidx.startup" />
-            <meta-data
-                android:name="com.choo.moviefinder.core.startup.StrictModeInitializer"
-                android:value="androidx.startup" />
         </provider>
 
         <activity

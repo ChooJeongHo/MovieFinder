@@ -45,6 +45,11 @@ class NetworkMonitor(context: Context) {
         connectivityManager.registerDefaultNetworkCallback(networkCallback)
     }
 
+    /** 네트워크 콜백 해제 (테스트 또는 리소스 정리 시 사용) */
+    fun unregister() {
+        connectivityManager.unregisterNetworkCallback(networkCallback)
+    }
+
     /** 현재 네트워크 연결 상태를 동기적으로 확인 (초기값 설정용) */
     private fun checkCurrentConnectivity(): Boolean {
         val network = connectivityManager.activeNetwork ?: return false

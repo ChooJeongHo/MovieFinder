@@ -6,11 +6,11 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ## 기술 스택
 
 ### 빌드 환경
-- **AGP**: 9.0.0 (Android Gradle Plugin, Kotlin 2.2.10 내장)
+- **AGP**: 9.0.1 (Android Gradle Plugin, Kotlin 2.2.10 내장)
 - **Gradle**: 9.1.0
 - **compileSdk**: 36 (Android 15)
 - **minSdk**: 24 / **targetSdk**: 36
-- **KSP**: 2.2.10-2.0.2 (Kotlin Symbol Processing)
+- **KSP**: 2.3.2 (Kotlin Symbol Processing)
 
 ### 핵심 라이브러리
 | 라이브러리 | 버전 | 용도 |
@@ -67,7 +67,7 @@ app/src/main/java/com/choo/moviefinder/
 │   │   └── StrictModeInitializer.kt # App Startup StrictMode (디버그 전용)
 │   └── util/
 │       ├── ImageUrlProvider.kt    # 이미지 URL 빌더
-│       ├── ErrorMessageProvider.kt # 예외 → 사용자 메시지 매핑
+│       ├── ErrorMessageProvider.kt # 예외 → ErrorType 매핑 + 사용자 메시지 변환
 │       └── NetworkMonitor.kt      # 실시간 네트워크 상태 모니터링 (StateFlow)
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 │   └── BaselineProfileGenerator.kt # 앱 시작 시나리오
@@ -90,7 +90,7 @@ app/src/main/java/com/choo/moviefinder/
 │   │   └── MovieRemoteMediator.kt     # 오프라인 지원 RemoteMediator (홈 화면)
 │   ├── remote/            # Retrofit API (Service, DTO)
 │   ├── repository/        # Repository 구현체
-│   └── util/              # 상수 정의 (PAGE_SIZE)
+│   └── util/              # 상수 정의 (PAGE_SIZE, API 언어 코드)
 ├── di/                    # Hilt DI 모듈
 │   ├── DatabaseModule.kt  # Room DB + DAO 제공 (destructive migration fallback)
 │   ├── DataStoreModule.kt # DataStore Preferences 제공
@@ -178,11 +178,12 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - `onNewIntent()` 처리로 기존 Activity에서도 딥링크 수신
 
 ### 6. 에러 처리
-- **ErrorMessageProvider**: 예외 타입별 한국어 사용자 메시지 매핑
-  - `UnknownHostException` / `ConnectException` → 네트워크 연결 오류
-  - `SocketTimeoutException` → 서버 응답 지연
-  - `HttpException` → 서버 오류
-  - 기타 → 알 수 없는 오류
+- **ErrorMessageProvider + ErrorType**: 예외 → ErrorType 열거형 매핑 + Context 기반 한국어 메시지 변환
+  - `UnknownHostException` / `ConnectException` → `ErrorType.NETWORK`
+  - `SocketTimeoutException` → `ErrorType.TIMEOUT`
+  - `HttpException` → `ErrorType.SERVER`
+  - 기타 → `ErrorType.UNKNOWN`
+  - ViewModel은 ErrorType만 보유 (Context 불필요), Fragment에서 문자열 변환
 - 네트워크 오류 시 재시도 버튼 (layout_error.xml include)
 - Shimmer 로딩 애니메이션
 - Empty State UI 구현 (layout_empty_state.xml include)
@@ -244,7 +245,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 
 ## 테스트
 
-### 유닛 테스트 (44개)
+### 유닛 테스트 (54개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -252,10 +253,12 @@ API 키 발급: https://www.themoviedb.org/settings/api
 | 테스트 클래스 | 테스트 수 | 대상 |
 |---|---|---|
 | `MovieRepositoryImplTest` | 20 | 영화 상세, 출연진, 비슷한 영화, 예고편 키(5개), 즐겨찾기 토글/조회, 검색 기록 CRUD |
-| `DetailViewModelTest` | 9 | 초기 상태, 에러, 부분 실패, 즐겨찾기 토글, Snackbar, 재시도 |
+| `DetailViewModelTest` | 9 | 초기 상태, ErrorType 에러, 부분 실패, 즐겨찾기 토글, Snackbar 이벤트, 재시도 |
 | `SearchViewModelTest` | 7 | 검색어 변경, 검색 저장, 빈 검색어, 삭제, 전체 삭제, 최근 검색어 |
+| `ErrorMessageProviderTest` | 6 | 예외 타입별 ErrorType 매핑 (Network, Timeout, Server, Unknown) |
 | `HomeViewModelTest` | 5 | UseCase 호출 검증 (nowPlaying, popular, 동시 호출, 테마 기본값, 테마 변경) |
-| `FavoriteViewModelTest` | 3 | 즐겨찾기 목록, 빈 목록, 삭제 |
+| `PreferencesRepositoryImplTest` | 4 | 테마 기본값, DARK/LIGHT 저장, 테마 변경 |
+| `FavoriteViewModelTest` | 3 | 즐겨찾기 목록, 빈 목록, 토글 |
 
 ### 테스트 패턴
 - `MockK`: UseCase/Repository/DAO/API 모킹
@@ -266,7 +269,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 ## 빌드 및 실행
 
 ### 사전 요구사항
-- Android Studio (AGP 9.0.0 지원 버전)
+- Android Studio (AGP 9.0.1 지원 버전)
 - JDK 17+
 - TMDB API Key
 
@@ -399,6 +402,7 @@ Repository Settings > Secrets and variables > Actions에서:
 
 ### StrictMode (디버그 전용)
 - `StrictModeInitializer` (core/startup): App Startup `Initializer` 패턴
+- **디버그 매니페스트에서만 등록** (`app/src/debug/AndroidManifest.xml`) — 릴리스 빌드 시 클래스 미로드
 - **ThreadPolicy**: `detectDiskReads()`, `detectDiskWrites()`, `detectNetwork()` + `penaltyLog()`
 - **VmPolicy**: `detectLeakedClosableObjects()`, `detectLeakedSqlLiteObjects()` + `penaltyLog()`
 - `penaltyLog()` 전용 (앱 크래시 방지), Logcat에서 `StrictMode` 태그로 확인
@@ -450,7 +454,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Coil 캐시: 메모리 25% + 디스크 5% 설정
 - [x] Room 인덱스: 자주 쿼리되는 컬럼에 인덱스 추가
 - [x] LoggingInterceptor: 릴리스 빌드에서 객체 미생성
-- [x] 유닛 테스트: 44개 (ViewModel 24개 + Repository 20개, MockK + Turbine)
+- [x] 유닛 테스트: 54개 (ViewModel 24개 + Repository 20개 + ErrorMessageProvider 6개 + PreferencesRepository 4개)
 - [x] 다크 모드 아이콘: `@color/icon_default` + `values-night/colors.xml` 테마 대응
 - [x] Shared Element Transition: 포스터 이미지 공유 전환 (postponeEnterTransition 패턴)
 - [x] YouTube 예고편 재생: YouTube 앱/웹 브라우저 연결 (Intent.ACTION_VIEW)
@@ -479,7 +483,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 딥링크 지원 (커스텀 스킴 + TMDB URL)
 - [x] 스와이프 삭제 + 실행취소
 - [x] 검색 연도 필터
-- [x] Unit Test 작성 (44개: ViewModel 24개 + Repository 20개)
+- [x] Unit Test 작성 (54개: ViewModel 24개 + Repository 20개 + ErrorMessageProvider 6개 + PreferencesRepository 4개)
 - [x] 영화 예고편 재생 (YouTube 앱/웹 연결, TMDB Videos API 연동)
 - [x] Shared Element Transition (포스터 이미지 공유 전환)
 - [x] DataStore 기반 다크모드 설정 (라이트/다크/시스템 전환)

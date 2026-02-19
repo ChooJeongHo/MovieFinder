@@ -24,6 +24,8 @@ import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
 import com.choo.moviefinder.R
+import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.databinding.FragmentDetailBinding
 import com.choo.moviefinder.domain.model.MovieDetail
@@ -125,7 +127,7 @@ class DetailFragment : Fragment() {
                     when (state) {
                         is DetailUiState.Loading -> showLoading()
                         is DetailUiState.Success -> showContent(state)
-                        is DetailUiState.Error -> showError(state.message)
+                        is DetailUiState.Error -> showError(state.errorType)
                     }
                 }
             }
@@ -150,7 +152,8 @@ class DetailFragment : Fragment() {
     private fun observeSnackbar() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.snackbarMessage.collect { message ->
+                viewModel.snackbarEvent.collect { errorType ->
+                    val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
                     Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
                 }
             }
@@ -245,20 +248,29 @@ class DetailFragment : Fragment() {
                     android.content.Intent.ACTION_VIEW,
                     android.net.Uri.parse("https://www.youtube.com/watch?v=$trailerKey")
                 )
-                startActivity(intent)
+                try {
+                    startActivity(intent)
+                } catch (_: android.content.ActivityNotFoundException) {
+                    Snackbar.make(
+                        binding.root,
+                        R.string.error_no_browser,
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                }
             }
         } else {
             binding.btnTrailer.isVisible = false
         }
     }
 
-    private fun showError(message: String) {
+    private fun showError(errorType: ErrorType) {
         binding.progressBar.isVisible = false
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = true
         binding.fabFavorite.isVisible = false
 
-        binding.errorView.tvErrorMessage.text = message
+        binding.errorView.tvErrorMessage.text =
+            ErrorMessageProvider.getMessage(requireContext(), errorType)
         binding.errorView.btnRetry.setOnClickListener {
             viewModel.loadMovieDetail()
         }

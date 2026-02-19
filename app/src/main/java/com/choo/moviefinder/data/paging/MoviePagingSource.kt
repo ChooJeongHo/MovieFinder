@@ -6,16 +6,9 @@ import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.domain.model.Movie
 
-enum class MovieListType {
-    NOW_PLAYING,
-    POPULAR,
-    SEARCH
-}
-
 class MoviePagingSource(
     private val apiService: MovieApiService,
-    private val listType: MovieListType,
-    private val query: String = "",
+    private val query: String,
     private val year: Int? = null
 ) : PagingSource<Int, Movie>() {
 
@@ -29,11 +22,7 @@ class MoviePagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Movie> {
         val page = params.key ?: 1
         return try {
-            val response = when (listType) {
-                MovieListType.NOW_PLAYING -> apiService.getNowPlayingMovies(page)
-                MovieListType.POPULAR -> apiService.getPopularMovies(page)
-                MovieListType.SEARCH -> apiService.searchMovies(query, page, year = year)
-            }
+            val response = apiService.searchMovies(query, page, year = year)
             LoadResult.Page(
                 data = response.results.map { it.toDomain() },
                 prevKey = if (page == 1) null else page - 1,

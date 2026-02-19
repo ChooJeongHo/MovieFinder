@@ -1,12 +1,11 @@
 package com.choo.moviefinder.presentation.detail
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Movie
-import dagger.hilt.android.qualifiers.ApplicationContext
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
@@ -14,6 +13,7 @@ import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
 import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,7 +29,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DetailViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle,
     private val getMovieDetailUseCase: GetMovieDetailUseCase,
     private val getMovieCreditsUseCase: GetMovieCreditsUseCase,
@@ -46,8 +45,8 @@ class DetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
-    private val _snackbarMessage = MutableSharedFlow<String>()
-    val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
+    private val _snackbarEvent = MutableSharedFlow<ErrorType>()
+    val snackbarEvent: SharedFlow<ErrorType> = _snackbarEvent.asSharedFlow()
 
     val isFavorite = isFavoriteUseCase(movieId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -82,9 +81,11 @@ class DetailViewModel @Inject constructor(
                         trailerKey = trailerDeferred.await()
                     )
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = DetailUiState.Error(
-                    ErrorMessageProvider.getErrorMessage(context, e)
+                    ErrorMessageProvider.getErrorType(e)
                 )
             }
         }
@@ -108,9 +109,11 @@ class DetailViewModel @Inject constructor(
                     )
                     toggleFavoriteUseCase(movie)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _snackbarMessage.emit(
-                    ErrorMessageProvider.getErrorMessage(context, e)
+                _snackbarEvent.emit(
+                    ErrorMessageProvider.getErrorType(e)
                 )
             }
         }

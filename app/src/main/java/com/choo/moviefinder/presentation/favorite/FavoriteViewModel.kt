@@ -20,7 +20,9 @@ class FavoriteViewModel @Inject constructor(
     val favoriteMovies = getFavoriteMoviesUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun removeFavorite(movie: Movie) {
+    // 즐겨찾기 상태를 토글 (추가 ↔ 제거)
+    // 스와이프 삭제 시 호출되고, Undo 시 다시 호출하면 재추가됨
+    fun toggleFavorite(movie: Movie) {
         viewModelScope.launch {
             toggleFavoriteUseCase(movie)
         }

@@ -1,8 +1,7 @@
 package com.choo.moviefinder.presentation.detail
 
-import android.content.Context
 import app.cash.turbine.test
-import com.choo.moviefinder.R
+import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
@@ -38,7 +37,6 @@ class DetailViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    private lateinit var context: Context
     private lateinit var getMovieDetailUseCase: GetMovieDetailUseCase
     private lateinit var getMovieCreditsUseCase: GetMovieCreditsUseCase
     private lateinit var getSimilarMoviesUseCase: GetSimilarMoviesUseCase
@@ -73,7 +71,6 @@ class DetailViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        context = mockk(relaxed = true)
         getMovieDetailUseCase = mockk()
         getMovieCreditsUseCase = mockk()
         getSimilarMoviesUseCase = mockk()
@@ -94,7 +91,6 @@ class DetailViewModelTest {
     private fun createViewModel(movieId: Int = 1): DetailViewModel {
         val savedStateHandle = SavedStateHandle(mapOf("movieId" to movieId))
         return DetailViewModel(
-            context = context,
             savedStateHandle = savedStateHandle,
             getMovieDetailUseCase = getMovieDetailUseCase,
             getMovieCreditsUseCase = getMovieCreditsUseCase,
@@ -128,12 +124,11 @@ class DetailViewModelTest {
     }
 
     @Test
-    fun `detail API failure shows error state`() = runTest {
+    fun `detail API failure shows error state with NETWORK type`() = runTest {
         val exception = UnknownHostException("no network")
         coEvery { getMovieDetailUseCase(1) } throws exception
         coEvery { getMovieCreditsUseCase(1) } returns testCasts
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
-        every { context.getString(R.string.error_network) } returns "네트워크 연결을 확인해 주세요"
 
         val viewModel = createViewModel()
 
@@ -141,7 +136,7 @@ class DetailViewModelTest {
             awaitItem() // Loading
             val error = awaitItem()
             assertTrue(error is DetailUiState.Error)
-            assertEquals("네트워크 연결을 확인해 주세요", (error as DetailUiState.Error).message)
+            assertEquals(ErrorType.NETWORK, (error as DetailUiState.Error).errorType)
         }
     }
 
@@ -203,26 +198,24 @@ class DetailViewModelTest {
     }
 
     @Test
-    fun `toggleFavorite failure emits snackbar message`() = runTest {
+    fun `toggleFavorite failure emits snackbar event with error type`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
         coEvery { getMovieCreditsUseCase(1) } returns testCasts
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { toggleFavoriteUseCase(any()) } throws RuntimeException("DB error")
-        every { context.getString(R.string.error_unknown) } returns "알 수 없는 오류가 발생했습니다"
 
         val viewModel = createViewModel()
         advanceUntilIdle()
 
-        viewModel.snackbarMessage.test {
+        viewModel.snackbarEvent.test {
             viewModel.toggleFavorite()
-            assertEquals("알 수 없는 오류가 발생했습니다", awaitItem())
+            assertEquals(ErrorType.UNKNOWN, awaitItem())
         }
     }
 
     @Test
     fun `toggleFavorite does nothing when state is not Success`() = runTest {
         coEvery { getMovieDetailUseCase(1) } throws RuntimeException("fail")
-        every { context.getString(any()) } returns "error"
 
         val viewModel = createViewModel()
         advanceUntilIdle()
@@ -256,7 +249,6 @@ class DetailViewModelTest {
     @Test
     fun `loadMovieDetail can be retried after error`() = runTest {
         coEvery { getMovieDetailUseCase(1) } throws RuntimeException("fail")
-        every { context.getString(any()) } returns "error"
 
         val viewModel = createViewModel()
         advanceUntilIdle()

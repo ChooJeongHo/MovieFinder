@@ -1,6 +1,7 @@
 package com.choo.moviefinder.data.repository
 
 import app.cash.turbine.test
+import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
@@ -35,6 +36,7 @@ import org.junit.Test
 class MovieRepositoryImplTest {
 
     private lateinit var apiService: MovieApiService
+    private lateinit var database: MovieDatabase
     private lateinit var favoriteMovieDao: FavoriteMovieDao
     private lateinit var recentSearchDao: RecentSearchDao
     private lateinit var cachedMovieDao: CachedMovieDao
@@ -90,6 +92,7 @@ class MovieRepositoryImplTest {
     @Before
     fun setup() {
         apiService = mockk()
+        database = mockk()
         favoriteMovieDao = mockk(relaxUnitFun = true)
         recentSearchDao = mockk(relaxUnitFun = true)
         cachedMovieDao = mockk()
@@ -97,6 +100,7 @@ class MovieRepositoryImplTest {
 
         repository = MovieRepositoryImpl(
             apiService = apiService,
+            database = database,
             favoriteMovieDao = favoriteMovieDao,
             recentSearchDao = recentSearchDao,
             cachedMovieDao = cachedMovieDao,

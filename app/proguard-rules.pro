@@ -20,11 +20,11 @@
 -keepclasseswithmembers class kotlinx.serialization.json.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep,includedescriptorclasses class com.choo.moviefinder.**$$serializer { *; }
--keepclassmembers class com.choo.moviefinder.** {
+-keep,includedescriptorclasses class com.choo.moviefinder.data.remote.dto.**$$serializer { *; }
+-keepclassmembers class com.choo.moviefinder.data.remote.dto.** {
     *** Companion;
 }
--keepclasseswithmembers class com.choo.moviefinder.** {
+-keepclasseswithmembers class com.choo.moviefinder.data.remote.dto.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
 
