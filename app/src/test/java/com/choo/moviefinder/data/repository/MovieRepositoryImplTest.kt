@@ -241,25 +241,12 @@ class MovieRepositoryImplTest {
     // --- toggleFavorite ---
 
     @Test
-    fun `toggleFavorite adds movie when not favorite`() = runTest {
+    fun `toggleFavorite delegates to dao toggleFavorite`() = runTest {
         val movie = Movie(1, "Test", "/p.jpg", "/b.jpg", "Overview", "2024-01-01", 8.0, 100)
-        every { favoriteMovieDao.isFavorite(1) } returns flowOf(false)
 
         repository.toggleFavorite(movie)
 
-        coVerify { favoriteMovieDao.insert(any()) }
-        coVerify(exactly = 0) { favoriteMovieDao.deleteById(any()) }
-    }
-
-    @Test
-    fun `toggleFavorite removes movie when already favorite`() = runTest {
-        val movie = Movie(1, "Test", "/p.jpg", "/b.jpg", "Overview", "2024-01-01", 8.0, 100)
-        every { favoriteMovieDao.isFavorite(1) } returns flowOf(true)
-
-        repository.toggleFavorite(movie)
-
-        coVerify { favoriteMovieDao.deleteById(1) }
-        coVerify(exactly = 0) { favoriteMovieDao.insert(any()) }
+        coVerify { favoriteMovieDao.toggleFavorite(match { it.id == 1 && it.title == "Test" }) }
     }
 
     // --- isFavorite ---

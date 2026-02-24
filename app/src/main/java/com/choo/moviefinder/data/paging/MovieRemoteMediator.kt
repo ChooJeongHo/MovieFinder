@@ -13,6 +13,7 @@ import com.choo.moviefinder.data.local.entity.RemoteKeyEntity
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.data.local.entity.toCachedEntity
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalPagingApi::class)
 class MovieRemoteMediator(
@@ -22,6 +23,17 @@ class MovieRemoteMediator(
     private val remoteKeyDao: RemoteKeyDao,
     private val category: String
 ) : RemoteMediator<Int, CachedMovieEntity>() {
+
+    override suspend fun initialize(): InitializeAction {
+        val remoteKey = remoteKeyDao.getRemoteKey(category)
+        val lastUpdated = remoteKey?.lastUpdated ?: 0L
+        val cacheAge = System.currentTimeMillis() - lastUpdated
+        return if (cacheAge > CACHE_TIMEOUT_MS) {
+            InitializeAction.LAUNCH_INITIAL_REFRESH
+        } else {
+            InitializeAction.SKIP_INITIAL_REFRESH
+        }
+    }
 
     override suspend fun load(
         loadType: LoadType,
@@ -73,5 +85,6 @@ class MovieRemoteMediator(
     companion object {
         const val CATEGORY_NOW_PLAYING = "now_playing"
         const val CATEGORY_POPULAR = "popular"
+        val CACHE_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1)
     }
 }

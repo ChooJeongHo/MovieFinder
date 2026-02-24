@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
+import java.util.concurrent.TimeUnit
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -75,7 +76,7 @@ class DetailFragment : Fragment() {
 
         // Shared Element Transition: 포스터 → 배경 이미지 전환
         ViewCompat.setTransitionName(binding.ivBackdrop, "poster_${args.movieId}")
-        postponeEnterTransition()
+        postponeEnterTransition(500, TimeUnit.MILLISECONDS)
         view.doOnPreDraw { startPostponedEnterTransition() }
 
         setupToolbar()
@@ -177,25 +178,15 @@ class DetailFragment : Fragment() {
         bindMovieDetail(detail)
         bindTrailer(state.trailerKey)
 
-        // Cast (self-navigation 시 이전 영화 데이터가 남지 않도록 항상 visibility를 재설정)
-        if (state.credits.isNotEmpty()) {
-            binding.tvCastLabel.isVisible = true
-            binding.rvCast.isVisible = true
-            castAdapter.submitList(state.credits)
-        } else {
-            binding.tvCastLabel.isVisible = false
-            binding.rvCast.isVisible = false
-        }
+        // Cast (self-navigation 시 이전 영화 데이터가 남지 않도록 항상 리스트를 갱신)
+        castAdapter.submitList(state.credits)
+        binding.tvCastLabel.isVisible = state.credits.isNotEmpty()
+        binding.rvCast.isVisible = state.credits.isNotEmpty()
 
         // 비슷한 영화
-        if (state.similarMovies.isNotEmpty()) {
-            binding.tvSimilarLabel.isVisible = true
-            binding.rvSimilar.isVisible = true
-            similarMovieAdapter.submitList(state.similarMovies)
-        } else {
-            binding.tvSimilarLabel.isVisible = false
-            binding.rvSimilar.isVisible = false
-        }
+        similarMovieAdapter.submitList(state.similarMovies)
+        binding.tvSimilarLabel.isVisible = state.similarMovies.isNotEmpty()
+        binding.rvSimilar.isVisible = state.similarMovies.isNotEmpty()
     }
 
     private fun bindMovieDetail(detail: MovieDetail) {
@@ -268,10 +259,12 @@ class DetailFragment : Fragment() {
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = true
         binding.fabFavorite.isVisible = false
+        binding.errorView.btnRetry.isEnabled = true
 
         binding.errorView.tvErrorMessage.text =
             ErrorMessageProvider.getMessage(requireContext(), errorType)
         binding.errorView.btnRetry.setOnClickListener {
+            binding.errorView.btnRetry.isEnabled = false
             viewModel.loadMovieDetail()
         }
     }

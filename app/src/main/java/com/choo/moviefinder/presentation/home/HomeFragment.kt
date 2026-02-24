@@ -20,6 +20,7 @@ import com.choo.moviefinder.databinding.FragmentHomeBinding
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
+import android.app.Dialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,6 +39,7 @@ class HomeFragment : Fragment() {
     private lateinit var movieAdapter: MoviePagingAdapter
     private var currentTab = 0
     private var collectJob: Job? = null
+    private var activeDialog: Dialog? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,11 +52,17 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        savedInstanceState?.let { currentTab = it.getInt(KEY_CURRENT_TAB, 0) }
         setupToolbarMenu()
         setupRecyclerView()
         setupTabs()
         observeLoadStates()
         collectMovies()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_CURRENT_TAB, currentTab)
     }
 
     private fun setupToolbarMenu() {
@@ -78,7 +86,8 @@ class HomeFragment : Fragment() {
         )
         val currentIndex = viewModel.currentThemeMode.value.ordinal
 
-        MaterialAlertDialogBuilder(requireContext())
+        activeDialog?.dismiss()
+        activeDialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.theme_settings)
             .setSingleChoiceItems(themes, currentIndex) { dialog, which ->
                 val selectedMode = ThemeMode.entries[which]
@@ -117,6 +126,10 @@ class HomeFragment : Fragment() {
     private fun setupTabs() {
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_now_playing))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_popular))
+
+        if (currentTab != 0) {
+            binding.tabLayout.getTabAt(currentTab)?.select()
+        }
 
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
@@ -175,8 +188,15 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        activeDialog?.dismiss()
+        activeDialog = null
+        binding.shimmerView.shimmerLayout.stopShimmer()
         collectJob = null
         binding.rvMovies.adapter = null
         _binding = null
+    }
+
+    companion object {
+        private const val KEY_CURRENT_TAB = "current_tab"
     }
 }

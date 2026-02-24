@@ -39,7 +39,9 @@ class CircularRatingView @JvmOverloads constructor(
     }
 
     fun setRating(value: Double) {
+        if (rating == value) return
         rating = value
+        contentDescription = context.getString(R.string.cd_rating, value)
         updateProgressColor()
         invalidate()
     }
@@ -53,37 +55,41 @@ class CircularRatingView @JvmOverloads constructor(
         progressPaint.color = ContextCompat.getColor(context, colorRes)
     }
 
-    // 그리기 순서: 배경 원 → 트랙(회색 원호) → 진행률 원호 → 중앙 텍스트
-    // 모든 수치는 뷰 크기에 비례하여 계산되므로 다양한 크기에서 동일한 비율 유지
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
+    // 크기 변경 시 1회만 계산하여 onDraw() 부하 최소화
+    private var cx = 0f
+    private var cy = 0f
+    private var radius = 0f
 
-        val cx = width / 2f
-        val cy = height / 2f
-        val radius = minOf(cx, cy)
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        cx = w / 2f
+        cy = h / 2f
+        radius = minOf(cx, cy)
 
-        canvas.drawCircle(cx, cy, radius, backgroundPaint)
-
-        // strokeWidth, arcRadius 모두 radius 기준 비례값으로 계산
         val strokeWidth = radius * 0.15f
         trackPaint.strokeWidth = strokeWidth
         progressPaint.strokeWidth = strokeWidth
+        textPaint.textSize = radius * 0.55f
 
-        // 원호가 배경 원 안쪽에 위치하도록 stroke 절반 + 여백(10%)만큼 안쪽으로 이동
         val arcRadius = radius - strokeWidth / 2 - radius * 0.1f
         arcRect.set(
             cx - arcRadius, cy - arcRadius,
             cx + arcRadius, cy + arcRadius
         )
+    }
 
+    // 그리기 순서: 배경 원 → 트랙(회색 원호) → 진행률 원호 → 중앙 텍스트
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+
+        canvas.drawCircle(cx, cy, radius, backgroundPaint)
         canvas.drawArc(arcRect, -90f, 360f, false, trackPaint)
 
         // rating(0~10)을 0~360도로 변환, -90f 시작은 12시 방향
         val sweepAngle = (rating / 10.0 * 360.0).toFloat()
         canvas.drawArc(arcRect, -90f, sweepAngle, false, progressPaint)
 
-        // Locale.US 고정으로 소수점 표기 일관성 보장 (한국 로케일은 동일하지만 명시적으로)
-        textPaint.textSize = radius * 0.55f
+        // Locale.US 고정으로 소수점 표기 일관성 보장
         val text = String.format(Locale.US, "%.1f", rating)
         val textY = cy - (textPaint.descent() + textPaint.ascent()) / 2
         canvas.drawText(text, cx, textY, textPaint)

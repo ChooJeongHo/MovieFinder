@@ -16,15 +16,15 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -45,8 +45,10 @@ class DetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
-    private val _snackbarEvent = MutableSharedFlow<ErrorType>()
-    val snackbarEvent: SharedFlow<ErrorType> = _snackbarEvent.asSharedFlow()
+    private val _snackbarEvent = Channel<ErrorType>(Channel.BUFFERED)
+    val snackbarEvent = _snackbarEvent.receiveAsFlow()
+
+    private var isLoading = false
 
     val isFavorite = isFavoriteUseCase(movieId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -59,19 +61,27 @@ class DetailViewModel @Inject constructor(
     // 영화 상세는 필수 — 실패 시 Error 상태로 전환
     // 출연진/비슷한 영화는 부가 정보 — 실패해도 빈 리스트로 대체하여 상세 화면 표시
     fun loadMovieDetail() {
+        if (isLoading) return
+        isLoading = true
         viewModelScope.launch {
             _uiState.value = DetailUiState.Loading
             try {
                 coroutineScope {
                     val detailDeferred = async { getMovieDetailUseCase(movieId) }
                     val creditsDeferred = async {
-                        runCatching { getMovieCreditsUseCase(movieId) }.getOrElse { emptyList() }
+                        runCatching { getMovieCreditsUseCase(movieId) }
+                            .onFailure { Timber.w(it, "Failed to load credits for movie %d", movieId) }
+                            .getOrElse { emptyList() }
                     }
                     val similarDeferred = async {
-                        runCatching { getSimilarMoviesUseCase(movieId) }.getOrElse { emptyList() }
+                        runCatching { getSimilarMoviesUseCase(movieId) }
+                            .onFailure { Timber.w(it, "Failed to load similar movies for movie %d", movieId) }
+                            .getOrElse { emptyList() }
                     }
                     val trailerDeferred = async {
-                        runCatching { getMovieTrailerUseCase(movieId) }.getOrNull()
+                        runCatching { getMovieTrailerUseCase(movieId) }
+                            .onFailure { Timber.w(it, "Failed to load trailer for movie %d", movieId) }
+                            .getOrNull()
                     }
 
                     _uiState.value = DetailUiState.Success(
@@ -87,6 +97,8 @@ class DetailViewModel @Inject constructor(
                 _uiState.value = DetailUiState.Error(
                     ErrorMessageProvider.getErrorType(e)
                 )
+            } finally {
+                isLoading = false
             }
         }
     }
@@ -112,7 +124,7 @@ class DetailViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _snackbarEvent.emit(
+                _snackbarEvent.send(
                     ErrorMessageProvider.getErrorType(e)
                 )
             }

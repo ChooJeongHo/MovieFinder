@@ -17,7 +17,12 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ImageOkHttpClient
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -82,6 +87,26 @@ object NetworkModule {
     @Singleton
     fun provideMovieApiService(retrofit: Retrofit): MovieApiService {
         return retrofit.create(MovieApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @ImageOkHttpClient
+    fun provideImageOkHttpClient(): OkHttpClient {
+        val certificatePinner = CertificatePinner.Builder()
+            .add(
+                "image.tmdb.org",
+                "sha256/lTfe0l8BsNLrIpmBOrNBdSg6TZn+VIEQ81pHilsTbqA=",
+                "sha256/AlSQhgtJirc8ahLyekmtX+Iw+v46yPYRLJt9Cq1GlB0="
+            )
+            .build()
+
+        return OkHttpClient.Builder()
+            .certificatePinner(certificatePinner)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
     }
 
     @Provides

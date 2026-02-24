@@ -20,6 +20,7 @@
     <dimen name="movie_card_horizontal_height">210dp</dimen>
 
     <!-- 평점 -->
+    <dimen name="rating_view_overlap_margin">-20dp</dimen>
     <dimen name="rating_view_size">40dp</dimen>
     <dimen name="rating_view_size_large">48dp</dimen>
     <dimen name="rating_stroke_width">3dp</dimen>
@@ -41,4 +42,12 @@
 
     <!-- 검색 -->
     <dimen name="search_bar_height">56dp</dimen>
+
+    <!-- 아이콘 -->
+    <dimen name="icon_size_small">24dp</dimen>
+    <dimen name="icon_size_error">64dp</dimen>
+    <dimen name="icon_size_empty_state">80dp</dimen>
+
+    <!-- 카드 (비슷한 영화) -->
+    <dimen name="card_elevation_small">2dp</dimen>
 </resources>

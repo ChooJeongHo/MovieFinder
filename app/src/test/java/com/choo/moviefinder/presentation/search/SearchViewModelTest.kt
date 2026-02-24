@@ -6,6 +6,7 @@ import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
+import androidx.lifecycle.SavedStateHandle
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -50,10 +51,12 @@ class SearchViewModelTest {
     }
 
     private fun createViewModel(
-        recentSearches: List<String> = emptyList()
+        recentSearches: List<String> = emptyList(),
+        savedStateHandle: SavedStateHandle = SavedStateHandle()
     ): SearchViewModel {
         every { getRecentSearchesUseCase() } returns flowOf(recentSearches)
         return SearchViewModel(
+            savedStateHandle = savedStateHandle,
             searchMoviesUseCase = searchMoviesUseCase,
             getRecentSearchesUseCase = getRecentSearchesUseCase,
             saveSearchQueryUseCase = saveSearchQueryUseCase,
@@ -118,6 +121,34 @@ class SearchViewModelTest {
         advanceUntilIdle()
 
         coVerify { clearSearchHistoryUseCase() }
+    }
+
+    @Test
+    fun `onYearSelected updates selectedYear`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.onYearSelected(2024)
+
+        assertEquals(2024, viewModel.selectedYear.value)
+    }
+
+    @Test
+    fun `onYearSelected with null clears year filter`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.onYearSelected(2024)
+        viewModel.onYearSelected(null)
+
+        assertEquals(null, viewModel.selectedYear.value)
+    }
+
+    @Test
+    fun `savedStateHandle restores search query and year`() = runTest {
+        val handle = SavedStateHandle(mapOf("search_query" to "batman", "selected_year" to 2023))
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        assertEquals("batman", viewModel.searchQuery.value)
+        assertEquals(2023, viewModel.selectedYear.value)
     }
 
     @Test

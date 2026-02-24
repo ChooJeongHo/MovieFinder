@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil3.dispose
 import coil3.load
 import coil3.request.crossfade
 import coil3.request.error
@@ -26,8 +27,13 @@ class CastAdapter : ListAdapter<Cast, CastAdapter.CastViewHolder>(DIFF_CALLBACK)
         holder.bind(getItem(position))
     }
 
+    override fun onViewRecycled(holder: CastViewHolder) {
+        super.onViewRecycled(holder)
+        holder.binding.ivProfile.dispose()
+    }
+
     class CastViewHolder(
-        private val binding: ItemCastBinding
+        val binding: ItemCastBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(cast: Cast) {

@@ -10,9 +10,12 @@ import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
+import com.choo.moviefinder.di.ImageOkHttpClient
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.repository.PreferencesRepository
+import okhttp3.OkHttpClient
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -29,6 +32,9 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
     @InstallIn(SingletonComponent::class)
     interface AppEntryPoint {
         fun preferencesRepository(): PreferencesRepository
+
+        @ImageOkHttpClient
+        fun imageOkHttpClient(): OkHttpClient
     }
 
     override fun onCreate() {
@@ -60,7 +66,13 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
+        val entryPoint = EntryPointAccessors.fromApplication(this, AppEntryPoint::class.java)
+        val imageClient = entryPoint.imageOkHttpClient()
+
         return ImageLoader.Builder(context)
+            .components {
+                add(OkHttpNetworkFetcherFactory(callFactory = { imageClient }))
+            }
             .crossfade(true)
             .memoryCache {
                 MemoryCache.Builder()

@@ -9,9 +9,9 @@
     android:padding="@dimen/spacing_xl">
 
     <ImageView
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:contentDescription="@null"
+        android:layout_width="@dimen/icon_size_error"
+        android:layout_height="@dimen/icon_size_error"
+        android:contentDescription="@string/cd_error_icon"
         android:src="@drawable/ic_cloud_off"
         app:tint="?attr/colorOnSurface"
         android:alpha="0.5" />

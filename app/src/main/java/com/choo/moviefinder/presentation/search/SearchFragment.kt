@@ -22,6 +22,7 @@ import com.choo.moviefinder.databinding.FragmentSearchBinding
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
 import com.choo.moviefinder.presentation.adapter.RecentSearchAdapter
+import android.app.Dialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -38,6 +39,13 @@ class SearchFragment : Fragment() {
 
     private lateinit var searchAdapter: MoviePagingAdapter
     private lateinit var recentSearchAdapter: RecentSearchAdapter
+    private var activeDialog: Dialog? = null
+
+    private val yearFilterItems: Array<String> by lazy {
+        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+        arrayOf(getString(R.string.filter_year_all)) +
+            (currentYear downTo 1950).map { it.toString() }.toTypedArray()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -132,16 +140,21 @@ class SearchFragment : Fragment() {
     }
 
     private fun showYearFilterDialog() {
-        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-        val items = arrayOf(getString(R.string.filter_year_all)) +
-            (currentYear downTo 1950).map { it.toString() }.toTypedArray()
+        val selectedYear = viewModel.selectedYear.value
+        val checkedIndex = if (selectedYear == null) {
+            0
+        } else {
+            yearFilterItems.indexOf(selectedYear.toString()).coerceAtLeast(0)
+        }
 
-        MaterialAlertDialogBuilder(requireContext())
+        activeDialog?.dismiss()
+        activeDialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.filter_year))
-            .setItems(items) { _, which ->
-                val year = if (which == 0) null else items[which].toIntOrNull()
+            .setSingleChoiceItems(yearFilterItems, checkedIndex) { dialog, which ->
+                val year = if (which == 0) null else yearFilterItems[which].toIntOrNull()
                 viewModel.onYearSelected(year)
                 updateYearChip(year)
+                dialog.dismiss()
             }
             .show()
     }
@@ -257,6 +270,9 @@ class SearchFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        activeDialog?.dismiss()
+        activeDialog = null
+        binding.shimmerView.shimmerLayout.stopShimmer()
         binding.rvSearchResults.adapter = null
         binding.rvRecentSearches.adapter = null
         _binding = null

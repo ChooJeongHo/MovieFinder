@@ -2,8 +2,10 @@ package com.choo.moviefinder.presentation.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil3.dispose
 import coil3.load
 import coil3.request.crossfade
 import coil3.request.error
@@ -27,11 +29,17 @@ class SimilarMovieAdapter(
         holder.bind(getItem(position))
     }
 
+    override fun onViewRecycled(holder: SimilarMovieViewHolder) {
+        super.onViewRecycled(holder)
+        holder.binding.ivPoster.dispose()
+    }
+
     inner class SimilarMovieViewHolder(
-        private val binding: ItemMovieHorizontalBinding
+        val binding: ItemMovieHorizontalBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(movie: Movie) {
+            ViewCompat.setTransitionName(binding.ivPoster, "poster_${movie.id}")
             binding.tvTitle.text = movie.title
 
             binding.ivPoster.load(ImageUrlProvider.posterUrl(movie.posterPath)) {

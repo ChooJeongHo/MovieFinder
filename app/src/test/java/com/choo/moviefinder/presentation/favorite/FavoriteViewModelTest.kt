@@ -87,4 +87,17 @@ class FavoriteViewModelTest {
 
         coVerify { toggleFavoriteUseCase(testMovies[0]) }
     }
+
+    @Test
+    fun `toggleFavorite does not crash on error`() = runTest {
+        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        coEvery { toggleFavoriteUseCase(any()) } throws RuntimeException("DB error")
+
+        val viewModel = FavoriteViewModel(getFavoriteMoviesUseCase, toggleFavoriteUseCase)
+
+        viewModel.toggleFavorite(testMovies[0])
+        advanceUntilIdle()
+
+        coVerify { toggleFavoriteUseCase(testMovies[0]) }
+    }
 }

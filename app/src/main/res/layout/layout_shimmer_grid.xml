@@ -4,6 +4,7 @@
     android:id="@+id/shimmer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:importantForAccessibility="noHideDescendants"
     app:shimmer_auto_start="true"
     app:shimmer_duration="1200">
 

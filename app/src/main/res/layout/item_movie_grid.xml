@@ -31,7 +31,7 @@
             android:layout_width="@dimen/rating_view_size"
             android:layout_height="@dimen/rating_view_size"
             android:layout_marginStart="@dimen/spacing_sm"
-            android:layout_marginTop="-20dp"
+            android:layout_marginTop="@dimen/rating_view_overlap_margin"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/iv_poster" />
 

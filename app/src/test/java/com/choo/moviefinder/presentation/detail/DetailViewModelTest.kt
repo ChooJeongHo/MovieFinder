@@ -247,6 +247,40 @@ class DetailViewModelTest {
     }
 
     @Test
+    fun `trailer failure still shows success with null trailer`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { getMovieTrailerUseCase(1) } throws RuntimeException("trailer failed")
+
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            val success = awaitItem()
+            assertTrue(success is DetailUiState.Success)
+            success as DetailUiState.Success
+            assertEquals(null, success.trailerKey)
+            assertEquals(testMovieDetail, success.movieDetail)
+        }
+    }
+
+    @Test
+    fun `loadMovieDetail ignores duplicate call while loading`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+
+        val viewModel = createViewModel()
+        // init sets Loading, calling again should be ignored
+        viewModel.loadMovieDetail()
+        advanceUntilIdle()
+
+        // Detail API should be called only once (from init)
+        coVerify(exactly = 1) { getMovieDetailUseCase(1) }
+    }
+
+    @Test
     fun `loadMovieDetail can be retried after error`() = runTest {
         coEvery { getMovieDetailUseCase(1) } throws RuntimeException("fail")
 

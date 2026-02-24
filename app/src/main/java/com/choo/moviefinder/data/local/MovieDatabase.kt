@@ -18,7 +18,7 @@ import com.choo.moviefinder.data.local.entity.RemoteKeyEntity
         CachedMovieEntity::class,
         RemoteKeyEntity::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = true
 )
 abstract class MovieDatabase : RoomDatabase() {

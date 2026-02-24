@@ -23,7 +23,6 @@ import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.repository.MovieRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -41,6 +40,8 @@ class MovieRepositoryImpl @Inject constructor(
         return Pager(
             config = PagingConfig(
                 pageSize = Constants.PAGE_SIZE,
+                prefetchDistance = Constants.PREFETCH_DISTANCE,
+                initialLoadSize = Constants.PAGE_SIZE,
                 enablePlaceholders = false
             ),
             remoteMediator = MovieRemoteMediator(
@@ -61,6 +62,8 @@ class MovieRepositoryImpl @Inject constructor(
         return Pager(
             config = PagingConfig(
                 pageSize = Constants.PAGE_SIZE,
+                prefetchDistance = Constants.PREFETCH_DISTANCE,
+                initialLoadSize = Constants.PAGE_SIZE,
                 enablePlaceholders = false
             ),
             remoteMediator = MovieRemoteMediator(
@@ -80,6 +83,8 @@ class MovieRepositoryImpl @Inject constructor(
         return Pager(
             config = PagingConfig(
                 pageSize = Constants.PAGE_SIZE,
+                prefetchDistance = Constants.PREFETCH_DISTANCE,
+                initialLoadSize = Constants.PAGE_SIZE,
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {
@@ -89,18 +94,24 @@ class MovieRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getMovieDetail(movieId: Int): MovieDetail {
+        require(movieId > 0) { "Movie ID must be positive" }
         return apiService.getMovieDetail(movieId).toDomain()
     }
 
     override suspend fun getMovieCredits(movieId: Int): List<Cast> {
-        return apiService.getMovieCredits(movieId).cast.map { it.toDomain() }
+        require(movieId > 0) { "Movie ID must be positive" }
+        return apiService.getMovieCredits(movieId).cast
+            .sortedBy { it.order }
+            .map { it.toDomain() }
     }
 
     override suspend fun getSimilarMovies(movieId: Int): List<Movie> {
+        require(movieId > 0) { "Movie ID must be positive" }
         return apiService.getSimilarMovies(movieId).results.map { it.toDomain() }
     }
 
     override suspend fun getMovieTrailerKey(movieId: Int): String? {
+        require(movieId > 0) { "Movie ID must be positive" }
         val response = apiService.getMovieVideos(movieId)
         return response.results
             .filter { it.site == "YouTube" && it.type == "Trailer" }
@@ -118,12 +129,7 @@ class MovieRepositoryImpl @Inject constructor(
     }
 
     override suspend fun toggleFavorite(movie: Movie) {
-        val isFav = favoriteMovieDao.isFavorite(movie.id).firstOrNull() ?: false
-        if (isFav) {
-            favoriteMovieDao.deleteById(movie.id)
-        } else {
-            favoriteMovieDao.insert(movie.toEntity())
-        }
+        favoriteMovieDao.toggleFavorite(movie.toEntity())
     }
 
     override fun isFavorite(movieId: Int): Flow<Boolean> {
@@ -137,7 +143,8 @@ class MovieRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveSearchQuery(query: String) {
-        recentSearchDao.insert(RecentSearchEntity(query = query))
+        require(query.isNotBlank()) { "Search query must not be blank" }
+        recentSearchDao.insert(RecentSearchEntity(query = query.trim()))
     }
 
     override suspend fun deleteSearchQuery(query: String) {

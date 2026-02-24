@@ -20,11 +20,11 @@ Clean Architecture + MVVM 패턴 기반으로, 오프라인 캐시, 다크 모�
 | DI | Hilt 2.59.1 |
 | Network | Retrofit 2.11.0, OkHttp 4.12.0, kotlinx.serialization 1.7.3 |
 | Database | Room 2.8.4, DataStore Preferences 1.2.0 |
-| Async | Coroutines, Flow, StateFlow, SharedFlow |
+| Async | Coroutines, Flow, StateFlow, Channel |
 | Paging | Paging 3.4.0, RemoteMediator |
 | Image | Coil 3.3.0 (메모리 25% + 디스크 5% 캐시) |
 | Navigation | Navigation Component 2.9.7, Safe Args |
-| Test | JUnit 4, MockK 1.14.9, Turbine 1.2.1 (54개 테스트) |
+| Test | JUnit 4, MockK 1.14.9, Turbine 1.2.1 (63개 테스트) |
 | CI/CD | GitHub Actions (Detekt + Lint + Build + Test) |
 | Static Analysis | Detekt 2.0.0-alpha.2 + KtLint |
 | Logging | Timber 5.0.1 |
@@ -48,21 +48,21 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── paging/            # PagingSource (검색), RemoteMediator (홈)
 │   ├── remote/            # Retrofit API Service, DTO
 │   ├── repository/        # Repository 구현체
-│   └── util/              # 상수 (PAGE_SIZE, 언어 코드)
+│   └── util/              # 상수 (PAGE_SIZE, PREFETCH_DISTANCE, 언어 코드)
 ├── domain/                # 도메인 레이어 (순수 Kotlin)
 │   ├── model/             # Movie, MovieDetail, Cast, ThemeMode
 │   ├── repository/        # Repository 인터페이스
 │   └── usecase/           # UseCase 15개
 ├── presentation/          # 프레젠테이션 레이어
-│   ├── adapter/           # RecyclerView 어댑터 6개
-│   ├── common/            # CircularRatingView (커스텀 뷰)
+│   ├── adapter/           # RecyclerView 어댑터 6개 + MovieGridViewHolder (공유 ViewHolder)
+│   ├── common/            # CircularRatingView (커스텀 뷰, 접근성 지원)
 │   ├── detail/            # 상세 화면 (DetailFragment, DetailViewModel)
 │   ├── favorite/          # 즐겨찾기 화면
 │   ├── home/              # 홈 화면
 │   └── search/            # 검색 화면
 ├── di/                    # Hilt DI 모듈
 ├── MainActivity.kt        # NavHostFragment + 딥링크 + 네트워크 Snackbar
-└── MovieFinderApp.kt      # Application (@HiltAndroidApp, Coil/테마 설정)
+└── MovieFinderApp.kt      # Application (@HiltAndroidApp, Coil/테마/Certificate Pinning 설정)
 ```
 
 ### 레이어 규칙
@@ -76,26 +76,30 @@ app/src/main/java/com/choo/moviefinder/
 
 ### 1. 홈 화면
 
-- **현재 상영작 / 인기 영화** TabLayout 전환
+- **현재 상영작 / 인기 영화** TabLayout 전환 (화면 회전 시 탭 상태 복원)
 - **Paging 3 무한 스크롤** (페이지당 20개, GridLayoutManager 2열)
 - **오프라인 지원**: RemoteMediator + Room 캐시 — 네트워크 오류 시에도 캐시 데이터 표시
 - **Facebook Shimmer** 로딩 애니메이션
 - **테마 설정**: 툴바 메뉴에서 라이트/다크/시스템 전환 (DataStore 저장)
+- **다이얼로그 생명주기 관리**: `onDestroyView()`에서 자동 dismiss
 
 ### 2. 검색 화면
 
-- **300ms debounce** 적용 실시간 검색 (`Flow.combine` → `debounce` → `distinctUntilChanged` → `flatMapLatest`)
-- **연도 필터**: ChipGroup + MaterialAlertDialog로 개봉 연도 필터링
-- **최근 검색어** Room DB 저장/삭제/전체삭제
+- **300ms debounce** 적용 실시간 검색 + 즉시 검색 (`merge(debounced, immediate)` → `flatMapLatest`)
+- **연도 필터**: ChipGroup + `setSingleChoiceItems` MaterialAlertDialog (현재 선택 상태 표시)
+- **SavedStateHandle**: 검색어 + 연도 필터 프로세스 사망 시 자동 복원
+- **최근 검색어** Room DB 저장/삭제/전체삭제 (타임스탬프 인덱스 최적화)
 - 상태별 UI 전환 (초기/검색중/결과없음/결과표시)
 
 ### 3. 영화 상세 화면
 
 - **CoordinatorLayout + CollapsingToolbarLayout** 패럴랙스 배경 이미지
 - 상세/출연진/비슷한 영화/예고편 **4개 API 병렬 호출** (`coroutineScope` + `async`)
-- **부분 실패 처리**: 출연진/비슷한 영화/예고편 API 실패 시 빈 리스트로 대체 (상세 정보는 유지)
+- **부분 실패 처리**: 출연진/비슷한 영화/예고편 API 실패 시 빈 리스트로 대체 (상세 정보는 유지, Timber 로깅)
+- **중복 호출 방지**: `isLoading` 플래그로 로딩 중 중복 API 호출 차단 (에러 후 재시도 가능)
+- **출연진 정렬**: `order` 필드 기준 오름차순 정렬
 - **ChipGroup**으로 장르 칩 동적 추가
-- **FAB**으로 즐겨찾기 토글 + 실패 시 Snackbar 피드백
+- **FAB**으로 즐겨찾기 토글 (`@Transaction` 원자적 처리) + 실패 시 Channel → Snackbar 피드백
 - **예고편 재생**: TMDB Videos API → YouTube 앱/웹 브라우저 연결
 - **Shared Element Transition**: 홈/검색/즐겨찾기 → 상세 화면 포스터 이미지 공유 전환
 
@@ -103,6 +107,7 @@ app/src/main/java/com/choo/moviefinder/
 
 - **Room Flow** 기반 실시간 업데이트 (`repeatOnLifecycle`)
 - **스와이프 삭제**: ItemTouchHelper 왼쪽 스와이프 + Snackbar 실행취소 (Undo)
+- **토글 에러 처리**: DB 에러 시 앱 크래시 방지 (try-catch + Timber 로깅)
 - 빈 상태 UI
 
 ### 5. 딥링크
@@ -122,8 +127,8 @@ app/src/main/java/com/choo/moviefinder/
 ```
 
 - `CachedMovieEntity`: 복합 PK(`id` + `category`), 카테고리별 인덱스
-- `RemoteKeyEntity`: 페이징 키 추적
-- `MovieRemoteMediator`: API → Room 동기화, **`withTransaction`으로 원자적 캐시 갱신**
+- `RemoteKeyEntity`: 페이징 키 추적 + `lastUpdated` 타임스탬프
+- `MovieRemoteMediator`: API → Room 동기화, **`withTransaction`으로 원자적 캐시 갱신**, **1시간 캐시 만료** (`initialize()`에서 체크)
 - 검색은 네트워크 전용 (`MoviePagingSource`)
 
 ### 에러 처리 구조
@@ -131,7 +136,7 @@ app/src/main/java/com/choo/moviefinder/
 ViewModel이 Android Context에 의존하지 않도록 에러 타입을 분리했습니다.
 
 ```
-예외 발생 → ErrorMessageProvider.getErrorType() → ErrorType (NETWORK/TIMEOUT/SERVER/UNKNOWN)
+예외 발생 → ErrorMessageProvider.getErrorType() → ErrorType (NETWORK/TIMEOUT/SERVER/SSL/PARSE/UNKNOWN)
          → ViewModel: ErrorType만 보유 (Context 불필요)
          → Fragment: ErrorMessageProvider.getMessage(context, errorType) → 한국어 메시지 표시
 ```
@@ -141,7 +146,7 @@ ViewModel이 Android Context에 의존하지 않도록 에러 타입을 분리�
 
 ### 네트워크 보안
 
-- **Certificate Pinning**: `api.themoviedb.org` leaf + intermediate SHA-256 핀 (OkHttp `CertificatePinner`)
+- **Certificate Pinning**: `api.themoviedb.org` + `image.tmdb.org` leaf + intermediate SHA-256 핀 (OkHttp `CertificatePinner`, Coil에 `@ImageOkHttpClient` 주입)
 - **Network Security Config**: `cleartextTrafficPermitted="false"` (HTTPS 강제)
 - **API Key**: `local.properties` → `BuildConfig` 주입, OkHttp Interceptor로 모든 요청에 자동 추가
 
@@ -158,18 +163,20 @@ ViewModel이 Android Context에 의존하지 않도록 에러 타입을 분리�
 - 메모리 캐시: 앱 메모리의 25%
 - 디스크 캐시: 디스크의 5%
 - `ImageUrlProvider`를 통해 이미지 URL 중앙 관리 (`posterUrl`, `backdropUrl`, `profileUrl`)
+- `@ImageOkHttpClient`로 `image.tmdb.org` Certificate Pinning 적용
+- 모든 이미지 어댑터에서 `onViewRecycled()` 시 `dispose()` 호출하여 메모리 최적화
 
 ### Shared Element Transition
 
 ```
 FragmentNavigatorExtras(posterView to "poster_$movieId")
-  → DetailFragment: postponeEnterTransition() + doOnPreDraw { startPostponedEnterTransition() }
+  → DetailFragment: postponeEnterTransition(500ms timeout) + doOnPreDraw { startPostponedEnterTransition() }
   → TransitionSet: ChangeBounds + ChangeTransform + ChangeImageTransform
 ```
 
 ## Testing
 
-총 **54개** 유닛 테스트를 작성하여 핵심 비즈니스 로직을 검증합니다.
+총 **63개** 유닛 테스트를 작성하여 핵심 비즈니스 로직을 검증합니다.
 
 ```bash
 ./gradlew testDebugUnitTest
@@ -177,13 +184,13 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 
 | 테스트 클래스 | 테스트 수 | 대상 |
 |---|---|---|
-| `MovieRepositoryImplTest` | 20 | 영화 상세, 출연진, 비슷한 영화, 예고편 키(5개), 즐겨찾기 토글/조회, 검색 기록 CRUD |
-| `DetailViewModelTest` | 9 | 초기 상태, ErrorType 에러, 부분 실패, 즐겨찾기 토글, Snackbar 이벤트, 재시도 |
-| `SearchViewModelTest` | 7 | 검색어 변경, 검색 저장, 빈 검색어, 삭제, 전체 삭제, 최근 검색어 |
-| `ErrorMessageProviderTest` | 6 | 예외 타입별 ErrorType 매핑 (Network, Timeout, Server, Unknown) |
+| `MovieRepositoryImplTest` | 19 | 영화 상세, 출연진, 비슷한 영화, 예고편 키(5개), 즐겨찾기 DAO 위임/조회, 검색 기록 CRUD |
+| `DetailViewModelTest` | 11 | 초기 상태, ErrorType 에러, 부분 실패(credits/similar/trailer), 즐겨찾기 토글, Snackbar 이벤트, 재시도, 중복 호출 방지 |
+| `ErrorMessageProviderTest` | 10 | 예외 타입별 ErrorType 매핑 (Network, Timeout, Server, SSL, Parse, IOException, Unknown) |
+| `SearchViewModelTest` | 10 | 검색어 변경, 검색 저장, 빈 검색어, 삭제, 전체 삭제, 최근 검색어, 연도 필터, SavedStateHandle 복원 |
 | `HomeViewModelTest` | 5 | UseCase 호출 검증, 테마 기본값/변경 |
 | `PreferencesRepositoryImplTest` | 4 | 테마 기본값, DARK/LIGHT 저장, 테마 변경 (실제 DataStore 사용) |
-| `FavoriteViewModelTest` | 3 | 즐겨찾기 목록, 빈 목록, 토글 |
+| `FavoriteViewModelTest` | 4 | 즐겨찾기 목록, 빈 목록, 토글, 토글 에러 처리 |
 
 ### 테스트 패턴
 
@@ -198,8 +205,8 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 
 - **트리거**: `push` / `pull_request` → `main` 브랜치
 - **빌드 환경**: Ubuntu + JDK 21 (Temurin) + Gradle 캐시
-- **파이프라인**: Detekt → Lint → Debug Build → Unit Test
-- **Artifact**: Lint 결과 HTML + 테스트 결과 HTML 업로드
+- **파이프라인**: Detekt → Lint → Debug Build → Unit Test → JaCoCo 리포트
+- **Artifact**: Lint 결과 HTML + 테스트 결과 HTML + Detekt 결과 + JaCoCo 커버리지 리포트 + Debug APK 업로드
 - **Concurrency**: 동일 브랜치 중복 실행 시 이전 실행 자동 취소
 
 ### 정적 분석
@@ -213,9 +220,12 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 
 - **Baseline Profiles**: `ProfileInstaller` + `:baselineprofile` 모듈로 앱 시작 성능 최적화
 - **App Startup**: `TimberInitializer`로 초기화 최적화, `StrictModeInitializer`는 디버그 빌드에서만 등록
-- **Coil 이미지 캐시**: 메모리 25% + 디스크 5% (네트워크 요청 최소화)
-- **Paging 3**: 페이지 단위 로딩으로 메모리 효율적 무한 스크롤
-- **Room 인덱스**: `CachedMovieEntity(category)`, `FavoriteMovieEntity(addedAt)`에 인덱스 추가
+- **Coil 이미지 캐시**: 메모리 25% + 디스크 5% (네트워크 요청 최소화) + `onViewRecycled()` dispose
+- **Paging 3**: 페이지 단위 로딩, `prefetchDistance=5`, `initialLoadSize=PAGE_SIZE` 최적화
+- **RemoteMediator 캐시 만료**: 1시간 경과 시 자동 새로고침 (`initialize()` + `lastUpdated` 타임스탬프)
+- **Room 인덱스**: `CachedMovieEntity(category)`, `FavoriteMovieEntity(addedAt)`, `RecentSearchEntity(timestamp)`에 인덱스 추가
+- **CircularRatingView**: `onSizeChanged()`에서 draw 메트릭 캐싱 (매 프레임 재계산 방지)
+- **Shimmer 생명주기**: `onDestroyView()`에서 `stopShimmer()` 호출하여 CPU/배터리 절약
 - **Gradle Configuration Cache**: 반복 빌드 속도 개선
 - **HttpLoggingInterceptor**: 릴리스 빌드에서 객체 자체를 미생성하여 오버헤드 제거
 

@@ -2,6 +2,7 @@ package com.choo.moviefinder.data.util
 
 object Constants {
     const val PAGE_SIZE = 20
+    const val PREFETCH_DISTANCE = 5
 
     // API 언어 설정
     const val LANGUAGE_KO = "ko-KR"

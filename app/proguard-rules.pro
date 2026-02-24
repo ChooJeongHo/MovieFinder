@@ -35,6 +35,18 @@
 # Coil
 -dontwarn coil3.**
 
+# Hilt
+-dontwarn dagger.hilt.**
+-keep class dagger.hilt.** { *; }
+-keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
+-keep class * extends androidx.lifecycle.ViewModel { *; }
+-keepclassmembers class * {
+    @dagger.hilt.android.lifecycle.HiltViewModel *;
+}
+
+# Paging
+-keep class androidx.paging.** { *; }
+
 # Keep line numbers for debugging
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile

@@ -8,6 +8,7 @@ import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.repository.PreferencesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 import javax.inject.Inject
 
 class PreferencesRepositoryImpl @Inject constructor(
@@ -24,6 +25,7 @@ class PreferencesRepositoryImpl @Inject constructor(
             try {
                 ThemeMode.valueOf(themeName)
             } catch (e: IllegalArgumentException) {
+                Timber.w(e, "잘못된 테마 설정값: %s, 기본값(SYSTEM)으로 복구", themeName)
                 ThemeMode.SYSTEM
             }
         }
