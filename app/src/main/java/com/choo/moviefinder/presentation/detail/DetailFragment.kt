@@ -1,5 +1,8 @@
 package com.choo.moviefinder.presentation.detail
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.transition.ChangeBounds
 import android.transition.ChangeImageTransform
@@ -235,13 +238,13 @@ class DetailFragment : Fragment() {
             binding.btnTrailer.isVisible = true
             binding.btnTrailer.setOnClickListener {
                 // YouTube 앱 또는 웹으로 연결
-                val intent = android.content.Intent(
-                    android.content.Intent.ACTION_VIEW,
-                    android.net.Uri.parse("https://www.youtube.com/watch?v=$trailerKey")
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://www.youtube.com/watch?v=$trailerKey")
                 )
                 try {
                     startActivity(intent)
-                } catch (_: android.content.ActivityNotFoundException) {
+                } catch (_: ActivityNotFoundException) {
                     Snackbar.make(
                         binding.root,
                         R.string.error_no_browser,
