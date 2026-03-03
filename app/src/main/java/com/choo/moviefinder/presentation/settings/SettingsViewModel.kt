@@ -9,8 +9,10 @@ import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,13 +27,25 @@ class SettingsViewModel @Inject constructor(
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
-            setThemeModeUseCase(mode)
+            try {
+                setThemeModeUseCase(mode)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to set theme mode to %s", mode)
+            }
         }
     }
 
     fun clearWatchHistory() {
         viewModelScope.launch {
-            clearWatchHistoryUseCase()
+            try {
+                clearWatchHistoryUseCase()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to clear watch history")
+            }
         }
     }
 }

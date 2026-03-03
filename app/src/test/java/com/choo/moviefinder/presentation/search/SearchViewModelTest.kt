@@ -1,6 +1,7 @@
 package com.choo.moviefinder.presentation.search
 
 import app.cash.turbine.test
+import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.usecase.ClearSearchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.DiscoverMoviesUseCase
@@ -23,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -175,5 +177,63 @@ class SearchViewModelTest {
                 assertEquals(searches, item)
             }
         }
+    }
+
+    // --- Genre/Sort filters ---
+
+    @Test
+    fun `onGenresSelected updates selectedGenres`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.onGenresSelected(setOf(28, 35))
+
+        assertEquals(setOf(28, 35), viewModel.selectedGenres.value)
+    }
+
+    @Test
+    fun `onGenresSelected with empty set clears genres`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.onGenresSelected(setOf(28))
+        viewModel.onGenresSelected(emptySet())
+
+        assertTrue(viewModel.selectedGenres.value.isEmpty())
+    }
+
+    @Test
+    fun `onSortSelected updates sortBy`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.onSortSelected(SortOption.VOTE_AVERAGE_DESC)
+
+        assertEquals(SortOption.VOTE_AVERAGE_DESC, viewModel.sortBy.value)
+    }
+
+    @Test
+    fun `genres emits loaded genres from use case`() = runTest {
+        val genreList = listOf(Genre(28, "Action"), Genre(35, "Comedy"))
+        coEvery { getGenreListUseCase() } returns genreList
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.genres.test {
+            assertEquals(genreList, awaitItem())
+        }
+    }
+
+    @Test
+    fun `SortOption apiValue maps correctly`() {
+        assertEquals("popularity.desc", SortOption.POPULARITY_DESC.apiValue)
+        assertEquals("vote_average.desc", SortOption.VOTE_AVERAGE_DESC.apiValue)
+        assertEquals("release_date.desc", SortOption.RELEASE_DATE_DESC.apiValue)
+        assertEquals("revenue.desc", SortOption.REVENUE_DESC.apiValue)
+    }
+
+    @Test
+    fun `initial sortBy is POPULARITY_DESC`() = runTest {
+        val viewModel = createViewModel()
+
+        assertEquals(SortOption.POPULARITY_DESC, viewModel.sortBy.value)
     }
 }

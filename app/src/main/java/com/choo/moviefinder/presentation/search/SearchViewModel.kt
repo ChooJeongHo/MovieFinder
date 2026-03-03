@@ -15,6 +15,7 @@ import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -61,6 +62,8 @@ class SearchViewModel @Inject constructor(
     private val _genres = MutableStateFlow<List<Genre>>(emptyList())
     val genres: StateFlow<List<Genre>> = _genres.asStateFlow()
 
+    private var genreLoadFailed = false
+
     val recentSearches = getRecentSearchesUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -95,10 +98,18 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _genres.value = getGenreListUseCase()
+                genreLoadFailed = false
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
+                genreLoadFailed = true
                 Timber.w(e, "Failed to load genre list")
             }
         }
+    }
+
+    fun retryLoadGenres() {
+        if (genreLoadFailed) loadGenres()
     }
 
     fun onSearchQueryChange(query: String) {

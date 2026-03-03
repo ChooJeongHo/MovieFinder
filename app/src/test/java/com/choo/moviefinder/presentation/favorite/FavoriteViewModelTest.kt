@@ -117,4 +117,41 @@ class FavoriteViewModelTest {
 
         coVerify { toggleFavoriteUseCase(testMovies[0]) }
     }
+
+    @Test
+    fun `watchlistMovies emits movie list from use case`() = runTest {
+        every { getFavoriteMoviesUseCase() } returns flowOf(emptyList())
+        every { getWatchlistUseCase() } returns flowOf(testMovies)
+
+        val viewModel = createViewModel()
+
+        viewModel.watchlistMovies.test {
+            val item = awaitItem()
+            if (item.isEmpty()) {
+                assertEquals(testMovies, awaitItem())
+            } else {
+                assertEquals(testMovies, item)
+            }
+        }
+    }
+
+    @Test
+    fun `toggleWatchlist calls use case and handles error`() = runTest {
+        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        coEvery { toggleWatchlistUseCase(any()) } returns Unit
+
+        val viewModel = createViewModel()
+
+        viewModel.toggleWatchlist(testMovies[0])
+        advanceUntilIdle()
+
+        coVerify { toggleWatchlistUseCase(testMovies[0]) }
+
+        // Also verify error handling
+        coEvery { toggleWatchlistUseCase(any()) } throws RuntimeException("DB error")
+        viewModel.toggleWatchlist(testMovies[1])
+        advanceUntilIdle()
+
+        coVerify { toggleWatchlistUseCase(testMovies[1]) }
+    }
 }

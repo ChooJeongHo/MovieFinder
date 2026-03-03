@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity() {
         if (intent.action != Intent.ACTION_VIEW) return
         val uri = intent.data ?: return
 
-        if (uri.host == "www.themoviedb.org" &&
+        if (uri.host.equals("www.themoviedb.org", ignoreCase = true) &&
             uri.pathSegments.size >= 2 &&
             uri.pathSegments[0] == "movie"
         ) {

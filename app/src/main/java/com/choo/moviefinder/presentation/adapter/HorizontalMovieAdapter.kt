@@ -15,32 +15,36 @@ import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.databinding.ItemMovieHorizontalBinding
 import com.choo.moviefinder.domain.model.Movie
 
-class WatchHistoryAdapter(
+class HorizontalMovieAdapter(
+    private val transitionPrefix: String = "poster",
     private val onMovieClick: (Int) -> Unit
-) : ListAdapter<Movie, WatchHistoryAdapter.WatchHistoryViewHolder>(MovieDiffCallback) {
+) : ListAdapter<Movie, HorizontalMovieAdapter.HorizontalMovieViewHolder>(MovieDiffCallback) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WatchHistoryViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HorizontalMovieViewHolder {
         val binding = ItemMovieHorizontalBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
-        return WatchHistoryViewHolder(binding)
+        return HorizontalMovieViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: WatchHistoryViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: HorizontalMovieViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
-    override fun onViewRecycled(holder: WatchHistoryViewHolder) {
+    override fun onViewRecycled(holder: HorizontalMovieViewHolder) {
         super.onViewRecycled(holder)
         holder.binding.ivPoster.dispose()
     }
 
-    inner class WatchHistoryViewHolder(
+    inner class HorizontalMovieViewHolder(
         val binding: ItemMovieHorizontalBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(movie: Movie) {
-            ViewCompat.setTransitionName(binding.ivPoster, "poster_history_${movie.id}")
+            ViewCompat.setTransitionName(
+                binding.ivPoster,
+                "${transitionPrefix}_${movie.id}"
+            )
             binding.tvTitle.text = movie.title
 
             binding.ivPoster.load(ImageUrlProvider.posterUrl(movie.posterPath)) {

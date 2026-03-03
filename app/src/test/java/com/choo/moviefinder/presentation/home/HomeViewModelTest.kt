@@ -5,6 +5,7 @@ import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.GetNowPlayingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetPopularMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
+import app.cash.turbine.test
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -13,9 +14,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -80,5 +84,29 @@ class HomeViewModelTest {
 
         verify(exactly = 1) { getNowPlayingMoviesUseCase() }
         verify(exactly = 1) { getPopularMoviesUseCase() }
+    }
+
+    @Test
+    fun `watchHistory emits movie list from use case`() = runTest {
+        every { getWatchHistoryUseCase() } returns flowOf(testMovies)
+        val viewModel = createViewModel()
+
+        viewModel.watchHistory.test {
+            val item = awaitItem()
+            if (item.isEmpty()) {
+                assertEquals(testMovies, awaitItem())
+            } else {
+                assertEquals(testMovies, item)
+            }
+        }
+    }
+
+    @Test
+    fun `watchHistory emits empty list by default`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.watchHistory.test {
+            assertTrue(awaitItem().isEmpty())
+        }
     }
 }

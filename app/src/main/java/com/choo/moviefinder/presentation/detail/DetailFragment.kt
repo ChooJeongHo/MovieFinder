@@ -2,7 +2,6 @@ package com.choo.moviefinder.presentation.detail
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.transition.ChangeBounds
 import android.transition.ChangeImageTransform
@@ -11,10 +10,11 @@ import android.transition.TransitionSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
-import java.util.concurrent.TimeUnit
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -34,11 +34,12 @@ import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.databinding.FragmentDetailBinding
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.presentation.adapter.CastAdapter
-import com.choo.moviefinder.presentation.adapter.SimilarMovieAdapter
+import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 @Suppress("TooManyFunctions")
 @AndroidEntryPoint
@@ -52,7 +53,7 @@ class DetailFragment : Fragment() {
     private val args: DetailFragmentArgs by navArgs()
 
     private lateinit var castAdapter: CastAdapter
-    private lateinit var similarMovieAdapter: SimilarMovieAdapter
+    private lateinit var similarMovieAdapter: HorizontalMovieAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -139,7 +140,7 @@ class DetailFragment : Fragment() {
         }
 
         // 비슷한 영화 클릭 시 같은 DetailFragment를 새 인스턴스로 재생성 (self-navigation)
-        similarMovieAdapter = SimilarMovieAdapter { movieId ->
+        similarMovieAdapter = HorizontalMovieAdapter { movieId ->
             if (findNavController().currentDestination?.id == R.id.detailFragment) {
                 findNavController().navigate(
                     R.id.action_detailFragment_self,
@@ -165,6 +166,9 @@ class DetailFragment : Fragment() {
     }
 
     private fun animateFabBounce(fab: View) {
+        fab.animate().cancel()
+        fab.scaleX = 1f
+        fab.scaleY = 1f
         fab.animate()
             .scaleX(1.2f).scaleY(1.2f)
             .setDuration(150)
@@ -318,41 +322,25 @@ class DetailFragment : Fragment() {
 
         if (!hasInfo) return
 
-        if (detail.status.isNotBlank()) {
-            binding.tvStatus.text = getString(R.string.status_format, detail.status)
-            binding.tvStatus.isVisible = true
-        } else {
-            binding.tvStatus.isVisible = false
-        }
-
-        if (detail.originalLanguage.isNotBlank()) {
-            binding.tvOriginalLanguage.text =
-                getString(R.string.original_language_format, detail.originalLanguage.uppercase())
-            binding.tvOriginalLanguage.isVisible = true
-        } else {
-            binding.tvOriginalLanguage.isVisible = false
-        }
-
-        if (detail.budget > 0) {
-            binding.tvBudget.text = getString(R.string.budget_format, detail.budget)
-            binding.tvBudget.isVisible = true
-        } else {
-            binding.tvBudget.isVisible = false
-        }
-
-        if (detail.revenue > 0) {
-            binding.tvRevenue.text = getString(R.string.revenue_format, detail.revenue)
-            binding.tvRevenue.isVisible = true
-        } else {
-            binding.tvRevenue.isVisible = false
-        }
+        bindOptionalField(
+            binding.tvStatus,
+            detail.status.isNotBlank(),
+            getString(R.string.status_format, detail.status)
+        )
+        bindOptionalField(
+            binding.tvOriginalLanguage,
+            detail.originalLanguage.isNotBlank(),
+            getString(R.string.original_language_format, detail.originalLanguage.uppercase())
+        )
+        bindOptionalField(binding.tvBudget, detail.budget > 0, getString(R.string.budget_format, detail.budget))
+        bindOptionalField(binding.tvRevenue, detail.revenue > 0, getString(R.string.revenue_format, detail.revenue))
 
         if (!detail.imdbId.isNullOrBlank()) {
             binding.btnImdb.isVisible = true
             binding.btnImdb.setOnClickListener {
                 val intent = Intent(
                     Intent.ACTION_VIEW,
-                    Uri.parse("https://www.imdb.com/title/${detail.imdbId}")
+                    "https://www.imdb.com/title/${detail.imdbId}".toUri()
                 )
                 try {
                     startActivity(intent)
@@ -367,6 +355,11 @@ class DetailFragment : Fragment() {
         } else {
             binding.btnImdb.isVisible = false
         }
+    }
+
+    private fun bindOptionalField(textView: TextView, show: Boolean, text: String) {
+        textView.isVisible = show
+        if (show) textView.text = text
     }
 
     private fun bindCertification(certification: String?) {
@@ -385,7 +378,7 @@ class DetailFragment : Fragment() {
                 // YouTube 앱 또는 웹으로 연결
                 val intent = Intent(
                     Intent.ACTION_VIEW,
-                    Uri.parse("https://www.youtube.com/watch?v=$trailerKey")
+                    "https://www.youtube.com/watch?v=$trailerKey".toUri()
                 )
                 try {
                     startActivity(intent)

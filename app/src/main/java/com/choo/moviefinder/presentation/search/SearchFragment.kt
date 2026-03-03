@@ -1,5 +1,6 @@
 package com.choo.moviefinder.presentation.search
 
+import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,15 +16,15 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.paging.LoadState
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.choo.moviefinder.R
 import com.choo.moviefinder.databinding.FragmentSearchBinding
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
 import com.choo.moviefinder.presentation.adapter.RecentSearchAdapter
-import android.app.Dialog
+import com.choo.moviefinder.presentation.common.createMovieGridLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -96,16 +97,10 @@ class SearchFragment : Fragment() {
             }
         }
 
-        val gridLayoutManager = GridLayoutManager(requireContext(), 2)
-        // LoadStateAdapter(footer)가 전체 너비를 차지하도록 span 조정
-        gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-            override fun getSpanSize(position: Int): Int {
-                return if (position < searchAdapter.itemCount) 1 else 2
-            }
-        }.apply { isSpanIndexCacheEnabled = true }
-
         binding.rvSearchResults.apply {
-            layoutManager = gridLayoutManager
+            layoutManager = createMovieGridLayoutManager(requireContext()) {
+                searchAdapter.itemCount
+            }
             adapter = searchAdapter.withLoadStateFooter(
                 footer = MovieLoadStateAdapter { searchAdapter.retry() }
             )
@@ -182,7 +177,15 @@ class SearchFragment : Fragment() {
 
     private fun showGenreFilterDialog() {
         val allGenres = viewModel.genres.value
-        if (allGenres.isEmpty()) return
+        if (allGenres.isEmpty()) {
+            viewModel.retryLoadGenres()
+            Snackbar.make(
+                binding.root,
+                R.string.genre_load_failed,
+                Snackbar.LENGTH_SHORT
+            ).show()
+            return
+        }
 
         val genreNames = allGenres.map { it.name }.toTypedArray()
         val selectedIds = viewModel.selectedGenres.value
@@ -242,11 +245,15 @@ class SearchFragment : Fragment() {
     private fun updateGenreChip(selectedGenreIds: Set<Int>) {
         if (selectedGenreIds.isNotEmpty()) {
             val allGenres = viewModel.genres.value
-            val selectedNames = allGenres
-                .filter { it.id in selectedGenreIds }
-                .joinToString(", ") { it.name }
-            binding.chipGenre.text = selectedNames.ifEmpty { getString(R.string.filter_genre) }
-            binding.chipGenre.isCloseIconVisible = selectedGenreIds.isNotEmpty()
+            val selectedNames = allGenres.filter { it.id in selectedGenreIds }
+            val chipText = if (selectedNames.size >= 3) {
+                getString(R.string.genre_count, selectedNames.size)
+            } else {
+                selectedNames.joinToString(", ") { it.name }
+                    .ifEmpty { getString(R.string.filter_genre) }
+            }
+            binding.chipGenre.text = chipText
+            binding.chipGenre.isCloseIconVisible = true
         } else {
             binding.chipGenre.text = getString(R.string.filter_genre)
             binding.chipGenre.isCloseIconVisible = false

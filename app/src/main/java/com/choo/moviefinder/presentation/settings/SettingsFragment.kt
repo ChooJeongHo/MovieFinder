@@ -103,6 +103,7 @@ class SettingsFragment : Fragment() {
 
     private fun clearCache() {
         requireContext().imageLoader.memoryCache?.clear()
+        requireContext().imageLoader.diskCache?.clear()
         Snackbar.make(binding.root, R.string.cache_cleared, Snackbar.LENGTH_SHORT).show()
     }
 

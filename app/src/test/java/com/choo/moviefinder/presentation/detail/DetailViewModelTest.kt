@@ -318,4 +318,77 @@ class DetailViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state is DetailUiState.Success)
     }
+
+    @Test
+    fun `toggleWatchlist calls use case with converted movie`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { toggleWatchlistUseCase(any()) } returns Unit
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleWatchlist()
+        advanceUntilIdle()
+
+        coVerify {
+            toggleWatchlistUseCase(match { movie ->
+                movie.id == testMovieDetail.id && movie.title == testMovieDetail.title
+            })
+        }
+    }
+
+    @Test
+    fun `toggleWatchlist failure emits snackbar event`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { toggleWatchlistUseCase(any()) } throws RuntimeException("DB error")
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.snackbarEvent.test {
+            viewModel.toggleWatchlist()
+            assertEquals(ErrorType.UNKNOWN, awaitItem())
+        }
+    }
+
+    @Test
+    fun `isInWatchlist reflects use case flow`() = runTest {
+        every { isInWatchlistUseCase(1) } returns flowOf(true)
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+
+        val viewModel = createViewModel()
+
+        viewModel.isInWatchlist.test {
+            val first = awaitItem()
+            if (!first) {
+                assertEquals(true, awaitItem())
+            } else {
+                assertEquals(true, first)
+            }
+        }
+    }
+
+    @Test
+    fun `certification loads in success state`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { getMovieCertificationUseCase(1) } returns "15"
+
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            val success = awaitItem()
+            assertTrue(success is DetailUiState.Success)
+            success as DetailUiState.Success
+            assertEquals("15", success.certification)
+        }
+    }
 }

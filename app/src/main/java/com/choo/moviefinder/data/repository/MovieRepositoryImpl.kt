@@ -2,7 +2,6 @@ package com.choo.moviefinder.data.repository
 
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
-import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
 import com.choo.moviefinder.data.local.MovieDatabase
@@ -47,12 +46,7 @@ class MovieRepositoryImpl @Inject constructor(
     @OptIn(ExperimentalPagingApi::class)
     override fun getNowPlayingMovies(): Flow<PagingData<Movie>> {
         return Pager(
-            config = PagingConfig(
-                pageSize = Constants.PAGE_SIZE,
-                prefetchDistance = Constants.PREFETCH_DISTANCE,
-                initialLoadSize = Constants.PAGE_SIZE,
-                enablePlaceholders = false
-            ),
+            config = Constants.DEFAULT_PAGING_CONFIG,
             remoteMediator = MovieRemoteMediator(
                 apiService = apiService,
                 database = database,
@@ -69,12 +63,7 @@ class MovieRepositoryImpl @Inject constructor(
     @OptIn(ExperimentalPagingApi::class)
     override fun getPopularMovies(): Flow<PagingData<Movie>> {
         return Pager(
-            config = PagingConfig(
-                pageSize = Constants.PAGE_SIZE,
-                prefetchDistance = Constants.PREFETCH_DISTANCE,
-                initialLoadSize = Constants.PAGE_SIZE,
-                enablePlaceholders = false
-            ),
+            config = Constants.DEFAULT_PAGING_CONFIG,
             remoteMediator = MovieRemoteMediator(
                 apiService = apiService,
                 database = database,
@@ -90,12 +79,7 @@ class MovieRepositoryImpl @Inject constructor(
 
     override fun searchMovies(query: String, year: Int?): Flow<PagingData<Movie>> {
         return Pager(
-            config = PagingConfig(
-                pageSize = Constants.PAGE_SIZE,
-                prefetchDistance = Constants.PREFETCH_DISTANCE,
-                initialLoadSize = Constants.PAGE_SIZE,
-                enablePlaceholders = false
-            ),
+            config = Constants.DEFAULT_PAGING_CONFIG,
             pagingSourceFactory = {
                 MoviePagingSource(apiService, query, year)
             }
@@ -109,12 +93,7 @@ class MovieRepositoryImpl @Inject constructor(
     ): Flow<PagingData<Movie>> {
         val genresParam = if (genres.isNotEmpty()) genres.joinToString(",") else null
         return Pager(
-            config = PagingConfig(
-                pageSize = Constants.PAGE_SIZE,
-                prefetchDistance = Constants.PREFETCH_DISTANCE,
-                initialLoadSize = Constants.PAGE_SIZE,
-                enablePlaceholders = false
-            ),
+            config = Constants.DEFAULT_PAGING_CONFIG,
             pagingSourceFactory = {
                 DiscoverPagingSource(apiService, genresParam, sortBy, year)
             }
@@ -201,7 +180,7 @@ class MovieRepositoryImpl @Inject constructor(
 
     // Watch History
     override fun getWatchHistory(): Flow<List<Movie>> {
-        return watchHistoryDao.getRecentHistory().map { entities ->
+        return watchHistoryDao.getRecentHistory(Constants.WATCH_HISTORY_LIMIT).map { entities ->
             entities.map { it.toDomain() }
         }
     }

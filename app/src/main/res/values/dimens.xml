@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 여백 -->
+    <dimen name="spacing_xxs">2dp</dimen>
     <dimen name="spacing_xs">4dp</dimen>
     <dimen name="spacing_sm">8dp</dimen>
     <dimen name="spacing_md">16dp</dimen>
@@ -36,6 +37,7 @@
     <dimen name="detail_poster_width">120dp</dimen>
     <dimen name="detail_poster_height">180dp</dimen>
     <dimen name="detail_fab_margin">16dp</dimen>
+    <dimen name="detail_watchlist_fab_bottom_margin">80dp</dimen>
 
     <!-- 로딩 Shimmer -->
     <dimen name="shimmer_card_height">260dp</dimen>

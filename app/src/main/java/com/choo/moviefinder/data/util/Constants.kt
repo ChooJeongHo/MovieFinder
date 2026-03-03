@@ -1,5 +1,7 @@
 package com.choo.moviefinder.data.util
 
+import androidx.paging.PagingConfig
+
 object Constants {
     const val PAGE_SIZE = 20
     const val PREFETCH_DISTANCE = 5
@@ -9,4 +11,14 @@ object Constants {
 
     // 예고편 검색 시 영어로 요청하여 더 많은 결과를 얻기 위함
     const val LANGUAGE_EN = "en-US"
+
+    // 시청 기록 최대 표시 개수
+    const val WATCH_HISTORY_LIMIT = 20
+
+    val DEFAULT_PAGING_CONFIG = PagingConfig(
+        pageSize = PAGE_SIZE,
+        prefetchDistance = PREFETCH_DISTANCE,
+        initialLoadSize = PAGE_SIZE,
+        enablePlaceholders = false
+    )
 }

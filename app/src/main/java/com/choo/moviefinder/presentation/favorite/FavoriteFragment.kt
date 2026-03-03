@@ -133,6 +133,7 @@ class FavoriteFragment : Fragment() {
 
     private fun collectCurrentTab() {
         collectJob?.cancel()
+        movieAdapter.submitList(emptyList())
         updateEmptyState()
         collectJob = viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

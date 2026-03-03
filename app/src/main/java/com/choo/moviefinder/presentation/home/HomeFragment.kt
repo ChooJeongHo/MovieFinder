@@ -13,14 +13,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.paging.LoadState
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.databinding.FragmentHomeBinding
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
+import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
-import com.choo.moviefinder.presentation.adapter.WatchHistoryAdapter
+import com.choo.moviefinder.presentation.common.createMovieGridLayoutManager
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
@@ -36,7 +36,7 @@ class HomeFragment : Fragment() {
     private val viewModel: HomeViewModel by viewModels()
 
     private lateinit var movieAdapter: MoviePagingAdapter
-    private lateinit var watchHistoryAdapter: WatchHistoryAdapter
+    private lateinit var watchHistoryAdapter: HorizontalMovieAdapter
     private var currentTab = 0
     private var collectJob: Job? = null
 
@@ -74,17 +74,10 @@ class HomeFragment : Fragment() {
             }
         }
 
-        val gridLayoutManager = GridLayoutManager(requireContext(), 2)
-        // LoadStateAdapter(footer)가 전체 너비를 차지하도록 span 조정
-        // 영화 아이템은 1칸(= 2열 그리드), footer는 2칸(= 전체 너비)
-        gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-            override fun getSpanSize(position: Int): Int {
-                return if (position < movieAdapter.itemCount) 1 else 2
-            }
-        }.apply { isSpanIndexCacheEnabled = true }
-
         binding.rvMovies.apply {
-            layoutManager = gridLayoutManager
+            layoutManager = createMovieGridLayoutManager(requireContext()) {
+                movieAdapter.itemCount
+            }
             adapter = movieAdapter.withLoadStateFooter(
                 footer = MovieLoadStateAdapter { movieAdapter.retry() }
             )
@@ -92,7 +85,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupWatchHistory() {
-        watchHistoryAdapter = WatchHistoryAdapter { movieId ->
+        watchHistoryAdapter = HorizontalMovieAdapter(transitionPrefix = "poster_history") { movieId ->
             if (findNavController().currentDestination?.id == R.id.homeFragment) {
                 val action = HomeFragmentDirections.actionHomeToDetail(movieId)
                 findNavController().navigate(action)
