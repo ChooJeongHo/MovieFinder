@@ -10,15 +10,21 @@ import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
+import com.choo.moviefinder.data.local.dao.WatchHistoryDao
+import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.data.local.entity.RecentSearchEntity
 import com.choo.moviefinder.data.local.entity.toDomain
 import com.choo.moviefinder.data.local.entity.toEntity
+import com.choo.moviefinder.data.local.entity.toWatchHistoryEntity
+import com.choo.moviefinder.data.local.entity.toWatchlistEntity
+import com.choo.moviefinder.data.paging.DiscoverPagingSource
 import com.choo.moviefinder.data.paging.MoviePagingSource
 import com.choo.moviefinder.data.paging.MovieRemoteMediator
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.data.util.Constants
 import com.choo.moviefinder.domain.model.Cast
+import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.repository.MovieRepository
@@ -26,13 +32,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
+@Suppress("TooManyFunctions")
 class MovieRepositoryImpl @Inject constructor(
     private val apiService: MovieApiService,
     private val database: MovieDatabase,
     private val favoriteMovieDao: FavoriteMovieDao,
     private val recentSearchDao: RecentSearchDao,
     private val cachedMovieDao: CachedMovieDao,
-    private val remoteKeyDao: RemoteKeyDao
+    private val remoteKeyDao: RemoteKeyDao,
+    private val watchHistoryDao: WatchHistoryDao,
+    private val watchlistDao: WatchlistDao
 ) : MovieRepository {
 
     @OptIn(ExperimentalPagingApi::class)
@@ -93,6 +102,25 @@ class MovieRepositoryImpl @Inject constructor(
         ).flow
     }
 
+    override fun discoverMovies(
+        genres: Set<Int>,
+        sortBy: String,
+        year: Int?
+    ): Flow<PagingData<Movie>> {
+        val genresParam = if (genres.isNotEmpty()) genres.joinToString(",") else null
+        return Pager(
+            config = PagingConfig(
+                pageSize = Constants.PAGE_SIZE,
+                prefetchDistance = Constants.PREFETCH_DISTANCE,
+                initialLoadSize = Constants.PAGE_SIZE,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                DiscoverPagingSource(apiService, genresParam, sortBy, year)
+            }
+        ).flow
+    }
+
     override suspend fun getMovieDetail(movieId: Int): MovieDetail {
         require(movieId > 0) { "Movie ID must be positive" }
         return apiService.getMovieDetail(movieId).toDomain()
@@ -120,6 +148,22 @@ class MovieRepositoryImpl @Inject constructor(
             ?: response.results
                 .filter { it.site == "YouTube" }
                 .firstOrNull()?.key
+    }
+
+    override suspend fun getMovieCertification(movieId: Int): String? {
+        require(movieId > 0) { "Movie ID must be positive" }
+        val response = apiService.getMovieReleaseDates(movieId)
+        // KR 우선, US 폴백
+        val krResult = response.results.find { it.iso31661 == "KR" }
+        val usResult = response.results.find { it.iso31661 == "US" }
+        val result = krResult ?: usResult ?: return null
+        return result.releaseDates
+            .map { it.certification }
+            .firstOrNull { it.isNotBlank() }
+    }
+
+    override suspend fun getGenreList(): List<Genre> {
+        return apiService.getGenreList().toDomain()
     }
 
     override fun getFavoriteMovies(): Flow<List<Movie>> {
@@ -153,5 +197,35 @@ class MovieRepositoryImpl @Inject constructor(
 
     override suspend fun clearSearchHistory() {
         recentSearchDao.clearAll()
+    }
+
+    // Watch History
+    override fun getWatchHistory(): Flow<List<Movie>> {
+        return watchHistoryDao.getRecentHistory().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun saveWatchHistory(movie: Movie) {
+        watchHistoryDao.insert(movie.toWatchHistoryEntity())
+    }
+
+    override suspend fun clearWatchHistory() {
+        watchHistoryDao.clearAll()
+    }
+
+    // Watchlist
+    override fun getWatchlistMovies(): Flow<List<Movie>> {
+        return watchlistDao.getAllWatchlist().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun toggleWatchlist(movie: Movie) {
+        watchlistDao.toggleWatchlist(movie.toWatchlistEntity())
+    }
+
+    override fun isInWatchlist(movieId: Int): Flow<Boolean> {
+        return watchlistDao.isInWatchlist(movieId)
     }
 }

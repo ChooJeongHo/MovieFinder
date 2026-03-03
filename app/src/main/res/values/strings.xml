@@ -75,4 +75,59 @@
 
     <!-- 평점 -->
     <string name="rating_format">%.1f</string>
+
+    <!-- 공유 -->
+    <string name="share_movie">영화 공유</string>
+    <string name="share_chooser_title">영화 공유</string>
+
+    <!-- 상세 정보 확장 -->
+    <string name="movie_info_title">영화 정보</string>
+    <string name="budget_format">제작비: $%,d</string>
+    <string name="revenue_format">수익: $%,d</string>
+    <string name="original_language_format">원어: %s</string>
+    <string name="status_format">상태: %s</string>
+    <string name="imdb_link">IMDb에서 보기</string>
+
+    <!-- 콘텐츠 등급 -->
+    <string name="certification_label">등급</string>
+
+    <!-- 시청 기록 -->
+    <string name="watch_history_title">최근 본 영화</string>
+    <string name="clear_watch_history">시청 기록 삭제</string>
+    <string name="watch_history_cleared">시청 기록이 삭제되었습니다</string>
+
+    <!-- 워치리스트 -->
+    <string name="watchlist_title">보고 싶은 영화</string>
+    <string name="watchlist_empty_title">워치리스트 없음</string>
+    <string name="watchlist_empty_message">보고 싶은 영화를 추가해 보세요</string>
+    <string name="watchlist_removed">워치리스트에서 삭제되었습니다</string>
+    <string name="add_to_watchlist">워치리스트 추가</string>
+    <string name="remove_from_watchlist">워치리스트 제거</string>
+    <string name="cd_watchlist">워치리스트</string>
+
+    <!-- 고급 검색 필터 -->
+    <string name="filter_genre">장르</string>
+    <string name="filter_sort">정렬</string>
+    <string name="sort_popularity">인기순</string>
+    <string name="sort_vote_average">평점순</string>
+    <string name="sort_release_date">개봉일순</string>
+    <string name="sort_revenue">수익순</string>
+    <string name="genre_select_title">장르 선택</string>
+    <string name="genre_confirm">확인</string>
+
+    <!-- 설정 -->
+    <string name="nav_settings">설정</string>
+    <string name="settings_theme">테마 설정</string>
+    <string name="settings_clear_cache">캐시 삭제</string>
+    <string name="settings_clear_cache_description">이미지 캐시 및 영화 캐시를 삭제합니다</string>
+    <string name="settings_clear_watch_history">시청 기록 삭제</string>
+    <string name="settings_clear_watch_history_description">최근 본 영화 기록을 삭제합니다</string>
+    <string name="settings_app_info">앱 정보</string>
+    <string name="settings_version">버전</string>
+    <string name="settings_open_source">오픈소스 라이선스</string>
+    <string name="cache_cleared">캐시가 삭제되었습니다</string>
+    <string name="confirm_clear_cache">캐시를 삭제하시겠습니까?</string>
+    <string name="confirm_clear_watch_history">시청 기록을 삭제하시겠습니까?</string>
+    <string name="confirm">확인</string>
+    <string name="cancel">취소</string>
 </resources>

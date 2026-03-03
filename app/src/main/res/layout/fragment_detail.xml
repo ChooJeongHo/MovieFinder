@@ -111,6 +111,17 @@
                     android:textAppearance="?attr/textAppearanceBody2"
                     tools:text="120분" />
 
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_certification"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_sm"
+                    android:clickable="false"
+                    android:checkable="false"
+                    android:visibility="gone"
+                    tools:text="15" />
+
             </LinearLayout>
 
             <!-- 장르 -->
@@ -186,10 +197,77 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_sm"
-                android:layout_marginBottom="@dimen/spacing_xl"
                 android:clipToPadding="false"
                 android:orientation="horizontal"
                 android:visibility="gone" />
+
+            <!-- 영화 정보 (확장) -->
+            <TextView
+                android:id="@+id/tv_movie_info_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_lg"
+                android:text="@string/movie_info_title"
+                android:textAppearance="?attr/textAppearanceHeadline6"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/movie_info_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tv_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/spacing_xs"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    tools:text="상태: Released" />
+
+                <TextView
+                    android:id="@+id/tv_original_language"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/spacing_xs"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    tools:text="원어: en" />
+
+                <TextView
+                    android:id="@+id/tv_budget"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/spacing_xs"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    android:visibility="gone"
+                    tools:text="제작비: $150,000,000" />
+
+                <TextView
+                    android:id="@+id/tv_revenue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/spacing_xs"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    android:visibility="gone"
+                    tools:text="수익: $500,000,000" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_imdb"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/imdb_link"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <!-- 등급 배지 위치를 위한 여백 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/spacing_xl" />
 
         </LinearLayout>
 
@@ -207,6 +285,24 @@
     <include
         android:id="@+id/error_view"
         layout="@layout/layout_error"
+        android:visibility="gone" />
+
+    <!-- 워치리스트 FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_watchlist"
+        style="@style/Widget.MaterialComponents.FloatingActionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="@dimen/spacing_md"
+        android:layout_marginBottom="80dp"
+        android:contentDescription="@string/cd_watchlist"
+        android:src="@drawable/ic_watchlist"
+        app:backgroundTint="?attr/colorSurface"
+        app:fabSize="mini"
+        app:tint="?attr/colorOnSurface"
+        app:layout_anchor="@id/nested_scroll"
+        app:layout_anchorGravity="bottom|end"
         android:visibility="gone" />
 
     <!-- 즐겨찾기 FAB -->

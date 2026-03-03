@@ -3,6 +3,8 @@ package com.choo.moviefinder.presentation.search
 import app.cash.turbine.test
 import com.choo.moviefinder.domain.usecase.ClearSearchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
+import com.choo.moviefinder.domain.usecase.DiscoverMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
@@ -30,6 +32,8 @@ class SearchViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var searchMoviesUseCase: SearchMoviesUseCase
+    private lateinit var discoverMoviesUseCase: DiscoverMoviesUseCase
+    private lateinit var getGenreListUseCase: GetGenreListUseCase
     private lateinit var getRecentSearchesUseCase: GetRecentSearchesUseCase
     private lateinit var saveSearchQueryUseCase: SaveSearchQueryUseCase
     private lateinit var deleteSearchQueryUseCase: DeleteSearchQueryUseCase
@@ -39,10 +43,14 @@ class SearchViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         searchMoviesUseCase = mockk()
+        discoverMoviesUseCase = mockk()
+        getGenreListUseCase = mockk()
         getRecentSearchesUseCase = mockk()
         saveSearchQueryUseCase = mockk()
         deleteSearchQueryUseCase = mockk()
         clearSearchHistoryUseCase = mockk()
+
+        coEvery { getGenreListUseCase() } returns emptyList()
     }
 
     @After
@@ -58,6 +66,8 @@ class SearchViewModelTest {
         return SearchViewModel(
             savedStateHandle = savedStateHandle,
             searchMoviesUseCase = searchMoviesUseCase,
+            discoverMoviesUseCase = discoverMoviesUseCase,
+            getGenreListUseCase = getGenreListUseCase,
             getRecentSearchesUseCase = getRecentSearchesUseCase,
             saveSearchQueryUseCase = saveSearchQueryUseCase,
             deleteSearchQueryUseCase = deleteSearchQueryUseCase,

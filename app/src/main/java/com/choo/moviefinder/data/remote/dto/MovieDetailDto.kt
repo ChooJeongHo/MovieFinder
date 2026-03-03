@@ -47,5 +47,10 @@ fun MovieDetailDto.toDomain() = MovieDetail(
     voteCount = voteCount,
     runtime = runtime,
     genres = genres.map { Genre(id = it.id, name = it.name) },
-    tagline = tagline
+    tagline = tagline,
+    budget = budget,
+    revenue = revenue,
+    originalLanguage = originalLanguage,
+    imdbId = imdbId,
+    status = status
 )

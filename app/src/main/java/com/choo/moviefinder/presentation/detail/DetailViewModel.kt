@@ -6,17 +6,21 @@ import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
 import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
 import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
+import com.choo.moviefinder.domain.usecase.IsInWatchlistUseCase
+import com.choo.moviefinder.domain.usecase.SaveWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
+import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,8 +38,12 @@ class DetailViewModel @Inject constructor(
     private val getMovieCreditsUseCase: GetMovieCreditsUseCase,
     private val getSimilarMoviesUseCase: GetSimilarMoviesUseCase,
     private val getMovieTrailerUseCase: GetMovieTrailerUseCase,
+    private val getMovieCertificationUseCase: GetMovieCertificationUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val isFavoriteUseCase: IsFavoriteUseCase
+    private val isFavoriteUseCase: IsFavoriteUseCase,
+    private val toggleWatchlistUseCase: ToggleWatchlistUseCase,
+    private val isInWatchlistUseCase: IsInWatchlistUseCase,
+    private val saveWatchHistoryUseCase: SaveWatchHistoryUseCase
 ) : ViewModel() {
 
     private val movieId: Int = requireNotNull(savedStateHandle.get<Int>("movieId")) {
@@ -53,13 +61,13 @@ class DetailViewModel @Inject constructor(
     val isFavorite = isFavoriteUseCase(movieId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val isInWatchlist = isInWatchlistUseCase(movieId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     init {
         loadMovieDetail()
     }
 
-    // 상세/출연진/비슷한 영화 3개 API를 병렬 호출하여 로딩 시간 단축
-    // 영화 상세는 필수 — 실패 시 Error 상태로 전환
-    // 출연진/비슷한 영화는 부가 정보 — 실패해도 빈 리스트로 대체하여 상세 화면 표시
     fun loadMovieDetail() {
         if (isLoading) return
         isLoading = true
@@ -83,13 +91,34 @@ class DetailViewModel @Inject constructor(
                             .onFailure { Timber.w(it, "Failed to load trailer for movie %d", movieId) }
                             .getOrNull()
                     }
+                    val certificationDeferred = async {
+                        runCatching { getMovieCertificationUseCase(movieId) }
+                            .onFailure { Timber.w(it, "Failed to load certification for movie %d", movieId) }
+                            .getOrNull()
+                    }
 
+                    val detail = detailDeferred.await()
                     _uiState.value = DetailUiState.Success(
-                        movieDetail = detailDeferred.await(),
+                        movieDetail = detail,
                         credits = creditsDeferred.await(),
                         similarMovies = similarDeferred.await(),
-                        trailerKey = trailerDeferred.await()
+                        trailerKey = trailerDeferred.await(),
+                        certification = certificationDeferred.await()
                     )
+
+                    // 시청 기록 저장
+                    val movie = Movie(
+                        id = detail.id,
+                        title = detail.title,
+                        posterPath = detail.posterPath,
+                        backdropPath = detail.backdropPath,
+                        overview = detail.overview,
+                        releaseDate = detail.releaseDate,
+                        voteAverage = detail.voteAverage,
+                        voteCount = detail.voteCount
+                    )
+                    runCatching { saveWatchHistoryUseCase(movie) }
+                        .onFailure { Timber.w(it, "Failed to save watch history for movie %d", movieId) }
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -103,22 +132,12 @@ class DetailViewModel @Inject constructor(
         }
     }
 
-    // MovieDetail → Movie 변환 후 toggle (Room에는 Movie 단위로 저장)
     fun toggleFavorite() {
         viewModelScope.launch {
             try {
                 val state = _uiState.value
                 if (state is DetailUiState.Success) {
-                    val movie = Movie(
-                        id = state.movieDetail.id,
-                        title = state.movieDetail.title,
-                        posterPath = state.movieDetail.posterPath,
-                        backdropPath = state.movieDetail.backdropPath,
-                        overview = state.movieDetail.overview,
-                        releaseDate = state.movieDetail.releaseDate,
-                        voteAverage = state.movieDetail.voteAverage,
-                        voteCount = state.movieDetail.voteCount
-                    )
+                    val movie = state.movieDetail.toMovie()
                     toggleFavoriteUseCase(movie)
                 }
             } catch (e: CancellationException) {
@@ -130,4 +149,33 @@ class DetailViewModel @Inject constructor(
             }
         }
     }
+
+    fun toggleWatchlist() {
+        viewModelScope.launch {
+            try {
+                val state = _uiState.value
+                if (state is DetailUiState.Success) {
+                    val movie = state.movieDetail.toMovie()
+                    toggleWatchlistUseCase(movie)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _snackbarEvent.send(
+                    ErrorMessageProvider.getErrorType(e)
+                )
+            }
+        }
+    }
+
+    private fun com.choo.moviefinder.domain.model.MovieDetail.toMovie() = Movie(
+        id = id,
+        title = title,
+        posterPath = posterPath,
+        backdropPath = backdropPath,
+        overview = overview,
+        releaseDate = releaseDate,
+        voteAverage = voteAverage,
+        voteCount = voteCount
+    )
 }

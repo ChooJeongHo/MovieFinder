@@ -11,7 +11,8 @@ sealed class DetailUiState {
         val movieDetail: MovieDetail,
         val credits: List<Cast>,
         val similarMovies: List<Movie>,
-        val trailerKey: String? = null
+        val trailerKey: String? = null,
+        val certification: String? = null
     ) : DetailUiState()
     data class Error(val errorType: ErrorType) : DetailUiState()
 }

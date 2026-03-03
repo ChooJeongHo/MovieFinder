@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
+@Suppress("TooManyFunctions")
 @AndroidEntryPoint
 class SearchFragment : Fragment() {
 
@@ -61,6 +62,8 @@ class SearchFragment : Fragment() {
         setupSearchInput()
         setupRecyclerViews()
         setupYearFilter()
+        setupGenreFilter()
+        setupSortFilter()
         setupEmptyStates()
         observeData()
     }
@@ -139,6 +142,24 @@ class SearchFragment : Fragment() {
         }
     }
 
+    private fun setupGenreFilter() {
+        updateGenreChip(viewModel.selectedGenres.value)
+        binding.chipGenre.setOnClickListener { showGenreFilterDialog() }
+        binding.chipGenre.setOnCloseIconClickListener {
+            viewModel.onGenresSelected(emptySet())
+            updateGenreChip(emptySet())
+        }
+    }
+
+    private fun setupSortFilter() {
+        updateSortChip(viewModel.sortBy.value)
+        binding.chipSort.setOnClickListener { showSortDialog() }
+        binding.chipSort.setOnCloseIconClickListener {
+            viewModel.onSortSelected(SortOption.POPULARITY_DESC)
+            updateSortChip(SortOption.POPULARITY_DESC)
+        }
+    }
+
     private fun showYearFilterDialog() {
         val selectedYear = viewModel.selectedYear.value
         val checkedIndex = if (selectedYear == null) {
@@ -159,6 +180,55 @@ class SearchFragment : Fragment() {
             .show()
     }
 
+    private fun showGenreFilterDialog() {
+        val allGenres = viewModel.genres.value
+        if (allGenres.isEmpty()) return
+
+        val genreNames = allGenres.map { it.name }.toTypedArray()
+        val selectedIds = viewModel.selectedGenres.value
+        val checkedItems = BooleanArray(allGenres.size) { allGenres[it].id in selectedIds }
+
+        activeDialog?.dismiss()
+        activeDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.genre_select_title))
+            .setMultiChoiceItems(genreNames, checkedItems) { _, which, isChecked ->
+                checkedItems[which] = isChecked
+            }
+            .setPositiveButton(getString(R.string.genre_confirm)) { _, _ ->
+                val selected = allGenres.filterIndexed { index, _ -> checkedItems[index] }
+                    .map { it.id }
+                    .toSet()
+                viewModel.onGenresSelected(selected)
+                updateGenreChip(selected)
+                // 검색어 없이 장르만으로 탐색
+                if (viewModel.searchQuery.value.isBlank() && selected.isNotEmpty()) {
+                    viewModel.onDiscoverWithFilters()
+                }
+            }
+            .show()
+    }
+
+    private fun showSortDialog() {
+        val sortOptions = SortOption.entries.toTypedArray()
+        val sortLabels = arrayOf(
+            getString(R.string.sort_popularity),
+            getString(R.string.sort_vote_average),
+            getString(R.string.sort_release_date),
+            getString(R.string.sort_revenue)
+        )
+        val currentIndex = sortOptions.indexOf(viewModel.sortBy.value)
+
+        activeDialog?.dismiss()
+        activeDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.filter_sort))
+            .setSingleChoiceItems(sortLabels, currentIndex) { dialog, which ->
+                viewModel.onSortSelected(sortOptions[which])
+                updateSortChip(sortOptions[which])
+                dialog.dismiss()
+            }
+            .show()
+    }
+
     private fun updateYearChip(year: Int?) {
         if (year != null) {
             binding.chipYear.text = getString(R.string.filter_year_value, year)
@@ -166,6 +236,36 @@ class SearchFragment : Fragment() {
         } else {
             binding.chipYear.text = getString(R.string.filter_year)
             binding.chipYear.isCloseIconVisible = false
+        }
+    }
+
+    private fun updateGenreChip(selectedGenreIds: Set<Int>) {
+        if (selectedGenreIds.isNotEmpty()) {
+            val allGenres = viewModel.genres.value
+            val selectedNames = allGenres
+                .filter { it.id in selectedGenreIds }
+                .joinToString(", ") { it.name }
+            binding.chipGenre.text = selectedNames.ifEmpty { getString(R.string.filter_genre) }
+            binding.chipGenre.isCloseIconVisible = selectedGenreIds.isNotEmpty()
+        } else {
+            binding.chipGenre.text = getString(R.string.filter_genre)
+            binding.chipGenre.isCloseIconVisible = false
+        }
+    }
+
+    private fun updateSortChip(sort: SortOption) {
+        if (sort != SortOption.POPULARITY_DESC) {
+            val label = when (sort) {
+                SortOption.POPULARITY_DESC -> getString(R.string.sort_popularity)
+                SortOption.VOTE_AVERAGE_DESC -> getString(R.string.sort_vote_average)
+                SortOption.RELEASE_DATE_DESC -> getString(R.string.sort_release_date)
+                SortOption.REVENUE_DESC -> getString(R.string.sort_revenue)
+            }
+            binding.chipSort.text = label
+            binding.chipSort.isCloseIconVisible = true
+        } else {
+            binding.chipSort.text = getString(R.string.filter_sort)
+            binding.chipSort.isCloseIconVisible = false
         }
     }
 
@@ -189,9 +289,9 @@ class SearchFragment : Fragment() {
                 viewModel.recentSearches.collect { searches ->
                     recentSearchAdapter.submitList(searches)
                     val query = binding.etSearch.text?.toString() ?: ""
-                    if (query.isBlank() && searches.isNotEmpty()) {
+                    if (query.isBlank() && viewModel.selectedGenres.value.isEmpty() && searches.isNotEmpty()) {
                         showRecentSearches()
-                    } else if (query.isBlank()) {
+                    } else if (query.isBlank() && viewModel.selectedGenres.value.isEmpty()) {
                         showInitialState()
                     }
                 }
@@ -209,9 +309,10 @@ class SearchFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 searchAdapter.loadStateFlow.collectLatest { loadStates ->
-                    // 검색어가 비어있으면 loadState 변화를 무시 (최근 검색어 화면 유지)
+                    // 검색어가 비어있고 장르 필터도 없으면 loadState 변화를 무시 (최근 검색어 화면 유지)
                     val query = viewModel.searchQuery.value
-                    if (query.isBlank()) return@collectLatest
+                    val hasGenreFilter = viewModel.selectedGenres.value.isNotEmpty()
+                    if (query.isBlank() && !hasGenreFilter) return@collectLatest
 
                     val refreshState = loadStates.refresh
 
@@ -240,7 +341,7 @@ class SearchFragment : Fragment() {
     // 검색어 입력 변경 시 즉시 호출되어 화면 상태를 전환
     // 검색어가 비면 결과/shimmer를 숨기고 최근검색어 또는 초기 안내 화면을 표시
     private fun updateVisibility(query: String) {
-        if (query.isBlank()) {
+        if (query.isBlank() && viewModel.selectedGenres.value.isEmpty()) {
             binding.rvSearchResults.isVisible = false
             binding.shimmerView.shimmerLayout.isVisible = false
             binding.emptyNoResults.layoutEmpty.isVisible = false

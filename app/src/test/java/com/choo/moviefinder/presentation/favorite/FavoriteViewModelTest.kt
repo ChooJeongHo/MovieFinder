@@ -3,7 +3,9 @@ package com.choo.moviefinder.presentation.favorite
 import app.cash.turbine.test
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.GetFavoriteMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetWatchlistUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
+import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -28,7 +30,9 @@ class FavoriteViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var getFavoriteMoviesUseCase: GetFavoriteMoviesUseCase
+    private lateinit var getWatchlistUseCase: GetWatchlistUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
+    private lateinit var toggleWatchlistUseCase: ToggleWatchlistUseCase
 
     private val testMovies = listOf(
         Movie(1, "Movie 1", "/poster1.jpg", "/backdrop1.jpg", "Overview 1", "2024-01-01", 8.0, 500),
@@ -39,7 +43,11 @@ class FavoriteViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         getFavoriteMoviesUseCase = mockk()
+        getWatchlistUseCase = mockk()
         toggleFavoriteUseCase = mockk()
+        toggleWatchlistUseCase = mockk()
+
+        every { getWatchlistUseCase() } returns flowOf(emptyList())
     }
 
     @After
@@ -47,11 +55,20 @@ class FavoriteViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private fun createViewModel(): FavoriteViewModel {
+        return FavoriteViewModel(
+            getFavoriteMoviesUseCase,
+            getWatchlistUseCase,
+            toggleFavoriteUseCase,
+            toggleWatchlistUseCase
+        )
+    }
+
     @Test
     fun `favoriteMovies emits movie list from use case`() = runTest {
         every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
 
-        val viewModel = FavoriteViewModel(getFavoriteMoviesUseCase, toggleFavoriteUseCase)
+        val viewModel = createViewModel()
 
         viewModel.favoriteMovies.test {
             val item = awaitItem()
@@ -67,7 +84,7 @@ class FavoriteViewModelTest {
     fun `favoriteMovies emits empty list when no favorites`() = runTest {
         every { getFavoriteMoviesUseCase() } returns flowOf(emptyList())
 
-        val viewModel = FavoriteViewModel(getFavoriteMoviesUseCase, toggleFavoriteUseCase)
+        val viewModel = createViewModel()
 
         viewModel.favoriteMovies.test {
             val item = awaitItem()
@@ -80,7 +97,7 @@ class FavoriteViewModelTest {
         every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
         coEvery { toggleFavoriteUseCase(any()) } returns Unit
 
-        val viewModel = FavoriteViewModel(getFavoriteMoviesUseCase, toggleFavoriteUseCase)
+        val viewModel = createViewModel()
 
         viewModel.toggleFavorite(testMovies[0])
         advanceUntilIdle()
@@ -93,7 +110,7 @@ class FavoriteViewModelTest {
         every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
         coEvery { toggleFavoriteUseCase(any()) } throws RuntimeException("DB error")
 
-        val viewModel = FavoriteViewModel(getFavoriteMoviesUseCase, toggleFavoriteUseCase)
+        val viewModel = createViewModel()
 
         viewModel.toggleFavorite(testMovies[0])
         advanceUntilIdle()

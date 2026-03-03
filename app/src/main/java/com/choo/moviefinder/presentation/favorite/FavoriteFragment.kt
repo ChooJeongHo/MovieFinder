@@ -17,9 +17,12 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.R
 import com.choo.moviefinder.databinding.FragmentFavoriteBinding
+import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.presentation.adapter.MovieAdapter
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -31,6 +34,9 @@ class FavoriteFragment : Fragment() {
     private val viewModel: FavoriteViewModel by viewModels()
 
     private lateinit var movieAdapter: MovieAdapter
+    private var currentTab = TAB_FAVORITES
+    private var collectJob: Job? = null
+    private var swipeHelper: ItemTouchHelper? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,16 +49,16 @@ class FavoriteFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupEmptyState()
+        savedInstanceState?.let { currentTab = it.getInt(KEY_CURRENT_TAB, TAB_FAVORITES) }
         setupRecyclerView()
         setupSwipeToDelete()
-        observeFavorites()
+        setupTabs()
+        collectCurrentTab()
     }
 
-    private fun setupEmptyState() {
-        binding.emptyView.ivEmptyIcon.setImageResource(R.drawable.ic_favorite_border)
-        binding.emptyView.tvEmptyTitle.text = getString(R.string.favorite_empty_title)
-        binding.emptyView.tvEmptyMessage.text = getString(R.string.favorite_empty_message)
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_CURRENT_TAB, currentTab)
     }
 
     private fun setupRecyclerView() {
@@ -82,21 +88,60 @@ class FavoriteFragment : Fragment() {
                 val position = viewHolder.bindingAdapterPosition
                 if (position == RecyclerView.NO_POSITION) return
                 val movie = movieAdapter.currentList.getOrNull(position) ?: return
-                viewModel.toggleFavorite(movie)
-                Snackbar.make(binding.root, getString(R.string.favorite_removed), Snackbar.LENGTH_LONG)
-                    .setAction(getString(R.string.undo)) {
-                        viewModel.toggleFavorite(movie)
-                    }
-                    .show()
+                onSwipeDelete(movie)
             }
         }
-        ItemTouchHelper(callback).attachToRecyclerView(binding.rvFavorites)
+        swipeHelper = ItemTouchHelper(callback)
+        swipeHelper?.attachToRecyclerView(binding.rvFavorites)
     }
 
-    private fun observeFavorites() {
-        viewLifecycleOwner.lifecycleScope.launch {
+    private fun onSwipeDelete(movie: Movie) {
+        if (currentTab == TAB_FAVORITES) {
+            viewModel.toggleFavorite(movie)
+            Snackbar.make(binding.root, getString(R.string.favorite_removed), Snackbar.LENGTH_LONG)
+                .setAction(getString(R.string.undo)) {
+                    viewModel.toggleFavorite(movie)
+                }
+                .show()
+        } else {
+            viewModel.toggleWatchlist(movie)
+            Snackbar.make(binding.root, getString(R.string.watchlist_removed), Snackbar.LENGTH_LONG)
+                .setAction(getString(R.string.undo)) {
+                    viewModel.toggleWatchlist(movie)
+                }
+                .show()
+        }
+    }
+
+    private fun setupTabs() {
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.favorite_title))
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.watchlist_title))
+
+        if (currentTab != TAB_FAVORITES) {
+            binding.tabLayout.getTabAt(currentTab)?.select()
+        }
+
+        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                currentTab = tab.position
+                collectCurrentTab()
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {}
+        })
+    }
+
+    private fun collectCurrentTab() {
+        collectJob?.cancel()
+        updateEmptyState()
+        collectJob = viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.favoriteMovies.collect { movies ->
+                val flow = if (currentTab == TAB_FAVORITES) {
+                    viewModel.favoriteMovies
+                } else {
+                    viewModel.watchlistMovies
+                }
+                flow.collect { movies ->
                     movieAdapter.submitList(movies)
                     binding.rvFavorites.isVisible = movies.isNotEmpty()
                     binding.emptyView.layoutEmpty.isVisible = movies.isEmpty()
@@ -105,9 +150,28 @@ class FavoriteFragment : Fragment() {
         }
     }
 
+    private fun updateEmptyState() {
+        if (currentTab == TAB_FAVORITES) {
+            binding.emptyView.ivEmptyIcon.setImageResource(R.drawable.ic_favorite_border)
+            binding.emptyView.tvEmptyTitle.text = getString(R.string.favorite_empty_title)
+            binding.emptyView.tvEmptyMessage.text = getString(R.string.favorite_empty_message)
+        } else {
+            binding.emptyView.ivEmptyIcon.setImageResource(R.drawable.ic_watchlist_border)
+            binding.emptyView.tvEmptyTitle.text = getString(R.string.watchlist_empty_title)
+            binding.emptyView.tvEmptyMessage.text = getString(R.string.watchlist_empty_message)
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        collectJob = null
         binding.rvFavorites.adapter = null
         _binding = null
+    }
+
+    companion object {
+        private const val KEY_CURRENT_TAB = "favorite_current_tab"
+        private const val TAB_FAVORITES = 0
+        private const val TAB_WATCHLIST = 1
     }
 }

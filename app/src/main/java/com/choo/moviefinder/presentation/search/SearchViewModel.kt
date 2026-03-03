@@ -5,9 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.ClearSearchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
+import com.choo.moviefinder.domain.usecase.DiscoverMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
@@ -28,12 +31,15 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val searchMoviesUseCase: SearchMoviesUseCase,
+    private val discoverMoviesUseCase: DiscoverMoviesUseCase,
+    private val getGenreListUseCase: GetGenreListUseCase,
     private val getRecentSearchesUseCase: GetRecentSearchesUseCase,
     private val saveSearchQueryUseCase: SaveSearchQueryUseCase,
     private val deleteSearchQueryUseCase: DeleteSearchQueryUseCase,
@@ -46,26 +52,54 @@ class SearchViewModel @Inject constructor(
     private val _selectedYear = MutableStateFlow(savedStateHandle.get<Int>(KEY_YEAR))
     val selectedYear: StateFlow<Int?> = _selectedYear.asStateFlow()
 
+    private val _selectedGenres = MutableStateFlow<Set<Int>>(emptySet())
+    val selectedGenres: StateFlow<Set<Int>> = _selectedGenres.asStateFlow()
+
+    private val _sortBy = MutableStateFlow(SortOption.POPULARITY_DESC)
+    val sortBy: StateFlow<SortOption> = _sortBy.asStateFlow()
+
+    private val _genres = MutableStateFlow<List<Genre>>(emptyList())
+    val genres: StateFlow<List<Genre>> = _genres.asStateFlow()
+
     val recentSearches = getRecentSearchesUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // 키보드 검색/최근 검색어 클릭 시 debounce 없이 즉시 검색
-    private val _immediateSearch = MutableSharedFlow<Pair<String, Int?>>(extraBufferCapacity = 1)
+    private val _immediateSearch = MutableSharedFlow<SearchParams>(extraBufferCapacity = 1)
 
     // 타이핑 중 자동 검색: 300ms debounce
     // 명시적 검색 액션: 즉시 실행 (merge)
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val searchResults: Flow<PagingData<Movie>> = merge(
-        combine(_searchQuery, _selectedYear) { query, year -> Pair(query, year) }
-            .debounce(300),
+        combine(_searchQuery, _selectedYear, _selectedGenres, _sortBy) { query, year, genres, sort ->
+            SearchParams(query, year, genres, sort)
+        }.debounce(300),
         _immediateSearch
     )
-        .filter { it.first.isNotBlank() }
+        .filter { it.query.isNotBlank() || it.genres.isNotEmpty() }
         .distinctUntilChanged()
-        .flatMapLatest { (query, year) ->
-            searchMoviesUseCase(query, year)
+        .flatMapLatest { params ->
+            if (params.query.isNotBlank()) {
+                searchMoviesUseCase(params.query, params.year)
+            } else {
+                discoverMoviesUseCase(params.genres, params.sort.apiValue, params.year)
+            }
         }
         .cachedIn(viewModelScope)
+
+    init {
+        loadGenres()
+    }
+
+    private fun loadGenres() {
+        viewModelScope.launch {
+            try {
+                _genres.value = getGenreListUseCase()
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to load genre list")
+            }
+        }
+    }
 
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
@@ -77,12 +111,29 @@ class SearchViewModel @Inject constructor(
         savedStateHandle[KEY_YEAR] = year
     }
 
+    fun onGenresSelected(genreIds: Set<Int>) {
+        _selectedGenres.value = genreIds
+    }
+
+    fun onSortSelected(sort: SortOption) {
+        _sortBy.value = sort
+    }
+
     fun onSearch(query: String) {
         if (query.isBlank()) return
         viewModelScope.launch {
             saveSearchQueryUseCase(query)
         }
-        _immediateSearch.tryEmit(Pair(query, _selectedYear.value))
+        _immediateSearch.tryEmit(
+            SearchParams(query, _selectedYear.value, _selectedGenres.value, _sortBy.value)
+        )
+    }
+
+    fun onDiscoverWithFilters() {
+        if (_selectedGenres.value.isEmpty()) return
+        _immediateSearch.tryEmit(
+            SearchParams("", _selectedYear.value, _selectedGenres.value, _sortBy.value)
+        )
     }
 
     fun onDeleteRecentSearch(query: String) {
@@ -97,8 +148,22 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    private data class SearchParams(
+        val query: String,
+        val year: Int?,
+        val genres: Set<Int>,
+        val sort: SortOption
+    )
+
     companion object {
         private const val KEY_QUERY = "search_query"
         private const val KEY_YEAR = "selected_year"
     }
+}
+
+enum class SortOption(val apiValue: String) {
+    POPULARITY_DESC("popularity.desc"),
+    VOTE_AVERAGE_DESC("vote_average.desc"),
+    RELEASE_DATE_DESC("release_date.desc"),
+    REVENUE_DESC("revenue.desc")
 }

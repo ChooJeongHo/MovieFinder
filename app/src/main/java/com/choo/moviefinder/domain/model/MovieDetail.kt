@@ -11,7 +11,12 @@ data class MovieDetail(
     val voteCount: Int,
     val runtime: Int?,
     val genres: List<Genre>,
-    val tagline: String?
+    val tagline: String?,
+    val budget: Long = 0,
+    val revenue: Long = 0,
+    val originalLanguage: String = "",
+    val imdbId: String? = null,
+    val status: String = ""
 )
 
 data class Genre(

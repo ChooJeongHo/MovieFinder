@@ -7,6 +7,8 @@ import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
+import com.choo.moviefinder.data.local.dao.WatchHistoryDao
+import com.choo.moviefinder.data.local.dao.WatchlistDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,7 +28,6 @@ object DatabaseModule {
             MovieDatabase::class.java,
             "movie_finder_db"
         )
-            // 프로덕션 배포 전 적절한 Migration으로 교체 필요 (즐겨찾기/검색 기록 보존)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
@@ -53,5 +54,17 @@ object DatabaseModule {
     @Singleton
     fun provideRemoteKeyDao(database: MovieDatabase): RemoteKeyDao {
         return database.remoteKeyDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideWatchHistoryDao(database: MovieDatabase): WatchHistoryDao {
+        return database.watchHistoryDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideWatchlistDao(database: MovieDatabase): WatchlistDao {
+        return database.watchlistDao()
     }
 }

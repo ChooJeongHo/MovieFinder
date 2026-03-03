@@ -36,6 +36,12 @@
     </fragment>
 
     <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.choo.moviefinder.presentation.settings.SettingsFragment"
+        android:label="@string/nav_settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
         android:id="@+id/detailFragment"
         android:name="com.choo.moviefinder.presentation.detail.DetailFragment"
         android:label=""

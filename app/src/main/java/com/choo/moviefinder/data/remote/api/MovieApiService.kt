@@ -1,8 +1,10 @@
 package com.choo.moviefinder.data.remote.api
 
 import com.choo.moviefinder.data.remote.dto.CreditsResponse
+import com.choo.moviefinder.data.remote.dto.GenreListResponse
 import com.choo.moviefinder.data.remote.dto.MovieDetailDto
 import com.choo.moviefinder.data.remote.dto.MovieListResponse
+import com.choo.moviefinder.data.remote.dto.ReleaseDateResponse
 import com.choo.moviefinder.data.remote.dto.VideoResponse
 import com.choo.moviefinder.data.util.Constants
 import retrofit2.http.GET
@@ -53,6 +55,25 @@ interface MovieApiService {
     suspend fun getSimilarMovies(
         @Path("movie_id") movieId: Int,
         @Query("page") page: Int = 1,
+        @Query("language") language: String = Constants.LANGUAGE_KO
+    ): MovieListResponse
+
+    @GET("movie/{movie_id}/release_dates")
+    suspend fun getMovieReleaseDates(
+        @Path("movie_id") movieId: Int
+    ): ReleaseDateResponse
+
+    @GET("genre/movie/list")
+    suspend fun getGenreList(
+        @Query("language") language: String = Constants.LANGUAGE_KO
+    ): GenreListResponse
+
+    @GET("discover/movie")
+    suspend fun discoverMovies(
+        @Query("page") page: Int,
+        @Query("with_genres") withGenres: String? = null,
+        @Query("sort_by") sortBy: String = "popularity.desc",
+        @Query("year") year: Int? = null,
         @Query("language") language: String = Constants.LANGUAGE_KO
     ): MovieListResponse
 }

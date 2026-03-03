@@ -40,6 +40,7 @@ import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
+@Suppress("TooManyFunctions")
 @AndroidEntryPoint
 class DetailFragment : Fragment() {
 
@@ -87,6 +88,7 @@ class DetailFragment : Fragment() {
         setupFab()
         observeUiState()
         observeFavorite()
+        observeWatchlist()
         observeSnackbar()
     }
 
@@ -94,6 +96,39 @@ class DetailFragment : Fragment() {
         binding.toolbar.setNavigationOnClickListener {
             findNavController().navigateUp()
         }
+        binding.toolbar.inflateMenu(R.menu.menu_detail)
+        binding.toolbar.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_share -> {
+                    shareMovie()
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun shareMovie() {
+        val state = viewModel.uiState.value
+        if (state !is DetailUiState.Success) return
+        val detail = state.movieDetail
+        val shareText = buildString {
+            append(detail.title)
+            if (detail.releaseDate.isNotBlank()) {
+                append(" (${detail.releaseDate})")
+            }
+            append("\n")
+            if (detail.overview.isNotBlank()) {
+                append(detail.overview)
+                append("\n\n")
+            }
+            append("https://www.themoviedb.org/movie/${detail.id}")
+        }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, shareText)
+        }
+        startActivity(Intent.createChooser(intent, getString(R.string.share_chooser_title)))
     }
 
     private fun setupRecyclerViews() {
@@ -120,8 +155,26 @@ class DetailFragment : Fragment() {
 
     private fun setupFab() {
         binding.fabFavorite.setOnClickListener {
+            animateFabBounce(binding.fabFavorite)
             viewModel.toggleFavorite()
         }
+        binding.fabWatchlist.setOnClickListener {
+            animateFabBounce(binding.fabWatchlist)
+            viewModel.toggleWatchlist()
+        }
+    }
+
+    private fun animateFabBounce(fab: View) {
+        fab.animate()
+            .scaleX(1.2f).scaleY(1.2f)
+            .setDuration(150)
+            .withEndAction {
+                fab.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(150)
+                    .start()
+            }
+            .start()
     }
 
     private fun observeUiState() {
@@ -153,6 +206,21 @@ class DetailFragment : Fragment() {
         }
     }
 
+    private fun observeWatchlist() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.isInWatchlist.collect { inWatchlist ->
+                    val icon = if (inWatchlist) {
+                        R.drawable.ic_watchlist
+                    } else {
+                        R.drawable.ic_watchlist_border
+                    }
+                    binding.fabWatchlist.setImageResource(icon)
+                }
+            }
+        }
+    }
+
     private fun observeSnackbar() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -169,6 +237,7 @@ class DetailFragment : Fragment() {
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = false
         binding.fabFavorite.isVisible = false
+        binding.fabWatchlist.isVisible = false
     }
 
     private fun showContent(state: DetailUiState.Success) {
@@ -176,6 +245,7 @@ class DetailFragment : Fragment() {
         binding.contentLayout.isVisible = true
         binding.errorView.layoutError.isVisible = false
         binding.fabFavorite.isVisible = true
+        binding.fabWatchlist.isVisible = true
 
         val detail = state.movieDetail
         bindMovieDetail(detail)
@@ -190,6 +260,9 @@ class DetailFragment : Fragment() {
         similarMovieAdapter.submitList(state.similarMovies)
         binding.tvSimilarLabel.isVisible = state.similarMovies.isNotEmpty()
         binding.rvSimilar.isVisible = state.similarMovies.isNotEmpty()
+
+        // 등급 배지
+        bindCertification(state.certification)
     }
 
     private fun bindMovieDetail(detail: MovieDetail) {
@@ -231,6 +304,78 @@ class DetailFragment : Fragment() {
             }
             binding.chipGroupGenres.addView(chip)
         }
+
+        // 확장 정보
+        bindExtendedInfo(detail)
+    }
+
+    private fun bindExtendedInfo(detail: MovieDetail) {
+        val hasInfo = detail.status.isNotBlank() || detail.originalLanguage.isNotBlank() ||
+            detail.budget > 0 || detail.revenue > 0 || !detail.imdbId.isNullOrBlank()
+
+        binding.tvMovieInfoLabel.isVisible = hasInfo
+        binding.movieInfoSection.isVisible = hasInfo
+
+        if (!hasInfo) return
+
+        if (detail.status.isNotBlank()) {
+            binding.tvStatus.text = getString(R.string.status_format, detail.status)
+            binding.tvStatus.isVisible = true
+        } else {
+            binding.tvStatus.isVisible = false
+        }
+
+        if (detail.originalLanguage.isNotBlank()) {
+            binding.tvOriginalLanguage.text =
+                getString(R.string.original_language_format, detail.originalLanguage.uppercase())
+            binding.tvOriginalLanguage.isVisible = true
+        } else {
+            binding.tvOriginalLanguage.isVisible = false
+        }
+
+        if (detail.budget > 0) {
+            binding.tvBudget.text = getString(R.string.budget_format, detail.budget)
+            binding.tvBudget.isVisible = true
+        } else {
+            binding.tvBudget.isVisible = false
+        }
+
+        if (detail.revenue > 0) {
+            binding.tvRevenue.text = getString(R.string.revenue_format, detail.revenue)
+            binding.tvRevenue.isVisible = true
+        } else {
+            binding.tvRevenue.isVisible = false
+        }
+
+        if (!detail.imdbId.isNullOrBlank()) {
+            binding.btnImdb.isVisible = true
+            binding.btnImdb.setOnClickListener {
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://www.imdb.com/title/${detail.imdbId}")
+                )
+                try {
+                    startActivity(intent)
+                } catch (_: ActivityNotFoundException) {
+                    Snackbar.make(
+                        binding.root,
+                        R.string.error_no_browser,
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        } else {
+            binding.btnImdb.isVisible = false
+        }
+    }
+
+    private fun bindCertification(certification: String?) {
+        if (!certification.isNullOrBlank()) {
+            binding.chipCertification.text = certification
+            binding.chipCertification.isVisible = true
+        } else {
+            binding.chipCertification.isVisible = false
+        }
     }
 
     private fun bindTrailer(trailerKey: String?) {
@@ -262,6 +407,7 @@ class DetailFragment : Fragment() {
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = true
         binding.fabFavorite.isVisible = false
+        binding.fabWatchlist.isVisible = false
         binding.errorView.btnRetry.isEnabled = true
 
         binding.errorView.tvErrorMessage.text =

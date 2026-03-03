@@ -6,12 +6,16 @@ import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
+import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
 import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
 import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
+import com.choo.moviefinder.domain.usecase.IsInWatchlistUseCase
+import com.choo.moviefinder.domain.usecase.SaveWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
+import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -41,8 +45,12 @@ class DetailViewModelTest {
     private lateinit var getMovieCreditsUseCase: GetMovieCreditsUseCase
     private lateinit var getSimilarMoviesUseCase: GetSimilarMoviesUseCase
     private lateinit var getMovieTrailerUseCase: GetMovieTrailerUseCase
+    private lateinit var getMovieCertificationUseCase: GetMovieCertificationUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var isFavoriteUseCase: IsFavoriteUseCase
+    private lateinit var toggleWatchlistUseCase: ToggleWatchlistUseCase
+    private lateinit var isInWatchlistUseCase: IsInWatchlistUseCase
+    private lateinit var saveWatchHistoryUseCase: SaveWatchHistoryUseCase
 
     private val testMovieDetail = MovieDetail(
         id = 1,
@@ -75,12 +83,19 @@ class DetailViewModelTest {
         getMovieCreditsUseCase = mockk()
         getSimilarMoviesUseCase = mockk()
         getMovieTrailerUseCase = mockk()
+        getMovieCertificationUseCase = mockk()
         toggleFavoriteUseCase = mockk()
         isFavoriteUseCase = mockk()
+        toggleWatchlistUseCase = mockk()
+        isInWatchlistUseCase = mockk()
+        saveWatchHistoryUseCase = mockk()
 
         coEvery { getMovieTrailerUseCase(any()) } returns null
+        coEvery { getMovieCertificationUseCase(any()) } returns null
+        coEvery { saveWatchHistoryUseCase(any()) } returns Unit
 
         every { isFavoriteUseCase(any()) } returns flowOf(false)
+        every { isInWatchlistUseCase(any()) } returns flowOf(false)
     }
 
     @After
@@ -96,8 +111,12 @@ class DetailViewModelTest {
             getMovieCreditsUseCase = getMovieCreditsUseCase,
             getSimilarMoviesUseCase = getSimilarMoviesUseCase,
             getMovieTrailerUseCase = getMovieTrailerUseCase,
+            getMovieCertificationUseCase = getMovieCertificationUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
-            isFavoriteUseCase = isFavoriteUseCase
+            isFavoriteUseCase = isFavoriteUseCase,
+            toggleWatchlistUseCase = toggleWatchlistUseCase,
+            isInWatchlistUseCase = isInWatchlistUseCase,
+            saveWatchHistoryUseCase = saveWatchHistoryUseCase
         )
     }
 

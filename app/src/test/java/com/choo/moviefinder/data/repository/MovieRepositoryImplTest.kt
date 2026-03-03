@@ -6,6 +6,8 @@ import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
+import com.choo.moviefinder.data.local.dao.WatchHistoryDao
+import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.RecentSearchEntity
 import com.choo.moviefinder.data.remote.api.MovieApiService
@@ -41,6 +43,8 @@ class MovieRepositoryImplTest {
     private lateinit var recentSearchDao: RecentSearchDao
     private lateinit var cachedMovieDao: CachedMovieDao
     private lateinit var remoteKeyDao: RemoteKeyDao
+    private lateinit var watchHistoryDao: WatchHistoryDao
+    private lateinit var watchlistDao: WatchlistDao
 
     private lateinit var repository: MovieRepositoryImpl
 
@@ -97,6 +101,8 @@ class MovieRepositoryImplTest {
         recentSearchDao = mockk(relaxUnitFun = true)
         cachedMovieDao = mockk()
         remoteKeyDao = mockk()
+        watchHistoryDao = mockk(relaxUnitFun = true)
+        watchlistDao = mockk(relaxUnitFun = true)
 
         repository = MovieRepositoryImpl(
             apiService = apiService,
@@ -104,7 +110,9 @@ class MovieRepositoryImplTest {
             favoriteMovieDao = favoriteMovieDao,
             recentSearchDao = recentSearchDao,
             cachedMovieDao = cachedMovieDao,
-            remoteKeyDao = remoteKeyDao
+            remoteKeyDao = remoteKeyDao,
+            watchHistoryDao = watchHistoryDao,
+            watchlistDao = watchlistDao
         )
     }
 

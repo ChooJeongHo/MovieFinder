@@ -14,14 +14,13 @@ import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.paging.LoadState
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.databinding.FragmentHomeBinding
-import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
-import android.app.Dialog
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.choo.moviefinder.presentation.adapter.WatchHistoryAdapter
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
@@ -37,9 +36,9 @@ class HomeFragment : Fragment() {
     private val viewModel: HomeViewModel by viewModels()
 
     private lateinit var movieAdapter: MoviePagingAdapter
+    private lateinit var watchHistoryAdapter: WatchHistoryAdapter
     private var currentTab = 0
     private var collectJob: Job? = null
-    private var activeDialog: Dialog? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,48 +52,17 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         savedInstanceState?.let { currentTab = it.getInt(KEY_CURRENT_TAB, 0) }
-        setupToolbarMenu()
         setupRecyclerView()
+        setupWatchHistory()
         setupTabs()
         observeLoadStates()
+        observeWatchHistory()
         collectMovies()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_CURRENT_TAB, currentTab)
-    }
-
-    private fun setupToolbarMenu() {
-        binding.toolbar.inflateMenu(R.menu.menu_home)
-        binding.toolbar.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.action_theme -> {
-                    showThemeDialog()
-                    true
-                }
-                else -> false
-            }
-        }
-    }
-
-    private fun showThemeDialog() {
-        val themes = arrayOf(
-            getString(R.string.theme_light),
-            getString(R.string.theme_dark),
-            getString(R.string.theme_system)
-        )
-        val currentIndex = viewModel.currentThemeMode.value.ordinal
-
-        activeDialog?.dismiss()
-        activeDialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.theme_settings)
-            .setSingleChoiceItems(themes, currentIndex) { dialog, which ->
-                val selectedMode = ThemeMode.entries[which]
-                viewModel.setThemeMode(selectedMode)
-                dialog.dismiss()
-            }
-            .show()
     }
 
     private fun setupRecyclerView() {
@@ -120,6 +88,30 @@ class HomeFragment : Fragment() {
             adapter = movieAdapter.withLoadStateFooter(
                 footer = MovieLoadStateAdapter { movieAdapter.retry() }
             )
+        }
+    }
+
+    private fun setupWatchHistory() {
+        watchHistoryAdapter = WatchHistoryAdapter { movieId ->
+            if (findNavController().currentDestination?.id == R.id.homeFragment) {
+                val action = HomeFragmentDirections.actionHomeToDetail(movieId)
+                findNavController().navigate(action)
+            }
+        }
+        binding.rvWatchHistory.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = watchHistoryAdapter
+        }
+    }
+
+    private fun observeWatchHistory() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.watchHistory.collect { history ->
+                    binding.watchHistorySection.isVisible = history.isNotEmpty()
+                    watchHistoryAdapter.submitList(history)
+                }
+            }
         }
     }
 
@@ -188,11 +180,10 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        activeDialog?.dismiss()
-        activeDialog = null
         binding.shimmerView.shimmerLayout.stopShimmer()
         collectJob = null
         binding.rvMovies.adapter = null
+        binding.rvWatchHistory.adapter = null
         _binding = null
     }
 

@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.GetFavoriteMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetWatchlistUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
+import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,10 +18,15 @@ import javax.inject.Inject
 @HiltViewModel
 class FavoriteViewModel @Inject constructor(
     getFavoriteMoviesUseCase: GetFavoriteMoviesUseCase,
-    private val toggleFavoriteUseCase: ToggleFavoriteUseCase
+    getWatchlistUseCase: GetWatchlistUseCase,
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    private val toggleWatchlistUseCase: ToggleWatchlistUseCase
 ) : ViewModel() {
 
     val favoriteMovies = getFavoriteMoviesUseCase()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val watchlistMovies = getWatchlistUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // 즐겨찾기 상태를 토글 (추가 ↔ 제거)
@@ -32,6 +39,18 @@ class FavoriteViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to toggle favorite for movie %d", movie.id)
+            }
+        }
+    }
+
+    fun toggleWatchlist(movie: Movie) {
+        viewModelScope.launch {
+            try {
+                toggleWatchlistUseCase(movie)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to toggle watchlist for movie %d", movie.id)
             }
         }
     }
