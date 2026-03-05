@@ -38,7 +38,7 @@
             android:src="@drawable/ic_refresh" />
     </RelativeLayout>
 
-    <View
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginStart="8dp"

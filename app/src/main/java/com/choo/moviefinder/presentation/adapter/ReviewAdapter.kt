@@ -6,6 +6,8 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.core.view.ViewCompat
+import com.choo.moviefinder.R
 import com.choo.moviefinder.databinding.ItemReviewBinding
 import com.choo.moviefinder.domain.model.Review
 import java.util.Locale
@@ -29,6 +31,13 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
 
         private var isExpanded = false
 
+        private fun updateStateDescription() {
+            val desc = itemView.context.getString(
+                if (isExpanded) R.string.cd_review_expanded else R.string.cd_review_collapsed
+            )
+            ViewCompat.setStateDescription(binding.root, desc)
+        }
+
         fun bind(review: Review) {
             binding.tvAuthor.text = review.author
 
@@ -42,12 +51,14 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
             binding.tvContent.text = review.content
             binding.tvContent.maxLines = 4
             isExpanded = false
+            updateStateDescription()
 
             binding.tvDate.text = review.createdAt.take(10)
 
             binding.root.setOnClickListener {
                 isExpanded = !isExpanded
                 binding.tvContent.maxLines = if (isExpanded) Integer.MAX_VALUE else 4
+                updateStateDescription()
             }
         }
     }

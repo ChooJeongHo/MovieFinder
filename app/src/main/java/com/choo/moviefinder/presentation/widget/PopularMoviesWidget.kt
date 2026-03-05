@@ -65,6 +65,7 @@ class PopularMoviesWidget : AppWidgetProvider() {
 
             // Item click pending intent template (deeplink to movie detail)
             val itemClickIntent = Intent(Intent.ACTION_VIEW).apply {
+                setPackage(context.packageName)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             val itemClickPendingIntent = PendingIntent.getActivity(

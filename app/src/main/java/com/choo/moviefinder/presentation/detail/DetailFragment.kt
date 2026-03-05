@@ -380,6 +380,8 @@ class DetailFragment : Fragment() {
     private fun bindCertification(certification: String?) {
         if (!certification.isNullOrBlank()) {
             binding.chipCertification.text = certification
+            binding.chipCertification.contentDescription =
+                getString(R.string.cd_certification, certification)
             binding.chipCertification.isVisible = true
         } else {
             binding.chipCertification.isVisible = false

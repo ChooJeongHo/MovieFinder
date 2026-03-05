@@ -64,6 +64,10 @@
     <string name="cd_rating">평점 %.1f점</string>
     <string name="cd_error_icon">오류 아이콘</string>
     <string name="cd_loading">로딩 중</string>
+    <string name="cd_movie_item">%1$s, 평점 %2$.1f</string>
+    <string name="cd_certification">등급 %s</string>
+    <string name="cd_review_collapsed">탭하여 펼치기</string>
+    <string name="cd_review_expanded">탭하여 접기</string>
 
     <!-- 테마 설정 -->
     <string name="theme_settings">테마 설정</string>

@@ -64,6 +64,10 @@
     <string name="cd_rating">Rating %.1f</string>
     <string name="cd_error_icon">Error icon</string>
     <string name="cd_loading">Loading</string>
+    <string name="cd_movie_item">%1$s, rating %2$.1f</string>
+    <string name="cd_certification">Rated %s</string>
+    <string name="cd_review_collapsed">Tap to expand</string>
+    <string name="cd_review_expanded">Tap to collapse</string>
 
     <!-- Theme Settings -->
     <string name="theme_settings">Theme Settings</string>

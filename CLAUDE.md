@@ -56,6 +56,8 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | Coroutines Test | 1.10.2 | 코루틴 테스트 디스패처 |
 | Paging Testing | 3.4.0 | PagingData 테스트 유틸리티 |
 | JUnit 4 | 4.13.2 | 유닛 테스트 프레임워크 |
+| Espresso | 3.7.0 | UI 테스트 프레임워크 (core + contrib) |
+| Hilt Testing | 2.59.2 | Hilt 의존성 주입 테스트 지원 |
 
 ## 아키텍처
 
@@ -323,7 +325,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 
 ## 테스트
 
-### 유닛 테스트 (111개)
+### 유닛 테스트 (130개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -336,8 +338,20 @@ API 키 발급: https://www.themoviedb.org/settings/api
 | `ErrorMessageProviderTest` | 10 | 예외 타입별 ErrorType 매핑 (Network, Timeout, Server, SSL, Parse, IOException, Unknown) |
 | `SettingsViewModelTest` | 10 | 테마 기본값/DARK/LIGHT 반영, 테마 설정(2개), 테마 설정 에러 처리, 시청기록 삭제, 시청기록 삭제 에러 처리, 삭제 성공 이벤트, 삭제 에러 Snackbar 이벤트 |
 | `FavoriteViewModelTest` | 10 | 즐겨찾기 목록, 빈 목록, 토글, 토글 에러 Snackbar 이벤트, 워치리스트 목록, 워치리스트 토글, 정렬 순서 변경, 제목순 정렬, 평점순 정렬 |
+| `MoviePagingSourceTest` | 7 | 첫 페이지 로드, 에러 처리, 다음 페이지 로드, 마지막 페이지 nextKey null, 첫 페이지 prevKey null, 연도 파라미터 전달, getRefreshKey null |
+| `DiscoverPagingSourceTest` | 5 | 첫 페이지 로드, 에러 처리, 파라미터 전달 검증, 마지막 페이지 nextKey null, 다음 페이지 키 |
+| `MovieRemoteMediatorTest` | 7 | 캐시 없을 때 REFRESH, 캐시 만료 시 REFRESH, 캐시 유효 시 SKIP, PREPEND 즉시 성공, APPEND 키 없음, APPEND nextKey null, API 에러 처리 |
 | `HomeViewModelTest` | 5 | UseCase 호출 검증 (nowPlaying, popular, 동시 호출), 시청기록 목록, 시청기록 빈 목록 |
 | `PreferencesRepositoryImplTest` | 4 | 테마 기본값, DARK/LIGHT 저장, 테마 변경 |
+
+### Espresso UI 테스트 (5개)
+```bash
+./gradlew connectedDebugAndroidTest
+```
+
+| 테스트 클래스 | 테스트 수 | 대상 |
+|---|---|---|
+| `MainActivityTest` | 5 | 하단 네비게이션 표시, 홈 TabLayout 표시, 검색 화면 이동, 즐겨찾기 화면 이동, 설정 화면 이동 |
 
 ### 테스트 패턴
 - `MockK`: UseCase/Repository/DAO/API 모킹
@@ -541,7 +555,9 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Coil 캐시: 메모리 25% + 디스크 5% 설정
 - [x] Room 인덱스: 자주 쿼리되는 컬럼에 인덱스 추가
 - [x] LoggingInterceptor: 릴리스 빌드에서 객체 미생성
-- [x] 유닛 테스트: 111개 (ViewModel 64개 + Repository 33개 + ErrorMessageProvider 10개 + PreferencesRepository 4개)
+- [x] 유닛 테스트: 130개 (ViewModel 64개 + Repository 33개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 4개)
+- [x] Espresso UI 테스트: 5개 (네비게이션 + 화면 표시 검증, HiltTestRunner)
+- [x] 접근성 강화: 영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지 접근성, ProgressBar/overlay 접근성
 - [x] 다크 모드 아이콘: `@color/icon_default` + `values-night/colors.xml` 테마 대응
 - [x] Shared Element Transition: 포스터 이미지 공유 전환 (postponeEnterTransition 패턴)
 - [x] YouTube 예고편 재생: YouTube 앱/웹 브라우저 연결 (Intent.ACTION_VIEW)
@@ -697,4 +713,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 검색 추천 (결과 없을 때 추천 검색어 칩)
 - [x] 홈 화면 위젯 (AppWidgetProvider, RemoteViewsService, 인기 영화 Top 10)
 - [x] 개봉일 알림 (WorkManager, 워치리스트 연동, NotificationChannel)
-- [x] 다국어 지원 (values-en/strings.xml 영어 번역 161개)
+- [x] 다국어 지원 (values-en/strings.xml 영어 번역 165개)
+- [x] Espresso UI 테스트 (HiltTestRunner + 네비게이션/화면 검증 5개)
+- [x] PagingSource/RemoteMediator 유닛 테스트 (19개: MoviePagingSource 7 + DiscoverPagingSource 5 + MovieRemoteMediator 7)
+- [x] 접근성 강화 (영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지, ProgressBar, decorative overlay)

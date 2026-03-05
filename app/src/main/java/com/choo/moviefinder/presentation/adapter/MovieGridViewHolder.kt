@@ -23,6 +23,10 @@ class MovieGridViewHolder(
         binding.tvReleaseDate.text = movie.releaseDate
         binding.ratingView.setRating(movie.voteAverage)
 
+        binding.cardMovie.contentDescription = binding.root.context.getString(
+            R.string.cd_movie_item, movie.title, movie.voteAverage
+        )
+
         ViewCompat.setTransitionName(binding.ivPoster, "poster_${movie.id}")
 
         binding.ivPoster.load(ImageUrlProvider.posterUrl(movie.posterPath)) {

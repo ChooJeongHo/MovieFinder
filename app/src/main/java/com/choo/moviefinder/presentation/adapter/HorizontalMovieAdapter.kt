@@ -46,6 +46,7 @@ class HorizontalMovieAdapter(
                 "${transitionPrefix}_${movie.id}"
             )
             binding.tvTitle.text = movie.title
+            binding.cardMovie.contentDescription = movie.title
 
             binding.ivPoster.load(ImageUrlProvider.posterUrl(movie.posterPath)) {
                 crossfade(true)
