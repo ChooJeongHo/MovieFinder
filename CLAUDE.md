@@ -40,6 +40,8 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | Timber | 5.0.1 | 구조화 로깅 |
 | App Startup | 1.2.0 | 초기화 최적화 (Timber 등) |
 | WorkManager | 2.10.1 | 개봉일 알림 스케줄링 |
+| kotlinx-datetime | 0.6.2 | 멀티플랫폼 날짜/시간 API (Calendar/SimpleDateFormat 대체) |
+| DataStore (Typed) | 1.2.0 | kotlinx.serialization JSON 기반 타입 안전 설정 저장 |
 
 ### 개발/디버그 도구
 | 도구 | 버전 | 용도 |
@@ -330,16 +332,16 @@ API 키 발급: https://www.themoviedb.org/settings/api
 
 ## 테스트
 
-### 유닛 테스트 (130개)
+### 유닛 테스트 (145개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
 
 | 테스트 클래스 | 테스트 수 | 대상 |
 |---|---|---|
-| `MovieRepositoryImplTest` | 33 | 영화 상세, 출연진, 비슷한 영화, 예고편 키(5개), 즐겨찾기 DAO 위임/조회, 검색 기록 CRUD, 인증등급(4개), 장르(1개), 시청기록(3개), 워치리스트(4개), 리뷰(2개) |
-| `DetailViewModelTest` | 19 | 초기 상태, ErrorType 에러, 부분 실패(credits/similar/trailer/reviews), 즐겨찾기 토글, Snackbar 이벤트, 재시도, 중복 호출 방지, 워치리스트 토글/실패/상태, 인증등급 로드, 리뷰 로드/실패, 알림 스케줄/취소 |
-| `SearchViewModelTest` | 20 | 검색어 변경, 검색 저장, 빈 검색어, 삭제, 전체 삭제, 최근 검색어, 연도 필터, SavedStateHandle 복원(query/year/genres/sort), 장르 선택/초기화, 정렬 선택/초기값, SortOption 매핑, onSearch trim, SavedStateHandle 저장 검증 |
+| `MovieRepositoryImplTest` | 36 | 영화 상세, 출연진, 비슷한 영화, 예고편 키(5개), 즐겨찾기 DAO 위임/조회, 검색 기록 CRUD, 인증등급(4개), 장르(1개), 시청기록(3개), 워치리스트(4개), 리뷰(2개), 사용자 평점(3개) |
+| `DetailViewModelTest` | 24 | 초기 상태, ErrorType 에러, 부분 실패(credits/similar/trailer/reviews), 즐겨찾기 토글, Snackbar 이벤트, 재시도, 중복 호출 방지, 워치리스트 토글/실패/상태, 인증등급 로드, 리뷰 로드/실패, 알림 스케줄/취소, 사용자 평점 설정/삭제/에러/조회(5개) |
+| `SearchViewModelTest` | 27 | 검색어 변경, 검색 저장, 빈 검색어, 삭제, 전체 삭제, 최근 검색어, 연도 필터, SavedStateHandle 복원(query/year/genres/sort), 장르 선택/초기화, 정렬 선택/초기값, SortOption 매핑, onSearch trim, SavedStateHandle 저장 검증, 뷰모드 토글(4개), Discover 필터(1개), 장르 재시도(2개) |
 | `ErrorMessageProviderTest` | 10 | 예외 타입별 ErrorType 매핑 (Network, Timeout, Server, SSL, Parse, IOException, Unknown) |
 | `SettingsViewModelTest` | 10 | 테마 기본값/DARK/LIGHT 반영, 테마 설정(2개), 테마 설정 에러 처리, 시청기록 삭제, 시청기록 삭제 에러 처리, 삭제 성공 이벤트, 삭제 에러 Snackbar 이벤트 |
 | `FavoriteViewModelTest` | 10 | 즐겨찾기 목록, 빈 목록, 토글, 토글 에러 Snackbar 이벤트, 워치리스트 목록, 워치리스트 토글, 정렬 순서 변경, 제목순 정렬, 평점순 정렬 |
@@ -562,7 +564,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Coil 캐시: 메모리 25% + 디스크 5% 설정
 - [x] Room 인덱스: 자주 쿼리되는 컬럼에 인덱스 추가
 - [x] LoggingInterceptor: 릴리스 빌드에서 객체 미생성
-- [x] 유닛 테스트: 130개 (ViewModel 64개 + Repository 33개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 4개)
+- [x] 유닛 테스트: 145개 (ViewModel 76개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 4개)
 - [x] Espresso UI 테스트: 5개 (네비게이션 + 화면 표시 검증, HiltTestRunner)
 - [x] 접근성 강화: 영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지 접근성, ProgressBar/overlay 접근성
 - [x] 다크 모드 아이콘: `@color/icon_default` + `values-night/colors.xml` 테마 대응
@@ -651,6 +653,12 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] DetailViewModel 부분 실패 리팩토링: loadOptional/loadOptionalNullable 헬퍼 추출
 - [x] 사용자 영화 평점: RatingBar (0.5~5.0 별점), Room DB UserRatingEntity 저장, 삭제 버튼
 - [x] 검색 결과 보기 모드 전환: 그리드 ↔ 리스트 토글 (Toolbar 메뉴, SavedStateHandle 저장)
+- [x] Predictive Back Gesture: `android:enableOnBackInvokedCallback="true"` (Android 14+ 뒤로가기 미리보기)
+- [x] kotlinx-datetime: Calendar/SimpleDateFormat → kotlinx.datetime.Clock, LocalDate, TimeZone (멀티플랫폼)
+- [x] Typed DataStore: Preferences DataStore → `DataStore<UserSettings>` (kotlinx.serialization JSON, 타입 안전)
+- [x] Per-App Language: `locales_config.xml` + `AppCompatDelegate.setApplicationLocales()` (시스템 설정 연동)
+- [x] Gradle Convention Plugins: `buildSrc/AndroidConfig` 공유 상수 (compileSdk, minSdk, targetSdk, Java 버전)
+- [x] R8 Full Mode: `android.enableR8.fullMode=true` (최적화 강화, ProGuard 규칙 보강)
 
 ## 보너스 기능 구현 현황
 - [x] 다크 모드 지원 (MaterialComponents.DayNight 테마 + 테마 대응 아이콘/색상)
@@ -663,7 +671,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 딥링크 지원 (커스텀 스킴 + TMDB URL)
 - [x] 스와이프 삭제 + 실행취소
 - [x] 검색 연도 필터
-- [x] Unit Test 작성 (111개: ViewModel 64개 + Repository 33개 + ErrorMessageProvider 10개 + PreferencesRepository 4개)
+- [x] Unit Test 작성 (145개: ViewModel 76개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 4개)
 - [x] 영화 예고편 재생 (YouTube 앱/웹 연결, TMDB Videos API 연동)
 - [x] Shared Element Transition (포스터 이미지 공유 전환)
 - [x] DataStore 기반 다크모드 설정 (라이트/다크/시스템 전환)
@@ -728,3 +736,9 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 접근성 강화 (영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지, ProgressBar, decorative overlay)
 - [x] 사용자 영화 평점 (RatingBar 0.5~5.0, Room DB UserRatingEntity, 삭제 버튼)
 - [x] 검색 결과 보기 모드 전환 (그리드 ↔ 리스트 토글, MovieListViewHolder, SavedStateHandle 저장)
+- [x] Predictive Back Gesture (Android 14+ 뒤로가기 미리보기 애니메이션)
+- [x] kotlinx-datetime (Calendar/SimpleDateFormat 대체, 멀티플랫폼 날짜/시간 API)
+- [x] Typed DataStore (Preferences → kotlinx.serialization JSON 기반 타입 안전 저장)
+- [x] Per-App Language (locales_config.xml, AppCompatDelegate.setApplicationLocales)
+- [x] Gradle Convention Plugins (buildSrc/AndroidConfig 공유 빌드 상수)
+- [x] R8 Full Mode (최적화 강화, ProGuard 규칙 보강)

@@ -477,6 +477,91 @@ class DetailViewModelTest {
         }
     }
 
+    // --- User Rating ---
+
+    @Test
+    fun `setUserRating calls use case with correct params`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { setUserRatingUseCase(any(), any()) } returns Unit
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.setUserRating(4.5f)
+        advanceUntilIdle()
+
+        coVerify { setUserRatingUseCase(1, 4.5f) }
+    }
+
+    @Test
+    fun `setUserRating failure emits snackbar event`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { setUserRatingUseCase(any(), any()) } throws RuntimeException("DB error")
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.snackbarEvent.test {
+            viewModel.setUserRating(3.0f)
+            assertEquals(ErrorType.UNKNOWN, awaitItem())
+        }
+    }
+
+    @Test
+    fun `deleteUserRating calls use case`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { deleteUserRatingUseCase(any()) } returns Unit
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.deleteUserRating()
+        advanceUntilIdle()
+
+        coVerify { deleteUserRatingUseCase(1) }
+    }
+
+    @Test
+    fun `deleteUserRating failure emits snackbar event`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { deleteUserRatingUseCase(any()) } throws RuntimeException("DB error")
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.snackbarEvent.test {
+            viewModel.deleteUserRating()
+            assertEquals(ErrorType.UNKNOWN, awaitItem())
+        }
+    }
+
+    @Test
+    fun `userRating emits values from use case`() = runTest {
+        every { getUserRatingUseCase(1) } returns flowOf(4.0f)
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+
+        val viewModel = createViewModel()
+
+        viewModel.userRating.test {
+            val first = awaitItem()
+            if (first == null) {
+                assertEquals(4.0f, awaitItem())
+            } else {
+                assertEquals(4.0f, first)
+            }
+        }
+    }
+
     @Test
     fun `toggleWatchlist cancels notification when removing from watchlist`() = runTest {
         every { isInWatchlistUseCase(1) } returns flowOf(true)

@@ -24,7 +24,7 @@ class CastAdapter : ListAdapter<Cast, CastAdapter.CastViewHolder>(DIFF_CALLBACK)
     }
 
     override fun onBindViewHolder(holder: CastViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        getItem(position)?.let { holder.bind(it) }
     }
 
     override fun onViewRecycled(holder: CastViewHolder) {

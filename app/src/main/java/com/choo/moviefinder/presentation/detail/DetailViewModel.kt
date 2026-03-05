@@ -193,9 +193,11 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 setUserRatingUseCase(movieId, rating)
+                Timber.d("User rating set to %.1f for movie %d", rating, movieId)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                Timber.w(e, "Failed to set user rating for movie %d", movieId)
                 _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
             }
         }
@@ -205,9 +207,11 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 deleteUserRatingUseCase(movieId)
+                Timber.d("User rating deleted for movie %d", movieId)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                Timber.w(e, "Failed to delete user rating for movie %d", movieId)
                 _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
             }
         }

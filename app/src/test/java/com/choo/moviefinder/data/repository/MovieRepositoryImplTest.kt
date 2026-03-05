@@ -580,4 +580,32 @@ class MovieRepositoryImplTest {
             // Expected
         }
     }
+
+    // --- User Rating ---
+
+    @Test
+    fun `getUserRating returns flow from dao`() = runTest {
+        every { userRatingDao.getRating(1) } returns flowOf(4.5f)
+
+        repository.getUserRating(1).test {
+            assertEquals(4.5f, awaitItem())
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `setUserRating delegates to dao insertRating`() = runTest {
+        repository.setUserRating(1, 4.0f)
+
+        coVerify {
+            userRatingDao.insertRating(match { it.movieId == 1 && it.rating == 4.0f })
+        }
+    }
+
+    @Test
+    fun `deleteUserRating delegates to dao deleteRating`() = runTest {
+        repository.deleteUserRating(1)
+
+        coVerify { userRatingDao.deleteRating(1) }
+    }
 }

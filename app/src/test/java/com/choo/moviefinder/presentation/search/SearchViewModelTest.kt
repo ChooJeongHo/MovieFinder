@@ -23,6 +23,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -282,5 +283,86 @@ class SearchViewModelTest {
         advanceUntilIdle()
 
         coVerify { saveSearchQueryUseCase("avengers") }
+    }
+
+    // --- View Mode Toggle ---
+
+    @Test
+    fun `initial viewMode is GRID`() = runTest {
+        val viewModel = createViewModel()
+
+        assertEquals(ViewMode.GRID, viewModel.viewMode.value)
+    }
+
+    @Test
+    fun `toggleViewMode switches GRID to LIST`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.toggleViewMode()
+
+        assertEquals(ViewMode.LIST, viewModel.viewMode.value)
+    }
+
+    @Test
+    fun `toggleViewMode switches LIST back to GRID`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.toggleViewMode()
+        viewModel.toggleViewMode()
+
+        assertEquals(ViewMode.GRID, viewModel.viewMode.value)
+    }
+
+    @Test
+    fun `toggleViewMode saves to savedStateHandle`() = runTest {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.toggleViewMode()
+
+        assertEquals("LIST", handle.get<String>("view_mode"))
+    }
+
+    // --- Discover / Genre Retry ---
+
+    @Test
+    fun `onDiscoverWithFilters does nothing when no genres selected`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.onDiscoverWithFilters()
+        advanceUntilIdle()
+
+        // genres가 비어있으면 즉시 return → discoverMoviesUseCase 호출 안됨
+        coVerify(exactly = 0) { discoverMoviesUseCase(any(), any(), any()) }
+    }
+
+    @Test
+    fun `retryLoadGenres retries after failure`() = runTest {
+        val genreList = listOf(com.choo.moviefinder.domain.model.Genre(28, "Action"))
+        coEvery { getGenreListUseCase() } throws RuntimeException("fail") andThen genreList
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        assertTrue(viewModel.genres.value.isEmpty())
+
+        viewModel.retryLoadGenres()
+        advanceUntilIdle()
+
+        assertEquals(genreList, viewModel.genres.value)
+    }
+
+    @Test
+    fun `retryLoadGenres does nothing when genres loaded successfully`() = runTest {
+        val genreList = listOf(com.choo.moviefinder.domain.model.Genre(28, "Action"))
+        coEvery { getGenreListUseCase() } returns genreList
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.retryLoadGenres()
+        advanceUntilIdle()
+
+        // init에서 1번만 호출, retryLoadGenres는 genreLoadFailed=false이므로 재호출 안됨
+        coVerify(exactly = 1) { getGenreListUseCase() }
     }
 }
