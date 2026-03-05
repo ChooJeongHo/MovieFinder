@@ -1,6 +1,7 @@
 package com.choo.moviefinder.presentation.settings
 
 import app.cash.turbine.test
+import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.usecase.ClearWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.GetThemeModeUseCase
@@ -143,5 +144,29 @@ class SettingsViewModelTest {
         advanceUntilIdle()
 
         coVerify { clearWatchHistoryUseCase() }
+    }
+
+    @Test
+    fun `clearWatchHistory success emits watchHistoryCleared event`() = runTest {
+        coEvery { clearWatchHistoryUseCase() } returns Unit
+        val viewModel = createViewModel()
+
+        viewModel.watchHistoryCleared.test {
+            viewModel.clearWatchHistory()
+            advanceUntilIdle()
+            awaitItem()
+        }
+    }
+
+    @Test
+    fun `clearWatchHistory error emits snackbar event`() = runTest {
+        coEvery { clearWatchHistoryUseCase() } throws RuntimeException("DB error")
+        val viewModel = createViewModel()
+
+        viewModel.snackbarEvent.test {
+            viewModel.clearWatchHistory()
+            advanceUntilIdle()
+            assertEquals(ErrorType.UNKNOWN, awaitItem())
+        }
     }
 }

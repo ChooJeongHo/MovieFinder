@@ -1,5 +1,6 @@
 package com.choo.moviefinder.presentation.favorite
 
+import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,9 +17,11 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.R
+import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.databinding.FragmentFavoriteBinding
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.presentation.adapter.MovieAdapter
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
@@ -37,6 +40,7 @@ class FavoriteFragment : Fragment() {
     private var currentTab = TAB_FAVORITES
     private var collectJob: Job? = null
     private var swipeHelper: ItemTouchHelper? = null
+    private var activeDialog: Dialog? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,15 +54,51 @@ class FavoriteFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         savedInstanceState?.let { currentTab = it.getInt(KEY_CURRENT_TAB, TAB_FAVORITES) }
+        setupToolbar()
         setupRecyclerView()
         setupSwipeToDelete()
         setupTabs()
+        updateSortLabel(viewModel.sortOrder.value)
         collectCurrentTab()
+        observeSnackbar()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_CURRENT_TAB, currentTab)
+    }
+
+    private fun setupToolbar() {
+        binding.toolbar.inflateMenu(R.menu.menu_favorite)
+        binding.toolbar.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_sort -> {
+                    showSortDialog()
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun showSortDialog() {
+        val sortOptions = FavoriteSortOrder.entries.toTypedArray()
+        val sortLabels = arrayOf(
+            getString(R.string.sort_added_date),
+            getString(R.string.sort_by_title),
+            getString(R.string.sort_by_rating)
+        )
+        val currentIndex = sortOptions.indexOf(viewModel.sortOrder.value)
+
+        activeDialog?.dismiss()
+        activeDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.sort_title))
+            .setSingleChoiceItems(sortLabels, currentIndex) { dialog, which ->
+                viewModel.onSortOrderSelected(sortOptions[which])
+                updateSortLabel(sortOptions[which])
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun setupRecyclerView() {
@@ -134,6 +174,7 @@ class FavoriteFragment : Fragment() {
     private fun collectCurrentTab() {
         collectJob?.cancel()
         movieAdapter.submitList(emptyList())
+        binding.rvFavorites.scrollToPosition(0)
         updateEmptyState()
         collectJob = viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -151,6 +192,26 @@ class FavoriteFragment : Fragment() {
         }
     }
 
+    private fun observeSnackbar() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.snackbarEvent.collect { errorType ->
+                    val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
+                    Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun updateSortLabel(sort: FavoriteSortOrder) {
+        val subtitle = when (sort) {
+            FavoriteSortOrder.ADDED_DATE -> null
+            FavoriteSortOrder.TITLE -> getString(R.string.sort_by_title)
+            FavoriteSortOrder.RATING -> getString(R.string.sort_by_rating)
+        }
+        binding.toolbar.subtitle = subtitle
+    }
+
     private fun updateEmptyState() {
         if (currentTab == TAB_FAVORITES) {
             binding.emptyView.ivEmptyIcon.setImageResource(R.drawable.ic_favorite_border)
@@ -165,6 +226,10 @@ class FavoriteFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        activeDialog?.dismiss()
+        activeDialog = null
+        swipeHelper?.attachToRecyclerView(null)
+        swipeHelper = null
         collectJob = null
         binding.rvFavorites.adapter = null
         _binding = null

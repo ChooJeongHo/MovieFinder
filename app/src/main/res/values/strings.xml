@@ -125,11 +125,20 @@
     <string name="settings_clear_watch_history">시청 기록 삭제</string>
     <string name="settings_clear_watch_history_description">최근 본 영화 기록을 삭제합니다</string>
     <string name="settings_app_info">앱 정보</string>
-    <string name="settings_version">버전</string>
+    <string name="settings_version">버전 %s</string>
     <string name="settings_open_source">오픈소스 라이선스</string>
     <string name="cache_cleared">캐시가 삭제되었습니다</string>
     <string name="confirm_clear_cache">캐시를 삭제하시겠습니까?</string>
     <string name="confirm_clear_watch_history">시청 기록을 삭제하시겠습니까?</string>
     <string name="confirm">확인</string>
     <string name="cancel">취소</string>
+
+    <!-- 정렬 -->
+    <string name="sort_title">정렬</string>
+    <string name="sort_added_date">추가 날짜순</string>
+    <string name="sort_by_title">제목순</string>
+    <string name="sort_by_rating">평점순</string>
+
+    <!-- Discover 모드 -->
+    <string name="discover_mode">탐색 모드</string>
 </resources>

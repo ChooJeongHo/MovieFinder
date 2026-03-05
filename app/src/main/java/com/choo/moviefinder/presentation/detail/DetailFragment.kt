@@ -13,7 +13,6 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
-import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -82,7 +81,6 @@ class DetailFragment : Fragment() {
         // Shared Element Transition: 포스터 → 배경 이미지 전환
         ViewCompat.setTransitionName(binding.ivBackdrop, "poster_${args.movieId}")
         postponeEnterTransition(500, TimeUnit.MILLISECONDS)
-        view.doOnPreDraw { startPostponedEnterTransition() }
 
         setupToolbar()
         setupRecyclerViews()
@@ -276,6 +274,10 @@ class DetailFragment : Fragment() {
             crossfade(true)
             placeholder(R.drawable.bg_poster_placeholder)
             error(R.drawable.bg_poster_placeholder)
+            listener(
+                onSuccess = { _, _ -> startPostponedEnterTransition() },
+                onError = { _, _ -> startPostponedEnterTransition() }
+            )
         }
 
         binding.tvTitle.text = detail.title
@@ -396,6 +398,7 @@ class DetailFragment : Fragment() {
     }
 
     private fun showError(errorType: ErrorType) {
+        startPostponedEnterTransition()
         binding.progressBar.isVisible = false
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = true

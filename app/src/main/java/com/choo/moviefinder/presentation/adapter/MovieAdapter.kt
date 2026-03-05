@@ -19,7 +19,7 @@ class MovieAdapter(
     }
 
     override fun onBindViewHolder(holder: MovieGridViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        getItem(position)?.let { holder.bind(it) }
     }
 
     override fun onViewRecycled(holder: MovieGridViewHolder) {

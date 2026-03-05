@@ -54,6 +54,7 @@ class HomeFragment : Fragment() {
         savedInstanceState?.let { currentTab = it.getInt(KEY_CURRENT_TAB, 0) }
         setupRecyclerView()
         setupWatchHistory()
+        setupSwipeRefresh()
         setupTabs()
         observeLoadStates()
         observeWatchHistory()
@@ -97,6 +98,15 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun setupSwipeRefresh() {
+        binding.swipeRefresh.setColorSchemeColors(
+            requireContext().getColor(R.color.colorPrimary)
+        )
+        binding.swipeRefresh.setOnRefreshListener {
+            movieAdapter.refresh()
+        }
+    }
+
     private fun observeWatchHistory() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -132,11 +142,17 @@ class HomeFragment : Fragment() {
                 movieAdapter.loadStateFlow.collectLatest { loadStates ->
                     val refreshState = loadStates.refresh
 
-                    binding.shimmerView.shimmerLayout.isVisible = refreshState is LoadState.Loading
-                    binding.rvMovies.isVisible = refreshState is LoadState.NotLoading
-                    binding.errorView.layoutError.isVisible = refreshState is LoadState.Error
+                    val hasItems = movieAdapter.itemCount > 0
+                    val isLoading = refreshState is LoadState.Loading
+                    val isError = refreshState is LoadState.Error
+                    val isInitialLoad = isLoading && !hasItems
 
-                    if (refreshState is LoadState.Loading) {
+                    binding.shimmerView.shimmerLayout.isVisible = isInitialLoad
+                    binding.rvMovies.isVisible = !isError || hasItems
+                    binding.swipeRefresh.isRefreshing = isLoading && hasItems
+                    binding.errorView.layoutError.isVisible = isError && !hasItems
+
+                    if (isInitialLoad) {
                         binding.shimmerView.shimmerLayout.startShimmer()
                     } else {
                         binding.shimmerView.shimmerLayout.stopShimmer()

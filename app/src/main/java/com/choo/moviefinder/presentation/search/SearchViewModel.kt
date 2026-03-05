@@ -53,10 +53,16 @@ class SearchViewModel @Inject constructor(
     private val _selectedYear = MutableStateFlow(savedStateHandle.get<Int>(KEY_YEAR))
     val selectedYear: StateFlow<Int?> = _selectedYear.asStateFlow()
 
-    private val _selectedGenres = MutableStateFlow<Set<Int>>(emptySet())
+    private val _selectedGenres = MutableStateFlow(
+        savedStateHandle.get<IntArray>(KEY_GENRES)?.toSet() ?: emptySet()
+    )
     val selectedGenres: StateFlow<Set<Int>> = _selectedGenres.asStateFlow()
 
-    private val _sortBy = MutableStateFlow(SortOption.POPULARITY_DESC)
+    private val _sortBy = MutableStateFlow(
+        savedStateHandle.get<String>(KEY_SORT)?.let { name ->
+            runCatching { SortOption.valueOf(name) }.getOrDefault(SortOption.POPULARITY_DESC)
+        } ?: SortOption.POPULARITY_DESC
+    )
     val sortBy: StateFlow<SortOption> = _sortBy.asStateFlow()
 
     private val _genres = MutableStateFlow<List<Genre>>(emptyList())
@@ -124,19 +130,22 @@ class SearchViewModel @Inject constructor(
 
     fun onGenresSelected(genreIds: Set<Int>) {
         _selectedGenres.value = genreIds
+        savedStateHandle[KEY_GENRES] = genreIds.toIntArray()
     }
 
     fun onSortSelected(sort: SortOption) {
         _sortBy.value = sort
+        savedStateHandle[KEY_SORT] = sort.name
     }
 
     fun onSearch(query: String) {
-        if (query.isBlank()) return
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) return
         viewModelScope.launch {
-            saveSearchQueryUseCase(query)
+            saveSearchQueryUseCase(trimmed)
         }
         _immediateSearch.tryEmit(
-            SearchParams(query, _selectedYear.value, _selectedGenres.value, _sortBy.value)
+            SearchParams(trimmed, _selectedYear.value, _selectedGenres.value, _sortBy.value)
         )
     }
 
@@ -169,6 +178,8 @@ class SearchViewModel @Inject constructor(
     companion object {
         private const val KEY_QUERY = "search_query"
         private const val KEY_YEAR = "selected_year"
+        private const val KEY_GENRES = "selected_genres"
+        private const val KEY_SORT = "selected_sort"
     }
 }
 

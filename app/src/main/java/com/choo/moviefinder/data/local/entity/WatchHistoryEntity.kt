@@ -14,7 +14,10 @@ data class WatchHistoryEntity(
     val title: String,
     val posterPath: String?,
     val backdropPath: String?,
+    val overview: String,
+    val releaseDate: String,
     val voteAverage: Double,
+    val voteCount: Int,
     val watchedAt: Long = System.currentTimeMillis()
 )
 
@@ -23,10 +26,10 @@ fun WatchHistoryEntity.toDomain() = Movie(
     title = title,
     posterPath = posterPath,
     backdropPath = backdropPath,
-    overview = "",
-    releaseDate = "",
+    overview = overview,
+    releaseDate = releaseDate,
     voteAverage = voteAverage,
-    voteCount = 0
+    voteCount = voteCount
 )
 
 fun Movie.toWatchHistoryEntity() = WatchHistoryEntity(
@@ -34,5 +37,8 @@ fun Movie.toWatchHistoryEntity() = WatchHistoryEntity(
     title = title,
     posterPath = posterPath,
     backdropPath = backdropPath,
-    voteAverage = voteAverage
+    overview = overview,
+    releaseDate = releaseDate,
+    voteAverage = voteAverage,
+    voteCount = voteCount
 )

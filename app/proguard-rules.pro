@@ -1,15 +1,15 @@
-# Retrofit
+# Retrofit 3.x (bundles own consumer rules, keep annotations and service interfaces)
 -keepattributes Signature
 -keepattributes *Annotation*
--keep class retrofit2.** { *; }
 -keepclasseswithmembers class * {
     @retrofit2.http.* <methods>;
 }
 
-# OkHttp
--dontwarn okhttp3.**
--dontwarn okio.**
--keep class okhttp3.** { *; }
+# OkHttp 5.x (bundles own consumer rules via okhttp3.internal.publicsuffix)
+-dontwarn okhttp3.internal.platform.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
 
 # kotlinx.serialization
 -keepattributes *Annotation*, InnerClasses
@@ -32,7 +32,7 @@
 -keep class * extends androidx.room.RoomDatabase
 -dontwarn androidx.room.paging.**
 
-# Coil
+# Coil 3.x
 -dontwarn coil3.**
 
 # Hilt

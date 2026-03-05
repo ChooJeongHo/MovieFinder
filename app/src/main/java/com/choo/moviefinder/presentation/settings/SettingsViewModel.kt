@@ -2,14 +2,18 @@ package com.choo.moviefinder.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.usecase.ClearWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.GetThemeModeUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -24,6 +28,12 @@ class SettingsViewModel @Inject constructor(
 
     val currentThemeMode: StateFlow<ThemeMode> = getThemeModeUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
+
+    private val _snackbarEvent = Channel<ErrorType>(Channel.BUFFERED)
+    val snackbarEvent = _snackbarEvent.receiveAsFlow()
+
+    private val _watchHistoryCleared = Channel<Unit>(Channel.BUFFERED)
+    val watchHistoryCleared = _watchHistoryCleared.receiveAsFlow()
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
@@ -41,10 +51,12 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 clearWatchHistoryUseCase()
+                _watchHistoryCleared.send(Unit)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to clear watch history")
+                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
             }
         }
     }

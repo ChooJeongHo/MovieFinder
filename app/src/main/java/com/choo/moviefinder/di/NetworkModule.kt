@@ -16,8 +16,8 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
+import kotlin.time.Duration.Companion.seconds
 import javax.inject.Singleton
 
 @Qualifier
@@ -67,9 +67,9 @@ object NetworkModule {
                     )
                 }
             }
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(30.seconds)
+            .readTimeout(30.seconds)
+            .writeTimeout(30.seconds)
             .build()
     }
 
@@ -103,9 +103,9 @@ object NetworkModule {
 
         return OkHttpClient.Builder()
             .certificatePinner(certificatePinner)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(30.seconds)
+            .readTimeout(30.seconds)
+            .writeTimeout(30.seconds)
             .build()
     }
 

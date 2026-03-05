@@ -70,6 +70,18 @@
 
     </com.google.android.material.chip.ChipGroup>
 
+    <com.google.android.material.chip.Chip
+        android:id="@+id/chip_discover_mode"
+        style="@style/Widget.MaterialComponents.Chip.Action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_md"
+        android:text="@string/discover_mode"
+        android:visibility="gone"
+        app:chipIcon="@drawable/ic_movie"
+        app:chipIconTint="?attr/colorPrimary"
+        app:chipBackgroundColor="?attr/colorPrimaryContainer" />
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">

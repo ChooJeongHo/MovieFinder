@@ -1,5 +1,6 @@
 package com.choo.moviefinder.core.util
 
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import retrofit2.HttpException
@@ -33,7 +34,7 @@ class ErrorMessageProviderTest {
 
     @Test
     fun `getErrorType returns SERVER for HttpException`() {
-        val response = Response.error<Any>(500, okhttp3.ResponseBody.create(null, byteArrayOf()))
+        val response = Response.error<Any>(500, byteArrayOf().toResponseBody())
         val result = ErrorMessageProvider.getErrorType(HttpException(response))
         assertEquals(ErrorType.SERVER, result)
     }

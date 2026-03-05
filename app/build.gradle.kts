@@ -43,6 +43,7 @@ android {
         }
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -91,27 +92,20 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         csv.required.set(false)
     }
 
+    val jacocoExcludes = listOf(
+        "**/R.class", "**/R\$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*_Hilt*.*", "**/Hilt_*.*",
+        "**/*_Factory.*", "**/*_MembersInjector.*",
+        "**/*Directions*.*", "**/*Args*.*",
+        "**/*Database_Impl*.*", "**/*Dao_Impl*.*"
+    )
     val javaClasses = fileTree("${layout.buildDirectory.get()}/intermediates/javac/debug/classes") {
-        exclude(
-            "**/R.class", "**/R\$*.class",
-            "**/BuildConfig.*",
-            "**/Manifest*.*",
-            "**/*_Hilt*.*", "**/Hilt_*.*",
-            "**/*_Factory.*", "**/*_MembersInjector.*",
-            "**/*Directions*.*", "**/*Args*.*",
-            "**/*Database_Impl*.*", "**/*Dao_Impl*.*"
-        )
+        exclude(jacocoExcludes)
     }
     val kotlinClasses = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
-        exclude(
-            "**/R.class", "**/R\$*.class",
-            "**/BuildConfig.*",
-            "**/Manifest*.*",
-            "**/*_Hilt*.*", "**/Hilt_*.*",
-            "**/*_Factory.*", "**/*_MembersInjector.*",
-            "**/*Directions*.*", "**/*Args*.*",
-            "**/*Database_Impl*.*", "**/*Dao_Impl*.*"
-        )
+        exclude(jacocoExcludes)
     }
 
     classDirectories.setFrom(files(javaClasses, kotlinClasses))
@@ -141,39 +135,30 @@ dependencies {
     implementation(libs.androidx.swiperefreshlayout)
 
     // Lifecycle
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation(libs.androidx.lifecycle.process)
+    implementation(libs.bundles.lifecycle)
 
     // Navigation
-    implementation(libs.androidx.navigation.fragment.ktx)
-    implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.bundles.navigation)
 
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
     // Room
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.room.paging)
+    implementation(libs.bundles.room)
     ksp(libs.androidx.room.compiler)
 
     // Paging
     implementation(libs.androidx.paging.runtime)
 
     // Retrofit + OkHttp
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.kotlinx.serialization)
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.bundles.retrofit)
 
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)
 
     // Coil
-    implementation(libs.coil)
-    implementation(libs.coil.network.okhttp)
+    implementation(libs.bundles.coil)
 
     // Shimmer
     implementation(libs.facebook.shimmer)

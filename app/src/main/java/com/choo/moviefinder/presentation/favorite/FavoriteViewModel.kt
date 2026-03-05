@@ -2,6 +2,8 @@ package com.choo.moviefinder.presentation.favorite
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.GetFavoriteMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchlistUseCase
@@ -9,7 +11,13 @@ import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -23,14 +31,24 @@ class FavoriteViewModel @Inject constructor(
     private val toggleWatchlistUseCase: ToggleWatchlistUseCase
 ) : ViewModel() {
 
-    val favoriteMovies = getFavoriteMoviesUseCase()
+    private val _sortOrder = MutableStateFlow(FavoriteSortOrder.ADDED_DATE)
+    val sortOrder: StateFlow<FavoriteSortOrder> = _sortOrder.asStateFlow()
+
+    val favoriteMovies = combine(
+        getFavoriteMoviesUseCase(),
+        _sortOrder
+    ) { movies, sort -> sort.apply(movies) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val watchlistMovies = getWatchlistUseCase()
+    val watchlistMovies = combine(
+        getWatchlistUseCase(),
+        _sortOrder
+    ) { movies, sort -> sort.apply(movies) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // 즐겨찾기 상태를 토글 (추가 ↔ 제거)
-    // 스와이프 삭제 시 호출되고, Undo 시 다시 호출하면 재추가됨
+    private val _snackbarEvent = Channel<ErrorType>(Channel.BUFFERED)
+    val snackbarEvent = _snackbarEvent.receiveAsFlow()
+
     fun toggleFavorite(movie: Movie) {
         viewModelScope.launch {
             try {
@@ -39,8 +57,13 @@ class FavoriteViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to toggle favorite for movie %d", movie.id)
+                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
             }
         }
+    }
+
+    fun onSortOrderSelected(sort: FavoriteSortOrder) {
+        _sortOrder.value = sort
     }
 
     fun toggleWatchlist(movie: Movie) {
@@ -51,6 +74,7 @@ class FavoriteViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to toggle watchlist for movie %d", movie.id)
+                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
             }
         }
     }

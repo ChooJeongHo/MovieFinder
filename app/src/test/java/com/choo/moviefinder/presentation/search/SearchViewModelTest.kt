@@ -236,4 +236,51 @@ class SearchViewModelTest {
 
         assertEquals(SortOption.POPULARITY_DESC, viewModel.sortBy.value)
     }
+
+    @Test
+    fun `savedStateHandle restores genres and sort`() = runTest {
+        val handle = SavedStateHandle(
+            mapOf(
+                "search_query" to "test",
+                "selected_genres" to intArrayOf(28, 35),
+                "selected_sort" to "VOTE_AVERAGE_DESC"
+            )
+        )
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        assertEquals(setOf(28, 35), viewModel.selectedGenres.value)
+        assertEquals(SortOption.VOTE_AVERAGE_DESC, viewModel.sortBy.value)
+    }
+
+    @Test
+    fun `onGenresSelected saves to savedStateHandle`() = runTest {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.onGenresSelected(setOf(28, 12))
+
+        val saved = handle.get<IntArray>("selected_genres")
+        assertTrue(saved != null && saved.toSet() == setOf(28, 12))
+    }
+
+    @Test
+    fun `onSortSelected saves to savedStateHandle`() = runTest {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.onSortSelected(SortOption.RELEASE_DATE_DESC)
+
+        assertEquals("RELEASE_DATE_DESC", handle.get<String>("selected_sort"))
+    }
+
+    @Test
+    fun `onSearch trims whitespace`() = runTest {
+        coEvery { saveSearchQueryUseCase(any()) } returns Unit
+        val viewModel = createViewModel()
+
+        viewModel.onSearch("  avengers  ")
+        advanceUntilIdle()
+
+        coVerify { saveSearchQueryUseCase("avengers") }
+    }
 }

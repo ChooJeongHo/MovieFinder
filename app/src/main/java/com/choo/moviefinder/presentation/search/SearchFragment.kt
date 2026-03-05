@@ -1,11 +1,13 @@
 package com.choo.moviefinder.presentation.search
 
 import android.app.Dialog
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -66,6 +68,7 @@ class SearchFragment : Fragment() {
         setupGenreFilter()
         setupSortFilter()
         setupEmptyStates()
+        observeGenres()
         observeData()
     }
 
@@ -104,6 +107,16 @@ class SearchFragment : Fragment() {
             adapter = searchAdapter.withLoadStateFooter(
                 footer = MovieLoadStateAdapter { searchAdapter.retry() }
             )
+            addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(
+                    recyclerView: androidx.recyclerview.widget.RecyclerView,
+                    newState: Int
+                ) {
+                    if (newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_DRAGGING) {
+                        hideKeyboard()
+                    }
+                }
+            })
         }
 
         recentSearchAdapter = RecentSearchAdapter(
@@ -143,6 +156,7 @@ class SearchFragment : Fragment() {
         binding.chipGenre.setOnCloseIconClickListener {
             viewModel.onGenresSelected(emptySet())
             updateGenreChip(emptySet())
+            updateDiscoverModeChip()
         }
     }
 
@@ -203,6 +217,7 @@ class SearchFragment : Fragment() {
                     .toSet()
                 viewModel.onGenresSelected(selected)
                 updateGenreChip(selected)
+                updateDiscoverModeChip()
                 // 검색어 없이 장르만으로 탐색
                 if (viewModel.searchQuery.value.isBlank() && selected.isNotEmpty()) {
                     viewModel.onDiscoverWithFilters()
@@ -246,11 +261,13 @@ class SearchFragment : Fragment() {
         if (selectedGenreIds.isNotEmpty()) {
             val allGenres = viewModel.genres.value
             val selectedNames = allGenres.filter { it.id in selectedGenreIds }
-            val chipText = if (selectedNames.size >= 3) {
+            val chipText = if (selectedNames.isEmpty()) {
+                // 장르 목록 미로드 시 개수만 표시
+                getString(R.string.genre_count, selectedGenreIds.size)
+            } else if (selectedNames.size >= 3) {
                 getString(R.string.genre_count, selectedNames.size)
             } else {
                 selectedNames.joinToString(", ") { it.name }
-                    .ifEmpty { getString(R.string.filter_genre) }
             }
             binding.chipGenre.text = chipText
             binding.chipGenre.isCloseIconVisible = true
@@ -286,20 +303,44 @@ class SearchFragment : Fragment() {
         binding.emptyNoResults.tvEmptyMessage.text = getString(R.string.search_empty_message)
     }
 
-    // 3개의 독립적인 Flow를 각각 별도 coroutine으로 수집
+    // 4개의 독립적인 Flow를 각각 별도 coroutine으로 수집
+    // - genres: 장르 목록 로드 완료 시 칩 텍스트 갱신 (프로세스 복원 대응)
     // - recentSearches: 검색어가 비어있을 때 최근 검색어 목록 표시 여부 결정
     // - searchResults: ViewModel의 debounce된 검색 결과 PagingData 수신
     // - loadStateFlow: 검색 결과의 로딩/에러/빈 상태에 따라 화면 전환
+    private fun observeGenres() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.genres.collect { genres ->
+                    if (genres.isNotEmpty()) {
+                        updateGenreChip(viewModel.selectedGenres.value)
+                    }
+                }
+            }
+        }
+    }
+
     private fun observeData() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.recentSearches.collect { searches ->
-                    recentSearchAdapter.submitList(searches)
-                    val query = binding.etSearch.text?.toString() ?: ""
-                    if (query.isBlank() && viewModel.selectedGenres.value.isEmpty() && searches.isNotEmpty()) {
-                        showRecentSearches()
-                    } else if (query.isBlank() && viewModel.selectedGenres.value.isEmpty()) {
-                        showInitialState()
+                    val query = binding.etSearch.text?.toString()?.trim() ?: ""
+                    if (query.isBlank()) {
+                        recentSearchAdapter.submitList(searches)
+                        if (viewModel.selectedGenres.value.isEmpty() && searches.isNotEmpty()) {
+                            showRecentSearches()
+                        } else if (viewModel.selectedGenres.value.isEmpty()) {
+                            showInitialState()
+                        }
+                    } else {
+                        // 입력 중 자동완성: 최근 검색어 중 매칭되는 항목 필터링
+                        val filtered = searches.filter {
+                            it.contains(query, ignoreCase = true) && it != query
+                        }
+                        recentSearchAdapter.submitList(filtered)
+                        if (filtered.isNotEmpty()) {
+                            binding.recentSearchesSection.isVisible = true
+                        }
                     }
                 }
             }
@@ -345,9 +386,16 @@ class SearchFragment : Fragment() {
         }
     }
 
+    private fun updateDiscoverModeChip() {
+        val query = viewModel.searchQuery.value
+        val hasGenres = viewModel.selectedGenres.value.isNotEmpty()
+        binding.chipDiscoverMode.isVisible = query.isBlank() && hasGenres
+    }
+
     // 검색어 입력 변경 시 즉시 호출되어 화면 상태를 전환
     // 검색어가 비면 결과/shimmer를 숨기고 최근검색어 또는 초기 안내 화면을 표시
     private fun updateVisibility(query: String) {
+        updateDiscoverModeChip()
         if (query.isBlank() && viewModel.selectedGenres.value.isEmpty()) {
             binding.rvSearchResults.isVisible = false
             binding.shimmerView.shimmerLayout.isVisible = false
@@ -367,6 +415,12 @@ class SearchFragment : Fragment() {
         binding.emptyInitial.layoutEmpty.isVisible = false
         binding.rvSearchResults.isVisible = false
         binding.emptyNoResults.layoutEmpty.isVisible = false
+    }
+
+    private fun hideKeyboard() {
+        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
+        binding.etSearch.clearFocus()
     }
 
     private fun showInitialState() {

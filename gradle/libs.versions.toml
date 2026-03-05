@@ -1,5 +1,5 @@
 [versions]
-agp = "9.0.1"
+agp = "9.1.0"
 kotlin = "2.2.10"
 ksp = "2.3.2"
 coreKtx = "1.17.0"
@@ -8,13 +8,13 @@ activity = "1.12.3"
 fragment = "1.8.9"
 lifecycle = "2.10.0"
 navigation = "2.9.7"
-hilt = "2.59.1"
+hilt = "2.59.2"
 room = "2.8.4"
 paging = "3.4.0"
-retrofit = "2.11.0"
-okhttp = "4.12.0"
-coil = "3.3.0"
-kotlinxSerializationJson = "1.7.3"
+retrofit = "3.0.0"
+okhttp = "5.0.0-alpha.14"
+coil = "3.4.0"
+kotlinxSerializationJson = "1.8.1"
 splashscreen = "1.2.0"
 material = "1.13.0"
 constraintlayout = "2.2.1"
@@ -124,6 +124,13 @@ timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "tim
 
 # App Startup
 androidx-startup = { group = "androidx.startup", name = "startup-runtime", version.ref = "startup" }
+
+[bundles]
+lifecycle = ["androidx-lifecycle-runtime-ktx", "androidx-lifecycle-viewmodel-ktx", "androidx-lifecycle-process"]
+room = ["androidx-room-runtime", "androidx-room-ktx", "androidx-room-paging"]
+navigation = ["androidx-navigation-fragment-ktx", "androidx-navigation-ui-ktx"]
+retrofit = ["retrofit", "retrofit-converter-kotlinx-serialization", "okhttp", "okhttp-logging-interceptor"]
+coil = ["coil", "coil-network-okhttp"]
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

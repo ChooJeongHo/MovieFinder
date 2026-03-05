@@ -21,6 +21,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -56,7 +57,7 @@ class DetailViewModel @Inject constructor(
     private val _snackbarEvent = Channel<ErrorType>(Channel.BUFFERED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
-    private var isLoading = false
+    private val loadingMutex = Mutex()
 
     val isFavorite = isFavoriteUseCase(movieId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -69,9 +70,8 @@ class DetailViewModel @Inject constructor(
     }
 
     fun loadMovieDetail() {
-        if (isLoading) return
-        isLoading = true
         viewModelScope.launch {
+            if (!loadingMutex.tryLock()) return@launch
             _uiState.value = DetailUiState.Loading
             try {
                 coroutineScope {
@@ -127,7 +127,7 @@ class DetailViewModel @Inject constructor(
                     ErrorMessageProvider.getErrorType(e)
                 )
             } finally {
-                isLoading = false
+                loadingMutex.unlock()
             }
         }
     }

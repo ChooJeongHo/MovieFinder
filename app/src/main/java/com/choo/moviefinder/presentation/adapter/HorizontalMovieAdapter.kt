@@ -28,7 +28,7 @@ class HorizontalMovieAdapter(
     }
 
     override fun onBindViewHolder(holder: HorizontalMovieViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        getItem(position)?.let { holder.bind(it) }
     }
 
     override fun onViewRecycled(holder: HorizontalMovieViewHolder) {

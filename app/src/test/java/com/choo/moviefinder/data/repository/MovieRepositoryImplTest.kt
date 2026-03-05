@@ -448,11 +448,13 @@ class MovieRepositoryImplTest {
         val entities = listOf(
             WatchHistoryEntity(
                 id = 1, title = "Movie 1", posterPath = "/p1.jpg",
-                backdropPath = "/b1.jpg", voteAverage = 8.0
+                backdropPath = "/b1.jpg", overview = "Overview 1",
+                releaseDate = "2024-01-01", voteAverage = 8.0, voteCount = 500
             ),
             WatchHistoryEntity(
                 id = 2, title = "Movie 2", posterPath = "/p2.jpg",
-                backdropPath = "/b2.jpg", voteAverage = 7.5
+                backdropPath = "/b2.jpg", overview = "Overview 2",
+                releaseDate = "2024-02-01", voteAverage = 7.5, voteCount = 300
             )
         )
         every { watchHistoryDao.getRecentHistory(Constants.WATCH_HISTORY_LIMIT) } returns flowOf(entities)

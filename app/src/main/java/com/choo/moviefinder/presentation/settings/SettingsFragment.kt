@@ -13,6 +13,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import coil3.imageLoader
 import com.choo.moviefinder.BuildConfig
 import com.choo.moviefinder.R
+import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.databinding.FragmentSettingsBinding
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -43,6 +44,7 @@ class SettingsFragment : Fragment() {
         setupClickListeners()
         setupAppInfo()
         observeTheme()
+        observeEvents()
     }
 
     private fun setupClickListeners() {
@@ -52,9 +54,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun setupAppInfo() {
-        binding.tvAppVersion.text = getString(
-            R.string.settings_version
-        ) + " " + BuildConfig.VERSION_NAME
+        binding.tvAppVersion.text = getString(R.string.settings_version, BuildConfig.VERSION_NAME)
     }
 
     private fun observeTheme() {
@@ -113,14 +113,27 @@ class SettingsFragment : Fragment() {
             .setMessage(R.string.confirm_clear_watch_history)
             .setPositiveButton(R.string.confirm) { _, _ ->
                 viewModel.clearWatchHistory()
-                Snackbar.make(
-                    binding.root,
-                    R.string.watch_history_cleared,
-                    Snackbar.LENGTH_SHORT
-                ).show()
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun observeEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.watchHistoryCleared.collect {
+                    Snackbar.make(binding.root, R.string.watch_history_cleared, Snackbar.LENGTH_SHORT).show()
+                }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.snackbarEvent.collect { errorType ->
+                    val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
+                    Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     override fun onDestroyView() {
