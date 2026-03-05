@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -43,12 +45,14 @@ class SettingsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupClickListeners()
         setupAppInfo()
+        updateLanguageDisplay()
         observeTheme()
         observeEvents()
     }
 
     private fun setupClickListeners() {
         binding.itemTheme.setOnClickListener { showThemeDialog() }
+        binding.itemLanguage.setOnClickListener { showLanguageDialog() }
         binding.itemClearCache.setOnClickListener { showClearCacheDialog() }
         binding.itemClearWatchHistory.setOnClickListener { showClearWatchHistoryDialog() }
     }
@@ -88,6 +92,48 @@ class SettingsFragment : Fragment() {
                 dialog.dismiss()
             }
             .show()
+    }
+
+    private fun showLanguageDialog() {
+        val languageLabels = arrayOf(
+            getString(R.string.language_system),
+            getString(R.string.language_korean),
+            getString(R.string.language_english)
+        )
+        val languageTags = arrayOf("", "ko", "en")
+        val currentLocales = AppCompatDelegate.getApplicationLocales()
+        val currentTag = if (currentLocales.isEmpty) "" else currentLocales.toLanguageTags()
+        val currentIndex = languageTags.indexOfFirst {
+            it.equals(currentTag, ignoreCase = true)
+        }.coerceAtLeast(0)
+
+        activeDialog?.dismiss()
+        activeDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.settings_language)
+            .setSingleChoiceItems(languageLabels, currentIndex) { dialog, which ->
+                val tag = languageTags[which]
+                val localeList = if (tag.isEmpty()) {
+                    LocaleListCompat.getEmptyLocaleList()
+                } else {
+                    LocaleListCompat.forLanguageTags(tag)
+                }
+                AppCompatDelegate.setApplicationLocales(localeList)
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun updateLanguageDisplay() {
+        val currentLocales = AppCompatDelegate.getApplicationLocales()
+        binding.tvLanguageValue.text = if (currentLocales.isEmpty) {
+            getString(R.string.language_system)
+        } else {
+            when (currentLocales.toLanguageTags().lowercase()) {
+                "ko" -> getString(R.string.language_korean)
+                "en" -> getString(R.string.language_english)
+                else -> getString(R.string.language_system)
+            }
+        }
     }
 
     private fun showClearCacheDialog() {

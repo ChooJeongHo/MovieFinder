@@ -20,15 +20,15 @@ val localProperties = Properties().apply {
 android {
     namespace = "com.choo.moviefinder"
     compileSdk {
-        version = release(36)
+        version = release(AndroidConfig.COMPILE_SDK)
     }
 
     defaultConfig {
         applicationId = "com.choo.moviefinder"
-        minSdk = 24
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        minSdk = AndroidConfig.MIN_SDK
+        targetSdk = AndroidConfig.TARGET_SDK
+        versionCode = AndroidConfig.VERSION_CODE
+        versionName = AndroidConfig.VERSION_NAME
 
         testInstrumentationRunner = "com.choo.moviefinder.HiltTestRunner"
 
@@ -52,8 +52,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = AndroidConfig.JAVA_VERSION
+        targetCompatibility = AndroidConfig.JAVA_VERSION
     }
 
     buildFeatures {
@@ -171,6 +171,10 @@ dependencies {
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore)
+
+    // kotlinx-datetime
+    implementation(libs.kotlinx.datetime)
 
     // App Startup
     implementation(libs.androidx.startup)

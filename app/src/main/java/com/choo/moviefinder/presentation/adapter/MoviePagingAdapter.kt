@@ -55,6 +55,7 @@ class MoviePagingAdapter(
     }
 
     enum class ViewMode {
-        GRID, LIST
+        GRID,
+        LIST,
     }
 }

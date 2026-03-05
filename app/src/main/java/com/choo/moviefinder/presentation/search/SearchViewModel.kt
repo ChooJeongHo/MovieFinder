@@ -14,6 +14,7 @@ import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
+import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -68,11 +69,11 @@ class SearchViewModel @Inject constructor(
     private val _viewMode = MutableStateFlow(
         savedStateHandle.get<String>(KEY_VIEW_MODE)?.let { name ->
             runCatching {
-                com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.valueOf(name)
-            }.getOrDefault(com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.GRID)
-        } ?: com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.GRID
+                ViewMode.valueOf(name)
+            }.getOrDefault(ViewMode.GRID)
+        } ?: ViewMode.GRID
     )
-    val viewMode: StateFlow<com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode> =
+    val viewMode: StateFlow<ViewMode> =
         _viewMode.asStateFlow()
 
     private val _genres = MutableStateFlow<List<Genre>>(emptyList())
@@ -160,10 +161,10 @@ class SearchViewModel @Inject constructor(
     }
 
     fun toggleViewMode() {
-        val newMode = if (_viewMode.value == com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.GRID) {
-            com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.LIST
+        val newMode = if (_viewMode.value == ViewMode.GRID) {
+            ViewMode.LIST
         } else {
-            com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.GRID
+            ViewMode.GRID
         }
         _viewMode.value = newMode
         savedStateHandle[KEY_VIEW_MODE] = newMode.name

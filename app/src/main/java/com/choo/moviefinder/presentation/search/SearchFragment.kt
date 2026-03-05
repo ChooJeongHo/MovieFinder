@@ -32,7 +32,9 @@ import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.util.Calendar
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 @Suppress("TooManyFunctions")
 @AndroidEntryPoint
@@ -48,7 +50,7 @@ class SearchFragment : Fragment() {
     private var activeDialog: Dialog? = null
 
     private val yearFilterItems: Array<String> by lazy {
-        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+        val currentYear = Clock.System.todayIn(TimeZone.currentSystemDefault()).year
         arrayOf(getString(R.string.filter_year_all)) +
             (currentYear downTo 1950).map { it.toString() }.toTypedArray()
     }

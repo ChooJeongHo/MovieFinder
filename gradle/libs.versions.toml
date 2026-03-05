@@ -36,6 +36,7 @@ leakcanary = "2.14"
 timber = "5.0.1"
 startup = "1.2.0"
 work = "2.10.1"
+kotlinxDatetime = "0.6.2"
 
 [libraries]
 # Core
@@ -116,6 +117,10 @@ androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchm
 
 # DataStore
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+androidx-datastore = { group = "androidx.datastore", name = "datastore", version.ref = "datastore" }
+
+# kotlinx-datetime
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 # Detekt
 detekt-rules-ktlint = { group = "dev.detekt", name = "detekt-rules-ktlint-wrapper", version.ref = "detekt" }

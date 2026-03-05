@@ -7,10 +7,12 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import timber.log.Timber
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,16 +33,8 @@ class ReleaseNotificationScheduler @Inject constructor(
             return
         }
 
-        val notificationTime = Calendar.getInstance().apply {
-            timeInMillis = releaseDateMillis
-            set(Calendar.HOUR_OF_DAY, 9)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        val now = System.currentTimeMillis()
-        val delay = notificationTime.timeInMillis - now
+        val now = Clock.System.now().toEpochMilliseconds()
+        val delay = releaseDateMillis - now
 
         if (delay <= 0) {
             Timber.d("Release date is today or in the past, skipping notification for movie %d", movieId)
@@ -73,8 +67,9 @@ class ReleaseNotificationScheduler @Inject constructor(
 
     private fun parseReleaseDate(releaseDate: String): Long? {
         return try {
-            val format = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-            format.parse(releaseDate)?.time
+            val date = LocalDate.parse(releaseDate)
+            val notificationTime = LocalDateTime(date.year, date.month, date.dayOfMonth, 9, 0, 0)
+            notificationTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         } catch (e: Exception) {
             null
         }

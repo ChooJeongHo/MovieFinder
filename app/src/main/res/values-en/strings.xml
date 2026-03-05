@@ -165,6 +165,13 @@
     <!-- View Mode -->
     <string name="view_mode_toggle">Toggle view mode</string>
 
+    <!-- Language Settings -->
+    <string name="settings_language">Language</string>
+    <string name="settings_language_description">Change the app display language</string>
+    <string name="language_korean">한국어</string>
+    <string name="language_english">English</string>
+    <string name="language_system">System Default</string>
+
     <!-- Release Notification -->
     <string name="notification_channel_name">Release Date Alerts</string>
     <string name="notification_channel_description">Get notified when your watchlist movies are released</string>

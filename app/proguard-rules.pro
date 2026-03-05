@@ -28,6 +28,15 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
+# DataStore UserSettings serialization
+-keep,includedescriptorclasses class com.choo.moviefinder.data.local.UserSettings$$serializer { *; }
+-keepclassmembers class com.choo.moviefinder.data.local.UserSettings {
+    *** Companion;
+}
+-keepclasseswithmembers class com.choo.moviefinder.data.local.UserSettings {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
 # Widget serialization classes
 -keep,includedescriptorclasses class com.choo.moviefinder.presentation.widget.**$$serializer { *; }
 -keepclassmembers class com.choo.moviefinder.presentation.widget.** {

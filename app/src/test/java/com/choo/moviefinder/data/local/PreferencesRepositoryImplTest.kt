@@ -1,8 +1,7 @@
 package com.choo.moviefinder.data.local
 
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.core.DataStoreFactory
 import app.cash.turbine.test
 import com.choo.moviefinder.domain.model.ThemeMode
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,14 +23,15 @@ class PreferencesRepositoryImplTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
-    private lateinit var dataStore: DataStore<Preferences>
+    private lateinit var dataStore: DataStore<UserSettings>
     private lateinit var repository: PreferencesRepositoryImpl
 
     @Before
     fun setup() {
-        dataStore = PreferenceDataStoreFactory.create(
+        dataStore = DataStoreFactory.create(
+            serializer = UserSettingsSerializer,
             scope = testScope,
-            produceFile = { tmpFolder.newFile("test_settings.preferences_pb") }
+            produceFile = { tmpFolder.newFile("test_user_settings.json") }
         )
         repository = PreferencesRepositoryImpl(dataStore)
     }

@@ -165,6 +165,13 @@
     <!-- 보기 모드 -->
     <string name="view_mode_toggle">보기 모드 전환</string>
 
+    <!-- 언어 설정 -->
+    <string name="settings_language">언어 설정</string>
+    <string name="settings_language_description">앱 표시 언어를 변경합니다</string>
+    <string name="language_korean">한국어</string>
+    <string name="language_english">English</string>
+    <string name="language_system">시스템 설정</string>
+
     <!-- 개봉일 알림 -->
     <string name="notification_channel_name">개봉일 알림</string>
     <string name="notification_channel_description">즐겨찾기한 영화의 개봉일을 알려줍니다</string>

@@ -5,17 +5,17 @@ plugins {
 
 android {
     namespace = "com.choo.moviefinder.baselineprofile"
-    compileSdk = 36
+    compileSdk = AndroidConfig.COMPILE_SDK
 
     defaultConfig {
         minSdk = 28
-        targetSdk = 36
+        targetSdk = AndroidConfig.TARGET_SDK
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = AndroidConfig.JAVA_VERSION
+        targetCompatibility = AndroidConfig.JAVA_VERSION
     }
 
     targetProjectPath = ":app"
