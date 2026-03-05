@@ -149,10 +149,49 @@
             layout="@layout/layout_empty_state" />
 
         <!-- 빈 상태 - 검색 결과 없음 -->
-        <include
-            android:id="@+id/empty_no_results"
-            layout="@layout/layout_empty_state"
-            android:visibility="gone" />
+        <LinearLayout
+            android:id="@+id/no_results_section"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <include
+                android:id="@+id/empty_no_results"
+                layout="@layout/layout_empty_state" />
+
+            <TextView
+                android:id="@+id/tv_suggestions_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_md"
+                android:text="@string/search_suggestions_label"
+                android:textAppearance="?attr/textAppearanceSubtitle2"
+                android:alpha="0.7" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupSuggestions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:layout_gravity="center"
+                android:gravity="center"
+                app:chipSpacingHorizontal="8dp" />
+
+        </LinearLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_scroll_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:src="@drawable/ic_arrow_up"
+            android:contentDescription="@string/cd_scroll_to_top"
+            android:visibility="gone"
+            app:fabSize="mini" />
 
     </FrameLayout>
 

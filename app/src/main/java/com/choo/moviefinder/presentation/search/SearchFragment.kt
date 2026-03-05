@@ -19,12 +19,14 @@ import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.R
 import com.choo.moviefinder.databinding.FragmentSearchBinding
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
 import com.choo.moviefinder.presentation.adapter.RecentSearchAdapter
 import com.choo.moviefinder.presentation.common.createMovieGridLayoutManager
+import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -64,10 +66,12 @@ class SearchFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupSearchInput()
         setupRecyclerViews()
+        setupScrollToTopFab()
         setupYearFilter()
         setupGenreFilter()
         setupSortFilter()
         setupEmptyStates()
+        setupSuggestionChips()
         observeGenres()
         observeData()
     }
@@ -107,12 +111,12 @@ class SearchFragment : Fragment() {
             adapter = searchAdapter.withLoadStateFooter(
                 footer = MovieLoadStateAdapter { searchAdapter.retry() }
             )
-            addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(
-                    recyclerView: androidx.recyclerview.widget.RecyclerView,
+                    recyclerView: RecyclerView,
                     newState: Int
                 ) {
-                    if (newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_DRAGGING) {
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
                         hideKeyboard()
                     }
                 }
@@ -293,6 +297,23 @@ class SearchFragment : Fragment() {
         }
     }
 
+    private fun setupScrollToTopFab() {
+        binding.rvSearchResults.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if (!recyclerView.canScrollVertically(-1)) {
+                    binding.fabScrollTop.hide()
+                } else {
+                    binding.fabScrollTop.show()
+                }
+            }
+        })
+
+        binding.fabScrollTop.setOnClickListener {
+            binding.rvSearchResults.scrollToPosition(0)
+            binding.fabScrollTop.hide()
+        }
+    }
+
     private fun setupEmptyStates() {
         binding.emptyInitial.ivEmptyIcon.setImageResource(R.drawable.ic_search)
         binding.emptyInitial.tvEmptyTitle.text = getString(R.string.search_initial_title)
@@ -301,6 +322,25 @@ class SearchFragment : Fragment() {
         binding.emptyNoResults.ivEmptyIcon.setImageResource(R.drawable.ic_movie)
         binding.emptyNoResults.tvEmptyTitle.text = getString(R.string.search_empty_title)
         binding.emptyNoResults.tvEmptyMessage.text = getString(R.string.search_empty_message)
+    }
+
+    private fun setupSuggestionChips() {
+        val suggestions = listOf("마블", "스파이더맨", "배트맨", "스타워즈", "해리포터")
+        binding.chipGroupSuggestions.removeAllViews()
+        for (term in suggestions) {
+            val chip = Chip(requireContext()).apply {
+                text = term
+                isClickable = true
+                isCheckable = false
+            }
+            chip.setOnClickListener {
+                binding.etSearch.setText(term)
+                binding.etSearch.setSelection(term.length)
+                viewModel.onSearchQueryChange(term)
+                viewModel.onSearch(term)
+            }
+            binding.chipGroupSuggestions.addView(chip)
+        }
     }
 
     // 4개의 독립적인 Flow를 각각 별도 coroutine으로 수집
@@ -371,14 +411,14 @@ class SearchFragment : Fragment() {
 
                     if (refreshState is LoadState.Loading) {
                         binding.shimmerView.shimmerLayout.startShimmer()
-                        binding.emptyNoResults.layoutEmpty.isVisible = false
+                        binding.noResultsSection.isVisible = false
                     } else {
                         binding.shimmerView.shimmerLayout.stopShimmer()
                     }
 
                     if (refreshState is LoadState.NotLoading) {
                         val isEmpty = searchAdapter.itemCount == 0
-                        binding.emptyNoResults.layoutEmpty.isVisible = isEmpty
+                        binding.noResultsSection.isVisible = isEmpty
                         binding.rvSearchResults.isVisible = !isEmpty
                     }
                 }
@@ -399,7 +439,7 @@ class SearchFragment : Fragment() {
         if (query.isBlank() && viewModel.selectedGenres.value.isEmpty()) {
             binding.rvSearchResults.isVisible = false
             binding.shimmerView.shimmerLayout.isVisible = false
-            binding.emptyNoResults.layoutEmpty.isVisible = false
+            binding.noResultsSection.isVisible = false
 
             val searches = viewModel.recentSearches.value
             if (searches.isNotEmpty()) {
@@ -414,7 +454,8 @@ class SearchFragment : Fragment() {
         binding.recentSearchesSection.isVisible = true
         binding.emptyInitial.layoutEmpty.isVisible = false
         binding.rvSearchResults.isVisible = false
-        binding.emptyNoResults.layoutEmpty.isVisible = false
+        binding.noResultsSection.isVisible = false
+        binding.fabScrollTop.hide()
     }
 
     private fun hideKeyboard() {
@@ -427,7 +468,8 @@ class SearchFragment : Fragment() {
         binding.recentSearchesSection.isVisible = false
         binding.emptyInitial.layoutEmpty.isVisible = true
         binding.rvSearchResults.isVisible = false
-        binding.emptyNoResults.layoutEmpty.isVisible = false
+        binding.noResultsSection.isVisible = false
+        binding.fabScrollTop.hide()
     }
 
     override fun onDestroyView() {

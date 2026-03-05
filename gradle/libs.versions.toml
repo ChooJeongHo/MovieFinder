@@ -34,6 +34,7 @@ detekt = "2.0.0-alpha.2"
 leakcanary = "2.14"
 timber = "5.0.1"
 startup = "1.2.0"
+work = "2.10.1"
 
 [libraries]
 # Core
@@ -124,6 +125,9 @@ timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "tim
 
 # App Startup
 androidx-startup = { group = "androidx.startup", name = "startup-runtime", version.ref = "startup" }
+
+# WorkManager
+androidx-work-runtime = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 
 [bundles]
 lifecycle = ["androidx-lifecycle-runtime-ktx", "androidx-lifecycle-viewmodel-ktx", "androidx-lifecycle-process"]

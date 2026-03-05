@@ -5,6 +5,7 @@ import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
+import com.choo.moviefinder.domain.model.Review
 import kotlinx.coroutines.flow.Flow
 
 @Suppress("TooManyFunctions")
@@ -29,6 +30,8 @@ interface MovieRepository {
     suspend fun getSimilarMovies(movieId: Int): List<Movie>
 
     suspend fun getMovieTrailerKey(movieId: Int): String?
+
+    suspend fun getMovieReviews(movieId: Int): List<Review>
 
     suspend fun getMovieCertification(movieId: Int): String?
 

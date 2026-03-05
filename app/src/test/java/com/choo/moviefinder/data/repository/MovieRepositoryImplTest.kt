@@ -23,6 +23,9 @@ import com.choo.moviefinder.data.remote.dto.MovieListResponse
 import com.choo.moviefinder.data.remote.dto.ReleaseDateInfo
 import com.choo.moviefinder.data.remote.dto.ReleaseDateResponse
 import com.choo.moviefinder.data.remote.dto.ReleaseDateResult
+import com.choo.moviefinder.data.remote.dto.AuthorDetailsDto
+import com.choo.moviefinder.data.remote.dto.ReviewDto
+import com.choo.moviefinder.data.remote.dto.ReviewResponse
 import com.choo.moviefinder.data.remote.dto.VideoDto
 import com.choo.moviefinder.data.remote.dto.VideoResponse
 import com.choo.moviefinder.data.util.Constants
@@ -537,6 +540,41 @@ class MovieRepositoryImplTest {
         repository.isInWatchlist(99).test {
             assertFalse(awaitItem())
             awaitComplete()
+        }
+    }
+
+    // --- Reviews ---
+
+    @Test
+    fun `getMovieReviews returns mapped domain reviews`() = runTest {
+        val response = ReviewResponse(
+            results = listOf(
+                ReviewDto(
+                    id = "r1",
+                    author = "Reviewer",
+                    authorDetails = AuthorDetailsDto(avatarPath = "/avatar.jpg", rating = 8.0),
+                    content = "Great movie!",
+                    createdAt = "2024-01-01T00:00:00.000Z"
+                )
+            )
+        )
+        coEvery { apiService.getMovieReviews(1) } returns response
+
+        val reviews = repository.getMovieReviews(1)
+
+        assertEquals(1, reviews.size)
+        assertEquals("Reviewer", reviews[0].author)
+        assertEquals(8.0, reviews[0].rating)
+        assertEquals("Great movie!", reviews[0].content)
+    }
+
+    @Test
+    fun `getMovieReviews with invalid movieId throws exception`() = runTest {
+        try {
+            repository.getMovieReviews(0)
+            assertTrue("Should throw", false)
+        } catch (e: IllegalArgumentException) {
+            // Expected
         }
     }
 }

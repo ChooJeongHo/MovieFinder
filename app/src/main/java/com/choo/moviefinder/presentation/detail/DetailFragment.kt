@@ -34,6 +34,7 @@ import com.choo.moviefinder.databinding.FragmentDetailBinding
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.presentation.adapter.CastAdapter
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
+import com.choo.moviefinder.presentation.adapter.ReviewAdapter
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -53,6 +54,7 @@ class DetailFragment : Fragment() {
 
     private lateinit var castAdapter: CastAdapter
     private lateinit var similarMovieAdapter: HorizontalMovieAdapter
+    private lateinit var reviewAdapter: ReviewAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -149,6 +151,12 @@ class DetailFragment : Fragment() {
         binding.rvSimilar.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = similarMovieAdapter
+        }
+
+        reviewAdapter = ReviewAdapter()
+        binding.rvReviews.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = reviewAdapter
         }
     }
 
@@ -262,6 +270,11 @@ class DetailFragment : Fragment() {
         similarMovieAdapter.submitList(state.similarMovies)
         binding.tvSimilarLabel.isVisible = state.similarMovies.isNotEmpty()
         binding.rvSimilar.isVisible = state.similarMovies.isNotEmpty()
+
+        // 리뷰
+        reviewAdapter.submitList(state.reviews)
+        binding.tvReviewsLabel.isVisible = state.reviews.isNotEmpty()
+        binding.rvReviews.isVisible = state.reviews.isNotEmpty()
 
         // 등급 배지
         bindCertification(state.certification)
@@ -418,6 +431,7 @@ class DetailFragment : Fragment() {
         super.onDestroyView()
         binding.rvCast.adapter = null
         binding.rvSimilar.adapter = null
+        binding.rvReviews.adapter = null
         _binding = null
     }
 }

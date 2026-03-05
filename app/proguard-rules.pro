@@ -28,6 +28,15 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
+# Widget serialization classes
+-keep,includedescriptorclasses class com.choo.moviefinder.presentation.widget.**$$serializer { *; }
+-keepclassmembers class com.choo.moviefinder.presentation.widget.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.choo.moviefinder.presentation.widget.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
 # Room
 -keep class * extends androidx.room.RoomDatabase
 -dontwarn androidx.room.paging.**
@@ -46,6 +55,12 @@
 
 # Paging
 -keep class androidx.paging.** { *; }
+
+# WorkManager (notification worker)
+-keep class * extends androidx.work.Worker
+-keep class * extends androidx.work.ListenableWorker {
+    public <init>(android.content.Context, androidx.work.WorkerParameters);
+}
 
 # Keep line numbers for debugging
 -keepattributes SourceFile,LineNumberTable

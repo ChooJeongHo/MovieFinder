@@ -3,12 +3,14 @@ package com.choo.moviefinder.presentation.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
+import com.choo.moviefinder.domain.usecase.GetMovieReviewsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
 import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
 import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
@@ -40,11 +42,13 @@ class DetailViewModel @Inject constructor(
     private val getSimilarMoviesUseCase: GetSimilarMoviesUseCase,
     private val getMovieTrailerUseCase: GetMovieTrailerUseCase,
     private val getMovieCertificationUseCase: GetMovieCertificationUseCase,
+    private val getMovieReviewsUseCase: GetMovieReviewsUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val isFavoriteUseCase: IsFavoriteUseCase,
     private val toggleWatchlistUseCase: ToggleWatchlistUseCase,
     private val isInWatchlistUseCase: IsInWatchlistUseCase,
-    private val saveWatchHistoryUseCase: SaveWatchHistoryUseCase
+    private val saveWatchHistoryUseCase: SaveWatchHistoryUseCase,
+    private val releaseNotificationScheduler: ReleaseNotificationScheduler
 ) : ViewModel() {
 
     private val movieId: Int = requireNotNull(savedStateHandle.get<Int>("movieId")) {
@@ -77,24 +81,19 @@ class DetailViewModel @Inject constructor(
                 coroutineScope {
                     val detailDeferred = async { getMovieDetailUseCase(movieId) }
                     val creditsDeferred = async {
-                        runCatching { getMovieCreditsUseCase(movieId) }
-                            .onFailure { Timber.w(it, "Failed to load credits for movie %d", movieId) }
-                            .getOrElse { emptyList() }
+                        loadOptional("credits") { getMovieCreditsUseCase(movieId) }
                     }
                     val similarDeferred = async {
-                        runCatching { getSimilarMoviesUseCase(movieId) }
-                            .onFailure { Timber.w(it, "Failed to load similar movies for movie %d", movieId) }
-                            .getOrElse { emptyList() }
+                        loadOptional("similar") { getSimilarMoviesUseCase(movieId) }
+                    }
+                    val reviewsDeferred = async {
+                        loadOptional("reviews") { getMovieReviewsUseCase(movieId) }
                     }
                     val trailerDeferred = async {
-                        runCatching { getMovieTrailerUseCase(movieId) }
-                            .onFailure { Timber.w(it, "Failed to load trailer for movie %d", movieId) }
-                            .getOrNull()
+                        loadOptionalNullable("trailer") { getMovieTrailerUseCase(movieId) }
                     }
-                    val certificationDeferred = async {
-                        runCatching { getMovieCertificationUseCase(movieId) }
-                            .onFailure { Timber.w(it, "Failed to load certification for movie %d", movieId) }
-                            .getOrNull()
+                    val certDeferred = async {
+                        loadOptionalNullable("cert") { getMovieCertificationUseCase(movieId) }
                     }
 
                     val detail = detailDeferred.await()
@@ -103,33 +102,35 @@ class DetailViewModel @Inject constructor(
                         credits = creditsDeferred.await(),
                         similarMovies = similarDeferred.await(),
                         trailerKey = trailerDeferred.await(),
-                        certification = certificationDeferred.await()
+                        certification = certDeferred.await(),
+                        reviews = reviewsDeferred.await()
                     )
-
-                    // 시청 기록 저장
-                    val movie = Movie(
-                        id = detail.id,
-                        title = detail.title,
-                        posterPath = detail.posterPath,
-                        backdropPath = detail.backdropPath,
-                        overview = detail.overview,
-                        releaseDate = detail.releaseDate,
-                        voteAverage = detail.voteAverage,
-                        voteCount = detail.voteCount
-                    )
-                    runCatching { saveWatchHistoryUseCase(movie) }
-                        .onFailure { Timber.w(it, "Failed to save watch history for movie %d", movieId) }
+                    saveWatchHistory(detail)
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _uiState.value = DetailUiState.Error(
-                    ErrorMessageProvider.getErrorType(e)
-                )
+                _uiState.value = DetailUiState.Error(ErrorMessageProvider.getErrorType(e))
             } finally {
                 loadingMutex.unlock()
             }
         }
+    }
+
+    private suspend fun <T> loadOptional(tag: String, block: suspend () -> List<T>): List<T> =
+        runCatching { block() }
+            .onFailure { Timber.w(it, "Failed to load %s for movie %d", tag, movieId) }
+            .getOrElse { emptyList() }
+
+    private suspend fun <T> loadOptionalNullable(tag: String, block: suspend () -> T?): T? =
+        runCatching { block() }
+            .onFailure { Timber.w(it, "Failed to load %s for movie %d", tag, movieId) }
+            .getOrNull()
+
+    private suspend fun saveWatchHistory(detail: com.choo.moviefinder.domain.model.MovieDetail) {
+        val movie = detail.toMovie()
+        runCatching { saveWatchHistoryUseCase(movie) }
+            .onFailure { Timber.w(it, "Failed to save watch history for movie %d", movieId) }
     }
 
     fun toggleFavorite() {
@@ -155,8 +156,19 @@ class DetailViewModel @Inject constructor(
             try {
                 val state = _uiState.value
                 if (state is DetailUiState.Success) {
+                    val wasInWatchlist = isInWatchlist.value
                     val movie = state.movieDetail.toMovie()
                     toggleWatchlistUseCase(movie)
+                    if (!wasInWatchlist) {
+                        val detail = state.movieDetail
+                        releaseNotificationScheduler.schedule(
+                            movieId = detail.id,
+                            movieTitle = detail.title,
+                            releaseDate = detail.releaseDate
+                        )
+                    } else {
+                        releaseNotificationScheduler.cancel(movieId)
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e

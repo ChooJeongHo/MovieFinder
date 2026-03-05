@@ -5,6 +5,7 @@ import com.choo.moviefinder.data.remote.dto.GenreListResponse
 import com.choo.moviefinder.data.remote.dto.MovieDetailDto
 import com.choo.moviefinder.data.remote.dto.MovieListResponse
 import com.choo.moviefinder.data.remote.dto.ReleaseDateResponse
+import com.choo.moviefinder.data.remote.dto.ReviewResponse
 import com.choo.moviefinder.data.remote.dto.VideoResponse
 import com.choo.moviefinder.data.util.Constants
 import retrofit2.http.GET
@@ -57,6 +58,12 @@ interface MovieApiService {
         @Query("page") page: Int = 1,
         @Query("language") language: String = Constants.LANGUAGE_KO
     ): MovieListResponse
+
+    @GET("movie/{movie_id}/reviews")
+    suspend fun getMovieReviews(
+        @Path("movie_id") movieId: Int,
+        @Query("language") language: String = Constants.LANGUAGE_EN
+    ): ReviewResponse
 
     @GET("movie/{movie_id}/release_dates")
     suspend fun getMovieReleaseDates(

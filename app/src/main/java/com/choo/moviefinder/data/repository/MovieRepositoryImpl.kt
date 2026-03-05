@@ -26,6 +26,7 @@ import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
+import com.choo.moviefinder.domain.model.Review
 import com.choo.moviefinder.domain.repository.MovieRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -127,6 +128,11 @@ class MovieRepositoryImpl @Inject constructor(
             ?: response.results
                 .filter { it.site == "YouTube" }
                 .firstOrNull()?.key
+    }
+
+    override suspend fun getMovieReviews(movieId: Int): List<Review> {
+        require(movieId > 0) { "Movie ID must be positive" }
+        return apiService.getMovieReviews(movieId).results.map { it.toDomain() }
     }
 
     override suspend fun getMovieCertification(movieId: Int): String? {

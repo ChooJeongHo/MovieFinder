@@ -14,6 +14,7 @@ import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.databinding.FragmentHomeBinding
@@ -55,6 +56,7 @@ class HomeFragment : Fragment() {
         setupRecyclerView()
         setupWatchHistory()
         setupSwipeRefresh()
+        setupScrollToTopFab()
         setupTabs()
         observeLoadStates()
         observeWatchHistory()
@@ -115,6 +117,23 @@ class HomeFragment : Fragment() {
                     watchHistoryAdapter.submitList(history)
                 }
             }
+        }
+    }
+
+    private fun setupScrollToTopFab() {
+        binding.rvMovies.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if (!recyclerView.canScrollVertically(-1)) {
+                    binding.fabScrollTop.hide()
+                } else {
+                    binding.fabScrollTop.show()
+                }
+            }
+        })
+
+        binding.fabScrollTop.setOnClickListener {
+            binding.rvMovies.scrollToPosition(0)
+            binding.fabScrollTop.hide()
         }
     }
 

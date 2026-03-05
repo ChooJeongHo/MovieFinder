@@ -201,6 +201,26 @@
                 android:orientation="horizontal"
                 android:visibility="gone" />
 
+            <!-- 리뷰 -->
+            <TextView
+                android:id="@+id/tv_reviews_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_lg"
+                android:text="@string/reviews_label"
+                android:textAppearance="?attr/textAppearanceHeadline6"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_reviews"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:visibility="gone" />
+
             <!-- 영화 정보 (확장) -->
             <TextView
                 android:id="@+id/tv_movie_info_label"

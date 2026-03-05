@@ -25,6 +25,7 @@
     <string name="overview_title">줄거리</string>
     <string name="cast_title">출연진</string>
     <string name="similar_movies_title">비슷한 영화</string>
+    <string name="reviews_label">리뷰</string>
     <string name="play_trailer">예고편 재생</string>
     <string name="add_to_favorites">즐겨찾기 추가</string>
     <string name="remove_from_favorites">즐겨찾기 제거</string>
@@ -141,4 +142,20 @@
 
     <!-- Discover 모드 -->
     <string name="discover_mode">탐색 모드</string>
+
+    <!-- 위젯 -->
+    <string name="widget_name">MovieFinder 인기 영화</string>
+    <string name="widget_empty">영화 목록을 불러올 수 없습니다</string>
+    <string name="widget_loading">로딩 중…</string>
+
+    <!-- 스크롤 -->
+    <string name="cd_scroll_to_top">맨 위로 스크롤</string>
+
+    <!-- 검색 추천 -->
+    <string name="search_suggestions_label">이런 검색어는 어떠세요?</string>
+
+    <!-- 개봉일 알림 -->
+    <string name="notification_channel_name">개봉일 알림</string>
+    <string name="notification_channel_description">즐겨찾기한 영화의 개봉일을 알려줍니다</string>
+    <string name="notification_release_today">오늘 개봉합니다!</string>
 </resources>

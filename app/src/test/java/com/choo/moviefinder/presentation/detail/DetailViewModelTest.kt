@@ -1,14 +1,17 @@
 package com.choo.moviefinder.presentation.detail
 
 import app.cash.turbine.test
+import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
+import com.choo.moviefinder.domain.model.Review
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
+import com.choo.moviefinder.domain.usecase.GetMovieReviewsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
 import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
 import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
@@ -46,11 +49,13 @@ class DetailViewModelTest {
     private lateinit var getSimilarMoviesUseCase: GetSimilarMoviesUseCase
     private lateinit var getMovieTrailerUseCase: GetMovieTrailerUseCase
     private lateinit var getMovieCertificationUseCase: GetMovieCertificationUseCase
+    private lateinit var getMovieReviewsUseCase: GetMovieReviewsUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var isFavoriteUseCase: IsFavoriteUseCase
     private lateinit var toggleWatchlistUseCase: ToggleWatchlistUseCase
     private lateinit var isInWatchlistUseCase: IsInWatchlistUseCase
     private lateinit var saveWatchHistoryUseCase: SaveWatchHistoryUseCase
+    private lateinit var releaseNotificationScheduler: ReleaseNotificationScheduler
 
     private val testMovieDetail = MovieDetail(
         id = 1,
@@ -84,14 +89,17 @@ class DetailViewModelTest {
         getSimilarMoviesUseCase = mockk()
         getMovieTrailerUseCase = mockk()
         getMovieCertificationUseCase = mockk()
+        getMovieReviewsUseCase = mockk()
         toggleFavoriteUseCase = mockk()
         isFavoriteUseCase = mockk()
         toggleWatchlistUseCase = mockk()
         isInWatchlistUseCase = mockk()
         saveWatchHistoryUseCase = mockk()
+        releaseNotificationScheduler = mockk(relaxed = true)
 
         coEvery { getMovieTrailerUseCase(any()) } returns null
         coEvery { getMovieCertificationUseCase(any()) } returns null
+        coEvery { getMovieReviewsUseCase(any()) } returns emptyList()
         coEvery { saveWatchHistoryUseCase(any()) } returns Unit
 
         every { isFavoriteUseCase(any()) } returns flowOf(false)
@@ -112,11 +120,13 @@ class DetailViewModelTest {
             getSimilarMoviesUseCase = getSimilarMoviesUseCase,
             getMovieTrailerUseCase = getMovieTrailerUseCase,
             getMovieCertificationUseCase = getMovieCertificationUseCase,
+            getMovieReviewsUseCase = getMovieReviewsUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
             isFavoriteUseCase = isFavoriteUseCase,
             toggleWatchlistUseCase = toggleWatchlistUseCase,
             isInWatchlistUseCase = isInWatchlistUseCase,
-            saveWatchHistoryUseCase = saveWatchHistoryUseCase
+            saveWatchHistoryUseCase = saveWatchHistoryUseCase,
+            releaseNotificationScheduler = releaseNotificationScheduler
         )
     }
 
@@ -390,5 +400,91 @@ class DetailViewModelTest {
             success as DetailUiState.Success
             assertEquals("15", success.certification)
         }
+    }
+
+    @Test
+    fun `reviews load in success state`() = runTest {
+        val testReviews = listOf(
+            Review("r1", "Author1", null, 8.0, "Great movie!", "2024-01-01"),
+            Review("r2", "Author2", "/avatar.jpg", null, "Not bad", "2024-02-01")
+        )
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { getMovieReviewsUseCase(1) } returns testReviews
+
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            val success = awaitItem()
+            assertTrue(success is DetailUiState.Success)
+            success as DetailUiState.Success
+            assertEquals(2, success.reviews.size)
+            assertEquals("Author1", success.reviews[0].author)
+        }
+    }
+
+    @Test
+    fun `reviews failure still shows success with empty reviews`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { getMovieReviewsUseCase(1) } throws RuntimeException("reviews failed")
+
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            val success = awaitItem()
+            assertTrue(success is DetailUiState.Success)
+            success as DetailUiState.Success
+            assertTrue(success.reviews.isEmpty())
+        }
+    }
+
+    @Test
+    fun `toggleWatchlist schedules notification when adding to watchlist`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { toggleWatchlistUseCase(any()) } returns Unit
+        every { isInWatchlistUseCase(1) } returns flowOf(false)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleWatchlist()
+        advanceUntilIdle()
+
+        io.mockk.verify {
+            releaseNotificationScheduler.schedule(
+                movieId = 1,
+                movieTitle = "Test Movie",
+                releaseDate = "2024-01-01"
+            )
+        }
+    }
+
+    @Test
+    fun `toggleWatchlist cancels notification when removing from watchlist`() = runTest {
+        every { isInWatchlistUseCase(1) } returns flowOf(true)
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { toggleWatchlistUseCase(any()) } returns Unit
+
+        val viewModel = createViewModel()
+        // stateIn(WhileSubscribed)은 구독자가 있어야 수집 시작
+        viewModel.isInWatchlist.test {
+            // 초기값 false → true
+            skipItems(1)
+            assertEquals(true, awaitItem())
+        }
+
+        viewModel.toggleWatchlist()
+        advanceUntilIdle()
+
+        io.mockk.verify { releaseNotificationScheduler.cancel(1) }
     }
 }

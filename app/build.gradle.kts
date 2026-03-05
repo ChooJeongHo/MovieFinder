@@ -175,6 +175,9 @@ dependencies {
     // App Startup
     implementation(libs.androidx.startup)
 
+    // WorkManager
+    implementation(libs.androidx.work.runtime)
+
     // Timber
     implementation(libs.timber)
 
