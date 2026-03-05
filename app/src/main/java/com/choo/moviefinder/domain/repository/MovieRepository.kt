@@ -64,4 +64,11 @@ interface MovieRepository {
     suspend fun toggleWatchlist(movie: Movie)
 
     fun isInWatchlist(movieId: Int): Flow<Boolean>
+
+    // User Rating
+    fun getUserRating(movieId: Int): Flow<Float?>
+
+    suspend fun setUserRating(movieId: Int, rating: Float)
+
+    suspend fun deleteUserRating(movieId: Int)
 }

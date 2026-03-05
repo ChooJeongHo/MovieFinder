@@ -10,6 +10,7 @@ import android.transition.TransitionSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.RatingBar
 import android.widget.TextView
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
@@ -90,6 +91,7 @@ class DetailFragment : Fragment() {
         observeUiState()
         observeFavorite()
         observeWatchlist()
+        observeUserRating()
         observeSnackbar()
     }
 
@@ -228,6 +230,33 @@ class DetailFragment : Fragment() {
                     binding.fabWatchlist.setImageResource(icon)
                 }
             }
+        }
+    }
+
+    private fun observeUserRating() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.userRating.collect { rating ->
+                    if (rating != null) {
+                        binding.ratingBarUser.rating = rating
+                        binding.btnClearRating.isVisible = true
+                    } else {
+                        binding.ratingBarUser.rating = 0f
+                        binding.btnClearRating.isVisible = false
+                    }
+                }
+            }
+        }
+
+        binding.ratingBarUser.onRatingBarChangeListener =
+            RatingBar.OnRatingBarChangeListener { _, rating, fromUser ->
+                if (fromUser && rating > 0f) {
+                    viewModel.setUserRating(rating)
+                }
+            }
+
+        binding.btnClearRating.setOnClickListener {
+            viewModel.deleteUserRating()
         }
     }
 

@@ -158,6 +158,13 @@
     <!-- Search Suggestions -->
     <string name="search_suggestions_label">Try these searches</string>
 
+    <!-- My Rating -->
+    <string name="my_rating_title">My Rating</string>
+    <string name="clear_rating">Clear rating</string>
+
+    <!-- View Mode -->
+    <string name="view_mode_toggle">Toggle view mode</string>
+
     <!-- Release Notification -->
     <string name="notification_channel_name">Release Date Alerts</string>
     <string name="notification_channel_description">Get notified when your watchlist movies are released</string>

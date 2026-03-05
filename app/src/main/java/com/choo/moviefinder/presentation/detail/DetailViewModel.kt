@@ -8,14 +8,17 @@ import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
+import com.choo.moviefinder.domain.usecase.DeleteUserRatingUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieReviewsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
 import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
 import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.IsInWatchlistUseCase
 import com.choo.moviefinder.domain.usecase.SaveWatchHistoryUseCase
+import com.choo.moviefinder.domain.usecase.SetUserRatingUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -48,6 +51,9 @@ class DetailViewModel @Inject constructor(
     private val toggleWatchlistUseCase: ToggleWatchlistUseCase,
     private val isInWatchlistUseCase: IsInWatchlistUseCase,
     private val saveWatchHistoryUseCase: SaveWatchHistoryUseCase,
+    private val getUserRatingUseCase: GetUserRatingUseCase,
+    private val setUserRatingUseCase: SetUserRatingUseCase,
+    private val deleteUserRatingUseCase: DeleteUserRatingUseCase,
     private val releaseNotificationScheduler: ReleaseNotificationScheduler
 ) : ViewModel() {
 
@@ -68,6 +74,9 @@ class DetailViewModel @Inject constructor(
 
     val isInWatchlist = isInWatchlistUseCase(movieId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val userRating = getUserRatingUseCase(movieId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
         loadMovieDetail()
@@ -176,6 +185,30 @@ class DetailViewModel @Inject constructor(
                 _snackbarEvent.send(
                     ErrorMessageProvider.getErrorType(e)
                 )
+            }
+        }
+    }
+
+    fun setUserRating(rating: Float) {
+        viewModelScope.launch {
+            try {
+                setUserRatingUseCase(movieId, rating)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
+            }
+        }
+    }
+
+    fun deleteUserRating() {
+        viewModelScope.launch {
+            try {
+                deleteUserRatingUseCase(movieId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
             }
         }
     }

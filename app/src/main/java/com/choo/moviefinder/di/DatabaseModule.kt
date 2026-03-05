@@ -7,6 +7,7 @@ import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
+import com.choo.moviefinder.data.local.dao.UserRatingDao
 import com.choo.moviefinder.data.local.dao.WatchHistoryDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
 import dagger.Module
@@ -66,5 +67,11 @@ object DatabaseModule {
     @Singleton
     fun provideWatchlistDao(database: MovieDatabase): WatchlistDao {
         return database.watchlistDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserRatingDao(database: MovieDatabase): UserRatingDao {
+        return database.userRatingDao()
     }
 }

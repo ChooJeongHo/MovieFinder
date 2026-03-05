@@ -9,9 +9,11 @@ import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
+import com.choo.moviefinder.data.local.dao.UserRatingDao
 import com.choo.moviefinder.data.local.dao.WatchHistoryDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.data.local.entity.RecentSearchEntity
+import com.choo.moviefinder.data.local.entity.UserRatingEntity
 import com.choo.moviefinder.data.local.entity.toDomain
 import com.choo.moviefinder.data.local.entity.toEntity
 import com.choo.moviefinder.data.local.entity.toWatchHistoryEntity
@@ -41,7 +43,8 @@ class MovieRepositoryImpl @Inject constructor(
     private val cachedMovieDao: CachedMovieDao,
     private val remoteKeyDao: RemoteKeyDao,
     private val watchHistoryDao: WatchHistoryDao,
-    private val watchlistDao: WatchlistDao
+    private val watchlistDao: WatchlistDao,
+    private val userRatingDao: UserRatingDao
 ) : MovieRepository {
 
     @OptIn(ExperimentalPagingApi::class)
@@ -212,5 +215,20 @@ class MovieRepositoryImpl @Inject constructor(
 
     override fun isInWatchlist(movieId: Int): Flow<Boolean> {
         return watchlistDao.isInWatchlist(movieId)
+    }
+
+    // User Rating
+    override fun getUserRating(movieId: Int): Flow<Float?> {
+        return userRatingDao.getRating(movieId)
+    }
+
+    override suspend fun setUserRating(movieId: Int, rating: Float) {
+        require(movieId > 0) { "Movie ID must be positive" }
+        require(rating in 0.5f..5.0f) { "Rating must be between 0.5 and 5.0" }
+        userRatingDao.insertRating(UserRatingEntity(movieId = movieId, rating = rating))
+    }
+
+    override suspend fun deleteUserRating(movieId: Int) {
+        userRatingDao.deleteRating(movieId)
     }
 }

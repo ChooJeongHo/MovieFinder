@@ -67,12 +67,14 @@ class SearchFragment : Fragment() {
         setupSearchInput()
         setupRecyclerViews()
         setupScrollToTopFab()
+        setupViewModeToggle()
         setupYearFilter()
         setupGenreFilter()
         setupSortFilter()
         setupEmptyStates()
         setupSuggestionChips()
         observeGenres()
+        observeViewMode()
         observeData()
     }
 
@@ -143,6 +145,51 @@ class SearchFragment : Fragment() {
         binding.btnClearAll.setOnClickListener {
             viewModel.onClearSearchHistory()
         }
+    }
+
+    private fun setupViewModeToggle() {
+        updateViewModeIcon(viewModel.viewMode.value)
+        binding.toolbar.inflateMenu(R.menu.menu_search)
+        binding.toolbar.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_view_mode -> {
+                    viewModel.toggleViewMode()
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun observeViewMode() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.viewMode.collect { mode ->
+                    searchAdapter.viewMode = mode
+                    updateViewModeIcon(mode)
+                    applyLayoutManager(mode)
+                }
+            }
+        }
+    }
+
+    private fun applyLayoutManager(mode: MoviePagingAdapter.ViewMode) {
+        binding.rvSearchResults.layoutManager = if (mode == MoviePagingAdapter.ViewMode.LIST) {
+            LinearLayoutManager(requireContext())
+        } else {
+            createMovieGridLayoutManager(requireContext()) {
+                searchAdapter.itemCount
+            }
+        }
+    }
+
+    private fun updateViewModeIcon(mode: MoviePagingAdapter.ViewMode) {
+        val icon = if (mode == MoviePagingAdapter.ViewMode.GRID) {
+            R.drawable.ic_view_list
+        } else {
+            R.drawable.ic_view_grid
+        }
+        binding.toolbar.menu.findItem(R.id.action_view_mode)?.setIcon(icon)
     }
 
     private fun setupYearFilter() {

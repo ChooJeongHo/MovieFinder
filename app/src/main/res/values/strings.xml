@@ -158,6 +158,13 @@
     <!-- 검색 추천 -->
     <string name="search_suggestions_label">이런 검색어는 어떠세요?</string>
 
+    <!-- 내 평점 -->
+    <string name="my_rating_title">내 평점</string>
+    <string name="clear_rating">평점 삭제</string>
+
+    <!-- 보기 모드 -->
+    <string name="view_mode_toggle">보기 모드 전환</string>
+
     <!-- 개봉일 알림 -->
     <string name="notification_channel_name">개봉일 알림</string>
     <string name="notification_channel_description">즐겨찾기한 영화의 개봉일을 알려줍니다</string>

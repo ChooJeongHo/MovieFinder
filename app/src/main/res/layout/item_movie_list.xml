@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_movie"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_sm"
+    android:layout_marginVertical="@dimen/spacing_xs"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="@dimen/card_corner_radius"
+    app:cardElevation="@dimen/card_elevation">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/iv_poster"
+            android:layout_width="@dimen/movie_list_poster_width"
+            android:layout_height="@dimen/movie_list_poster_height"
+            android:contentDescription="@string/cd_movie_poster"
+            android:scaleType="centerCrop"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:background="#CCCCCC" />
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:layout_marginEnd="@dimen/spacing_md"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="?attr/textAppearanceSubtitle1"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/iv_poster"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="영화 제목" />
+
+        <TextView
+            android:id="@+id/tv_release_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:layout_marginEnd="@dimen/spacing_md"
+            android:textAppearance="?attr/textAppearanceCaption"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/iv_poster"
+            app:layout_constraintTop_toBottomOf="@id/tv_title"
+            tools:text="2024-01-01" />
+
+        <TextView
+            android:id="@+id/tv_overview"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:layout_marginEnd="@dimen/spacing_md"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:alpha="0.7"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/iv_poster"
+            app:layout_constraintTop_toBottomOf="@id/tv_release_date"
+            tools:text="영화 줄거리..." />
+
+        <com.choo.moviefinder.presentation.common.CircularRatingView
+            android:id="@+id/rating_view"
+            android:layout_width="@dimen/rating_view_size"
+            android:layout_height="@dimen/rating_view_size"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:layout_marginBottom="@dimen/spacing_md"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/iv_poster"
+            app:layout_constraintTop_toBottomOf="@id/tv_overview"
+            app:layout_constraintVertical_bias="0" />
+
+        <TextView
+            android:id="@+id/tv_vote_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_sm"
+            android:textAppearance="?attr/textAppearanceCaption"
+            android:alpha="0.6"
+            app:layout_constraintBottom_toBottomOf="@id/rating_view"
+            app:layout_constraintStart_toEndOf="@id/rating_view"
+            app:layout_constraintTop_toTopOf="@id/rating_view"
+            tools:text="(1,234)" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

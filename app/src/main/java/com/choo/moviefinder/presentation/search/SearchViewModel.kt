@@ -65,6 +65,16 @@ class SearchViewModel @Inject constructor(
     )
     val sortBy: StateFlow<SortOption> = _sortBy.asStateFlow()
 
+    private val _viewMode = MutableStateFlow(
+        savedStateHandle.get<String>(KEY_VIEW_MODE)?.let { name ->
+            runCatching {
+                com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.valueOf(name)
+            }.getOrDefault(com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.GRID)
+        } ?: com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.GRID
+    )
+    val viewMode: StateFlow<com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode> =
+        _viewMode.asStateFlow()
+
     private val _genres = MutableStateFlow<List<Genre>>(emptyList())
     val genres: StateFlow<List<Genre>> = _genres.asStateFlow()
 
@@ -149,6 +159,16 @@ class SearchViewModel @Inject constructor(
         )
     }
 
+    fun toggleViewMode() {
+        val newMode = if (_viewMode.value == com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.GRID) {
+            com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.LIST
+        } else {
+            com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode.GRID
+        }
+        _viewMode.value = newMode
+        savedStateHandle[KEY_VIEW_MODE] = newMode.name
+    }
+
     fun onDiscoverWithFilters() {
         if (_selectedGenres.value.isEmpty()) return
         _immediateSearch.tryEmit(
@@ -180,6 +200,7 @@ class SearchViewModel @Inject constructor(
         private const val KEY_YEAR = "selected_year"
         private const val KEY_GENRES = "selected_genres"
         private const val KEY_SORT = "selected_sort"
+        private const val KEY_VIEW_MODE = "view_mode"
     }
 }
 

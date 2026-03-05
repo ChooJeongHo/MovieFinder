@@ -50,6 +50,10 @@
     <dimen name="icon_size_error">64dp</dimen>
     <dimen name="icon_size_empty_state">80dp</dimen>
 
+    <!-- 영화 리스트 뷰 -->
+    <dimen name="movie_list_poster_width">100dp</dimen>
+    <dimen name="movie_list_poster_height">150dp</dimen>
+
     <!-- 카드 (비슷한 영화) -->
     <dimen name="card_elevation_small">2dp</dimen>
 </resources>

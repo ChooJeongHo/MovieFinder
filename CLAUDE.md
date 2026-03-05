@@ -86,13 +86,15 @@ app/src/main/java/com/choo/moviefinder/
 │   │   │   ├── RecentSearchDao.kt
 │   │   │   ├── CachedMovieDao.kt  # 오프라인 캐시 (PagingSource 반환)
 │   │   │   ├── RemoteKeyDao.kt    # 페이징 키 관리
+│   │   │   ├── UserRatingDao.kt    # 사용자 평점 (CRUD)
 │   │   │   ├── WatchHistoryDao.kt # 시청 기록 (최근 20개)
 │   │   │   └── WatchlistDao.kt    # abstract class (@Transaction toggleWatchlist)
-│   │   └── entity/                # Room Entity (6개)
+│   │   └── entity/                # Room Entity (7개)
 │   │       ├── FavoriteMovieEntity.kt  # 인덱스: addedAt
 │   │       ├── RecentSearchEntity.kt  # 인덱스: timestamp
 │   │       ├── CachedMovieEntity.kt    # 인덱스: category, 복합PK: id+category
 │   │       ├── RemoteKeyEntity.kt      # lastUpdated 타임스탬프 포함
+│   │       ├── UserRatingEntity.kt      # 사용자 영화 평점 (PK: movieId)
 │   │       ├── WatchHistoryEntity.kt   # 인덱스: watchedAt
 │   │       └── WatchlistEntity.kt      # 인덱스: addedAt
 │   ├── paging/
@@ -110,9 +112,9 @@ app/src/main/java/com/choo/moviefinder/
 ├── domain/                # 도메인 레이어
 │   ├── model/             # 도메인 모델 (Movie, MovieDetail, Cast, Review, ThemeMode)
 │   ├── repository/        # Repository 인터페이스
-│   └── usecase/           # UseCase 클래스 (27개, 테마/시청기록/워치리스트/장르/등급/리뷰 포함)
+│   └── usecase/           # UseCase 클래스 (30개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점 포함)
 ├── presentation/          # 프레젠테이션 레이어
-│   ├── adapter/           # RecyclerView 어댑터 (7개) + MovieGridViewHolder (공유 ViewHolder)
+│   ├── adapter/           # RecyclerView 어댑터 (7개) + MovieGridViewHolder + MovieListViewHolder (뷰 모드별 ViewHolder)
 │   ├── common/            # CircularRatingView (커스텀 뷰), GridLayoutManagerFactory (LoadState-aware 그리드)
 │   ├── detail/            # 영화 상세 화면 (DetailFragment, DetailViewModel, Mutex 중복 호출 방지)
 │   ├── favorite/          # 즐겨찾기/워치리스트 화면 (FavoriteFragment, FavoriteViewModel, TabLayout 탭 전환, 정렬, FavoriteSortOrder)
@@ -175,6 +177,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - 상태별 UI 전환 (초기/검색중/결과없음/결과표시)
 - **검색 추천**: 결과 없을 때 추천 검색어 칩 표시 (마블, 스파이더맨, 배트맨, 스타워즈, 해리포터)
 - **맨 위로 FAB**: 스크롤 시 mini FAB 표시, 탭하면 최상단 이동
+- **보기 모드 전환**: Toolbar 메뉴 토글로 그리드 ↔ 리스트 뷰 전환 (SavedStateHandle 저장)
 - **장르 칩 복원 개선**: 장르 API 미로드 시 개수만 표시, 로드 완료 시 이름으로 갱신
 - **다이얼로그 생명주기 관리**: `onDestroyView()`에서 dismiss
 
@@ -199,6 +202,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **재시도 UI**: 에러 시 재시도 버튼 비활성화 → 완료 후 재활성화
 - **즐겨찾기 토글 실패 피드백**: Channel → `receiveAsFlow()` → Snackbar로 에러 메시지 표시 (이벤트 유실 방지)
 - **출연진 정렬**: `order` 필드 기준 오름차순 정렬
+- **사용자 평점**: RatingBar로 0.5~5.0 별점 매기기 (Room DB 저장), 삭제 버튼
 - NestedScrollView 기반 스크롤
 
 ### 4. 즐겨찾기/워치리스트 화면 (FavoriteFragment)
@@ -271,7 +275,8 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 | `ReviewAdapter` | `ListAdapter` | 상세 화면 리뷰 (클릭 시 확장/축소) |
 | `RecentSearchAdapter` | `ListAdapter` | 검색 화면 최근 검색어 |
 | `MovieLoadStateAdapter` | `LoadStateAdapter` | 페이징 로딩/에러 footer |
-| `MovieGridViewHolder` | `ViewHolder` | MoviePagingAdapter/MovieAdapter 공유 ViewHolder |
+| `MovieGridViewHolder` | `ViewHolder` | MoviePagingAdapter/MovieAdapter 공유 ViewHolder (그리드 뷰) |
+| `MovieListViewHolder` | `ViewHolder` | MoviePagingAdapter 리스트 뷰 ViewHolder |
 
 - 모든 이미지 어댑터에 `onViewRecycled()` 구현 → Coil 이미지 로드 취소 (`dispose()`)
 
@@ -428,9 +433,9 @@ Repository Settings > Secrets and variables > Actions에서:
 
 ### Room DB
 - 스키마 export 위치: `app/schemas/`
-- Entity: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity
+- Entity: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity
 - 데이터베이스 이름: `movie_finder_db`
-- 데이터베이스 버전: 8
+- 데이터베이스 버전: 9
 - Destructive migration fallback 적용 (개발 환경)
 - 인덱스: CachedMovieEntity(category), FavoriteMovieEntity(addedAt), RecentSearchEntity(timestamp), WatchHistoryEntity(watchedAt), WatchlistEntity(addedAt)
 
@@ -532,7 +537,9 @@ Repository Settings > Secrets and variables > Actions에서:
 | `layout_empty_state.xml` | 빈 상태 뷰 (include용) |
 | `item_review.xml` | 리뷰 아이템 (확장/축소) |
 | `widget_popular_movies.xml` | 위젯 레이아웃 (인기 영화 목록) |
+| `item_movie_list.xml` | 리스트 뷰용 영화 카드 (포스터 + 제목 + 줄거리 + 평점) |
 | `widget_movie_item.xml` | 위젯 영화 아이템 |
+| `menu_search.xml` | 검색 화면 툴바 메뉴 (보기 모드 토글) |
 | `menu_detail.xml` | 상세 화면 툴바 메뉴 (공유) |
 
 ## QA 완료 사항
@@ -642,6 +649,8 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 개봉일 알림: WorkManager + ReleaseNotificationScheduler/Worker (워치리스트 추가 시 예약, 삭제 시 취소)
 - [x] 다국어 지원: values-en/strings.xml 영어 번역 (161개 문자열)
 - [x] DetailViewModel 부분 실패 리팩토링: loadOptional/loadOptionalNullable 헬퍼 추출
+- [x] 사용자 영화 평점: RatingBar (0.5~5.0 별점), Room DB UserRatingEntity 저장, 삭제 버튼
+- [x] 검색 결과 보기 모드 전환: 그리드 ↔ 리스트 토글 (Toolbar 메뉴, SavedStateHandle 저장)
 
 ## 보너스 기능 구현 현황
 - [x] 다크 모드 지원 (MaterialComponents.DayNight 테마 + 테마 대응 아이콘/색상)
@@ -717,3 +726,5 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Espresso UI 테스트 (HiltTestRunner + 네비게이션/화면 검증 5개)
 - [x] PagingSource/RemoteMediator 유닛 테스트 (19개: MoviePagingSource 7 + DiscoverPagingSource 5 + MovieRemoteMediator 7)
 - [x] 접근성 강화 (영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지, ProgressBar, decorative overlay)
+- [x] 사용자 영화 평점 (RatingBar 0.5~5.0, Room DB UserRatingEntity, 삭제 버튼)
+- [x] 검색 결과 보기 모드 전환 (그리드 ↔ 리스트 토글, MovieListViewHolder, SavedStateHandle 저장)

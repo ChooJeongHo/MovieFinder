@@ -6,12 +6,14 @@ import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
+import com.choo.moviefinder.data.local.dao.UserRatingDao
 import com.choo.moviefinder.data.local.dao.WatchHistoryDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.data.local.entity.CachedMovieEntity
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.RecentSearchEntity
 import com.choo.moviefinder.data.local.entity.RemoteKeyEntity
+import com.choo.moviefinder.data.local.entity.UserRatingEntity
 import com.choo.moviefinder.data.local.entity.WatchHistoryEntity
 import com.choo.moviefinder.data.local.entity.WatchlistEntity
 
@@ -22,9 +24,10 @@ import com.choo.moviefinder.data.local.entity.WatchlistEntity
         CachedMovieEntity::class,
         RemoteKeyEntity::class,
         WatchHistoryEntity::class,
-        WatchlistEntity::class
+        WatchlistEntity::class,
+        UserRatingEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 abstract class MovieDatabase : RoomDatabase() {
@@ -34,4 +37,5 @@ abstract class MovieDatabase : RoomDatabase() {
     abstract fun remoteKeyDao(): RemoteKeyDao
     abstract fun watchHistoryDao(): WatchHistoryDao
     abstract fun watchlistDao(): WatchlistDao
+    abstract fun userRatingDao(): UserRatingDao
 }

@@ -55,6 +55,9 @@ class DetailViewModelTest {
     private lateinit var toggleWatchlistUseCase: ToggleWatchlistUseCase
     private lateinit var isInWatchlistUseCase: IsInWatchlistUseCase
     private lateinit var saveWatchHistoryUseCase: SaveWatchHistoryUseCase
+    private lateinit var getUserRatingUseCase: com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
+    private lateinit var setUserRatingUseCase: com.choo.moviefinder.domain.usecase.SetUserRatingUseCase
+    private lateinit var deleteUserRatingUseCase: com.choo.moviefinder.domain.usecase.DeleteUserRatingUseCase
     private lateinit var releaseNotificationScheduler: ReleaseNotificationScheduler
 
     private val testMovieDetail = MovieDetail(
@@ -95,7 +98,12 @@ class DetailViewModelTest {
         toggleWatchlistUseCase = mockk()
         isInWatchlistUseCase = mockk()
         saveWatchHistoryUseCase = mockk()
+        getUserRatingUseCase = mockk()
+        setUserRatingUseCase = mockk()
+        deleteUserRatingUseCase = mockk()
         releaseNotificationScheduler = mockk(relaxed = true)
+
+        every { getUserRatingUseCase(any()) } returns flowOf(null)
 
         coEvery { getMovieTrailerUseCase(any()) } returns null
         coEvery { getMovieCertificationUseCase(any()) } returns null
@@ -126,6 +134,9 @@ class DetailViewModelTest {
             toggleWatchlistUseCase = toggleWatchlistUseCase,
             isInWatchlistUseCase = isInWatchlistUseCase,
             saveWatchHistoryUseCase = saveWatchHistoryUseCase,
+            getUserRatingUseCase = getUserRatingUseCase,
+            setUserRatingUseCase = setUserRatingUseCase,
+            deleteUserRatingUseCase = deleteUserRatingUseCase,
             releaseNotificationScheduler = releaseNotificationScheduler
         )
     }

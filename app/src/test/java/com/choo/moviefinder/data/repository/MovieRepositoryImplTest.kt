@@ -55,6 +55,7 @@ class MovieRepositoryImplTest {
     private lateinit var remoteKeyDao: RemoteKeyDao
     private lateinit var watchHistoryDao: WatchHistoryDao
     private lateinit var watchlistDao: WatchlistDao
+    private lateinit var userRatingDao: com.choo.moviefinder.data.local.dao.UserRatingDao
 
     private lateinit var repository: MovieRepositoryImpl
 
@@ -113,6 +114,7 @@ class MovieRepositoryImplTest {
         remoteKeyDao = mockk()
         watchHistoryDao = mockk(relaxUnitFun = true)
         watchlistDao = mockk(relaxUnitFun = true)
+        userRatingDao = mockk(relaxUnitFun = true)
 
         repository = MovieRepositoryImpl(
             apiService = apiService,
@@ -122,7 +124,8 @@ class MovieRepositoryImplTest {
             cachedMovieDao = cachedMovieDao,
             remoteKeyDao = remoteKeyDao,
             watchHistoryDao = watchHistoryDao,
-            watchlistDao = watchlistDao
+            watchlistDao = watchlistDao,
+            userRatingDao = userRatingDao
         )
     }
 
