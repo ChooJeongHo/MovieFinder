@@ -32,6 +32,7 @@ class SettingsFragment : Fragment() {
     private val viewModel: SettingsViewModel by viewModels()
     private var activeDialog: Dialog? = null
 
+    // 설정 화면 레이아웃을 인플레이트하고 바인딩 초기화
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -41,6 +42,7 @@ class SettingsFragment : Fragment() {
         return binding.root
     }
 
+    // 뷰 생성 후 설정 항목 클릭 리스너, 테마/언어 관찰 등 UI 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupClickListeners()
@@ -50,6 +52,7 @@ class SettingsFragment : Fragment() {
         observeEvents()
     }
 
+    // 테마, 언어, 캐시 삭제, 시청기록 삭제 항목 클릭 리스너 등록
     private fun setupClickListeners() {
         binding.itemTheme.setOnClickListener { showThemeDialog() }
         binding.itemLanguage.setOnClickListener { showLanguageDialog() }
@@ -57,10 +60,12 @@ class SettingsFragment : Fragment() {
         binding.itemClearWatchHistory.setOnClickListener { showClearWatchHistoryDialog() }
     }
 
+    // 앱 버전 정보 텍스트 설정
     private fun setupAppInfo() {
         binding.tvAppVersion.text = getString(R.string.settings_version, BuildConfig.VERSION_NAME)
     }
 
+    // 현재 테마 모드 Flow를 수집하여 표시 텍스트 갱신
     private fun observeTheme() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -75,6 +80,7 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    // 테마 선택 다이얼로그 표시 (라이트/다크/시스템)
     private fun showThemeDialog() {
         val themes = arrayOf(
             getString(R.string.theme_light),
@@ -94,6 +100,7 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
+    // 언어 선택 다이얼로그 표시 (시스템/한국어/영어)
     private fun showLanguageDialog() {
         val languageLabels = arrayOf(
             getString(R.string.language_system),
@@ -123,6 +130,7 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
+    // 현재 설정된 앱 언어를 텍스트로 표시
     private fun updateLanguageDisplay() {
         val currentLocales = AppCompatDelegate.getApplicationLocales()
         binding.tvLanguageValue.text = if (currentLocales.isEmpty) {
@@ -136,6 +144,7 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    // 캐시 삭제 확인 다이얼로그 표시
     private fun showClearCacheDialog() {
         activeDialog?.dismiss()
         activeDialog = MaterialAlertDialogBuilder(requireContext())
@@ -147,6 +156,7 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
+    // Coil 메모리 및 디스크 이미지 캐시 삭제
     private fun clearCache() {
         val imageLoader = requireContext().imageLoader
         try {
@@ -157,6 +167,7 @@ class SettingsFragment : Fragment() {
         Snackbar.make(binding.root, R.string.cache_cleared, Snackbar.LENGTH_SHORT).show()
     }
 
+    // 시청 기록 삭제 확인 다이얼로그 표시
     private fun showClearWatchHistoryDialog() {
         activeDialog?.dismiss()
         activeDialog = MaterialAlertDialogBuilder(requireContext())
@@ -168,6 +179,7 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
+    // 시청 기록 삭제 성공/에러 이벤트를 수집하여 Snackbar 표시
     private fun observeEvents() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -186,6 +198,7 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    // 다이얼로그 dismiss 및 바인딩 null 처리
     override fun onDestroyView() {
         super.onDestroyView()
         activeDialog?.dismiss()

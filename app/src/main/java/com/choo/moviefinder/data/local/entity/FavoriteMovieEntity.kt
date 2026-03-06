@@ -21,6 +21,7 @@ data class FavoriteMovieEntity(
     val addedAt: Long = System.currentTimeMillis()
 )
 
+// 즐겨찾기 Entity를 도메인 Movie 모델로 변환
 fun FavoriteMovieEntity.toDomain() = Movie(
     id = id,
     title = title,
@@ -32,6 +33,7 @@ fun FavoriteMovieEntity.toDomain() = Movie(
     voteCount = voteCount
 )
 
+// 도메인 Movie를 즐겨찾기 Entity로 변환
 fun Movie.toEntity() = FavoriteMovieEntity(
     id = id,
     title = title,

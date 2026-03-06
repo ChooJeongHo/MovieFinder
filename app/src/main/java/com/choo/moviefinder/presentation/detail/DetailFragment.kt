@@ -57,6 +57,7 @@ class DetailFragment : Fragment() {
     private lateinit var similarMovieAdapter: HorizontalMovieAdapter
     private lateinit var reviewAdapter: ReviewAdapter
 
+    // Shared Element Transition 애니메이션 설정 (ChangeBounds + ChangeTransform + ChangeImageTransform)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val sharedTransition = TransitionSet().apply {
@@ -69,6 +70,7 @@ class DetailFragment : Fragment() {
         sharedElementReturnTransition = sharedTransition
     }
 
+    // 상세 화면 레이아웃을 인플레이트하고 바인딩 초기화
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -78,6 +80,7 @@ class DetailFragment : Fragment() {
         return binding.root
     }
 
+    // 뷰 생성 후 툴바, RecyclerView, FAB, 상태 관찰 등 UI 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -95,6 +98,7 @@ class DetailFragment : Fragment() {
         observeSnackbar()
     }
 
+    // 툴바 뒤로가기 및 공유 메뉴 설정
     private fun setupToolbar() {
         binding.toolbar.setNavigationOnClickListener {
             findNavController().navigateUp()
@@ -111,6 +115,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 영화 정보를 텍스트로 공유 (Intent.ACTION_SEND)
     private fun shareMovie() {
         val state = viewModel.uiState.value
         if (state !is DetailUiState.Success) return
@@ -134,6 +139,7 @@ class DetailFragment : Fragment() {
         startActivity(Intent.createChooser(intent, getString(R.string.share_chooser_title)))
     }
 
+    // 출연진, 비슷한 영화, 리뷰 RecyclerView 초기화
     private fun setupRecyclerViews() {
         castAdapter = CastAdapter()
         binding.rvCast.apply {
@@ -162,6 +168,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 즐겨찾기 및 워치리스트 FAB 클릭 리스너 설정
     private fun setupFab() {
         binding.fabFavorite.setOnClickListener {
             animateFabBounce(binding.fabFavorite)
@@ -173,6 +180,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // FAB 토글 시 scale 바운스 애니메이션 실행
     private fun animateFabBounce(fab: View) {
         fab.animate().cancel()
         fab.scaleX = 1f
@@ -189,6 +197,7 @@ class DetailFragment : Fragment() {
             .start()
     }
 
+    // UI 상태(Loading/Success/Error) Flow를 수집하여 화면 전환
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -203,6 +212,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 즐겨찾기 상태를 수집하여 FAB 아이콘 갱신
     private fun observeFavorite() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -218,6 +228,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 워치리스트 상태를 수집하여 FAB 아이콘 갱신
     private fun observeWatchlist() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -233,6 +244,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 사용자 평점 수집 및 RatingBar/삭제 버튼 리스너 설정
     private fun observeUserRating() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -260,6 +272,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 에러 이벤트를 수집하여 Snackbar로 표시
     private fun observeSnackbar() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -271,6 +284,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 로딩 상태 표시 (ProgressBar 표시, 콘텐츠/FAB 숨김)
     private fun showLoading() {
         binding.progressBar.isVisible = true
         binding.contentLayout.isVisible = false
@@ -279,6 +293,7 @@ class DetailFragment : Fragment() {
         binding.fabWatchlist.isVisible = false
     }
 
+    // 성공 상태 표시 (영화 상세, 출연진, 비슷한 영화, 리뷰, 등급 바인딩)
     private fun showContent(state: DetailUiState.Success) {
         binding.progressBar.isVisible = false
         binding.contentLayout.isVisible = true
@@ -309,6 +324,7 @@ class DetailFragment : Fragment() {
         bindCertification(state.certification)
     }
 
+    // 영화 기본 정보 (제목, 배경, 평점, 개봉일, 장르 칩 등) 바인딩
     private fun bindMovieDetail(detail: MovieDetail) {
         binding.collapsingToolbar.title = detail.title
 
@@ -357,6 +373,7 @@ class DetailFragment : Fragment() {
         bindExtendedInfo(detail)
     }
 
+    // 확장 상세 정보 (제작비, 수익, 원어, 상태, IMDb 링크) 바인딩
     private fun bindExtendedInfo(detail: MovieDetail) {
         val hasInfo = detail.status.isNotBlank() || detail.originalLanguage.isNotBlank() ||
             detail.budget > 0 || detail.revenue > 0 || !detail.imdbId.isNullOrBlank()
@@ -401,11 +418,13 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 조건부 텍스트 필드 표시/숨김 헬퍼
     private fun bindOptionalField(textView: TextView, show: Boolean, text: String) {
         textView.isVisible = show
         if (show) textView.text = text
     }
 
+    // 콘텐츠 등급 배지 칩 표시 (KR/US 등급)
     private fun bindCertification(certification: String?) {
         if (!certification.isNullOrBlank()) {
             binding.chipCertification.text = certification
@@ -417,6 +436,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 예고편 버튼 표시 및 YouTube 연결 설정
     private fun bindTrailer(trailerKey: String?) {
         if (trailerKey != null) {
             binding.btnTrailer.isVisible = true
@@ -441,6 +461,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 에러 상태 표시 (에러 메시지 및 재시도 버튼)
     private fun showError(errorType: ErrorType) {
         startPostponedEnterTransition()
         binding.progressBar.isVisible = false
@@ -458,6 +479,7 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 어댑터 해제 및 바인딩 null 처리로 메모리 누수 방지
     override fun onDestroyView() {
         super.onDestroyView()
         binding.rvCast.adapter = null

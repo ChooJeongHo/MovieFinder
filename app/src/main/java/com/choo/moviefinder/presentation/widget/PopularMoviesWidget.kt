@@ -12,6 +12,7 @@ import com.choo.moviefinder.R
 
 class PopularMoviesWidget : AppWidgetProvider() {
 
+    // 위젯 갱신 시 각 위젯 인스턴스에 RemoteViewsService 연결
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -22,6 +23,7 @@ class PopularMoviesWidget : AppWidgetProvider() {
         }
     }
 
+    // 새로고침 브로드캐스트 수신 시 위젯 데이터 갱신 트리거
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == ACTION_REFRESH) {
@@ -36,6 +38,7 @@ class PopularMoviesWidget : AppWidgetProvider() {
         const val ACTION_REFRESH = "com.choo.moviefinder.widget.ACTION_REFRESH"
         const val EXTRA_MOVIE_ID = "com.choo.moviefinder.widget.EXTRA_MOVIE_ID"
 
+        // 위젯 RemoteViews 구성 (ListView 어댑터, 새로고침 버튼, 아이템 클릭 PendingIntent)
         private fun updateAppWidget(
             context: Context,
             appWidgetManager: AppWidgetManager,

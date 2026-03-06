@@ -23,6 +23,7 @@ data class CachedMovieEntity(
     val cachedAt: Long = System.currentTimeMillis()
 )
 
+// 캐시 영화 Entity를 도메인 Movie 모델로 변환
 fun CachedMovieEntity.toDomain() = Movie(
     id = id,
     title = title,
@@ -34,6 +35,7 @@ fun CachedMovieEntity.toDomain() = Movie(
     voteCount = voteCount
 )
 
+// 도메인 Movie를 카테고리와 페이지 정보를 포함한 캐시 Entity로 변환
 fun Movie.toCachedEntity(category: String, page: Int) = CachedMovieEntity(
     id = id,
     category = category,

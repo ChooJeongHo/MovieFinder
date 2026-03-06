@@ -36,6 +36,7 @@ data class GenreDto(
     @SerialName("name") val name: String
 )
 
+// MovieDetailDto를 도메인 MovieDetail 모델로 변환
 fun MovieDetailDto.toDomain() = MovieDetail(
     id = id,
     title = title,

@@ -21,6 +21,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
+    // Room 데이터베이스 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): MovieDatabase {
@@ -33,42 +34,49 @@ object DatabaseModule {
             .build()
     }
 
+    // 즐겨찾기 영화 DAO를 제공한다
     @Provides
     @Singleton
     fun provideFavoriteMovieDao(database: MovieDatabase): FavoriteMovieDao {
         return database.favoriteMovieDao()
     }
 
+    // 최근 검색어 DAO를 제공한다
     @Provides
     @Singleton
     fun provideRecentSearchDao(database: MovieDatabase): RecentSearchDao {
         return database.recentSearchDao()
     }
 
+    // 캐시된 영화 DAO를 제공한다
     @Provides
     @Singleton
     fun provideCachedMovieDao(database: MovieDatabase): CachedMovieDao {
         return database.cachedMovieDao()
     }
 
+    // 페이징 원격 키 DAO를 제공한다
     @Provides
     @Singleton
     fun provideRemoteKeyDao(database: MovieDatabase): RemoteKeyDao {
         return database.remoteKeyDao()
     }
 
+    // 시청 기록 DAO를 제공한다
     @Provides
     @Singleton
     fun provideWatchHistoryDao(database: MovieDatabase): WatchHistoryDao {
         return database.watchHistoryDao()
     }
 
+    // 워치리스트 DAO를 제공한다
     @Provides
     @Singleton
     fun provideWatchlistDao(database: MovieDatabase): WatchlistDao {
         return database.watchlistDao()
     }
 
+    // 사용자 평점 DAO를 제공한다
     @Provides
     @Singleton
     fun provideUserRatingDao(database: MovieDatabase): UserRatingDao {

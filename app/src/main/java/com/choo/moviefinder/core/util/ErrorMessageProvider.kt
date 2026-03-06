@@ -19,6 +19,7 @@ enum class ErrorType {
 
 object ErrorMessageProvider {
 
+    // 예외를 분석하여 해당하는 ErrorType 열거형으로 매핑한다
     fun getErrorType(throwable: Throwable): ErrorType {
         return when (throwable) {
             is UnknownHostException,
@@ -38,6 +39,7 @@ object ErrorMessageProvider {
         }
     }
 
+    // ErrorType에 대응하는 사용자 친화적 에러 메시지 문자열을 반환한다
     fun getMessage(context: Context, errorType: ErrorType): String {
         return when (errorType) {
             ErrorType.NETWORK -> context.getString(R.string.error_network)
@@ -49,6 +51,7 @@ object ErrorMessageProvider {
         }
     }
 
+    // 예외로부터 직접 사용자 친화적 에러 메시지를 반환한다
     fun getErrorMessage(context: Context, throwable: Throwable): String {
         return getMessage(context, getErrorType(throwable))
     }

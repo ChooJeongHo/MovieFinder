@@ -21,6 +21,7 @@ data class WatchlistEntity(
     val addedAt: Long = System.currentTimeMillis()
 )
 
+// 워치리스트 Entity를 도메인 Movie 모델로 변환
 fun WatchlistEntity.toDomain() = Movie(
     id = id,
     title = title,
@@ -32,6 +33,7 @@ fun WatchlistEntity.toDomain() = Movie(
     voteCount = voteCount
 )
 
+// 도메인 Movie를 워치리스트 Entity로 변환
 fun Movie.toWatchlistEntity() = WatchlistEntity(
     id = id,
     title = title,

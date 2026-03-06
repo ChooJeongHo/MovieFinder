@@ -30,6 +30,7 @@ data class MovieDto(
     @SerialName("video") val video: Boolean = false
 )
 
+// MovieDto를 도메인 Movie 모델로 변환
 fun MovieDto.toDomain() = Movie(
     id = id,
     title = title,

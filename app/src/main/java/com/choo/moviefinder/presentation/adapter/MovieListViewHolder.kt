@@ -19,6 +19,7 @@ class MovieListViewHolder(
     private val onMovieClick: (Int, View) -> Unit
 ) : RecyclerView.ViewHolder(binding.root) {
 
+    // 영화 제목, 개봉일, 줄거리, 평점, 포스터 이미지 및 클릭 리스너 바인딩
     fun bind(movie: Movie) {
         binding.tvTitle.text = movie.title
         binding.tvReleaseDate.text = movie.releaseDate
@@ -43,6 +44,7 @@ class MovieListViewHolder(
         }
     }
 
+    // Coil 이미지 로드 취소
     fun recycle() {
         binding.ivPoster.dispose()
     }

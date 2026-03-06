@@ -6,5 +6,6 @@ import javax.inject.Inject
 class GetMovieReviewsUseCase @Inject constructor(
     private val repository: MovieRepository
 ) {
+    // 영화 ID로 사용자 리뷰 목록을 조회한다
     suspend operator fun invoke(movieId: Int) = repository.getMovieReviews(movieId)
 }

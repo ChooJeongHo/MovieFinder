@@ -22,6 +22,7 @@ class ReleaseNotificationScheduler @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
+    // 영화 개봉일에 맞춰 알림을 WorkManager로 예약한다
     fun schedule(movieId: Int, movieTitle: String, releaseDate: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             Timber.d("Skipping notification scheduling on API < 26")
@@ -59,12 +60,14 @@ class ReleaseNotificationScheduler @Inject constructor(
         Timber.d("Scheduled release notification for movie %d (%s) at %s", movieId, movieTitle, releaseDate)
     }
 
+    // 예약된 개봉일 알림을 취소한다
     fun cancel(movieId: Int) {
         val workName = "release_$movieId"
         WorkManager.getInstance(context).cancelUniqueWork(workName)
         Timber.d("Cancelled release notification for movie %d", movieId)
     }
 
+    // 개봉일 문자열을 당일 오전 9시 기준 밀리초 타임스탬프로 변환한다
     private fun parseReleaseDate(releaseDate: String): Long? {
         return try {
             val date = LocalDate.parse(releaseDate)

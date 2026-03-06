@@ -111,6 +111,7 @@ class SearchViewModel @Inject constructor(
         loadGenres()
     }
 
+    // TMDB API에서 장르 목록을 로드하여 StateFlow 갱신
     private fun loadGenres() {
         viewModelScope.launch {
             try {
@@ -125,30 +126,36 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    // 장르 로드 실패 시 재시도
     fun retryLoadGenres() {
         if (genreLoadFailed) loadGenres()
     }
 
+    // 검색어 변경 시 StateFlow 갱신 및 SavedStateHandle 저장
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
         savedStateHandle[KEY_QUERY] = query
     }
 
+    // 연도 필터 선택 시 StateFlow 갱신 및 SavedStateHandle 저장
     fun onYearSelected(year: Int?) {
         _selectedYear.value = year
         savedStateHandle[KEY_YEAR] = year
     }
 
+    // 장르 필터 선택 시 StateFlow 갱신 및 SavedStateHandle 저장
     fun onGenresSelected(genreIds: Set<Int>) {
         _selectedGenres.value = genreIds
         savedStateHandle[KEY_GENRES] = genreIds.toIntArray()
     }
 
+    // 정렬 옵션 선택 시 StateFlow 갱신 및 SavedStateHandle 저장
     fun onSortSelected(sort: SortOption) {
         _sortBy.value = sort
         savedStateHandle[KEY_SORT] = sort.name
     }
 
+    // 검색어 trim 후 DB에 저장하고 즉시 검색 실행
     fun onSearch(query: String) {
         val trimmed = query.trim()
         if (trimmed.isBlank()) return
@@ -160,6 +167,7 @@ class SearchViewModel @Inject constructor(
         )
     }
 
+    // 그리드/리스트 보기 모드 전환 및 SavedStateHandle 저장
     fun toggleViewMode() {
         val newMode = if (_viewMode.value == ViewMode.GRID) {
             ViewMode.LIST
@@ -170,6 +178,7 @@ class SearchViewModel @Inject constructor(
         savedStateHandle[KEY_VIEW_MODE] = newMode.name
     }
 
+    // 검색어 없이 장르/정렬 필터만으로 Discover API 즉시 호출
     fun onDiscoverWithFilters() {
         if (_selectedGenres.value.isEmpty()) return
         _immediateSearch.tryEmit(
@@ -177,12 +186,14 @@ class SearchViewModel @Inject constructor(
         )
     }
 
+    // 특정 최근 검색어를 DB에서 삭제
     fun onDeleteRecentSearch(query: String) {
         viewModelScope.launch {
             deleteSearchQueryUseCase(query)
         }
     }
 
+    // 전체 검색 기록을 DB에서 삭제
     fun onClearSearchHistory() {
         viewModelScope.launch {
             clearSearchHistoryUseCase()

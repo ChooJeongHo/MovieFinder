@@ -14,6 +14,7 @@ import java.util.Locale
 
 class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_CALLBACK) {
 
+    // 리뷰 아이템 ViewHolder 생성
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReviewViewHolder {
         val binding = ItemReviewBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
@@ -21,6 +22,7 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
         return ReviewViewHolder(binding)
     }
 
+    // 리뷰 데이터를 ViewHolder에 바인딩
     override fun onBindViewHolder(holder: ReviewViewHolder, position: Int) {
         getItem(position)?.let { holder.bind(it) }
     }
@@ -31,6 +33,7 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
 
         private var isExpanded = false
 
+        // 접근성: 확장/축소 상태 설명 갱신
         private fun updateStateDescription() {
             val desc = itemView.context.getString(
                 if (isExpanded) R.string.cd_review_expanded else R.string.cd_review_collapsed
@@ -38,6 +41,7 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
             ViewCompat.setStateDescription(binding.root, desc)
         }
 
+        // 리뷰 작성자, 평점, 내용, 날짜 바인딩 및 클릭 확장/축소 설정
         fun bind(review: Review) {
             binding.tvAuthor.text = review.author
 

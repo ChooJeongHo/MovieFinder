@@ -22,8 +22,10 @@ class MoviePagingAdapter(
             }
         }
 
+    // 현재 보기 모드에 따른 뷰 타입 반환
     override fun getItemViewType(position: Int): Int = viewMode.ordinal
 
+    // 뷰 타입에 따라 그리드 또는 리스트 ViewHolder 생성
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return if (viewType == ViewMode.LIST.ordinal) {
             val binding = ItemMovieListBinding.inflate(
@@ -38,6 +40,7 @@ class MoviePagingAdapter(
         }
     }
 
+    // ViewHolder 타입에 따라 영화 데이터 바인딩
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val movie = getItem(position) ?: return
         when (holder) {
@@ -46,6 +49,7 @@ class MoviePagingAdapter(
         }
     }
 
+    // 재활용 시 Coil 이미지 로드 취소
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         super.onViewRecycled(holder)
         when (holder) {

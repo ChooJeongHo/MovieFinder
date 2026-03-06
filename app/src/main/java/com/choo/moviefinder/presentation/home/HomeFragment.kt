@@ -41,6 +41,7 @@ class HomeFragment : Fragment() {
     private var currentTab = 0
     private var collectJob: Job? = null
 
+    // 홈 화면 레이아웃을 인플레이트하고 바인딩 초기화
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -50,6 +51,7 @@ class HomeFragment : Fragment() {
         return binding.root
     }
 
+    // 뷰 생성 후 RecyclerView, 탭, SwipeRefresh 등 UI 컴포넌트 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         savedInstanceState?.let { currentTab = it.getInt(KEY_CURRENT_TAB, 0) }
@@ -63,11 +65,13 @@ class HomeFragment : Fragment() {
         collectMovies()
     }
 
+    // 현재 선택된 탭 인덱스를 저장하여 화면 회전 시 복원
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_CURRENT_TAB, currentTab)
     }
 
+    // 영화 목록 RecyclerView에 PagingAdapter와 GridLayoutManager 설정
     private fun setupRecyclerView() {
         movieAdapter = MoviePagingAdapter { movieId, posterView ->
             if (findNavController().currentDestination?.id == R.id.homeFragment) {
@@ -87,6 +91,7 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // 시청 기록 가로 스크롤 RecyclerView 설정
     private fun setupWatchHistory() {
         watchHistoryAdapter = HorizontalMovieAdapter(transitionPrefix = "poster_history") { movieId ->
             if (findNavController().currentDestination?.id == R.id.homeFragment) {
@@ -100,6 +105,7 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // 당겨서 새로고침 색상 및 리스너 설정
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.setColorSchemeColors(
             requireContext().getColor(R.color.colorPrimary)
@@ -109,6 +115,7 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // 시청 기록 Flow를 수집하여 섹션 표시 여부 및 어댑터 갱신
     private fun observeWatchHistory() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -120,6 +127,7 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // 스크롤 위치에 따라 맨 위로 FAB 표시/숨김 및 클릭 동작 설정
     private fun setupScrollToTopFab() {
         binding.rvMovies.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -137,6 +145,7 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // 현재 상영작/인기 영화 탭 생성 및 탭 전환 리스너 설정
     private fun setupTabs() {
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_now_playing))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_popular))
@@ -155,6 +164,7 @@ class HomeFragment : Fragment() {
         })
     }
 
+    // Paging LoadState를 수집하여 Shimmer, 에러 뷰, SwipeRefresh 상태 전환
     private fun observeLoadStates() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -206,6 +216,7 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // Shimmer 중지, 어댑터 해제 및 바인딩 null 처리로 메모리 누수 방지
     override fun onDestroyView() {
         super.onDestroyView()
         binding.shimmerView.shimmerLayout.stopShimmer()

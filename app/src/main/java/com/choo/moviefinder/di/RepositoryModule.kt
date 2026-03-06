@@ -14,10 +14,12 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
+    // MovieRepositoryImpl을 MovieRepository 인터페이스에 바인딩한다
     @Binds
     @Singleton
     abstract fun bindMovieRepository(impl: MovieRepositoryImpl): MovieRepository
 
+    // PreferencesRepositoryImpl을 PreferencesRepository 인터페이스에 바인딩한다
     @Binds
     @Singleton
     abstract fun bindPreferencesRepository(impl: PreferencesRepositoryImpl): PreferencesRepository

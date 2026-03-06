@@ -40,12 +40,14 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
         fun imageOkHttpClient(): OkHttpClient
     }
 
+    // 앱 초기화 시 알림 채널 생성 및 테마를 적용한다
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         applyTheme()
     }
 
+    // 개봉일 알림용 NotificationChannel을 생성한다 (API 26+)
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -64,6 +66,7 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
         const val RELEASE_DATE_CHANNEL_ID = "release_date_channel"
     }
 
+    // 저장된 테마를 동기 적용하고 이후 변경을 실시간 반영한다
     private fun applyTheme() {
         val entryPoint = EntryPointAccessors.fromApplication(this, AppEntryPoint::class.java)
         val repository = entryPoint.preferencesRepository()
@@ -78,6 +81,7 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
         }
     }
 
+    // ThemeMode에 따라 AppCompat 야간 모드를 설정한다
     private fun applyNightMode(themeMode: ThemeMode) {
         val nightMode = when (themeMode) {
             ThemeMode.LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
@@ -87,6 +91,7 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
         AppCompatDelegate.setDefaultNightMode(nightMode)
     }
 
+    // Coil 이미지 로더를 메모리/디스크 캐시와 인증서 피닝을 포함하여 생성한다
     override fun newImageLoader(context: PlatformContext): ImageLoader {
         val entryPoint = EntryPointAccessors.fromApplication(this, AppEntryPoint::class.java)
         val imageClient = entryPoint.imageOkHttpClient()

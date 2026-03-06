@@ -6,5 +6,6 @@ import javax.inject.Inject
 class GetMovieCreditsUseCase @Inject constructor(
     private val repository: MovieRepository
 ) {
+    // 영화 ID로 출연진 목록을 조회한다
     suspend operator fun invoke(movieId: Int) = repository.getMovieCredits(movieId)
 }

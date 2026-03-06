@@ -7,6 +7,7 @@ enum class FavoriteSortOrder {
     TITLE,
     RATING;
 
+    // 정렬 옵션에 따라 영화 목록 정렬 (추가일/제목/평점)
     fun apply(movies: List<Movie>): List<Movie> = when (this) {
         ADDED_DATE -> movies
         TITLE -> movies.sortedBy { it.title }

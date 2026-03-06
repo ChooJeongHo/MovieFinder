@@ -38,6 +38,7 @@ class CircularRatingView @JvmOverloads constructor(
         textPaint.textAlign = Paint.Align.CENTER
     }
 
+    // 평점 값 설정 및 접근성 설명 갱신 후 뷰 다시 그리기
     fun setRating(value: Double) {
         if (rating == value) return
         rating = value
@@ -46,6 +47,7 @@ class CircularRatingView @JvmOverloads constructor(
         invalidate()
     }
 
+    // 평점에 따라 진행률 색상 변경 (녹색/노란색/빨간색)
     private fun updateProgressColor() {
         val colorRes = when {
             rating >= 7.0 -> R.color.rating_green
@@ -60,6 +62,7 @@ class CircularRatingView @JvmOverloads constructor(
     private var cy = 0f
     private var radius = 0f
 
+    // 뷰 크기 변경 시 중심좌표, 반지름, 선 굵기, 텍스트 크기 재계산
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         cx = w / 2f

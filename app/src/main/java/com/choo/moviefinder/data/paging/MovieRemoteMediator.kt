@@ -24,6 +24,7 @@ class MovieRemoteMediator(
     private val category: String
 ) : RemoteMediator<Int, CachedMovieEntity>() {
 
+    // 캐시 만료 여부를 확인하여 초기 새로고침 필요 여부 결정
     override suspend fun initialize(): InitializeAction {
         val remoteKey = remoteKeyDao.getRemoteKey(category)
         val lastUpdated = remoteKey?.lastUpdated ?: 0L
@@ -35,6 +36,7 @@ class MovieRemoteMediator(
         }
     }
 
+    // API에서 영화를 가져와 Room 캐시에 저장하는 페이징 로드 처리
     override suspend fun load(
         loadType: LoadType,
         state: PagingState<Int, CachedMovieEntity>

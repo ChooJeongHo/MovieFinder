@@ -42,6 +42,7 @@ class FavoriteFragment : Fragment() {
     private var swipeHelper: ItemTouchHelper? = null
     private var activeDialog: Dialog? = null
 
+    // 즐겨찾기 화면 레이아웃을 인플레이트하고 바인딩 초기화
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -51,6 +52,7 @@ class FavoriteFragment : Fragment() {
         return binding.root
     }
 
+    // 뷰 생성 후 툴바, RecyclerView, 스와이프 삭제, 탭 등 UI 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         savedInstanceState?.let { currentTab = it.getInt(KEY_CURRENT_TAB, TAB_FAVORITES) }
@@ -63,11 +65,13 @@ class FavoriteFragment : Fragment() {
         observeSnackbar()
     }
 
+    // 현재 선택된 탭 인덱스를 저장하여 화면 회전 시 복원
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_CURRENT_TAB, currentTab)
     }
 
+    // 툴바에 정렬 메뉴 설정
     private fun setupToolbar() {
         binding.toolbar.inflateMenu(R.menu.menu_favorite)
         binding.toolbar.setOnMenuItemClickListener { item ->
@@ -81,6 +85,7 @@ class FavoriteFragment : Fragment() {
         }
     }
 
+    // 정렬 옵션 단일 선택 다이얼로그 표시
     private fun showSortDialog() {
         val sortOptions = FavoriteSortOrder.entries.toTypedArray()
         val sortLabels = arrayOf(
@@ -101,6 +106,7 @@ class FavoriteFragment : Fragment() {
             .show()
     }
 
+    // 영화 목록 RecyclerView에 GridLayoutManager와 MovieAdapter 설정
     private fun setupRecyclerView() {
         movieAdapter = MovieAdapter { movieId, posterView ->
             if (findNavController().currentDestination?.id == R.id.favoriteFragment) {
@@ -116,6 +122,7 @@ class FavoriteFragment : Fragment() {
         }
     }
 
+    // 왼쪽 스와이프 삭제 ItemTouchHelper 설정
     private fun setupSwipeToDelete() {
         val callback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
             override fun onMove(
@@ -135,6 +142,7 @@ class FavoriteFragment : Fragment() {
         swipeHelper?.attachToRecyclerView(binding.rvFavorites)
     }
 
+    // 스와이프 삭제 처리 및 Undo Snackbar 표시
     private fun onSwipeDelete(movie: Movie) {
         if (currentTab == TAB_FAVORITES) {
             viewModel.toggleFavorite(movie)
@@ -153,6 +161,7 @@ class FavoriteFragment : Fragment() {
         }
     }
 
+    // 즐겨찾기/워치리스트 탭 생성 및 탭 전환 리스너 설정
     private fun setupTabs() {
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.favorite_title))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.watchlist_title))
@@ -171,6 +180,7 @@ class FavoriteFragment : Fragment() {
         })
     }
 
+    // 현재 탭에 해당하는 영화 목록 Flow를 수집하여 UI 갱신
     private fun collectCurrentTab() {
         collectJob?.cancel()
         movieAdapter.submitList(emptyList())
@@ -192,6 +202,7 @@ class FavoriteFragment : Fragment() {
         }
     }
 
+    // 에러 이벤트를 수집하여 Snackbar로 표시
     private fun observeSnackbar() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -203,6 +214,7 @@ class FavoriteFragment : Fragment() {
         }
     }
 
+    // 현재 정렬 옵션을 툴바 subtitle로 표시
     private fun updateSortLabel(sort: FavoriteSortOrder) {
         val subtitle = when (sort) {
             FavoriteSortOrder.ADDED_DATE -> null
@@ -212,6 +224,7 @@ class FavoriteFragment : Fragment() {
         binding.toolbar.subtitle = subtitle
     }
 
+    // 현재 탭에 맞는 빈 상태 아이콘 및 메시지 설정
     private fun updateEmptyState() {
         if (currentTab == TAB_FAVORITES) {
             binding.emptyView.ivEmptyIcon.setImageResource(R.drawable.ic_favorite_border)
@@ -224,6 +237,7 @@ class FavoriteFragment : Fragment() {
         }
     }
 
+    // 다이얼로그 dismiss, SwipeHelper 해제, 어댑터 및 바인딩 null 처리
     override fun onDestroyView() {
         super.onDestroyView()
         activeDialog?.dismiss()

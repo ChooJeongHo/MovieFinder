@@ -26,6 +26,7 @@ data class CastDto(
     @SerialName("credit_id") val creditId: String = ""
 )
 
+// CastDto를 도메인 Cast 모델로 변환
 fun CastDto.toDomain() = Cast(
     id = id,
     name = name,

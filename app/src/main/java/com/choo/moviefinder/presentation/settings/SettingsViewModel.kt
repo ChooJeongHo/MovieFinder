@@ -35,6 +35,7 @@ class SettingsViewModel @Inject constructor(
     private val _watchHistoryCleared = Channel<Unit>(Channel.BUFFERED)
     val watchHistoryCleared = _watchHistoryCleared.receiveAsFlow()
 
+    // 테마 모드를 DataStore에 저장 (에러 시 Timber 로깅)
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             try {
@@ -47,6 +48,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // 시청 기록 전체 삭제 (성공 시 이벤트, 에러 시 Snackbar)
     fun clearWatchHistory() {
         viewModelScope.launch {
             try {

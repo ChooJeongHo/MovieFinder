@@ -55,6 +55,7 @@ class SearchFragment : Fragment() {
             (currentYear downTo 1950).map { it.toString() }.toTypedArray()
     }
 
+    // 검색 화면 레이아웃을 인플레이트하고 바인딩 초기화
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -64,6 +65,7 @@ class SearchFragment : Fragment() {
         return binding.root
     }
 
+    // 뷰 생성 후 검색 입력, 필터, RecyclerView 등 전체 UI 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupSearchInput()
@@ -80,6 +82,7 @@ class SearchFragment : Fragment() {
         observeData()
     }
 
+    // 검색 입력 텍스트 변경 감지 및 키보드 검색 액션 리스너 설정
     private fun setupSearchInput() {
         binding.etSearch.doAfterTextChanged { text ->
             viewModel.onSearchQueryChange(text?.toString() ?: "")
@@ -99,6 +102,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 검색 결과 및 최근 검색어 RecyclerView 초기화
     private fun setupRecyclerViews() {
         searchAdapter = MoviePagingAdapter { movieId, posterView ->
             if (findNavController().currentDestination?.id == R.id.searchFragment) {
@@ -149,6 +153,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 툴바 메뉴에 그리드/리스트 보기 모드 전환 버튼 설정
     private fun setupViewModeToggle() {
         updateViewModeIcon(viewModel.viewMode.value)
         binding.toolbar.inflateMenu(R.menu.menu_search)
@@ -163,6 +168,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 보기 모드 StateFlow를 수집하여 어댑터 및 아이콘 갱신
     private fun observeViewMode() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -175,6 +181,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 보기 모드에 따라 GridLayoutManager 또는 LinearLayoutManager 적용
     private fun applyLayoutManager(mode: MoviePagingAdapter.ViewMode) {
         binding.rvSearchResults.layoutManager = if (mode == MoviePagingAdapter.ViewMode.LIST) {
             LinearLayoutManager(requireContext())
@@ -185,6 +192,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 현재 보기 모드에 따라 툴바 메뉴 아이콘 전환
     private fun updateViewModeIcon(mode: MoviePagingAdapter.ViewMode) {
         val icon = if (mode == MoviePagingAdapter.ViewMode.GRID) {
             R.drawable.ic_view_list
@@ -194,6 +202,7 @@ class SearchFragment : Fragment() {
         binding.toolbar.menu.findItem(R.id.action_view_mode)?.setIcon(icon)
     }
 
+    // 연도 필터 칩 초기값 설정 및 클릭/닫기 리스너 등록
     private fun setupYearFilter() {
         updateYearChip(viewModel.selectedYear.value)
         binding.chipYear.setOnClickListener { showYearFilterDialog() }
@@ -203,6 +212,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 장르 필터 칩 초기값 설정 및 클릭/닫기 리스너 등록
     private fun setupGenreFilter() {
         updateGenreChip(viewModel.selectedGenres.value)
         binding.chipGenre.setOnClickListener { showGenreFilterDialog() }
@@ -213,6 +223,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 정렬 필터 칩 초기값 설정 및 클릭/닫기 리스너 등록
     private fun setupSortFilter() {
         updateSortChip(viewModel.sortBy.value)
         binding.chipSort.setOnClickListener { showSortDialog() }
@@ -222,6 +233,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 연도 선택 다이얼로그 표시 (현재 선택 상태 반영)
     private fun showYearFilterDialog() {
         val selectedYear = viewModel.selectedYear.value
         val checkedIndex = if (selectedYear == null) {
@@ -242,6 +254,7 @@ class SearchFragment : Fragment() {
             .show()
     }
 
+    // 장르 다중 선택 다이얼로그 표시 (미로드 시 재시도 안내)
     private fun showGenreFilterDialog() {
         val allGenres = viewModel.genres.value
         if (allGenres.isEmpty()) {
@@ -279,6 +292,7 @@ class SearchFragment : Fragment() {
             .show()
     }
 
+    // 정렬 옵션 단일 선택 다이얼로그 표시
     private fun showSortDialog() {
         val sortOptions = SortOption.entries.toTypedArray()
         val sortLabels = arrayOf(
@@ -300,6 +314,7 @@ class SearchFragment : Fragment() {
             .show()
     }
 
+    // 연도 칩 텍스트 및 닫기 아이콘 표시 갱신
     private fun updateYearChip(year: Int?) {
         if (year != null) {
             binding.chipYear.text = getString(R.string.filter_year_value, year)
@@ -310,6 +325,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 장르 칩 텍스트 갱신 (3개 이상 시 개수 표시, 미로드 시 개수만 표시)
     private fun updateGenreChip(selectedGenreIds: Set<Int>) {
         if (selectedGenreIds.isNotEmpty()) {
             val allGenres = viewModel.genres.value
@@ -330,6 +346,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 정렬 칩 텍스트 및 닫기 아이콘 표시 갱신
     private fun updateSortChip(sort: SortOption) {
         if (sort != SortOption.POPULARITY_DESC) {
             val label = when (sort) {
@@ -346,6 +363,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 스크롤 위치에 따라 맨 위로 FAB 표시/숨김 및 클릭 동작 설정
     private fun setupScrollToTopFab() {
         binding.rvSearchResults.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -363,6 +381,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 초기 상태 및 결과 없음 빈 화면의 아이콘과 텍스트 설정
     private fun setupEmptyStates() {
         binding.emptyInitial.ivEmptyIcon.setImageResource(R.drawable.ic_search)
         binding.emptyInitial.tvEmptyTitle.text = getString(R.string.search_initial_title)
@@ -373,6 +392,7 @@ class SearchFragment : Fragment() {
         binding.emptyNoResults.tvEmptyMessage.text = getString(R.string.search_empty_message)
     }
 
+    // 결과 없을 때 표시할 추천 검색어 칩 동적 생성
     private fun setupSuggestionChips() {
         val suggestions = listOf("마블", "스파이더맨", "배트맨", "스타워즈", "해리포터")
         binding.chipGroupSuggestions.removeAllViews()
@@ -397,6 +417,7 @@ class SearchFragment : Fragment() {
     // - recentSearches: 검색어가 비어있을 때 최근 검색어 목록 표시 여부 결정
     // - searchResults: ViewModel의 debounce된 검색 결과 PagingData 수신
     // - loadStateFlow: 검색 결과의 로딩/에러/빈 상태에 따라 화면 전환
+    // 장르 목록 로드 완료 시 칩 텍스트 갱신 (프로세스 복원 대응)
     private fun observeGenres() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -409,6 +430,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 최근 검색어, 검색 결과 PagingData, LoadState를 각각 수집하여 UI 전환
     private fun observeData() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -475,6 +497,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 검색어 없이 장르 필터만 사용 중일 때 Discover 모드 칩 표시
     private fun updateDiscoverModeChip() {
         val query = viewModel.searchQuery.value
         val hasGenres = viewModel.selectedGenres.value.isNotEmpty()
@@ -499,6 +522,7 @@ class SearchFragment : Fragment() {
         }
     }
 
+    // 최근 검색어 섹션을 표시하고 다른 뷰를 숨김
     private fun showRecentSearches() {
         binding.recentSearchesSection.isVisible = true
         binding.emptyInitial.layoutEmpty.isVisible = false
@@ -507,12 +531,14 @@ class SearchFragment : Fragment() {
         binding.fabScrollTop.hide()
     }
 
+    // 소프트 키보드를 숨기고 검색 입력 포커스 해제
     private fun hideKeyboard() {
         val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
         binding.etSearch.clearFocus()
     }
 
+    // 검색 초기 안내 화면을 표시하고 다른 뷰를 숨김
     private fun showInitialState() {
         binding.recentSearchesSection.isVisible = false
         binding.emptyInitial.layoutEmpty.isVisible = true
@@ -521,6 +547,7 @@ class SearchFragment : Fragment() {
         binding.fabScrollTop.hide()
     }
 
+    // 다이얼로그 dismiss, Shimmer 중지, 어댑터 해제 및 바인딩 null 처리
     override fun onDestroyView() {
         super.onDestroyView()
         activeDialog?.dismiss()

@@ -11,6 +11,7 @@ import com.choo.moviefinder.BuildConfig
  * penaltyLog()만 사용하므로 앱이 크래시되지 않는다.
  */
 class StrictModeInitializer : Initializer<Unit> {
+    // 디버그 빌드에서 StrictMode ThreadPolicy와 VmPolicy를 설정한다
     override fun create(context: Context) {
         if (BuildConfig.DEBUG) {
             // 메인 스레드 정책: 디스크 읽기/쓰기, 네트워크 접근 감지
@@ -33,7 +34,7 @@ class StrictModeInitializer : Initializer<Unit> {
         }
     }
 
-    // Timber 초기화 후 실행 (로그 출력을 위해)
+    // TimberInitializer에 의존하여 Timber 초기화 후 실행되도록 한다
     override fun dependencies(): List<Class<out Initializer<*>>> =
         listOf(TimberInitializer::class.java)
 }

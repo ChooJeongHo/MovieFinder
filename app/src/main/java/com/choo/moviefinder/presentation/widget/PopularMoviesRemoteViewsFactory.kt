@@ -33,10 +33,12 @@ class PopularMoviesRemoteViewsFactory(
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
+    // 초기 생성 시 호출 (데이터는 onDataSetChanged에서 로드)
     override fun onCreate() {
         // Initial data will be loaded in onDataSetChanged
     }
 
+    // TMDB API에서 인기 영화 Top 10을 동기 호출로 가져옴
     override fun onDataSetChanged() {
         try {
             val url = "https://api.themoviedb.org/3/movie/popular" +
@@ -55,12 +57,15 @@ class PopularMoviesRemoteViewsFactory(
         }
     }
 
+    // 위젯 제거 시 영화 데이터 정리
     override fun onDestroy() {
         movies.clear()
     }
 
+    // 위젯에 표시할 영화 개수 반환
     override fun getCount(): Int = movies.size
 
+    // 지정 위치의 영화 RemoteViews 생성 (제목, 평점, 딥링크 클릭)
     override fun getViewAt(position: Int): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_movie_item)
 
@@ -83,6 +88,7 @@ class PopularMoviesRemoteViewsFactory(
         return views
     }
 
+    // 데이터 로딩 중 표시할 임시 뷰 반환
     override fun getLoadingView(): RemoteViews {
         return RemoteViews(context.packageName, R.layout.widget_movie_item).apply {
             setTextViewText(R.id.movie_title, context.getString(R.string.widget_loading))
@@ -90,12 +96,15 @@ class PopularMoviesRemoteViewsFactory(
         }
     }
 
+    // 뷰 타입 수 반환 (단일 타입)
     override fun getViewTypeCount(): Int = 1
 
+    // 영화 ID를 안정적인 아이템 ID로 반환
     override fun getItemId(position: Int): Long {
         return if (position < movies.size) movies[position].id.toLong() else position.toLong()
     }
 
+    // 안정적 ID 사용 여부 (영화 ID 기반)
     override fun hasStableIds(): Boolean = true
 
     companion object {

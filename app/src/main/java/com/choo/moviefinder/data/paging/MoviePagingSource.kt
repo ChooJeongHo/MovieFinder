@@ -12,6 +12,7 @@ class MoviePagingSource(
     private val year: Int? = null
 ) : PagingSource<Int, Movie>() {
 
+    // 새로고침 시 기준이 되는 페이지 키 계산
     override fun getRefreshKey(state: PagingState<Int, Movie>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
@@ -19,6 +20,7 @@ class MoviePagingSource(
         }
     }
 
+    // 검색 API를 호출하여 페이지 단위로 영화 목록 로드
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Movie> {
         val page = params.key ?: 1
         return try {

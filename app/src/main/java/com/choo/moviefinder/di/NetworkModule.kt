@@ -28,6 +28,7 @@ annotation class ImageOkHttpClient
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
+    // kotlinx.serialization JSON 파서를 설정하여 제공한다
     @Provides
     @Singleton
     fun provideJson(): Json = Json {
@@ -36,6 +37,7 @@ object NetworkModule {
         isLenient = true
     }
 
+    // API 통신용 OkHttpClient를 인증서 피닝과 API 키 인터셉터를 포함하여 제공한다
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
@@ -73,6 +75,7 @@ object NetworkModule {
             .build()
     }
 
+    // TMDB API 베이스 URL로 Retrofit 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit {
@@ -83,12 +86,14 @@ object NetworkModule {
             .build()
     }
 
+    // Retrofit으로 MovieApiService 구현체를 생성하여 제공한다
     @Provides
     @Singleton
     fun provideMovieApiService(retrofit: Retrofit): MovieApiService {
         return retrofit.create(MovieApiService::class.java)
     }
 
+    // 이미지 로딩용 OkHttpClient를 image.tmdb.org 인증서 피닝과 함께 제공한다
     @Provides
     @Singleton
     @ImageOkHttpClient
@@ -109,6 +114,7 @@ object NetworkModule {
             .build()
     }
 
+    // 실시간 네트워크 연결 상태 모니터를 제공한다
     @Provides
     @Singleton
     fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor {

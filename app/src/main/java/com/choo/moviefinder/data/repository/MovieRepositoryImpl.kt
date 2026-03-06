@@ -47,6 +47,7 @@ class MovieRepositoryImpl @Inject constructor(
     private val userRatingDao: UserRatingDao
 ) : MovieRepository {
 
+    // 현재 상영작을 RemoteMediator 기반 오프라인 캐시로 페이징 조회
     @OptIn(ExperimentalPagingApi::class)
     override fun getNowPlayingMovies(): Flow<PagingData<Movie>> {
         return Pager(
@@ -64,6 +65,7 @@ class MovieRepositoryImpl @Inject constructor(
         ).flow.map { pagingData -> pagingData.map { it.toDomain() } }
     }
 
+    // 인기 영화를 RemoteMediator 기반 오프라인 캐시로 페이징 조회
     @OptIn(ExperimentalPagingApi::class)
     override fun getPopularMovies(): Flow<PagingData<Movie>> {
         return Pager(
@@ -81,6 +83,7 @@ class MovieRepositoryImpl @Inject constructor(
         ).flow.map { pagingData -> pagingData.map { it.toDomain() } }
     }
 
+    // 검색어와 연도 필터로 영화를 네트워크 페이징 검색
     override fun searchMovies(query: String, year: Int?): Flow<PagingData<Movie>> {
         return Pager(
             config = Constants.DEFAULT_PAGING_CONFIG,
@@ -90,6 +93,7 @@ class MovieRepositoryImpl @Inject constructor(
         ).flow
     }
 
+    // 장르와 정렬 기준으로 영화를 탐색 (Discover API)
     override fun discoverMovies(
         genres: Set<Int>,
         sortBy: String,
@@ -104,11 +108,13 @@ class MovieRepositoryImpl @Inject constructor(
         ).flow
     }
 
+    // 영화 상세 정보를 API에서 조회
     override suspend fun getMovieDetail(movieId: Int): MovieDetail {
         require(movieId > 0) { "Movie ID must be positive" }
         return apiService.getMovieDetail(movieId).toDomain()
     }
 
+    // 영화 출연진 정보를 order 기준 정렬하여 조회
     override suspend fun getMovieCredits(movieId: Int): List<Cast> {
         require(movieId > 0) { "Movie ID must be positive" }
         return apiService.getMovieCredits(movieId).cast
@@ -116,11 +122,13 @@ class MovieRepositoryImpl @Inject constructor(
             .map { it.toDomain() }
     }
 
+    // 비슷한 영화 목록을 API에서 조회
     override suspend fun getSimilarMovies(movieId: Int): List<Movie> {
         require(movieId > 0) { "Movie ID must be positive" }
         return apiService.getSimilarMovies(movieId).results.map { it.toDomain() }
     }
 
+    // YouTube 예고편 키 조회 (공식 Trailer 우선, YouTube 영상 폴백)
     override suspend fun getMovieTrailerKey(movieId: Int): String? {
         require(movieId > 0) { "Movie ID must be positive" }
         val response = apiService.getMovieVideos(movieId)
@@ -133,11 +141,13 @@ class MovieRepositoryImpl @Inject constructor(
                 .firstOrNull()?.key
     }
 
+    // 영화 리뷰 목록을 API에서 조회
     override suspend fun getMovieReviews(movieId: Int): List<Review> {
         require(movieId > 0) { "Movie ID must be positive" }
         return apiService.getMovieReviews(movieId).results.map { it.toDomain() }
     }
 
+    // 영화 콘텐츠 등급 조회 (KR 우선, US 폴백)
     override suspend fun getMovieCertification(movieId: Int): String? {
         require(movieId > 0) { "Movie ID must be positive" }
         val response = apiService.getMovieReleaseDates(movieId)
@@ -150,85 +160,99 @@ class MovieRepositoryImpl @Inject constructor(
             .firstOrNull { it.isNotBlank() }
     }
 
+    // 영화 장르 목록을 API에서 조회
     override suspend fun getGenreList(): List<Genre> {
         return apiService.getGenreList().toDomain()
     }
 
+    // 즐겨찾기 영화 목록을 실시간 Flow로 조회
     override fun getFavoriteMovies(): Flow<List<Movie>> {
         return favoriteMovieDao.getAllFavorites().map { entities ->
             entities.map { it.toDomain() }
         }
     }
 
+    // 즐겨찾기 상태 토글 (추가/삭제)
     override suspend fun toggleFavorite(movie: Movie) {
         favoriteMovieDao.toggleFavorite(movie.toEntity())
     }
 
+    // 해당 영화의 즐겨찾기 여부를 실시간 관찰
     override fun isFavorite(movieId: Int): Flow<Boolean> {
         return favoriteMovieDao.isFavorite(movieId)
     }
 
+    // 최근 검색어 목록을 문자열 리스트로 조회
     override fun getRecentSearches(): Flow<List<String>> {
         return recentSearchDao.getRecentSearches().map { entities ->
             entities.map { it.query }
         }
     }
 
+    // 검색어를 trim 후 DB에 저장
     override suspend fun saveSearchQuery(query: String) {
         val trimmed = query.trim()
         require(trimmed.isNotBlank()) { "Search query must not be blank" }
         recentSearchDao.insert(RecentSearchEntity(query = trimmed))
     }
 
+    // 특정 검색어 삭제
     override suspend fun deleteSearchQuery(query: String) {
         recentSearchDao.delete(query)
     }
 
+    // 모든 검색 기록 삭제
     override suspend fun clearSearchHistory() {
         recentSearchDao.clearAll()
     }
 
-    // Watch History
+    // 최근 시청 기록을 도메인 모델로 변환하여 조회
     override fun getWatchHistory(): Flow<List<Movie>> {
         return watchHistoryDao.getRecentHistory(Constants.WATCH_HISTORY_LIMIT).map { entities ->
             entities.map { it.toDomain() }
         }
     }
 
+    // 영화를 시청 기록에 저장
     override suspend fun saveWatchHistory(movie: Movie) {
         watchHistoryDao.insert(movie.toWatchHistoryEntity())
     }
 
+    // 모든 시청 기록 삭제
     override suspend fun clearWatchHistory() {
         watchHistoryDao.clearAll()
     }
 
-    // Watchlist
+    // 워치리스트 영화 목록을 실시간 Flow로 조회
     override fun getWatchlistMovies(): Flow<List<Movie>> {
         return watchlistDao.getAllWatchlist().map { entities ->
             entities.map { it.toDomain() }
         }
     }
 
+    // 워치리스트 상태 토글 (추가/삭제)
     override suspend fun toggleWatchlist(movie: Movie) {
         watchlistDao.toggleWatchlist(movie.toWatchlistEntity())
     }
 
+    // 해당 영화의 워치리스트 여부를 실시간 관찰
     override fun isInWatchlist(movieId: Int): Flow<Boolean> {
         return watchlistDao.isInWatchlist(movieId)
     }
 
-    // User Rating
+    // 영화의 사용자 평점을 실시간 Flow로 조회
     override fun getUserRating(movieId: Int): Flow<Float?> {
         return userRatingDao.getRating(movieId)
     }
 
+    // 사용자 영화 평점 저장 (0.5~5.0 범위 검증)
     override suspend fun setUserRating(movieId: Int, rating: Float) {
         require(movieId > 0) { "Movie ID must be positive" }
         require(rating in 0.5f..5.0f) { "Rating must be between 0.5 and 5.0" }
         userRatingDao.insertRating(UserRatingEntity(movieId = movieId, rating = rating))
     }
 
+    // 사용자 영화 평점 삭제
     override suspend fun deleteUserRating(movieId: Int) {
         userRatingDao.deleteRating(movieId)
     }

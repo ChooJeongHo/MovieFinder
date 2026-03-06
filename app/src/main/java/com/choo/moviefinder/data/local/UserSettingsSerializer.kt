@@ -10,6 +10,7 @@ object UserSettingsSerializer : Serializer<UserSettings> {
 
     override val defaultValue: UserSettings = UserSettings()
 
+    // InputStream에서 JSON을 읽어 UserSettings로 역직렬화
     override suspend fun readFrom(input: InputStream): UserSettings {
         return try {
             Json.decodeFromString(
@@ -22,6 +23,7 @@ object UserSettingsSerializer : Serializer<UserSettings> {
         }
     }
 
+    // UserSettings를 JSON으로 직렬화하여 OutputStream에 기록
     override suspend fun writeTo(t: UserSettings, output: OutputStream) {
         output.write(
             Json.encodeToString(UserSettings.serializer(), t).encodeToByteArray()

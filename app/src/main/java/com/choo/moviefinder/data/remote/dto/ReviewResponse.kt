@@ -25,6 +25,7 @@ data class ReviewDto(
     @SerialName("url") val url: String = ""
 )
 
+// ReviewDto를 도메인 Review 모델로 변환
 fun ReviewDto.toDomain() = Review(
     id = id,
     author = author,

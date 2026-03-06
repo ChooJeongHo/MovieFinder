@@ -21,12 +21,14 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
 
+    // Preferences DataStore 인스턴스를 제공한다
     @Provides
     @Singleton
     fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> {
         return context.dataStore
     }
 
+    // 타입 안전 UserSettings DataStore를 JSON 직렬화 기반으로 제공한다
     @Provides
     @Singleton
     fun provideUserSettingsDataStore(@ApplicationContext context: Context): DataStore<UserSettings> {

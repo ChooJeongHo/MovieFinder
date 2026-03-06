@@ -12,6 +12,7 @@ class PreferencesRepositoryImpl @Inject constructor(
     private val userSettingsStore: DataStore<UserSettings>
 ) : PreferencesRepository {
 
+    // 저장된 테마 모드를 Flow로 조회 (잘못된 값은 SYSTEM으로 복구)
     override fun getThemeMode(): Flow<ThemeMode> {
         return userSettingsStore.data.map { settings ->
             try {
@@ -23,6 +24,7 @@ class PreferencesRepositoryImpl @Inject constructor(
         }
     }
 
+    // 테마 모드를 DataStore에 저장
     override suspend fun setThemeMode(themeMode: ThemeMode) {
         userSettingsStore.updateData { current ->
             current.copy(themeMode = themeMode.name)

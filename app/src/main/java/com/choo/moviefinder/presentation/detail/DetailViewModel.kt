@@ -82,6 +82,7 @@ class DetailViewModel @Inject constructor(
         loadMovieDetail()
     }
 
+    // 영화 상세/출연진/비슷한 영화/리뷰/예고편/등급 6개 API 병렬 호출
     fun loadMovieDetail() {
         viewModelScope.launch {
             if (!loadingMutex.tryLock()) return@launch
@@ -126,22 +127,26 @@ class DetailViewModel @Inject constructor(
         }
     }
 
+    // 부분 실패 허용 로드 (실패 시 빈 리스트 반환)
     private suspend fun <T> loadOptional(tag: String, block: suspend () -> List<T>): List<T> =
         runCatching { block() }
             .onFailure { Timber.w(it, "Failed to load %s for movie %d", tag, movieId) }
             .getOrElse { emptyList() }
 
+    // 부분 실패 허용 로드 (실패 시 null 반환)
     private suspend fun <T> loadOptionalNullable(tag: String, block: suspend () -> T?): T? =
         runCatching { block() }
             .onFailure { Timber.w(it, "Failed to load %s for movie %d", tag, movieId) }
             .getOrNull()
 
+    // 영화 상세 화면 진입 시 시청 기록을 Room DB에 저장
     private suspend fun saveWatchHistory(detail: com.choo.moviefinder.domain.model.MovieDetail) {
         val movie = detail.toMovie()
         runCatching { saveWatchHistoryUseCase(movie) }
             .onFailure { Timber.w(it, "Failed to save watch history for movie %d", movieId) }
     }
 
+    // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleFavorite() = launchWithSnackbar {
         val state = _uiState.value
         if (state is DetailUiState.Success) {
@@ -149,6 +154,7 @@ class DetailViewModel @Inject constructor(
         }
     }
 
+    // 워치리스트 토글 및 개봉일 알림 예약/취소
     fun toggleWatchlist() = launchWithSnackbar {
         val state = _uiState.value
         if (state is DetailUiState.Success) {
@@ -168,16 +174,19 @@ class DetailViewModel @Inject constructor(
         }
     }
 
+    // 사용자 영화 평점을 Room DB에 저장
     fun setUserRating(rating: Float) = launchWithSnackbar {
         setUserRatingUseCase(movieId, rating)
         Timber.d("User rating set to %.1f for movie %d", rating, movieId)
     }
 
+    // 사용자 영화 평점을 Room DB에서 삭제
     fun deleteUserRating() = launchWithSnackbar {
         deleteUserRatingUseCase(movieId)
         Timber.d("User rating deleted for movie %d", movieId)
     }
 
+    // 코루틴 실행 후 예외 발생 시 Snackbar 에러 이벤트 전송
     private fun launchWithSnackbar(block: suspend () -> Unit) {
         viewModelScope.launch {
             try {
@@ -190,6 +199,7 @@ class DetailViewModel @Inject constructor(
         }
     }
 
+    // MovieDetail을 Movie 도메인 모델로 변환
     private fun com.choo.moviefinder.domain.model.MovieDetail.toMovie() = Movie(
         id = id,
         title = title,

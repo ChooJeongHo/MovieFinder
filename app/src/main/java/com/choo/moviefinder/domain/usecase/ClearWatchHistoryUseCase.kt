@@ -6,5 +6,6 @@ import javax.inject.Inject
 class ClearWatchHistoryUseCase @Inject constructor(
     private val repository: MovieRepository
 ) {
+    // 모든 시청 기록을 삭제한다
     suspend operator fun invoke() = repository.clearWatchHistory()
 }

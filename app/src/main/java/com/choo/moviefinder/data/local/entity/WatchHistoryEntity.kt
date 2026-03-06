@@ -21,6 +21,7 @@ data class WatchHistoryEntity(
     val watchedAt: Long = System.currentTimeMillis()
 )
 
+// 시청 기록 Entity를 도메인 Movie 모델로 변환
 fun WatchHistoryEntity.toDomain() = Movie(
     id = id,
     title = title,
@@ -32,6 +33,7 @@ fun WatchHistoryEntity.toDomain() = Movie(
     voteCount = voteCount
 )
 
+// 도메인 Movie를 시청 기록 Entity로 변환
 fun Movie.toWatchHistoryEntity() = WatchHistoryEntity(
     id = id,
     title = title,

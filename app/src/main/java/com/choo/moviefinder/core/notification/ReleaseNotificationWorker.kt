@@ -20,6 +20,7 @@ class ReleaseNotificationWorker(
     workerParams: WorkerParameters
 ) : Worker(context, workerParams) {
 
+    // 개봉일 알림을 생성하여 사용자에게 표시한다
     override fun doWork(): Result {
         val movieId = inputData.getInt(KEY_MOVIE_ID, -1)
         val movieTitle = inputData.getString(KEY_MOVIE_TITLE) ?: return Result.failure()

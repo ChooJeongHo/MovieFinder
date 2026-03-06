@@ -49,6 +49,7 @@ class FavoriteViewModel @Inject constructor(
     private val _snackbarEvent = Channel<ErrorType>(Channel.BUFFERED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
+    // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleFavorite(movie: Movie) {
         viewModelScope.launch {
             try {
@@ -62,10 +63,12 @@ class FavoriteViewModel @Inject constructor(
         }
     }
 
+    // 정렬 순서 변경
     fun onSortOrderSelected(sort: FavoriteSortOrder) {
         _sortOrder.value = sort
     }
 
+    // 워치리스트 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleWatchlist(movie: Movie) {
         viewModelScope.launch {
             try {

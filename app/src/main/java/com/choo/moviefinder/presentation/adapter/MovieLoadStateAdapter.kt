@@ -13,6 +13,7 @@ class MovieLoadStateAdapter(
     private val retry: () -> Unit
 ) : LoadStateAdapter<MovieLoadStateAdapter.LoadStateViewHolder>() {
 
+    // 로딩/에러 상태 footer ViewHolder 생성
     override fun onCreateViewHolder(parent: ViewGroup, loadState: LoadState): LoadStateViewHolder {
         val binding = ItemLoadStateBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
@@ -20,6 +21,7 @@ class MovieLoadStateAdapter(
         return LoadStateViewHolder(binding)
     }
 
+    // 로딩 상태에 따라 ProgressBar 또는 에러 메시지 표시
     override fun onBindViewHolder(holder: LoadStateViewHolder, loadState: LoadState) {
         holder.bind(loadState)
     }
@@ -32,6 +34,7 @@ class MovieLoadStateAdapter(
             binding.btnRetry.setOnClickListener { retry() }
         }
 
+        // LoadState에 따라 로딩/에러 UI 전환
         fun bind(loadState: LoadState) {
             binding.progressBar.isVisible = loadState is LoadState.Loading
             binding.tvErrorMessage.isVisible = loadState is LoadState.Error

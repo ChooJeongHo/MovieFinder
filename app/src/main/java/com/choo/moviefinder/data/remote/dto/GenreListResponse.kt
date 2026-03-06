@@ -9,6 +9,7 @@ data class GenreListResponse(
     @SerialName("genres") val genres: List<GenreDto> = emptyList()
 )
 
+// GenreListResponse를 도메인 Genre 리스트로 변환
 fun GenreListResponse.toDomain(): List<Genre> = genres.map {
     Genre(id = it.id, name = it.name)
 }

@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var offlineSnackbar: Snackbar? = null
 
+    // 스플래시 화면 설정, 네비게이션 초기화 및 네트워크 상태 감지를 시작한다
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -84,6 +85,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // 기존 Activity에서 새 딥링크 Intent를 수신하여 처리한다
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         val navHostFragment = supportFragmentManager
@@ -97,6 +99,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // TMDB 웹 URL 딥링크를 파싱하여 영화 상세 화면으로 이동한다
     private fun handleTmdbDeepLink(intent: Intent) {
         if (intent.action != Intent.ACTION_VIEW) return
         val uri = intent.data ?: return
