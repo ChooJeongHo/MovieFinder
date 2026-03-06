@@ -175,8 +175,9 @@ class MovieRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveSearchQuery(query: String) {
-        require(query.isNotBlank()) { "Search query must not be blank" }
-        recentSearchDao.insert(RecentSearchEntity(query = query.trim()))
+        val trimmed = query.trim()
+        require(trimmed.isNotBlank()) { "Search query must not be blank" }
+        recentSearchDao.insert(RecentSearchEntity(query = trimmed))
     }
 
     override suspend fun deleteSearchQuery(query: String) {

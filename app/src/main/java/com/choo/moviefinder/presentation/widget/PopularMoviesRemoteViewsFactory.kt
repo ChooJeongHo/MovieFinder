@@ -42,13 +42,13 @@ class PopularMoviesRemoteViewsFactory(
             val url = "https://api.themoviedb.org/3/movie/popular" +
                 "?api_key=${BuildConfig.TMDB_API_KEY}&language=ko-KR&page=1"
             val request = Request.Builder().url(url).build()
-            val response = client.newCall(request).execute()
-            val body = response.body?.string()
-
-            if (response.isSuccessful && body != null) {
-                val movieResponse = json.decodeFromString<WidgetMovieListResponse>(body)
-                movies.clear()
-                movies.addAll(movieResponse.results.take(MAX_MOVIES))
+            client.newCall(request).execute().use { response ->
+                val body = response.body?.string()
+                if (response.isSuccessful && body != null) {
+                    val movieResponse = json.decodeFromString<WidgetMovieListResponse>(body)
+                    movies.clear()
+                    movies.addAll(movieResponse.results.take(MAX_MOVIES))
+                }
             }
         } catch (e: Exception) {
             Timber.w(e, "Widget: Failed to fetch popular movies")

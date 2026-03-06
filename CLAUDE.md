@@ -81,7 +81,7 @@ app/src/main/java/com/choo/moviefinder/
 │   └── BaselineProfileGenerator.kt # 앱 시작 시나리오
 ├── data/                  # 데이터 레이어
 │   ├── local/
-│   │   ├── MovieDatabase.kt       # Room DB (version 8)
+│   │   ├── MovieDatabase.kt       # Room DB (version 9)
 │   │   ├── PreferencesRepositoryImpl.kt # DataStore 기반 설정 저장소
 │   │   ├── dao/                   # DAO (6개)
 │   │   │   ├── FavoriteMovieDao.kt  # abstract class (@Transaction toggleFavorite)
@@ -659,6 +659,11 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Per-App Language: `locales_config.xml` + `AppCompatDelegate.setApplicationLocales()` (시스템 설정 연동)
 - [x] Gradle Convention Plugins: `buildSrc/AndroidConfig` 공유 상수 (compileSdk, minSdk, targetSdk, Java 버전)
 - [x] R8 Full Mode: `android.enableR8.fullMode=true` (최적화 강화, ProGuard 규칙 보강)
+- [x] 검색어 저장 trim 순서 수정: `trim()` 후 `isNotBlank()` 검증 (공백만 있는 쿼리 방어)
+- [x] 딥링크 movieId 검증 강화: `movieId <= 0` 방어 추가 (음수/0 ID 네비게이션 차단)
+- [x] 캐시 삭제 안정성: `try-finally`로 memoryCache 실패해도 diskCache 클리어 보장
+- [x] DetailViewModel 보일러플레이트 제거: `launchWithSnackbar` 헬퍼 추출 (4개 함수 중복 try-catch 통합)
+- [x] 위젯 리소스 누수 수정: OkHttp `response.use {}` 패턴으로 Response 자동 닫힘 보장
 
 ## 보너스 기능 구현 현황
 - [x] 다크 모드 지원 (MaterialComponents.DayNight 테마 + 테마 대응 아이콘/색상)
@@ -742,3 +747,8 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Per-App Language (locales_config.xml, AppCompatDelegate.setApplicationLocales)
 - [x] Gradle Convention Plugins (buildSrc/AndroidConfig 공유 빌드 상수)
 - [x] R8 Full Mode (최적화 강화, ProGuard 규칙 보강)
+- [x] 검색어 저장 trim 순서 수정 (공백 쿼리 방어)
+- [x] 딥링크 movieId 검증 강화 (음수/0 ID 차단)
+- [x] 캐시 삭제 안정성 (try-finally memoryCache/diskCache 보장)
+- [x] DetailViewModel launchWithSnackbar 헬퍼 (중복 try-catch 4곳 통합)
+- [x] 위젯 OkHttp Response 리소스 누수 수정 (response.use 패턴)

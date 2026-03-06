@@ -108,6 +108,7 @@ class MainActivity : AppCompatActivity() {
             // TMDB URL 형식: /movie/550 또는 /movie/550-fight-club
             val movieSegment = uri.pathSegments[1]
             val movieId = movieSegment.split("-").firstOrNull()?.toIntOrNull() ?: return
+            if (movieId <= 0) return
 
             val navHostFragment = supportFragmentManager
                 .findFragmentById(R.id.nav_host_fragment) as NavHostFragment

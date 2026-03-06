@@ -142,76 +142,49 @@ class DetailViewModel @Inject constructor(
             .onFailure { Timber.w(it, "Failed to save watch history for movie %d", movieId) }
     }
 
-    fun toggleFavorite() {
-        viewModelScope.launch {
-            try {
-                val state = _uiState.value
-                if (state is DetailUiState.Success) {
-                    val movie = state.movieDetail.toMovie()
-                    toggleFavoriteUseCase(movie)
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _snackbarEvent.send(
-                    ErrorMessageProvider.getErrorType(e)
+    fun toggleFavorite() = launchWithSnackbar {
+        val state = _uiState.value
+        if (state is DetailUiState.Success) {
+            toggleFavoriteUseCase(state.movieDetail.toMovie())
+        }
+    }
+
+    fun toggleWatchlist() = launchWithSnackbar {
+        val state = _uiState.value
+        if (state is DetailUiState.Success) {
+            val wasInWatchlist = isInWatchlist.value
+            val movie = state.movieDetail.toMovie()
+            toggleWatchlistUseCase(movie)
+            if (!wasInWatchlist) {
+                val detail = state.movieDetail
+                releaseNotificationScheduler.schedule(
+                    movieId = detail.id,
+                    movieTitle = detail.title,
+                    releaseDate = detail.releaseDate
                 )
+            } else {
+                releaseNotificationScheduler.cancel(movieId)
             }
         }
     }
 
-    fun toggleWatchlist() {
-        viewModelScope.launch {
-            try {
-                val state = _uiState.value
-                if (state is DetailUiState.Success) {
-                    val wasInWatchlist = isInWatchlist.value
-                    val movie = state.movieDetail.toMovie()
-                    toggleWatchlistUseCase(movie)
-                    if (!wasInWatchlist) {
-                        val detail = state.movieDetail
-                        releaseNotificationScheduler.schedule(
-                            movieId = detail.id,
-                            movieTitle = detail.title,
-                            releaseDate = detail.releaseDate
-                        )
-                    } else {
-                        releaseNotificationScheduler.cancel(movieId)
-                    }
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _snackbarEvent.send(
-                    ErrorMessageProvider.getErrorType(e)
-                )
-            }
-        }
+    fun setUserRating(rating: Float) = launchWithSnackbar {
+        setUserRatingUseCase(movieId, rating)
+        Timber.d("User rating set to %.1f for movie %d", rating, movieId)
     }
 
-    fun setUserRating(rating: Float) {
-        viewModelScope.launch {
-            try {
-                setUserRatingUseCase(movieId, rating)
-                Timber.d("User rating set to %.1f for movie %d", rating, movieId)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.w(e, "Failed to set user rating for movie %d", movieId)
-                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
-            }
-        }
+    fun deleteUserRating() = launchWithSnackbar {
+        deleteUserRatingUseCase(movieId)
+        Timber.d("User rating deleted for movie %d", movieId)
     }
 
-    fun deleteUserRating() {
+    private fun launchWithSnackbar(block: suspend () -> Unit) {
         viewModelScope.launch {
             try {
-                deleteUserRatingUseCase(movieId)
-                Timber.d("User rating deleted for movie %d", movieId)
+                block()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Timber.w(e, "Failed to delete user rating for movie %d", movieId)
                 _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
             }
         }

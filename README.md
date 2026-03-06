@@ -306,6 +306,11 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 - **FavoriteFragment 탭 전환**: `submitList(emptyList())`로 stale data 방지
 - **장르 칩 오버플로우**: 3개 이상 선택 시 "장르 N개" 카운트 표시
 - **WATCH_HISTORY_LIMIT 상수 추출**: WatchHistoryDao 파라미터화로 매직 넘버 제거
+- **검색어 저장 trim 순서 수정**: `trim()` 후 `isNotBlank()` 검증 (공백 쿼리 방어)
+- **딥링크 movieId 검증 강화**: 음수/0 ID 네비게이션 차단
+- **캐시 삭제 안정성**: `try-finally`로 memoryCache 실패해도 diskCache 클리어 보장
+- **DetailViewModel 보일러플레이트 제거**: `launchWithSnackbar` 헬퍼로 중복 try-catch 통합
+- **위젯 리소스 누수 수정**: OkHttp `response.use {}` 패턴으로 Response 자동 닫힘 보장
 
 ## Setup
 
