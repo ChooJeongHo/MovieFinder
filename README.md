@@ -66,6 +66,7 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── home/              # 홈 화면 (시청 기록 포함)
 │   ├── search/            # 검색 화면 (장르/정렬 필터)
 │   ├── settings/          # 설정 화면 (테마/캐시/시청기록 관리)
+│   ├── stats/             # 시청 통계 화면 (총 시청/월별/평균 별점/장르 Top 3)
 │   └── widget/            # 홈 화면 위젯 (PopularMoviesWidget)
 ├── di/                    # Hilt DI 모듈
 ├── MainActivity.kt        # NavHostFragment + 딥링크 + 네트워크 Snackbar
@@ -132,11 +133,20 @@ app/src/main/java/com/choo/moviefinder/
 
 - **테마 설정**: 라이트/다크/시스템 전환 (Typed DataStore 저장)
 - **언어 설정**: 한국어/영어/시스템 전환 (Per-App Language, `AppCompatDelegate.setApplicationLocales()`)
+- **시청 통계**: Settings → StatsFragment 네비게이션
 - **캐시 삭제**: Coil 이미지 메모리 + 디스크 캐시 클리어
 - **시청 기록 삭제**: Room DB 시청 기록 전체 삭제
 - **앱 정보**: 버전 표시 (BuildConfig)
 - **에러 처리**: 설정 변경 실패 시 앱 크래시 방지 (try-catch + CancellationException rethrow)
 - BottomNavigationView 4번째 탭
+
+### 5-1. 시청 통계 화면
+
+- **총 시청 편수 / 이번 달 시청 편수**: WatchHistoryDao Flow 기반 실시간 갱신
+- **내 평균 별점**: UserRatingDao AVG 쿼리 (평점 없을 시 안내 텍스트)
+- **장르 Top 3**: WatchHistoryEntity genres 필드 → 빈도 계산
+- **stateIn 패턴**: Room Flow 자동 갱신, retry 불필요
+- 4개 MaterialCardView 카드 UI
 
 ### 6. 홈 화면 위젯
 - **인기 영화 Top 10** 목록 위젯 (AppWidgetProvider + RemoteViewsService)
@@ -311,6 +321,7 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 - **캐시 삭제 안정성**: `try-finally`로 memoryCache 실패해도 diskCache 클리어 보장
 - **DetailViewModel 보일러플레이트 제거**: `launchWithSnackbar` 헬퍼로 중복 try-catch 통합
 - **위젯 리소스 누수 수정**: OkHttp `response.use {}` 패턴으로 Response 자동 닫힘 보장
+- **시청 통계 화면**: 총 시청/이번 달/평균 별점/장르 Top 3 (stateIn + combine 패턴, Room DB v10)
 - **MovieDetail.toMovie()**: ViewModel private 확장 함수 → 도메인 모델 멤버 함수로 이동 (재사용성 향상)
 - **saveWatchHistory 분리**: `coroutineScope` 밖으로 이동하여 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
 - **FAB 연타 방어**: `toggleMutex.withLock()`으로 즐겨찾기/워치리스트 동시 실행 방지

@@ -89,15 +89,15 @@ app/src/main/java/com/choo/moviefinder/
 │   │   │   ├── CachedMovieDao.kt  # 오프라인 캐시 (PagingSource 반환)
 │   │   │   ├── RemoteKeyDao.kt    # 페이징 키 관리
 │   │   │   ├── UserRatingDao.kt    # 사용자 평점 (CRUD)
-│   │   │   ├── WatchHistoryDao.kt # 시청 기록 (최근 20개)
+│   │   │   ├── WatchHistoryDao.kt # 시청 기록 (최근 20개, 통계 쿼리 3개)
 │   │   │   └── WatchlistDao.kt    # abstract class (@Transaction toggleWatchlist)
 │   │   └── entity/                # Room Entity (7개)
 │   │       ├── FavoriteMovieEntity.kt  # 인덱스: addedAt
 │   │       ├── RecentSearchEntity.kt  # 인덱스: timestamp
 │   │       ├── CachedMovieEntity.kt    # 인덱스: category, 복합PK: id+category
 │   │       ├── RemoteKeyEntity.kt      # lastUpdated 타임스탬프 포함
-│   │       ├── UserRatingEntity.kt      # 사용자 영화 평점 (PK: movieId)
-│   │       ├── WatchHistoryEntity.kt   # 인덱스: watchedAt
+│   │       ├── UserRatingEntity.kt      # 사용자 영화 평점 (PK: movieId, AVG 쿼리)
+│   │       ├── WatchHistoryEntity.kt   # 인덱스: watchedAt, genres 필드
 │   │       └── WatchlistEntity.kt      # 인덱스: addedAt
 │   ├── paging/
 │   │   ├── MoviePagingSource.kt       # 네트워크 전용 PagingSource (검색용)
@@ -112,9 +112,9 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── NetworkModule.kt   # Retrofit/OkHttp 제공 (API key interceptor, Certificate Pinning, @ImageOkHttpClient, NetworkMonitor)
 │   └── RepositoryModule.kt # Repository 바인딩 (Movie + Preferences)
 ├── domain/                # 도메인 레이어
-│   ├── model/             # 도메인 모델 (Movie, MovieDetail(toMovie()), Cast, Review, ThemeMode)
+│   ├── model/             # 도메인 모델 (Movie, MovieDetail(toMovie()), Cast, Review, ThemeMode, WatchStats, GenreCount)
 │   ├── repository/        # Repository 인터페이스
-│   └── usecase/           # UseCase 클래스 (30개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점 포함)
+│   └── usecase/           # UseCase 클래스 (31개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점/시청통계 포함)
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 (7개) + MovieGridViewHolder + MovieListViewHolder (뷰 모드별 ViewHolder)
 │   ├── common/            # CircularRatingView (커스텀 뷰), GridLayoutManagerFactory (LoadState-aware 그리드)
@@ -123,6 +123,7 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── home/              # 홈 화면 (HomeFragment, HomeViewModel, 시청 기록, 탭 상태 저장)
 │   ├── search/            # 검색 화면 (SearchFragment, SearchViewModel, 장르/정렬 필터, SavedStateHandle)
 │   ├── settings/          # 설정 화면 (SettingsFragment, SettingsViewModel, 테마/캐시/시청기록 관리)
+│   ├── stats/             # 시청 통계 화면 (StatsFragment, StatsViewModel, stateIn 패턴)
 │   └── widget/            # 홈 화면 위젯 (PopularMoviesWidget, RemoteViewsService/Factory)
 ├── MainActivity.kt        # 진입점 (AppCompatActivity + NavHostFragment + 딥링크 처리 + 네트워크 Snackbar)
 └── MovieFinderApp.kt      # Application 클래스 (@HiltAndroidApp, Coil 캐시 설정 + Certificate Pinning + NotificationChannel)
@@ -222,9 +223,21 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **테마 설정**: 라이트/다크/시스템 전환 (MaterialAlertDialog 단일 선택)
 - **캐시 삭제**: Coil 메모리 + 디스크 캐시 클리어
 - **시청 기록 삭제**: WatchHistoryDao.clearAll() + Channel 기반 성공/에러 이벤트 분리
+- **시청 통계**: Settings → StatsFragment 네비게이션 (Navigation Component action)
 - **앱 정보**: `getString(R.string.settings_version, VERSION_NAME)` 포맷으로 표시
 - BottomNavigationView 4번째 탭으로 접근
 - **에러 처리**: setThemeMode/clearWatchHistory에 try-catch + CancellationException rethrow + Snackbar 에러 피드백
+
+### 5-1. 시청 통계 화면 (StatsFragment)
+- **총 시청 편수**: `WatchHistoryDao.getTotalCount()` Flow
+- **이번 달 시청 편수**: `WatchHistoryDao.getCountSince()` + kotlinx-datetime 월 시작 계산
+- **내 평균 별점**: `UserRatingDao.getAverageRating()` Flow (평점 없을 시 "아직 평점을 매기지 않았습니다")
+- **가장 많이 본 장르 Top 3**: `WatchHistoryEntity.genres` 콤마 split → 빈도 계산 → `GenreCount` (장르 없을 시 빈 상태 표시)
+- **GetWatchStatsUseCase**: 4개 Room Flow를 `combine()`으로 합성 → `WatchStats` 도메인 모델
+- **StatsViewModel**: `stateIn(WhileSubscribed(5000))` + `map` + `catch` 패턴 (Room Flow 자동 갱신, retry 불필요)
+- **StatsUiState**: sealed class (Loading/Success/Error)
+- 4개 MaterialCardView로 통계 카드 표시
+- Settings → Stats: Navigation Component `action_settings_to_stats` (slide 애니메이션)
 
 ### 6. 딥링크 지원
 - **커스텀 스킴**: `moviefinder://movie/{movieId}` (Navigation Component 자동 처리)
@@ -437,7 +450,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - 스키마 export 위치: `app/schemas/`
 - Entity: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity
 - 데이터베이스 이름: `movie_finder_db`
-- 데이터베이스 버전: 9
+- 데이터베이스 버전: 10
 - Destructive migration fallback 적용 (개발 환경)
 - 인덱스: CachedMovieEntity(category), FavoriteMovieEntity(addedAt), RecentSearchEntity(timestamp), WatchHistoryEntity(watchedAt), WatchlistEntity(addedAt)
 
@@ -529,6 +542,7 @@ Repository Settings > Secrets and variables > Actions에서:
 | `fragment_detail.xml` | CoordinatorLayout + CollapsingToolbar + NestedScrollView + FAB |
 | `fragment_favorite.xml` | Toolbar + TabLayout + RecyclerView + EmptyState |
 | `fragment_settings.xml` | Toolbar + NestedScrollView + 설정 항목 목록 |
+| `fragment_stats.xml` | Toolbar + ProgressBar + 4개 MaterialCardView (시청 통계) |
 | `item_movie_grid.xml` | 그리드용 영화 카드 |
 | `item_movie_horizontal.xml` | 가로 스크롤용 영화 카드 |
 | `item_cast.xml` | 출연진 아이템 |
@@ -752,6 +766,10 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 캐시 삭제 안정성 (try-finally memoryCache/diskCache 보장)
 - [x] DetailViewModel launchWithSnackbar 헬퍼 (중복 try-catch 4곳 통합)
 - [x] 위젯 OkHttp Response 리소스 누수 수정 (response.use 패턴)
+- [x] 시청 통계 화면 (StatsFragment, 총 시청/이번 달/평균 별점/장르 Top 3, stateIn 패턴)
+- [x] WatchHistoryEntity genres 필드 추가 (Room DB v10, 장르 통계용)
+- [x] GetWatchStatsUseCase: 4개 Room Flow combine + kotlinx-datetime 월 시작 계산
+- [x] SaveWatchHistoryUseCase genres 파라미터 추가 (DetailViewModel에서 장르 전달)
 - [x] MovieDetail.toMovie() 도메인 이동: ViewModel private 확장 함수 → MovieDetail 멤버 함수 (재사용성 향상)
 - [x] saveWatchHistory coroutineScope 분리: 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
 - [x] FAB 연타 방어: toggleMutex.withLock()으로 즐겨찾기/워치리스트 동시 실행 방지
