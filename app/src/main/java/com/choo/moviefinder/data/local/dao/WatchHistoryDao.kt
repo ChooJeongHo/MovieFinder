@@ -21,4 +21,16 @@ interface WatchHistoryDao {
     // 모든 시청 기록 삭제
     @Query("DELETE FROM watch_history")
     suspend fun clearAll()
+
+    // 총 시청 편수 조회
+    @Query("SELECT COUNT(*) FROM watch_history")
+    fun getTotalCount(): Flow<Int>
+
+    // 특정 시점 이후 시청 편수 조회
+    @Query("SELECT COUNT(*) FROM watch_history WHERE watchedAt >= :since")
+    fun getCountSince(since: Long): Flow<Int>
+
+    // 모든 시청 기록의 장르 문자열 조회
+    @Query("SELECT genres FROM watch_history WHERE genres != ''")
+    fun getAllGenres(): Flow<List<String>>
 }

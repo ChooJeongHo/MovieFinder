@@ -256,4 +256,29 @@ class MovieRepositoryImpl @Inject constructor(
     override suspend fun deleteUserRating(movieId: Int) {
         userRatingDao.deleteRating(movieId)
     }
+
+    // 영화를 장르 정보와 함께 시청 기록에 저장
+    override suspend fun saveWatchHistoryWithGenres(movie: Movie, genres: String) {
+        watchHistoryDao.insert(movie.toWatchHistoryEntity(genres))
+    }
+
+    // 총 시청 편수를 실시간 Flow로 조회
+    override fun getTotalWatchedCount(): Flow<Int> {
+        return watchHistoryDao.getTotalCount()
+    }
+
+    // 특정 시점 이후 시청 편수를 실시간 Flow로 조회
+    override fun getWatchedCountSince(since: Long): Flow<Int> {
+        return watchHistoryDao.getCountSince(since)
+    }
+
+    // 모든 시청 기록의 장르 문자열 목록을 실시간 Flow로 조회
+    override fun getAllWatchedGenres(): Flow<List<String>> {
+        return watchHistoryDao.getAllGenres()
+    }
+
+    // 모든 사용자 평점의 평균을 실시간 Flow로 조회
+    override fun getAverageUserRating(): Flow<Float?> {
+        return userRatingDao.getAverageRating()
+    }
 }

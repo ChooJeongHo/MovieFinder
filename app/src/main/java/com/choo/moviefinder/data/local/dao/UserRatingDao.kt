@@ -21,4 +21,8 @@ interface UserRatingDao {
     // 영화의 사용자 평점 삭제
     @Query("DELETE FROM user_ratings WHERE movieId = :movieId")
     suspend fun deleteRating(movieId: Int)
+
+    // 모든 사용자 평점의 평균 조회
+    @Query("SELECT AVG(rating) FROM user_ratings")
+    fun getAverageRating(): Flow<Float?>
 }

@@ -12,6 +12,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import coil3.imageLoader
 import com.choo.moviefinder.BuildConfig
 import com.choo.moviefinder.R
@@ -52,12 +53,20 @@ class SettingsFragment : Fragment() {
         observeEvents()
     }
 
-    // 테마, 언어, 캐시 삭제, 시청기록 삭제 항목 클릭 리스너 등록
+    // 테마, 언어, 통계, 캐시 삭제, 시청기록 삭제 항목 클릭 리스너 등록
     private fun setupClickListeners() {
         binding.itemTheme.setOnClickListener { showThemeDialog() }
         binding.itemLanguage.setOnClickListener { showLanguageDialog() }
+        binding.itemStats.setOnClickListener { navigateToStats() }
         binding.itemClearCache.setOnClickListener { showClearCacheDialog() }
         binding.itemClearWatchHistory.setOnClickListener { showClearWatchHistoryDialog() }
+    }
+
+    // 시청 통계 화면으로 이동
+    private fun navigateToStats() {
+        if (findNavController().currentDestination?.id == R.id.settingsFragment) {
+            findNavController().navigate(R.id.action_settings_to_stats)
+        }
     }
 
     // 앱 버전 정보 텍스트 설정

@@ -172,6 +172,20 @@
     <string name="language_english">English</string>
     <string name="language_system">System Default</string>
 
+    <!-- Watch Stats -->
+    <string name="stats_title">Watch Stats</string>
+    <string name="stats_total_watched">Total Movies Watched</string>
+    <string name="stats_monthly_watched">This Month</string>
+    <string name="stats_average_rating">My Average Rating</string>
+    <string name="stats_top_genres">Top 3 Genres</string>
+    <string name="stats_count_format">%d movies</string>
+    <string name="stats_rating_format">%.1f</string>
+    <string name="stats_no_rating">No ratings yet</string>
+    <string name="stats_no_genre_data">No genre data available</string>
+    <string name="stats_genre_item">%1$d. %2$s (%3$d movies)</string>
+    <string name="settings_stats">Watch Stats</string>
+    <string name="settings_stats_description">View your watching history and rating statistics</string>
+
     <!-- Release Notification -->
     <string name="notification_channel_name">Release Date Alerts</string>
     <string name="notification_channel_description">Get notified when your watchlist movies are released</string>

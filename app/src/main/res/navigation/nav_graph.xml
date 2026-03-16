@@ -39,7 +39,21 @@
         android:id="@+id/settingsFragment"
         android:name="com.choo.moviefinder.presentation.settings.SettingsFragment"
         android:label="@string/nav_settings"
-        tools:layout="@layout/fragment_settings" />
+        tools:layout="@layout/fragment_settings">
+        <action
+            android:id="@+id/action_settings_to_stats"
+            app:destination="@id/statsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/fade_out"
+            app:popEnterAnim="@anim/fade_in"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/statsFragment"
+        android:name="com.choo.moviefinder.presentation.stats.StatsFragment"
+        android:label="@string/stats_title"
+        tools:layout="@layout/fragment_stats" />
 
     <fragment
         android:id="@+id/detailFragment"

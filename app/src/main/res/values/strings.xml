@@ -172,6 +172,20 @@
     <string name="language_english">English</string>
     <string name="language_system">시스템 설정</string>
 
+    <!-- 시청 통계 -->
+    <string name="stats_title">시청 통계</string>
+    <string name="stats_total_watched">총 시청 편수</string>
+    <string name="stats_monthly_watched">이번 달 시청 편수</string>
+    <string name="stats_average_rating">내 평균 별점</string>
+    <string name="stats_top_genres">가장 많이 본 장르 Top 3</string>
+    <string name="stats_count_format">%d편</string>
+    <string name="stats_rating_format">%.1f점</string>
+    <string name="stats_no_rating">아직 평점을 매기지 않았습니다</string>
+    <string name="stats_no_genre_data">장르 데이터가 없습니다</string>
+    <string name="stats_genre_item">%1$d. %2$s (%3$d편)</string>
+    <string name="settings_stats">시청 통계</string>
+    <string name="settings_stats_description">내 시청 기록과 평점 통계를 확인합니다</string>
+
     <!-- 개봉일 알림 -->
     <string name="notification_channel_name">개봉일 알림</string>
     <string name="notification_channel_description">즐겨찾기한 영화의 개봉일을 알려줍니다</string>

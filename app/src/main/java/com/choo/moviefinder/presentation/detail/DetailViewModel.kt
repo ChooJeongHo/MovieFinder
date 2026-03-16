@@ -142,10 +142,11 @@ class DetailViewModel @Inject constructor(
             .onFailure { Timber.w(it, "Failed to load %s for movie %d", tag, movieId) }
             .getOrNull()
 
-    // 영화 상세 화면 진입 시 시청 기록을 Room DB에 저장
+    // 영화 상세 화면 진입 시 장르 정보와 함께 시청 기록을 Room DB에 저장
     private suspend fun saveWatchHistory(detail: MovieDetail) {
         val movie = detail.toMovie()
-        runCatching { saveWatchHistoryUseCase(movie) }
+        val genres = detail.genres.joinToString(",") { it.name }
+        runCatching { saveWatchHistoryUseCase(movie, genres) }
             .onFailure { Timber.w(it, "Failed to save watch history for movie %d", movieId) }
     }
 

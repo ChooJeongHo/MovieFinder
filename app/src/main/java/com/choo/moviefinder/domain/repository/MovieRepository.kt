@@ -95,4 +95,19 @@ interface MovieRepository {
 
     // 영화에 매긴 사용자 평점을 삭제한다
     suspend fun deleteUserRating(movieId: Int)
+
+    // 영화를 장르 정보와 함께 시청 기록에 저장한다
+    suspend fun saveWatchHistoryWithGenres(movie: Movie, genres: String)
+
+    // 총 시청 편수를 Flow로 반환한다
+    fun getTotalWatchedCount(): Flow<Int>
+
+    // 특정 시점 이후 시청 편수를 Flow로 반환한다
+    fun getWatchedCountSince(since: Long): Flow<Int>
+
+    // 모든 시청 기록의 장르 문자열 목록을 Flow로 반환한다
+    fun getAllWatchedGenres(): Flow<List<String>>
+
+    // 모든 사용자 평점의 평균을 Flow로 반환한다
+    fun getAverageUserRating(): Flow<Float?>
 }

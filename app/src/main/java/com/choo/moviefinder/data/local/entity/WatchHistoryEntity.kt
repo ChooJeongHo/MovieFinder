@@ -18,7 +18,8 @@ data class WatchHistoryEntity(
     val releaseDate: String,
     val voteAverage: Double,
     val voteCount: Int,
-    val watchedAt: Long = System.currentTimeMillis()
+    val watchedAt: Long = System.currentTimeMillis(),
+    val genres: String = ""
 )
 
 // 시청 기록 Entity를 도메인 Movie 모델로 변환
@@ -34,7 +35,7 @@ fun WatchHistoryEntity.toDomain() = Movie(
 )
 
 // 도메인 Movie를 시청 기록 Entity로 변환
-fun Movie.toWatchHistoryEntity() = WatchHistoryEntity(
+fun Movie.toWatchHistoryEntity(genres: String = "") = WatchHistoryEntity(
     id = id,
     title = title,
     posterPath = posterPath,
@@ -42,5 +43,6 @@ fun Movie.toWatchHistoryEntity() = WatchHistoryEntity(
     overview = overview,
     releaseDate = releaseDate,
     voteAverage = voteAverage,
-    voteCount = voteCount
+    voteCount = voteCount,
+    genres = genres
 )

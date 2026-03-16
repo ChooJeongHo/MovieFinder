@@ -108,7 +108,7 @@ class DetailViewModelTest {
         coEvery { getMovieTrailerUseCase(any()) } returns null
         coEvery { getMovieCertificationUseCase(any()) } returns null
         coEvery { getMovieReviewsUseCase(any()) } returns emptyList()
-        coEvery { saveWatchHistoryUseCase(any()) } returns Unit
+        coEvery { saveWatchHistoryUseCase(any(), any()) } returns Unit
 
         every { isFavoriteUseCase(any()) } returns flowOf(false)
         every { isInWatchlistUseCase(any()) } returns flowOf(false)
