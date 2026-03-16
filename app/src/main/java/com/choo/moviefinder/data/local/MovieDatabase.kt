@@ -33,16 +33,22 @@ import com.choo.moviefinder.data.local.entity.WatchlistEntity
 abstract class MovieDatabase : RoomDatabase() {
     // 즐겨찾기 영화 DAO 제공
     abstract fun favoriteMovieDao(): FavoriteMovieDao
+
     // 최근 검색어 DAO 제공
     abstract fun recentSearchDao(): RecentSearchDao
+
     // 캐시 영화 DAO 제공
     abstract fun cachedMovieDao(): CachedMovieDao
+
     // 원격 페이징 키 DAO 제공
     abstract fun remoteKeyDao(): RemoteKeyDao
+
     // 시청 기록 DAO 제공
     abstract fun watchHistoryDao(): WatchHistoryDao
+
     // 워치리스트 DAO 제공
     abstract fun watchlistDao(): WatchlistDao
+
     // 사용자 평점 DAO 제공
     abstract fun userRatingDao(): UserRatingDao
 }
