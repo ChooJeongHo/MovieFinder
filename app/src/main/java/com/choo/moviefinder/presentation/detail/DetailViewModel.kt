@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
-import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.DeleteUserRatingUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
@@ -27,6 +27,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -64,10 +65,11 @@ class DetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
-    private val _snackbarEvent = Channel<ErrorType>(Channel.BUFFERED)
+    private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
     private val loadingMutex = Mutex()
+    private val toggleMutex = Mutex()
 
     val isFavorite = isFavoriteUseCase(movieId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -88,6 +90,7 @@ class DetailViewModel @Inject constructor(
             if (!loadingMutex.tryLock()) return@launch
             _uiState.value = DetailUiState.Loading
             try {
+                val detail: MovieDetail
                 coroutineScope {
                     val detailDeferred = async { getMovieDetailUseCase(movieId) }
                     val creditsDeferred = async {
@@ -106,7 +109,7 @@ class DetailViewModel @Inject constructor(
                         loadOptionalNullable("cert") { getMovieCertificationUseCase(movieId) }
                     }
 
-                    val detail = detailDeferred.await()
+                    detail = detailDeferred.await()
                     _uiState.value = DetailUiState.Success(
                         movieDetail = detail,
                         credits = creditsDeferred.await(),
@@ -115,8 +118,8 @@ class DetailViewModel @Inject constructor(
                         certification = certDeferred.await(),
                         reviews = reviewsDeferred.await()
                     )
-                    saveWatchHistory(detail)
                 }
+                saveWatchHistory(detail)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -140,7 +143,7 @@ class DetailViewModel @Inject constructor(
             .getOrNull()
 
     // 영화 상세 화면 진입 시 시청 기록을 Room DB에 저장
-    private suspend fun saveWatchHistory(detail: com.choo.moviefinder.domain.model.MovieDetail) {
+    private suspend fun saveWatchHistory(detail: MovieDetail) {
         val movie = detail.toMovie()
         runCatching { saveWatchHistoryUseCase(movie) }
             .onFailure { Timber.w(it, "Failed to save watch history for movie %d", movieId) }
@@ -148,28 +151,32 @@ class DetailViewModel @Inject constructor(
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleFavorite() = launchWithSnackbar {
-        val state = _uiState.value
-        if (state is DetailUiState.Success) {
-            toggleFavoriteUseCase(state.movieDetail.toMovie())
+        toggleMutex.withLock {
+            val state = _uiState.value
+            if (state is DetailUiState.Success) {
+                toggleFavoriteUseCase(state.movieDetail.toMovie())
+            }
         }
     }
 
     // 워치리스트 토글 및 개봉일 알림 예약/취소
     fun toggleWatchlist() = launchWithSnackbar {
-        val state = _uiState.value
-        if (state is DetailUiState.Success) {
-            val wasInWatchlist = isInWatchlist.value
-            val movie = state.movieDetail.toMovie()
-            toggleWatchlistUseCase(movie)
-            if (!wasInWatchlist) {
-                val detail = state.movieDetail
-                releaseNotificationScheduler.schedule(
-                    movieId = detail.id,
-                    movieTitle = detail.title,
-                    releaseDate = detail.releaseDate
-                )
-            } else {
-                releaseNotificationScheduler.cancel(movieId)
+        toggleMutex.withLock {
+            val state = _uiState.value
+            if (state is DetailUiState.Success) {
+                val wasInWatchlist = isInWatchlist.value
+                val movie = state.movieDetail.toMovie()
+                toggleWatchlistUseCase(movie)
+                if (!wasInWatchlist) {
+                    val detail = state.movieDetail
+                    releaseNotificationScheduler.schedule(
+                        movieId = detail.id,
+                        movieTitle = detail.title,
+                        releaseDate = detail.releaseDate
+                    )
+                } else {
+                    releaseNotificationScheduler.cancel(movieId)
+                }
             }
         }
     }
@@ -198,16 +205,4 @@ class DetailViewModel @Inject constructor(
             }
         }
     }
-
-    // MovieDetail을 Movie 도메인 모델로 변환
-    private fun com.choo.moviefinder.domain.model.MovieDetail.toMovie() = Movie(
-        id = id,
-        title = title,
-        posterPath = posterPath,
-        backdropPath = backdropPath,
-        overview = overview,
-        releaseDate = releaseDate,
-        voteAverage = voteAverage,
-        voteCount = voteCount
-    )
 }

@@ -55,7 +55,7 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── repository/        # Repository 구현체
 │   └── util/              # 상수 (PAGE_SIZE, PREFETCH_DISTANCE, DEFAULT_PAGING_CONFIG, 언어 코드)
 ├── domain/                # 도메인 레이어 (순수 Kotlin)
-│   ├── model/             # Movie, MovieDetail, Cast, Review, Genre, ThemeMode
+│   ├── model/             # Movie, MovieDetail(toMovie()), Cast, Review, Genre, ThemeMode
 │   ├── repository/        # Repository 인터페이스
 │   └── usecase/           # UseCase 30개
 ├── presentation/          # 프레젠테이션 레이어
@@ -112,11 +112,11 @@ app/src/main/java/com/choo/moviefinder/
 - **콘텐츠 등급 배지**: release_dates API로 KR→US 폴백 등급 Chip 표시
 - **영화 공유**: Toolbar 메뉴에서 Intent.ACTION_SEND (제목, 개봉일, 줄거리, TMDB 링크)
 - **부분 실패 처리**: 출연진/비슷한 영화/예고편/등급 API 실패 시 빈 리스트/null로 대체 (Timber 로깅)
-- **중복 호출 방지**: `Mutex.tryLock()` 기반 원자적 로딩 가드로 중복 API 호출 차단 (에러 후 재시도 가능)
+- **중복 호출 방지**: `Mutex.tryLock()` 기반 원자적 로딩 가드로 중복 API 호출 차단 (에러 후 재시도 가능), FAB 연타 방지 `toggleMutex.withLock()`
 - **출연진 정렬**: `order` 필드 기준 오름차순 정렬
 - **사용자 평점**: RatingBar로 0.5~5.0 별점 매기기 (Room DB 저장), 삭제 버튼으로 평점 초기화
 - **ChipGroup**으로 장르 칩 동적 추가
-- **FAB 즐겨찾기/워치리스트 토글**: `@Transaction` 원자적 처리 + bounce 애니메이션 (연타 스태킹 방지) + 실패 시 Channel → Snackbar 피드백
+- **FAB 즐겨찾기/워치리스트 토글**: `@Transaction` 원자적 처리 + bounce 애니메이션 (연타 스태킹 방지) + `toggleMutex.withLock()` 동시 실행 방지 + 실패 시 Channel(CONFLATED) → Snackbar 피드백
 - **예고편 재생**: TMDB Videos API → YouTube 앱/웹 브라우저 연결
 - **Shared Element Transition**: 홈/검색/즐겨찾기 → 상세 화면 포스터 이미지 공유 전환
 
@@ -311,6 +311,10 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 - **캐시 삭제 안정성**: `try-finally`로 memoryCache 실패해도 diskCache 클리어 보장
 - **DetailViewModel 보일러플레이트 제거**: `launchWithSnackbar` 헬퍼로 중복 try-catch 통합
 - **위젯 리소스 누수 수정**: OkHttp `response.use {}` 패턴으로 Response 자동 닫힘 보장
+- **MovieDetail.toMovie()**: ViewModel private 확장 함수 → 도메인 모델 멤버 함수로 이동 (재사용성 향상)
+- **saveWatchHistory 분리**: `coroutineScope` 밖으로 이동하여 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
+- **FAB 연타 방어**: `toggleMutex.withLock()`으로 즐겨찾기/워치리스트 동시 실행 방지
+- **Channel.CONFLATED**: 스낵바 이벤트 채널을 BUFFERED(64) → CONFLATED로 축소 (최신 이벤트만 유지)
 
 ## Setup
 

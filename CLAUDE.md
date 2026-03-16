@@ -112,13 +112,13 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── NetworkModule.kt   # Retrofit/OkHttp 제공 (API key interceptor, Certificate Pinning, @ImageOkHttpClient, NetworkMonitor)
 │   └── RepositoryModule.kt # Repository 바인딩 (Movie + Preferences)
 ├── domain/                # 도메인 레이어
-│   ├── model/             # 도메인 모델 (Movie, MovieDetail, Cast, Review, ThemeMode)
+│   ├── model/             # 도메인 모델 (Movie, MovieDetail(toMovie()), Cast, Review, ThemeMode)
 │   ├── repository/        # Repository 인터페이스
 │   └── usecase/           # UseCase 클래스 (30개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점 포함)
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 (7개) + MovieGridViewHolder + MovieListViewHolder (뷰 모드별 ViewHolder)
 │   ├── common/            # CircularRatingView (커스텀 뷰), GridLayoutManagerFactory (LoadState-aware 그리드)
-│   ├── detail/            # 영화 상세 화면 (DetailFragment, DetailViewModel, Mutex 중복 호출 방지)
+│   ├── detail/            # 영화 상세 화면 (DetailFragment, DetailViewModel, Mutex 중복 호출/연타 방지)
 │   ├── favorite/          # 즐겨찾기/워치리스트 화면 (FavoriteFragment, FavoriteViewModel, TabLayout 탭 전환, 정렬, FavoriteSortOrder)
 │   ├── home/              # 홈 화면 (HomeFragment, HomeViewModel, 시청 기록, 탭 상태 저장)
 │   ├── search/            # 검색 화면 (SearchFragment, SearchViewModel, 장르/정렬 필터, SavedStateHandle)
@@ -200,9 +200,9 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - 상세/출연진/비슷한 영화/예고편/등급/리뷰 6개 API를 async로 병렬 호출
 - **시청 기록 자동 저장**: 상세 화면 진입 시 Room DB에 저장
 - **부분 실패 처리**: 출연진/비슷한 영화/예고편/등급/리뷰 API 실패 시 빈 리스트/null로 대체 (상세 정보는 유지, `loadOptional`/`loadOptionalNullable` 헬퍼)
-- **중복 호출 방지**: `Mutex.tryLock()` 기반 원자적 로딩 가드로 중복 API 호출 차단 (에러 후 재시도 가능)
+- **중복 호출 방지**: `Mutex.tryLock()` 기반 원자적 로딩 가드로 중복 API 호출 차단 (에러 후 재시도 가능), FAB 연타 방지 `toggleMutex.withLock()`
 - **재시도 UI**: 에러 시 재시도 버튼 비활성화 → 완료 후 재활성화
-- **즐겨찾기 토글 실패 피드백**: Channel → `receiveAsFlow()` → Snackbar로 에러 메시지 표시 (이벤트 유실 방지)
+- **즐겨찾기 토글 실패 피드백**: Channel(CONFLATED) → `receiveAsFlow()` → Snackbar로 에러 메시지 표시 (이벤트 유실 방지)
 - **출연진 정렬**: `order` 필드 기준 오름차순 정렬
 - **사용자 평점**: RatingBar로 0.5~5.0 별점 매기기 (Room DB 저장), 삭제 버튼
 - NestedScrollView 기반 스크롤
@@ -584,7 +584,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] StrictMode: 디버그 전용 디스크/네트워크 접근 감지 (App Startup)
 - [x] Gradle Configuration Cache: 빌드 속도 최적화
 - [x] ErrorType 확장: SSL, PARSE 에러 타입 추가 (SSLException, SerializationException, IOException 매핑)
-- [x] Channel 기반 일회성 이벤트: DetailViewModel Snackbar 이벤트 유실 방지 (SharedFlow → Channel)
+- [x] Channel 기반 일회성 이벤트: DetailViewModel Snackbar 이벤트 유실 방지 (SharedFlow → Channel(CONFLATED))
 - [x] 검색 즉시 실행: merge(debounced, immediate) 패턴으로 검색 버튼 즉시 반응
 - [x] CircularRatingView 접근성: contentDescription으로 평점 값 음성 출력
 - [x] postponeEnterTransition 타임아웃: 500ms (이미지 로딩 실패 시 무한 대기 방지)
@@ -632,7 +632,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Discover 모드 표시: 검색어 없이 필터 탐색 시 Chip 표시
 - [x] 검색 자동완성: 입력 중 최근 검색어 필터링 제안
 - [x] 검색어 trim 처리: onSearch 시 공백 제거
-- [x] DetailViewModel Mutex 로딩 가드: @Volatile isLoading → Mutex.tryLock() 원자적 처리
+- [x] DetailViewModel Mutex 로딩 가드: @Volatile isLoading → Mutex.tryLock() 원자적 처리, FAB 연타 방지 toggleMutex.withLock()
 - [x] 장르 칩 복원 개선: API 미로드 시 개수 표시, 로드 완료 시 이름 갱신
 - [x] FavoriteFragment 탭 전환 스크롤 초기화: scrollToPosition(0)으로 이전 탭 스크롤 위치 제거
 - [x] FavoriteFragment 다이얼로그 생명주기: activeDialog 추가, onDestroyView() dismiss
@@ -698,7 +698,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Channel 기반 일회성 UI 이벤트 (Snackbar 이벤트 유실 방지)
 - [x] 검색 즉시 실행 (merge 패턴: debounced + immediate flow)
 - [x] 홈 화면 탭 상태 저장 (savedInstanceState로 화면 회전 시 복원)
-- [x] DetailViewModel 중복 호출 방지 (isLoading 플래그)
+- [x] DetailViewModel 중복 호출 방지 (isLoading 플래그) + FAB 연타 방지 (toggleMutex)
 - [x] 재시도 버튼 debounce (로딩 중 비활성화)
 - [x] 부분 API 실패 Timber 로깅 (credits/similar/trailer)
 - [x] CircularRatingView draw 캐싱 (onSizeChanged)
@@ -752,3 +752,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 캐시 삭제 안정성 (try-finally memoryCache/diskCache 보장)
 - [x] DetailViewModel launchWithSnackbar 헬퍼 (중복 try-catch 4곳 통합)
 - [x] 위젯 OkHttp Response 리소스 누수 수정 (response.use 패턴)
+- [x] MovieDetail.toMovie() 도메인 이동: ViewModel private 확장 함수 → MovieDetail 멤버 함수 (재사용성 향상)
+- [x] saveWatchHistory coroutineScope 분리: 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
+- [x] FAB 연타 방어: toggleMutex.withLock()으로 즐겨찾기/워치리스트 동시 실행 방지
+- [x] Channel.BUFFERED → Channel.CONFLATED: 스낵바 이벤트에 적합한 최소 버퍼로 축소
