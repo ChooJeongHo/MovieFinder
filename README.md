@@ -116,6 +116,7 @@ app/src/main/java/com/choo/moviefinder/
 - **중복 호출 방지**: `Mutex.tryLock()` 기반 원자적 로딩 가드로 중복 API 호출 차단 (에러 후 재시도 가능), FAB 연타 방지 `toggleMutex.withLock()`
 - **출연진 정렬**: `order` 필드 기준 오름차순 정렬
 - **사용자 평점**: RatingBar로 0.5~5.0 별점 매기기 (Room DB 저장), 삭제 버튼으로 평점 초기화
+- **영화 메모**: 영화별 메모 작성/수정/삭제 (MemoEntity, Room DB v11, MemoAdapter, stateIn 패턴)
 - **ChipGroup**으로 장르 칩 동적 추가
 - **FAB 즐겨찾기/워치리스트 토글**: `@Transaction` 원자적 처리 + bounce 애니메이션 (연타 스태킹 방지) + `toggleMutex.withLock()` 동시 실행 방지 + 실패 시 Channel(CONFLATED) → Snackbar 피드백
 - **예고편 재생**: TMDB Videos API → YouTube 앱/웹 브라우저 연결
@@ -325,6 +326,7 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 - **위젯 리소스 누수 수정**: OkHttp `response.use {}` 패턴으로 Response 자동 닫힘 보장
 - **시청 통계 화면**: 총 시청/이번 달/평균 별점/장르 Top 3 (stateIn + combine 패턴, Room DB v10)
 - **장르 파이차트 / 월별 바차트**: PieChartView + BarChartView 커스텀 뷰 (Canvas, 접근성, 다크 모드 대응)
+- **영화 메모 기능**: MemoEntity + MemoDao + UseCase 4개 + MemoAdapter (Room DB v11)
 - **MovieDetail.toMovie()**: ViewModel private 확장 함수 → 도메인 모델 멤버 함수로 이동 (재사용성 향상)
 - **saveWatchHistory 분리**: `coroutineScope` 밖으로 이동하여 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
 - **FAB 연타 방어**: `toggleMutex.withLock()`으로 즐겨찾기/워치리스트 동시 실행 방지

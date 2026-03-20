@@ -83,19 +83,21 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── local/
 │   │   ├── MovieDatabase.kt       # Room DB (version 9)
 │   │   ├── PreferencesRepositoryImpl.kt # DataStore 기반 설정 저장소
-│   │   ├── dao/                   # DAO (6개)
+│   │   ├── dao/                   # DAO (7개)
 │   │   │   ├── FavoriteMovieDao.kt  # abstract class (@Transaction toggleFavorite)
 │   │   │   ├── RecentSearchDao.kt
 │   │   │   ├── CachedMovieDao.kt  # 오프라인 캐시 (PagingSource 반환)
 │   │   │   ├── RemoteKeyDao.kt    # 페이징 키 관리
-│   │   │   ├── UserRatingDao.kt    # 사용자 평점 (CRUD)
-│   │   │   ├── WatchHistoryDao.kt # 시청 기록 (최근 20개, 통계 쿼리 3개)
+│   │   │   ├── MemoDao.kt           # 영화 메모 CRUD (movieId 인덱스)
+│   │   │   ├── UserRatingDao.kt    # 사용자 평점 (CRUD, AVG 쿼리)
+│   │   │   ├── WatchHistoryDao.kt # 시청 기록 (최근 20개, 통계 쿼리 3개, 월별 통계)
 │   │   │   └── WatchlistDao.kt    # abstract class (@Transaction toggleWatchlist)
-│   │   └── entity/                # Room Entity (7개)
+│   │   └── entity/                # Room Entity (8개)
 │   │       ├── FavoriteMovieEntity.kt  # 인덱스: addedAt
 │   │       ├── RecentSearchEntity.kt  # 인덱스: timestamp
 │   │       ├── CachedMovieEntity.kt    # 인덱스: category, 복합PK: id+category
 │   │       ├── RemoteKeyEntity.kt      # lastUpdated 타임스탬프 포함
+│   │       ├── MemoEntity.kt            # 영화 메모 (PK: autoGenerate, 인덱스: movieId)
 │   │       ├── UserRatingEntity.kt      # 사용자 영화 평점 (PK: movieId, AVG 쿼리)
 │   │       ├── WatchHistoryEntity.kt   # 인덱스: watchedAt, genres 필드
 │   │       └── WatchlistEntity.kt      # 인덱스: addedAt
@@ -112,11 +114,11 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── NetworkModule.kt   # Retrofit/OkHttp 제공 (API key interceptor, Certificate Pinning, @ImageOkHttpClient, NetworkMonitor)
 │   └── RepositoryModule.kt # Repository 바인딩 (Movie + Preferences)
 ├── domain/                # 도메인 레이어
-│   ├── model/             # 도메인 모델 (Movie, MovieDetail(toMovie()), Cast, Review, ThemeMode, WatchStats, GenreCount)
+│   ├── model/             # 도메인 모델 (Movie, MovieDetail(toMovie()), Cast, Review, ThemeMode, WatchStats, GenreCount, Memo)
 │   ├── repository/        # Repository 인터페이스
-│   └── usecase/           # UseCase 클래스 (31개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점/시청통계 포함)
+│   └── usecase/           # UseCase 클래스 (35개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점/시청통계/메모 포함)
 ├── presentation/          # 프레젠테이션 레이어
-│   ├── adapter/           # RecyclerView 어댑터 (7개) + MovieGridViewHolder + MovieListViewHolder (뷰 모드별 ViewHolder)
+│   ├── adapter/           # RecyclerView 어댑터 (8개) + MovieGridViewHolder + MovieListViewHolder (뷰 모드별 ViewHolder)
 │   ├── common/            # CircularRatingView, PieChartView, BarChartView (커스텀 뷰), GridLayoutManagerFactory (LoadState-aware 그리드)
 │   ├── detail/            # 영화 상세 화면 (DetailFragment, DetailViewModel, Mutex 중복 호출/연타 방지)
 │   ├── favorite/          # 즐겨찾기/워치리스트 화면 (FavoriteFragment, FavoriteViewModel, TabLayout 탭 전환, 정렬, FavoriteSortOrder)
@@ -206,6 +208,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **즐겨찾기 토글 실패 피드백**: Channel(CONFLATED) → `receiveAsFlow()` → Snackbar로 에러 메시지 표시 (이벤트 유실 방지)
 - **출연진 정렬**: `order` 필드 기준 오름차순 정렬
 - **사용자 평점**: RatingBar로 0.5~5.0 별점 매기기 (Room DB 저장), 삭제 버튼
+- **영화 메모**: 영화별 메모 작성/수정/삭제 (MemoEntity, Room DB v11, stateIn 패턴, RecyclerView MemoAdapter)
 - NestedScrollView 기반 스크롤
 
 ### 4. 즐겨찾기/워치리스트 화면 (FavoriteFragment)
@@ -294,6 +297,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 | `HorizontalMovieAdapter` | `ListAdapter` | 가로 스크롤 영화 카드 (비슷한 영화 + 시청 기록, transitionPrefix 파라미터) |
 | `ReviewAdapter` | `ListAdapter` | 상세 화면 리뷰 (클릭 시 확장/축소) |
 | `RecentSearchAdapter` | `ListAdapter` | 검색 화면 최근 검색어 |
+| `MemoAdapter` | `ListAdapter` | 상세 화면 메모 목록 (수정/삭제) |
 | `MovieLoadStateAdapter` | `LoadStateAdapter` | 페이징 로딩/에러 footer |
 | `MovieGridViewHolder` | `ViewHolder` | MoviePagingAdapter/MovieAdapter 공유 ViewHolder (그리드 뷰) |
 | `MovieListViewHolder` | `ViewHolder` | MoviePagingAdapter 리스트 뷰 ViewHolder |
@@ -453,9 +457,9 @@ Repository Settings > Secrets and variables > Actions에서:
 
 ### Room DB
 - 스키마 export 위치: `app/schemas/`
-- Entity: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity
+- Entity: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity, MemoEntity
 - 데이터베이스 이름: `movie_finder_db`
-- 데이터베이스 버전: 10
+- 데이터베이스 버전: 11
 - Destructive migration fallback 적용 (개발 환경)
 - 인덱스: CachedMovieEntity(category), FavoriteMovieEntity(addedAt), RecentSearchEntity(timestamp), WatchHistoryEntity(watchedAt), WatchlistEntity(addedAt)
 
@@ -782,6 +786,8 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 장르별 시청 비율 파이차트: PieChartView 커스텀 뷰 (Canvas 기반, 범례, 접근성)
 - [x] 월별 시청 편수 바차트: BarChartView 커스텀 뷰 (Canvas 기반, 최근 6개월, 그리드 라인)
 - [x] WatchHistoryDao 월별 통계 쿼리: strftime GROUP BY (MonthlyCount POJO)
+- [x] 영화 메모 기능: MemoEntity + MemoDao + 4개 UseCase (Get/Save/Update/Delete) + MemoAdapter
+- [x] 영화 메모 UI: 상세 화면 하단 메모 섹션 (TextInputLayout + RecyclerView + 수정/삭제)
 - [x] MovieDetail.toMovie() 도메인 이동: ViewModel private 확장 함수 → MovieDetail 멤버 함수 (재사용성 향상)
 - [x] saveWatchHistory coroutineScope 분리: 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
 - [x] FAB 연타 방어: toggleMutex.withLock()으로 즐겨찾기/워치리스트 동시 실행 방지

@@ -195,4 +195,16 @@
     <string name="notification_channel_name">개봉일 알림</string>
     <string name="notification_channel_description">즐겨찾기한 영화의 개봉일을 알려줍니다</string>
     <string name="notification_release_today">오늘 개봉합니다!</string>
+
+    <!-- 메모 -->
+    <string name="memo_title">내 메모</string>
+    <string name="memo_hint">이 영화에 대한 메모를 남겨보세요</string>
+    <string name="memo_save">메모 저장</string>
+    <string name="memo_edit">메모 수정</string>
+    <string name="memo_delete">메모 삭제</string>
+    <string name="memo_deleted">메모가 삭제되었습니다</string>
+    <string name="memo_saved">메모가 저장되었습니다</string>
+    <string name="memo_updated">메모가 수정되었습니다</string>
+    <string name="memo_edit_dialog_title">메모 수정</string>
+    <string name="memo_empty">아직 메모가 없습니다</string>
 </resources>

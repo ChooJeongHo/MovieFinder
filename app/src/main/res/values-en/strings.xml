@@ -195,4 +195,16 @@
     <string name="notification_channel_name">Release Date Alerts</string>
     <string name="notification_channel_description">Get notified when your watchlist movies are released</string>
     <string name="notification_release_today">Released today!</string>
+
+    <!-- Memos -->
+    <string name="memo_title">My Memos</string>
+    <string name="memo_hint">Write a memo about this movie</string>
+    <string name="memo_save">Save memo</string>
+    <string name="memo_edit">Edit memo</string>
+    <string name="memo_delete">Delete memo</string>
+    <string name="memo_deleted">Memo deleted</string>
+    <string name="memo_saved">Memo saved</string>
+    <string name="memo_updated">Memo updated</string>
+    <string name="memo_edit_dialog_title">Edit Memo</string>
+    <string name="memo_empty">No memos yet</string>
 </resources>

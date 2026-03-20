@@ -58,6 +58,10 @@ class DetailViewModelTest {
     private lateinit var getUserRatingUseCase: com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
     private lateinit var setUserRatingUseCase: com.choo.moviefinder.domain.usecase.SetUserRatingUseCase
     private lateinit var deleteUserRatingUseCase: com.choo.moviefinder.domain.usecase.DeleteUserRatingUseCase
+    private lateinit var getMemosUseCase: com.choo.moviefinder.domain.usecase.GetMemosUseCase
+    private lateinit var saveMemoUseCase: com.choo.moviefinder.domain.usecase.SaveMemoUseCase
+    private lateinit var updateMemoUseCase: com.choo.moviefinder.domain.usecase.UpdateMemoUseCase
+    private lateinit var deleteMemoUseCase: com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
     private lateinit var releaseNotificationScheduler: ReleaseNotificationScheduler
 
     private val testMovieDetail = MovieDetail(
@@ -101,7 +105,13 @@ class DetailViewModelTest {
         getUserRatingUseCase = mockk()
         setUserRatingUseCase = mockk()
         deleteUserRatingUseCase = mockk()
+        getMemosUseCase = mockk()
+        saveMemoUseCase = mockk()
+        updateMemoUseCase = mockk()
+        deleteMemoUseCase = mockk()
         releaseNotificationScheduler = mockk(relaxed = true)
+
+        every { getMemosUseCase(any()) } returns flowOf(emptyList())
 
         every { getUserRatingUseCase(any()) } returns flowOf(null)
 
@@ -137,6 +147,10 @@ class DetailViewModelTest {
             getUserRatingUseCase = getUserRatingUseCase,
             setUserRatingUseCase = setUserRatingUseCase,
             deleteUserRatingUseCase = deleteUserRatingUseCase,
+            getMemosUseCase = getMemosUseCase,
+            saveMemoUseCase = saveMemoUseCase,
+            updateMemoUseCase = updateMemoUseCase,
+            deleteMemoUseCase = deleteMemoUseCase,
             releaseNotificationScheduler = releaseNotificationScheduler
         )
     }

@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
+import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
 import com.choo.moviefinder.data.local.dao.UserRatingDao
@@ -11,6 +12,7 @@ import com.choo.moviefinder.data.local.dao.WatchHistoryDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.data.local.entity.CachedMovieEntity
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
+import com.choo.moviefinder.data.local.entity.MemoEntity
 import com.choo.moviefinder.data.local.entity.RecentSearchEntity
 import com.choo.moviefinder.data.local.entity.RemoteKeyEntity
 import com.choo.moviefinder.data.local.entity.UserRatingEntity
@@ -25,9 +27,10 @@ import com.choo.moviefinder.data.local.entity.WatchlistEntity
         RemoteKeyEntity::class,
         WatchHistoryEntity::class,
         WatchlistEntity::class,
-        UserRatingEntity::class
+        UserRatingEntity::class,
+        MemoEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 abstract class MovieDatabase : RoomDatabase() {
@@ -51,4 +54,7 @@ abstract class MovieDatabase : RoomDatabase() {
 
     // 사용자 평점 DAO 제공
     abstract fun userRatingDao(): UserRatingDao
+
+    // 메모 DAO 제공
+    abstract fun memoDao(): MemoDao
 }

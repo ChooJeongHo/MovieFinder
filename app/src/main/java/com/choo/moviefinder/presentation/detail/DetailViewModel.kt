@@ -7,8 +7,12 @@ import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.MovieDetail
+import com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
+import com.choo.moviefinder.domain.usecase.GetMemosUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.DeleteUserRatingUseCase
+import com.choo.moviefinder.domain.usecase.SaveMemoUseCase
+import com.choo.moviefinder.domain.usecase.UpdateMemoUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieReviewsUseCase
@@ -55,6 +59,10 @@ class DetailViewModel @Inject constructor(
     private val getUserRatingUseCase: GetUserRatingUseCase,
     private val setUserRatingUseCase: SetUserRatingUseCase,
     private val deleteUserRatingUseCase: DeleteUserRatingUseCase,
+    private val getMemosUseCase: GetMemosUseCase,
+    private val saveMemoUseCase: SaveMemoUseCase,
+    private val updateMemoUseCase: UpdateMemoUseCase,
+    private val deleteMemoUseCase: DeleteMemoUseCase,
     private val releaseNotificationScheduler: ReleaseNotificationScheduler
 ) : ViewModel() {
 
@@ -192,6 +200,24 @@ class DetailViewModel @Inject constructor(
     fun deleteUserRating() = launchWithSnackbar {
         deleteUserRatingUseCase(movieId)
         Timber.d("User rating deleted for movie %d", movieId)
+    }
+
+    val memos = getMemosUseCase(movieId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // 영화에 새 메모를 저장
+    fun saveMemo(content: String) = launchWithSnackbar {
+        saveMemoUseCase(movieId, content)
+    }
+
+    // 기존 메모 내용을 수정
+    fun updateMemo(memoId: Long, content: String) = launchWithSnackbar {
+        updateMemoUseCase(memoId, content)
+    }
+
+    // 메모를 삭제
+    fun deleteMemo(memoId: Long) = launchWithSnackbar {
+        deleteMemoUseCase(memoId)
     }
 
     // 코루틴 실행 후 예외 발생 시 Snackbar 에러 이벤트 전송

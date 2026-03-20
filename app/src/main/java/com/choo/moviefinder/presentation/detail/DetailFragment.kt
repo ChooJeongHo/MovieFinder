@@ -10,6 +10,7 @@ import android.transition.TransitionSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.RatingBar
 import android.widget.TextView
 import androidx.core.net.toUri
@@ -35,7 +36,9 @@ import com.choo.moviefinder.databinding.FragmentDetailBinding
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.presentation.adapter.CastAdapter
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
+import com.choo.moviefinder.presentation.adapter.MemoAdapter
 import com.choo.moviefinder.presentation.adapter.ReviewAdapter
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -56,6 +59,8 @@ class DetailFragment : Fragment() {
     private lateinit var castAdapter: CastAdapter
     private lateinit var similarMovieAdapter: HorizontalMovieAdapter
     private lateinit var reviewAdapter: ReviewAdapter
+    private lateinit var memoAdapter: MemoAdapter
+    private var memoEditDialog: android.app.Dialog? = null
 
     // Shared Element Transition 애니메이션 설정 (ChangeBounds + ChangeTransform + ChangeImageTransform)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,6 +101,8 @@ class DetailFragment : Fragment() {
         observeWatchlist()
         observeUserRating()
         observeSnackbar()
+        setupMemoInput()
+        observeMemos()
     }
 
     // 툴바 뒤로가기 및 공유 메뉴 설정
@@ -165,6 +172,18 @@ class DetailFragment : Fragment() {
         binding.rvReviews.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = reviewAdapter
+        }
+
+        memoAdapter = MemoAdapter(
+            onEditClick = { memo -> showEditMemoDialog(memo) },
+            onDeleteClick = { memo ->
+                viewModel.deleteMemo(memo.id)
+                Snackbar.make(binding.root, R.string.memo_deleted, Snackbar.LENGTH_SHORT).show()
+            }
+        )
+        binding.rvMemos.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = memoAdapter
         }
     }
 
@@ -479,12 +498,58 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 메모 입력 필드 및 저장 버튼 설정
+    private fun setupMemoInput() {
+        binding.tilMemo.setEndIconOnClickListener {
+            val content = binding.etMemo.text?.toString()?.trim().orEmpty()
+            if (content.isNotBlank()) {
+                viewModel.saveMemo(content)
+                binding.etMemo.text?.clear()
+            }
+        }
+    }
+
+    // 메모 목록을 수집하여 RecyclerView 갱신
+    private fun observeMemos() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.memos.collect { memos ->
+                    memoAdapter.submitList(memos)
+                }
+            }
+        }
+    }
+
+    // 메모 수정 다이얼로그 표시
+    private fun showEditMemoDialog(memo: com.choo.moviefinder.domain.model.Memo) {
+        val editText = EditText(requireContext()).apply {
+            setText(memo.content)
+            setPadding(64, 32, 64, 32)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            maxLines = 5
+        }
+        memoEditDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.memo_edit_dialog_title)
+            .setView(editText)
+            .setPositiveButton(R.string.confirm) { _, _ ->
+                val newContent = editText.text?.toString()?.trim().orEmpty()
+                if (newContent.isNotBlank()) {
+                    viewModel.updateMemo(memo.id, newContent)
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
     // 어댑터 해제 및 바인딩 null 처리로 메모리 누수 방지
     override fun onDestroyView() {
         super.onDestroyView()
         binding.rvCast.adapter = null
         binding.rvSimilar.adapter = null
         binding.rvReviews.adapter = null
+        memoEditDialog?.dismiss()
+        memoEditDialog = null
+        binding.rvMemos.adapter = null
         _binding = null
     }
 }

@@ -7,11 +7,13 @@ import androidx.paging.map
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
+import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
 import com.choo.moviefinder.data.local.dao.UserRatingDao
 import com.choo.moviefinder.data.local.dao.WatchHistoryDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
+import com.choo.moviefinder.data.local.entity.MemoEntity
 import com.choo.moviefinder.data.local.entity.RecentSearchEntity
 import com.choo.moviefinder.data.local.entity.UserRatingEntity
 import com.choo.moviefinder.data.local.entity.toDomain
@@ -26,6 +28,7 @@ import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.data.util.Constants
 import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Genre
+import com.choo.moviefinder.domain.model.Memo
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
@@ -45,7 +48,8 @@ class MovieRepositoryImpl @Inject constructor(
     private val remoteKeyDao: RemoteKeyDao,
     private val watchHistoryDao: WatchHistoryDao,
     private val watchlistDao: WatchlistDao,
-    private val userRatingDao: UserRatingDao
+    private val userRatingDao: UserRatingDao,
+    private val memoDao: MemoDao
 ) : MovieRepository {
 
     // 현재 상영작을 RemoteMediator 기반 오프라인 캐시로 페이징 조회
@@ -288,5 +292,39 @@ class MovieRepositoryImpl @Inject constructor(
         return watchHistoryDao.getMonthlyWatchCounts().map { counts ->
             counts.map { MonthlyWatchCount(yearMonth = it.yearMonth, count = it.count) }
         }
+    }
+
+    // 영화의 메모 목록을 최신순으로 실시간 Flow로 조회
+    override fun getMemos(movieId: Int): Flow<List<Memo>> {
+        require(movieId > 0) { "Movie ID must be positive" }
+        return memoDao.getMemosByMovieId(movieId).map { entities ->
+            entities.map {
+                Memo(
+                    id = it.id,
+                    movieId = it.movieId,
+                    content = it.content,
+                    createdAt = it.createdAt,
+                    updatedAt = it.updatedAt
+                )
+            }
+        }
+    }
+
+    // 새 메모를 저장
+    override suspend fun saveMemo(movieId: Int, content: String) {
+        require(movieId > 0) { "Movie ID must be positive" }
+        require(content.isNotBlank()) { "Memo content must not be blank" }
+        memoDao.insert(MemoEntity(movieId = movieId, content = content))
+    }
+
+    // 기존 메모 내용을 수정
+    override suspend fun updateMemo(memoId: Long, content: String) {
+        require(content.isNotBlank()) { "Memo content must not be blank" }
+        memoDao.updateMemo(memoId = memoId, content = content, updatedAt = System.currentTimeMillis())
+    }
+
+    // 메모를 삭제
+    override suspend fun deleteMemo(memoId: Long) {
+        memoDao.deleteMemo(memoId)
     }
 }

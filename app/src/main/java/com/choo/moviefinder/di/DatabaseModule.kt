@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
+import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
 import com.choo.moviefinder.data.local.dao.UserRatingDao
@@ -81,5 +82,12 @@ object DatabaseModule {
     @Singleton
     fun provideUserRatingDao(database: MovieDatabase): UserRatingDao {
         return database.userRatingDao()
+    }
+
+    // 메모 DAO를 제공한다
+    @Provides
+    @Singleton
+    fun provideMemoDao(database: MovieDatabase): MemoDao {
+        return database.memoDao()
     }
 }

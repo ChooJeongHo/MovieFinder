@@ -264,6 +264,44 @@
                 android:nestedScrollingEnabled="false"
                 android:visibility="gone" />
 
+            <!-- 메모 -->
+            <TextView
+                android:id="@+id/tv_memo_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_lg"
+                android:text="@string/memo_title"
+                android:textAppearance="?attr/textAppearanceHeadline6"
+                android:textStyle="bold" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_memo"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:hint="@string/memo_hint"
+                app:endIconMode="custom"
+                app:endIconDrawable="@drawable/ic_send"
+                app:endIconContentDescription="@string/memo_save">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_memo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:maxLines="4" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_memos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false" />
+
             <!-- 영화 정보 (확장) -->
             <TextView
                 android:id="@+id/tv_movie_info_label"

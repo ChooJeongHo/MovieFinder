@@ -2,6 +2,7 @@ package com.choo.moviefinder.domain.repository
 
 import androidx.paging.PagingData
 import com.choo.moviefinder.domain.model.Cast
+import com.choo.moviefinder.domain.model.Memo
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
@@ -114,4 +115,16 @@ interface MovieRepository {
 
     // 월별 시청 편수를 Flow로 반환한다
     fun getMonthlyWatchCounts(): Flow<List<MonthlyWatchCount>>
+
+    // 영화의 메모 목록을 Flow로 반환한다
+    fun getMemos(movieId: Int): Flow<List<Memo>>
+
+    // 영화에 메모를 저장한다
+    suspend fun saveMemo(movieId: Int, content: String)
+
+    // 메모 내용을 수정한다
+    suspend fun updateMemo(memoId: Long, content: String)
+
+    // 메모를 삭제한다
+    suspend fun deleteMemo(memoId: Long)
 }
