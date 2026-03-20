@@ -33,4 +33,12 @@ interface WatchHistoryDao {
     // 모든 시청 기록의 장르 문자열 조회
     @Query("SELECT genres FROM watch_history WHERE genres != ''")
     fun getAllGenres(): Flow<List<String>>
+
+    // 월별 시청 편수를 최근 6개월 기준으로 조회
+    @Query(
+        "SELECT strftime('%Y-%m', watchedAt / 1000, 'unixepoch', 'localtime') AS yearMonth, " +
+            "COUNT(*) AS count FROM watch_history " +
+            "GROUP BY yearMonth ORDER BY yearMonth DESC LIMIT 6"
+    )
+    fun getMonthlyWatchCounts(): Flow<List<MonthlyCount>>
 }

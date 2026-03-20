@@ -4,6 +4,7 @@ import androidx.paging.PagingData
 import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.model.MonthlyWatchCount
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.Review
 import kotlinx.coroutines.flow.Flow
@@ -110,4 +111,7 @@ interface MovieRepository {
 
     // 모든 사용자 평점의 평균을 Flow로 반환한다
     fun getAverageUserRating(): Flow<Float?>
+
+    // 월별 시청 편수를 Flow로 반환한다
+    fun getMonthlyWatchCounts(): Flow<List<MonthlyWatchCount>>
 }

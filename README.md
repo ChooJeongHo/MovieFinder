@@ -145,8 +145,10 @@ app/src/main/java/com/choo/moviefinder/
 - **총 시청 편수 / 이번 달 시청 편수**: WatchHistoryDao Flow 기반 실시간 갱신
 - **내 평균 별점**: UserRatingDao AVG 쿼리 (평점 없을 시 안내 텍스트)
 - **장르 Top 3**: WatchHistoryEntity genres 필드 → 빈도 계산
+- **장르별 시청 비율 파이차트**: PieChartView 커스텀 뷰 (Canvas 기반, 범례 + 접근성)
+- **월별 시청 편수 바차트**: BarChartView 커스텀 뷰 (Canvas 기반, 최근 6개월, 그리드 라인)
 - **stateIn 패턴**: Room Flow 자동 갱신, retry 불필요
-- 4개 MaterialCardView 카드 UI
+- 6개 MaterialCardView 카드 UI (기본 4개 + 파이차트 + 바차트)
 
 ### 6. 홈 화면 위젯
 - **인기 영화 Top 10** 목록 위젯 (AppWidgetProvider + RemoteViewsService)
@@ -322,6 +324,7 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 - **DetailViewModel 보일러플레이트 제거**: `launchWithSnackbar` 헬퍼로 중복 try-catch 통합
 - **위젯 리소스 누수 수정**: OkHttp `response.use {}` 패턴으로 Response 자동 닫힘 보장
 - **시청 통계 화면**: 총 시청/이번 달/평균 별점/장르 Top 3 (stateIn + combine 패턴, Room DB v10)
+- **장르 파이차트 / 월별 바차트**: PieChartView + BarChartView 커스텀 뷰 (Canvas, 접근성, 다크 모드 대응)
 - **MovieDetail.toMovie()**: ViewModel private 확장 함수 → 도메인 모델 멤버 함수로 이동 (재사용성 향상)
 - **saveWatchHistory 분리**: `coroutineScope` 밖으로 이동하여 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
 - **FAB 연타 방어**: `toggleMutex.withLock()`으로 즐겨찾기/워치리스트 동시 실행 방지

@@ -88,6 +88,13 @@ class StatsFragment : Fragment() {
             binding.tvAverageRating.text = getString(R.string.stats_no_rating)
         }
 
+        bindTopGenres(stats)
+        bindGenrePieChart(stats)
+        bindMonthlyBarChart(stats)
+    }
+
+    // 장르 Top 3 텍스트 바인딩
+    private fun bindTopGenres(stats: WatchStats) {
         binding.genreContainer.removeAllViews()
         if (stats.topGenres.isEmpty()) {
             binding.tvGenreEmpty.isVisible = true
@@ -100,6 +107,34 @@ class StatsFragment : Fragment() {
                 }
                 binding.genreContainer.addView(textView)
             }
+        }
+    }
+
+    // 장르별 시청 비율 파이차트 바인딩
+    private fun bindGenrePieChart(stats: WatchStats) {
+        if (stats.allGenreCounts.isEmpty()) {
+            binding.pieChartView.isVisible = false
+            binding.tvPieChartEmpty.isVisible = true
+        } else {
+            binding.pieChartView.isVisible = true
+            binding.tvPieChartEmpty.isVisible = false
+            binding.pieChartView.setData(
+                stats.allGenreCounts.map { it.name to it.count }
+            )
+        }
+    }
+
+    // 월별 시청 편수 바차트 바인딩
+    private fun bindMonthlyBarChart(stats: WatchStats) {
+        if (stats.monthlyWatchCounts.isEmpty()) {
+            binding.barChartView.isVisible = false
+            binding.tvBarChartEmpty.isVisible = true
+        } else {
+            binding.barChartView.isVisible = true
+            binding.tvBarChartEmpty.isVisible = false
+            binding.barChartView.setData(
+                stats.monthlyWatchCounts.map { it.yearMonth to it.count }
+            )
         }
     }
 

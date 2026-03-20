@@ -183,6 +183,11 @@
     <string name="stats_no_rating">No ratings yet</string>
     <string name="stats_no_genre_data">No genre data available</string>
     <string name="stats_genre_item">%1$d. %2$s (%3$d movies)</string>
+    <string name="stats_genre_chart_title">Genre Distribution</string>
+    <string name="stats_monthly_chart_title">Monthly Watch Count</string>
+    <string name="stats_no_monthly_data">No monthly data available</string>
+    <string name="stats_chart_genre_percent">%1$s %2$d%%</string>
+    <string name="stats_chart_month_format">%1$d mo</string>
     <string name="settings_stats">Watch Stats</string>
     <string name="settings_stats_description">View your watching history and rating statistics</string>
 

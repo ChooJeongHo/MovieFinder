@@ -56,4 +56,7 @@
 
     <!-- 카드 (비슷한 영화) -->
     <dimen name="card_elevation_small">2dp</dimen>
+
+    <!-- 차트 -->
+    <dimen name="chart_height">220dp</dimen>
 </resources>

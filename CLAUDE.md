@@ -117,7 +117,7 @@ app/src/main/java/com/choo/moviefinder/
 │   └── usecase/           # UseCase 클래스 (31개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점/시청통계 포함)
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 (7개) + MovieGridViewHolder + MovieListViewHolder (뷰 모드별 ViewHolder)
-│   ├── common/            # CircularRatingView (커스텀 뷰), GridLayoutManagerFactory (LoadState-aware 그리드)
+│   ├── common/            # CircularRatingView, PieChartView, BarChartView (커스텀 뷰), GridLayoutManagerFactory (LoadState-aware 그리드)
 │   ├── detail/            # 영화 상세 화면 (DetailFragment, DetailViewModel, Mutex 중복 호출/연타 방지)
 │   ├── favorite/          # 즐겨찾기/워치리스트 화면 (FavoriteFragment, FavoriteViewModel, TabLayout 탭 전환, 정렬, FavoriteSortOrder)
 │   ├── home/              # 홈 화면 (HomeFragment, HomeViewModel, 시청 기록, 탭 상태 저장)
@@ -233,10 +233,15 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **이번 달 시청 편수**: `WatchHistoryDao.getCountSince()` + kotlinx-datetime 월 시작 계산
 - **내 평균 별점**: `UserRatingDao.getAverageRating()` Flow (평점 없을 시 "아직 평점을 매기지 않았습니다")
 - **가장 많이 본 장르 Top 3**: `WatchHistoryEntity.genres` 콤마 split → 빈도 계산 → `GenreCount` (장르 없을 시 빈 상태 표시)
-- **GetWatchStatsUseCase**: 4개 Room Flow를 `combine()`으로 합성 → `WatchStats` 도메인 모델
+- **장르별 시청 비율 파이차트**: `PieChartView` 커스텀 뷰 (Canvas 기반, 범례 포함, 접근성 contentDescription)
+- **월별 시청 편수 바차트**: `BarChartView` 커스텀 뷰 (Canvas 기반, 최근 6개월, 그리드 라인, 둥근 모서리 바)
+- **GetWatchStatsUseCase**: 5개 Room Flow를 `combine()`으로 합성 → `WatchStats` 도메인 모델
+- **WatchHistoryDao.getMonthlyWatchCounts()**: `strftime` 기반 월별 GROUP BY 쿼리 (최근 6개월)
+- **MonthlyCount**: Room 쿼리 결과 매핑용 POJO (`data/local/dao/`)
+- **MonthlyWatchCount**: 도메인 모델 (`domain/model/WatchStats.kt`)
 - **StatsViewModel**: `stateIn(WhileSubscribed(5000))` + `map` + `catch` 패턴 (Room Flow 자동 갱신, retry 불필요)
 - **StatsUiState**: sealed class (Loading/Success/Error)
-- 4개 MaterialCardView로 통계 카드 표시
+- 6개 MaterialCardView로 통계 카드 표시 (기본 4개 + 파이차트 + 바차트)
 - Settings → Stats: Navigation Component `action_settings_to_stats` (slide 애니메이션)
 
 ### 6. 딥링크 지원
@@ -770,6 +775,13 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] WatchHistoryEntity genres 필드 추가 (Room DB v10, 장르 통계용)
 - [x] GetWatchStatsUseCase: 4개 Room Flow combine + kotlinx-datetime 월 시작 계산
 - [x] SaveWatchHistoryUseCase genres 파라미터 추가 (DetailViewModel에서 장르 전달)
+- [x] MovieDetail.toMovie() 도메인 이동: ViewModel private 확장 함수 → MovieDetail 멤버 함수 (재사용성 향상)
+- [x] saveWatchHistory coroutineScope 분리: 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
+- [x] FAB 연타 방어: toggleMutex.withLock()으로 즐겨찾기/워치리스트 동시 실행 방지
+- [x] Channel.BUFFERED → Channel.CONFLATED: 스낵바 이벤트에 적합한 최소 버퍼로 축소
+- [x] 장르별 시청 비율 파이차트: PieChartView 커스텀 뷰 (Canvas 기반, 범례, 접근성)
+- [x] 월별 시청 편수 바차트: BarChartView 커스텀 뷰 (Canvas 기반, 최근 6개월, 그리드 라인)
+- [x] WatchHistoryDao 월별 통계 쿼리: strftime GROUP BY (MonthlyCount POJO)
 - [x] MovieDetail.toMovie() 도메인 이동: ViewModel private 확장 함수 → MovieDetail 멤버 함수 (재사용성 향상)
 - [x] saveWatchHistory coroutineScope 분리: 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
 - [x] FAB 연타 방어: toggleMutex.withLock()으로 즐겨찾기/워치리스트 동시 실행 방지

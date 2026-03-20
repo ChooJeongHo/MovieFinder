@@ -26,6 +26,7 @@ import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.data.util.Constants
 import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Genre
+import com.choo.moviefinder.domain.model.MonthlyWatchCount
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.Review
@@ -280,5 +281,12 @@ class MovieRepositoryImpl @Inject constructor(
     // 모든 사용자 평점의 평균을 실시간 Flow로 조회
     override fun getAverageUserRating(): Flow<Float?> {
         return userRatingDao.getAverageRating()
+    }
+
+    // 월별 시청 편수를 도메인 모델로 변환하여 조회
+    override fun getMonthlyWatchCounts(): Flow<List<MonthlyWatchCount>> {
+        return watchHistoryDao.getMonthlyWatchCounts().map { counts ->
+            counts.map { MonthlyWatchCount(yearMonth = it.yearMonth, count = it.count) }
+        }
     }
 }
