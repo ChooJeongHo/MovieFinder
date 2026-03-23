@@ -47,7 +47,7 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
         applyTheme()
     }
 
-    // 개봉일 알림용 NotificationChannel을 생성한다 (API 26+)
+    // 개봉일 알림용 및 시청 목표 알림용 NotificationChannel을 생성한다 (API 26+)
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -57,13 +57,22 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
             ).apply {
                 description = getString(R.string.notification_channel_description)
             }
+            val goalChannel = NotificationChannel(
+                WATCH_GOAL_CHANNEL_ID,
+                getString(R.string.notification_goal_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = getString(R.string.notification_goal_channel_description)
+            }
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
+            notificationManager.createNotificationChannel(goalChannel)
         }
     }
 
     companion object {
         const val RELEASE_DATE_CHANNEL_ID = "release_date_channel"
+        const val WATCH_GOAL_CHANNEL_ID = "watch_goal_channel"
     }
 
     // 저장된 테마를 동기 적용하고 이후 변경을 실시간 반영한다

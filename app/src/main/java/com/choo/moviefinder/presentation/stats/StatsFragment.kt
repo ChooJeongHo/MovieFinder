@@ -82,6 +82,8 @@ class StatsFragment : Fragment() {
         binding.tvTotalWatched.text = getString(R.string.stats_count_format, stats.totalWatched)
         binding.tvMonthlyWatched.text = getString(R.string.stats_count_format, stats.monthlyWatched)
 
+        bindGoalProgress(stats)
+
         if (stats.averageRating != null) {
             binding.tvAverageRating.text = getString(R.string.stats_rating_format, stats.averageRating)
         } else {
@@ -120,6 +122,36 @@ class StatsFragment : Fragment() {
             binding.tvPieChartEmpty.isVisible = false
             binding.pieChartView.setData(
                 stats.allGenreCounts.map { it.name to it.count }
+            )
+        }
+    }
+
+    // 시청 목표 달성률 바인딩
+    private fun bindGoalProgress(stats: WatchStats) {
+        if (stats.monthlyWatchGoal <= 0) {
+            binding.cardGoalProgress.isVisible = false
+            return
+        }
+        binding.cardGoalProgress.isVisible = true
+
+        val progress = (stats.monthlyWatched.toFloat() / stats.monthlyWatchGoal * 100).toInt().coerceAtMost(100)
+        binding.tvGoalProgress.text = getString(
+            R.string.stats_goal_progress_format,
+            stats.monthlyWatched,
+            stats.monthlyWatchGoal
+        )
+        binding.progressGoal.progress = progress
+
+        if (stats.monthlyWatched >= stats.monthlyWatchGoal) {
+            binding.tvGoalStatus.text = getString(R.string.stats_goal_achieved)
+            binding.tvGoalStatus.setTextColor(requireContext().getColor(R.color.colorPrimary))
+        } else {
+            val remaining = stats.monthlyWatchGoal - stats.monthlyWatched
+            binding.tvGoalStatus.text = getString(R.string.stats_goal_remaining, remaining)
+            val typedValue = android.util.TypedValue()
+            requireContext().theme.resolveAttribute(android.R.attr.textColorSecondary, typedValue, true)
+            binding.tvGoalStatus.setTextColor(
+                requireContext().getColor(typedValue.resourceId)
             )
         }
     }

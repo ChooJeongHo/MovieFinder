@@ -49,15 +49,16 @@ class SettingsFragment : Fragment() {
         setupClickListeners()
         setupAppInfo()
         updateLanguageDisplay()
-        observeTheme()
+        observeSettings()
         observeEvents()
     }
 
-    // 테마, 언어, 통계, 캐시 삭제, 시청기록 삭제 항목 클릭 리스너 등록
+    // 테마, 언어, 통계, 시청 목표, 캐시 삭제, 시청기록 삭제 항목 클릭 리스너 등록
     private fun setupClickListeners() {
         binding.itemTheme.setOnClickListener { showThemeDialog() }
         binding.itemLanguage.setOnClickListener { showLanguageDialog() }
         binding.itemStats.setOnClickListener { navigateToStats() }
+        binding.itemWatchGoal.setOnClickListener { showWatchGoalDialog() }
         binding.itemClearCache.setOnClickListener { showClearCacheDialog() }
         binding.itemClearWatchHistory.setOnClickListener { showClearWatchHistoryDialog() }
     }
@@ -74,8 +75,8 @@ class SettingsFragment : Fragment() {
         binding.tvAppVersion.text = getString(R.string.settings_version, BuildConfig.VERSION_NAME)
     }
 
-    // 현재 테마 모드 Flow를 수집하여 표시 텍스트 갱신
-    private fun observeTheme() {
+    // 테마 모드와 시청 목표 Flow를 수집하여 표시 텍스트 갱신
+    private fun observeSettings() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.currentThemeMode.collect { mode ->
@@ -83,6 +84,17 @@ class SettingsFragment : Fragment() {
                         ThemeMode.LIGHT -> getString(R.string.theme_light)
                         ThemeMode.DARK -> getString(R.string.theme_dark)
                         ThemeMode.SYSTEM -> getString(R.string.theme_system)
+                    }
+                }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.monthlyWatchGoal.collect { goal ->
+                    binding.tvWatchGoalValue.text = if (goal == 0) {
+                        getString(R.string.settings_watch_goal_not_set)
+                    } else {
+                        getString(R.string.stats_count_format, goal)
                     }
                 }
             }
@@ -151,6 +163,26 @@ class SettingsFragment : Fragment() {
                 else -> getString(R.string.language_system)
             }
         }
+    }
+
+    // 이번 달 시청 목표 편수 설정 다이얼로그 표시 (NumberPicker 0~100)
+    private fun showWatchGoalDialog() {
+        val numberPicker = android.widget.NumberPicker(requireContext()).apply {
+            minValue = 0
+            maxValue = 100
+            value = viewModel.monthlyWatchGoal.value
+            wrapSelectorWheel = false
+        }
+        activeDialog?.dismiss()
+        activeDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.settings_watch_goal)
+            .setMessage(R.string.settings_watch_goal_dialog_message)
+            .setView(numberPicker)
+            .setPositiveButton(R.string.confirm) { _, _ ->
+                viewModel.setMonthlyWatchGoal(numberPicker.value)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     // 캐시 삭제 확인 다이얼로그 표시

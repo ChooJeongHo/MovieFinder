@@ -30,4 +30,28 @@ class PreferencesRepositoryImpl @Inject constructor(
             current.copy(themeMode = themeMode.name)
         }
     }
+
+    // 월간 시청 목표 편수를 Flow로 조회
+    override fun getMonthlyWatchGoal(): Flow<Int> {
+        return userSettingsStore.data.map { it.monthlyWatchGoal }
+    }
+
+    // 월간 시청 목표 편수를 DataStore에 저장
+    override suspend fun setMonthlyWatchGoal(goal: Int) {
+        userSettingsStore.updateData { current ->
+            current.copy(monthlyWatchGoal = goal)
+        }
+    }
+
+    // 마지막 목표 달성 알림 월을 Flow로 조회
+    override fun getLastGoalNotifiedMonth(): Flow<String> {
+        return userSettingsStore.data.map { it.lastGoalNotifiedMonth }
+    }
+
+    // 마지막 목표 달성 알림 월을 DataStore에 저장
+    override suspend fun setLastGoalNotifiedMonth(yearMonth: String) {
+        userSettingsStore.updateData { current ->
+            current.copy(lastGoalNotifiedMonth = yearMonth)
+        }
+    }
 }

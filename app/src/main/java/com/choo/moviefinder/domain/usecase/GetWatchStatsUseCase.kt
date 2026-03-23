@@ -1,45 +1,46 @@
 package com.choo.moviefinder.domain.usecase
 
+import com.choo.moviefinder.core.util.currentMonthStartMillis
 import com.choo.moviefinder.domain.model.GenreCount
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
 import com.choo.moviefinder.domain.model.WatchStats
 import com.choo.moviefinder.domain.repository.MovieRepository
+import com.choo.moviefinder.domain.repository.PreferencesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.atStartOfDayIn
 import javax.inject.Inject
 
 class GetWatchStatsUseCase @Inject constructor(
-    private val repository: MovieRepository
+    private val repository: MovieRepository,
+    private val preferencesRepository: PreferencesRepository
 ) {
-    // 시청 통계 데이터를 5개 Flow를 combine하여 반환한다
+    // 시청 통계 데이터를 6개 Flow를 combine하여 반환한다
     operator fun invoke(): Flow<WatchStats> {
-        val now = Clock.System.now()
-        val tz = TimeZone.currentSystemDefault()
-        val localDate = now.toLocalDateTime(tz).date
-        val monthStart = kotlinx.datetime.LocalDate(localDate.year, localDate.month, 1)
-        val monthStartMillis = monthStart.atStartOfDayIn(tz).toEpochMilliseconds()
+        val monthStartMillis = currentMonthStartMillis()
 
-        return combine(
+        val baseStatsFlow = combine(
             repository.getTotalWatchedCount(),
             repository.getWatchedCountSince(monthStartMillis),
             repository.getAverageUserRating(),
             repository.getAllWatchedGenres(),
             repository.getMonthlyWatchCounts()
         ) { total, monthly, avgRating, genreStrings, monthlyCounts ->
-            val allGenres = computeAllGenres(genreStrings)
+            BaseStats(total, monthly, avgRating, genreStrings, monthlyCounts)
+        }
+
+        return combine(
+            baseStatsFlow,
+            preferencesRepository.getMonthlyWatchGoal()
+        ) { base, watchGoal ->
+            val allGenres = computeAllGenres(base.genreStrings)
             WatchStats(
-                totalWatched = total,
-                monthlyWatched = monthly,
-                averageRating = avgRating,
+                totalWatched = base.total,
+                monthlyWatched = base.monthly,
+                averageRating = base.avgRating,
                 topGenres = allGenres.take(3),
                 allGenreCounts = allGenres,
-                monthlyWatchCounts = monthlyCounts.map {
-                    MonthlyWatchCount(yearMonth = it.yearMonth, count = it.count)
-                }
+                monthlyWatchCounts = base.monthlyCounts,
+                monthlyWatchGoal = watchGoal
             )
         }
     }
@@ -56,4 +57,13 @@ class GetWatchStatsUseCase @Inject constructor(
             .sortedByDescending { it.value }
             .map { GenreCount(name = it.key, count = it.value) }
     }
+
+    // 5개 기본 통계 Flow를 묶기 위한 내부 데이터 홀더
+    private data class BaseStats(
+        val total: Int,
+        val monthly: Int,
+        val avgRating: Float?,
+        val genreStrings: List<String>,
+        val monthlyCounts: List<MonthlyWatchCount>
+    )
 }

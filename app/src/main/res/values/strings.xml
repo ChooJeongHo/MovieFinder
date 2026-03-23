@@ -188,13 +188,26 @@
     <string name="stats_no_monthly_data">월별 데이터가 없습니다</string>
     <string name="stats_chart_genre_percent">%1$s %2$d%%</string>
     <string name="stats_chart_month_format">%1$d월</string>
+    <string name="stats_goal_progress">시청 목표 달성률</string>
+    <string name="stats_goal_progress_format">%1$d / %2$d편</string>
+    <string name="stats_goal_achieved">목표 달성!</string>
+    <string name="stats_goal_remaining">%d편 남았습니다</string>
     <string name="settings_stats">시청 통계</string>
     <string name="settings_stats_description">내 시청 기록과 평점 통계를 확인합니다</string>
+    <string name="settings_watch_goal">이번 달 시청 목표</string>
+    <string name="settings_watch_goal_not_set">설정 안 됨</string>
+    <string name="settings_watch_goal_dialog_message">이번 달 시청 목표 편수를 설정하세요 (0 = 목표 없음)</string>
 
     <!-- 개봉일 알림 -->
     <string name="notification_channel_name">개봉일 알림</string>
     <string name="notification_channel_description">즐겨찾기한 영화의 개봉일을 알려줍니다</string>
     <string name="notification_release_today">오늘 개봉합니다!</string>
+
+    <!-- 시청 목표 알림 -->
+    <string name="notification_goal_channel_name">시청 목표 알림</string>
+    <string name="notification_goal_channel_description">월간 시청 목표 달성 시 알림을 보냅니다</string>
+    <string name="notification_goal_achieved_title">시청 목표 달성!</string>
+    <string name="notification_goal_achieved_text">이번 달 시청 목표를 달성했습니다. 축하합니다!</string>
 
     <!-- 메모 -->
     <string name="memo_title">내 메모</string>

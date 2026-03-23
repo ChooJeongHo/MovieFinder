@@ -70,4 +70,46 @@ class PreferencesRepositoryImplTest {
             assertEquals(ThemeMode.SYSTEM, awaitItem())
         }
     }
+
+    @Test
+    fun `getMonthlyWatchGoal returns 0 as default`() = testScope.runTest {
+        repository.getMonthlyWatchGoal().test {
+            assertEquals(0, awaitItem())
+        }
+    }
+
+    @Test
+    fun `setMonthlyWatchGoal persists goal value`() = testScope.runTest {
+        repository.setMonthlyWatchGoal(10)
+
+        repository.getMonthlyWatchGoal().test {
+            assertEquals(10, awaitItem())
+        }
+    }
+
+    @Test
+    fun `setMonthlyWatchGoal can change goal value`() = testScope.runTest {
+        repository.setMonthlyWatchGoal(10)
+        repository.setMonthlyWatchGoal(20)
+
+        repository.getMonthlyWatchGoal().test {
+            assertEquals(20, awaitItem())
+        }
+    }
+
+    @Test
+    fun `getLastGoalNotifiedMonth returns empty string as default`() = testScope.runTest {
+        repository.getLastGoalNotifiedMonth().test {
+            assertEquals("", awaitItem())
+        }
+    }
+
+    @Test
+    fun `setLastGoalNotifiedMonth persists year-month`() = testScope.runTest {
+        repository.setLastGoalNotifiedMonth("2026-03")
+
+        repository.getLastGoalNotifiedMonth().test {
+            assertEquals("2026-03", awaitItem())
+        }
+    }
 }

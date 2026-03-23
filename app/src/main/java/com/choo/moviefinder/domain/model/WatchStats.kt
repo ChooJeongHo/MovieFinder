@@ -6,7 +6,8 @@ data class WatchStats(
     val averageRating: Float?,
     val topGenres: List<GenreCount>,
     val allGenreCounts: List<GenreCount>,
-    val monthlyWatchCounts: List<MonthlyWatchCount>
+    val monthlyWatchCounts: List<MonthlyWatchCount>,
+    val monthlyWatchGoal: Int = 0
 )
 
 data class GenreCount(

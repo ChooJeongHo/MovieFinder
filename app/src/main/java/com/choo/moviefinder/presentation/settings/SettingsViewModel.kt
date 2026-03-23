@@ -6,7 +6,9 @@ import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.usecase.ClearWatchHistoryUseCase
+import com.choo.moviefinder.domain.usecase.GetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.GetThemeModeUseCase
+import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -23,11 +25,17 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     getThemeModeUseCase: GetThemeModeUseCase,
     private val setThemeModeUseCase: SetThemeModeUseCase,
-    private val clearWatchHistoryUseCase: ClearWatchHistoryUseCase
+    private val clearWatchHistoryUseCase: ClearWatchHistoryUseCase,
+    getMonthlyWatchGoalUseCase: GetMonthlyWatchGoalUseCase,
+    private val setMonthlyWatchGoalUseCase: SetMonthlyWatchGoalUseCase
 ) : ViewModel() {
 
     val currentThemeMode: StateFlow<ThemeMode> = getThemeModeUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
+
+    // 이번 달 시청 목표 편수 Flow (0 = 목표 없음)
+    val monthlyWatchGoal: StateFlow<Int> = getMonthlyWatchGoalUseCase()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     private val _snackbarEvent = Channel<ErrorType>(Channel.BUFFERED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
@@ -44,6 +52,19 @@ class SettingsViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to set theme mode to %s", mode)
+            }
+        }
+    }
+
+    // 이번 달 시청 목표 편수 저장 (에러 시 Timber 로깅)
+    fun setMonthlyWatchGoal(goal: Int) {
+        viewModelScope.launch {
+            try {
+                setMonthlyWatchGoalUseCase(goal)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to set monthly watch goal to %d", goal)
             }
         }
     }

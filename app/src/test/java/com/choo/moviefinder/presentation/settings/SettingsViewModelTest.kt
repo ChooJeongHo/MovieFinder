@@ -4,7 +4,9 @@ import app.cash.turbine.test
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.usecase.ClearWatchHistoryUseCase
+import com.choo.moviefinder.domain.usecase.GetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.GetThemeModeUseCase
+import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -31,6 +33,8 @@ class SettingsViewModelTest {
     private lateinit var getThemeModeUseCase: GetThemeModeUseCase
     private lateinit var setThemeModeUseCase: SetThemeModeUseCase
     private lateinit var clearWatchHistoryUseCase: ClearWatchHistoryUseCase
+    private lateinit var getMonthlyWatchGoalUseCase: GetMonthlyWatchGoalUseCase
+    private lateinit var setMonthlyWatchGoalUseCase: SetMonthlyWatchGoalUseCase
 
     @Before
     fun setup() {
@@ -38,6 +42,8 @@ class SettingsViewModelTest {
         getThemeModeUseCase = mockk()
         setThemeModeUseCase = mockk()
         clearWatchHistoryUseCase = mockk()
+        getMonthlyWatchGoalUseCase = mockk()
+        setMonthlyWatchGoalUseCase = mockk()
     }
 
     @After
@@ -49,8 +55,13 @@ class SettingsViewModelTest {
         themeFlow: kotlinx.coroutines.flow.Flow<ThemeMode> = flowOf(ThemeMode.SYSTEM)
     ): SettingsViewModel {
         every { getThemeModeUseCase() } returns themeFlow
+        every { getMonthlyWatchGoalUseCase() } returns flowOf(0)
         return SettingsViewModel(
-            getThemeModeUseCase, setThemeModeUseCase, clearWatchHistoryUseCase
+            getThemeModeUseCase,
+            setThemeModeUseCase,
+            clearWatchHistoryUseCase,
+            getMonthlyWatchGoalUseCase,
+            setMonthlyWatchGoalUseCase
         )
     }
 
@@ -168,5 +179,64 @@ class SettingsViewModelTest {
             advanceUntilIdle()
             assertEquals(ErrorType.UNKNOWN, awaitItem())
         }
+    }
+
+    private fun createViewModelWithGoal(
+        goalFlow: kotlinx.coroutines.flow.Flow<Int> = flowOf(0)
+    ): SettingsViewModel {
+        every { getThemeModeUseCase() } returns flowOf(ThemeMode.SYSTEM)
+        every { getMonthlyWatchGoalUseCase() } returns goalFlow
+        return SettingsViewModel(
+            getThemeModeUseCase,
+            setThemeModeUseCase,
+            clearWatchHistoryUseCase,
+            getMonthlyWatchGoalUseCase,
+            setMonthlyWatchGoalUseCase
+        )
+    }
+
+    @Test
+    fun `monthlyWatchGoal returns 0 by default`() = runTest {
+        val viewModel = createViewModelWithGoal()
+
+        viewModel.monthlyWatchGoal.test {
+            assertEquals(0, awaitItem())
+        }
+    }
+
+    @Test
+    fun `monthlyWatchGoal reflects value from use case`() = runTest {
+        val viewModel = createViewModelWithGoal(flowOf(10))
+
+        viewModel.monthlyWatchGoal.test {
+            val item = awaitItem()
+            if (item == 0) {
+                assertEquals(10, awaitItem())
+            } else {
+                assertEquals(10, item)
+            }
+        }
+    }
+
+    @Test
+    fun `setMonthlyWatchGoal calls use case with correct value`() = runTest {
+        coEvery { setMonthlyWatchGoalUseCase(any()) } returns Unit
+        val viewModel = createViewModelWithGoal()
+
+        viewModel.setMonthlyWatchGoal(15)
+        advanceUntilIdle()
+
+        coVerify { setMonthlyWatchGoalUseCase(15) }
+    }
+
+    @Test
+    fun `setMonthlyWatchGoal does not crash on error`() = runTest {
+        coEvery { setMonthlyWatchGoalUseCase(any()) } throws RuntimeException("DataStore error")
+        val viewModel = createViewModelWithGoal()
+
+        viewModel.setMonthlyWatchGoal(10)
+        advanceUntilIdle()
+
+        coVerify { setMonthlyWatchGoalUseCase(10) }
     }
 }

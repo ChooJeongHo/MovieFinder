@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
+import com.choo.moviefinder.core.notification.WatchGoalNotificationHelper
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.MovieDetail
@@ -63,7 +64,8 @@ class DetailViewModel @Inject constructor(
     private val saveMemoUseCase: SaveMemoUseCase,
     private val updateMemoUseCase: UpdateMemoUseCase,
     private val deleteMemoUseCase: DeleteMemoUseCase,
-    private val releaseNotificationScheduler: ReleaseNotificationScheduler
+    private val releaseNotificationScheduler: ReleaseNotificationScheduler,
+    private val watchGoalNotificationHelper: WatchGoalNotificationHelper
 ) : ViewModel() {
 
     private val movieId: Int = requireNotNull(savedStateHandle.get<Int>("movieId")) {
@@ -150,12 +152,14 @@ class DetailViewModel @Inject constructor(
             .onFailure { Timber.w(it, "Failed to load %s for movie %d", tag, movieId) }
             .getOrNull()
 
-    // 영화 상세 화면 진입 시 장르 정보와 함께 시청 기록을 Room DB에 저장
+    // 영화 상세 화면 진입 시 장르 정보와 함께 시청 기록을 Room DB에 저장하고 목표 달성을 확인한다
     private suspend fun saveWatchHistory(detail: MovieDetail) {
         val movie = detail.toMovie()
         val genres = detail.genres.joinToString(",") { it.name }
         runCatching { saveWatchHistoryUseCase(movie, genres) }
             .onFailure { Timber.w(it, "Failed to save watch history for movie %d", movieId) }
+        runCatching { watchGoalNotificationHelper.checkAndNotifyGoalAchieved() }
+            .onFailure { Timber.w(it, "Failed to check watch goal for movie %d", movieId) }
     }
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)

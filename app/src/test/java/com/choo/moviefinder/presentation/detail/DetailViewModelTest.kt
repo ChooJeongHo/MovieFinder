@@ -2,6 +2,7 @@ package com.choo.moviefinder.presentation.detail
 
 import app.cash.turbine.test
 import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
+import com.choo.moviefinder.core.notification.WatchGoalNotificationHelper
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Genre
@@ -63,6 +64,7 @@ class DetailViewModelTest {
     private lateinit var updateMemoUseCase: com.choo.moviefinder.domain.usecase.UpdateMemoUseCase
     private lateinit var deleteMemoUseCase: com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
     private lateinit var releaseNotificationScheduler: ReleaseNotificationScheduler
+    private lateinit var watchGoalNotificationHelper: WatchGoalNotificationHelper
 
     private val testMovieDetail = MovieDetail(
         id = 1,
@@ -110,6 +112,7 @@ class DetailViewModelTest {
         updateMemoUseCase = mockk()
         deleteMemoUseCase = mockk()
         releaseNotificationScheduler = mockk(relaxed = true)
+        watchGoalNotificationHelper = mockk(relaxed = true)
 
         every { getMemosUseCase(any()) } returns flowOf(emptyList())
 
@@ -151,7 +154,8 @@ class DetailViewModelTest {
             saveMemoUseCase = saveMemoUseCase,
             updateMemoUseCase = updateMemoUseCase,
             deleteMemoUseCase = deleteMemoUseCase,
-            releaseNotificationScheduler = releaseNotificationScheduler
+            releaseNotificationScheduler = releaseNotificationScheduler,
+            watchGoalNotificationHelper = watchGoalNotificationHelper
         )
     }
 

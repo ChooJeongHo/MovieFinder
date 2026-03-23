@@ -53,7 +53,9 @@
         android:id="@+id/statsFragment"
         android:name="com.choo.moviefinder.presentation.stats.StatsFragment"
         android:label="@string/stats_title"
-        tools:layout="@layout/fragment_stats" />
+        tools:layout="@layout/fragment_stats">
+        <deepLink app:uri="moviefinder://stats" />
+    </fragment>
 
     <fragment
         android:id="@+id/detailFragment"
