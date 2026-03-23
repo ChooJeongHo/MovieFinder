@@ -75,6 +75,7 @@ app/src/main/java/com/choo/moviefinder/
 │   │   ├── ReleaseNotificationWorker.kt    # 개봉일 알림 Worker
 │   │   └── WatchGoalNotificationHelper.kt  # 시청 목표 달성 알림 (Mutex 중복 방지)
 │   └── util/
+│       ├── DateUtils.kt           # currentMonthStartMillis(), currentYearMonth() 공유 유틸
 │       ├── ImageUrlProvider.kt    # 이미지 URL 빌더
 │       ├── ErrorMessageProvider.kt # 예외 → ErrorType 매핑 + 사용자 메시지 변환
 │       └── NetworkMonitor.kt      # 실시간 네트워크 상태 모니터링 (StateFlow)
@@ -401,6 +402,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 - `Turbine`: StateFlow/SharedFlow 수집 및 검증
 - `StandardTestDispatcher` + `Dispatchers.setMain()`: 코루틴 테스트
 - `coEvery`/`coVerify`: suspend 함수 모킹 및 검증
+- `testOptions.unitTests.isReturnDefaultValues = true`: Android API 스텁 기본값 반환 (Uri, Intent 등 유닛 테스트 지원)
 
 ## 빌드 및 실행
 
