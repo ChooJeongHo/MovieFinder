@@ -85,7 +85,7 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── local/
 │   │   ├── MovieDatabase.kt       # Room DB (version 9)
 │   │   ├── PreferencesRepositoryImpl.kt # DataStore 기반 설정 저장소
-│   │   ├── dao/                   # DAO (7개)
+│   │   ├── dao/                   # DAO (8개)
 │   │   │   ├── FavoriteMovieDao.kt  # abstract class (@Transaction toggleFavorite)
 │   │   │   ├── RecentSearchDao.kt
 │   │   │   ├── CachedMovieDao.kt  # 오프라인 캐시 (PagingSource 반환)
@@ -118,7 +118,7 @@ app/src/main/java/com/choo/moviefinder/
 ├── domain/                # 도메인 레이어
 │   ├── model/             # 도메인 모델 (Movie, MovieDetail(toMovie()), Cast, Review, ThemeMode, WatchStats(monthlyWatchGoal), GenreCount, Memo)
 │   ├── repository/        # Repository 인터페이스
-│   └── usecase/           # UseCase 클래스 (37개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점/시청통계/메모/시청목표 포함)
+│   └── usecase/           # UseCase 클래스 (36개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점/시청통계/메모/시청목표 포함)
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 (8개) + MovieGridViewHolder + MovieListViewHolder (뷰 모드별 ViewHolder)
 │   ├── common/            # CircularRatingView, PieChartView, BarChartView (커스텀 뷰), GridLayoutManagerFactory (LoadState-aware 그리드)
@@ -285,7 +285,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 
 ### 9. 다국어 지원 (i18n)
 - **한국어** (기본): `values/strings.xml`
-- **영어**: `values-en/strings.xml` (172개 문자열 완전 번역)
+- **영어**: `values-en/strings.xml` (161개 문자열 완전 번역)
 - 포맷 문자열 (%s, %d, %,d 등) 모든 specifier 보존
 
 ### 10. 에러 처리
@@ -775,7 +775,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 검색 추천 (결과 없을 때 추천 검색어 칩)
 - [x] 홈 화면 위젯 (AppWidgetProvider, RemoteViewsService, 인기 영화 Top 10)
 - [x] 개봉일 알림 (WorkManager, 워치리스트 연동, NotificationChannel)
-- [x] 다국어 지원 (values-en/strings.xml 영어 번역 165개)
+- [x] 다국어 지원 (values-en/strings.xml 영어 번역 161개)
 - [x] Espresso UI 테스트 (HiltTestRunner + 네비게이션/화면 검증 5개)
 - [x] PagingSource/RemoteMediator 유닛 테스트 (19개: MoviePagingSource 7 + DiscoverPagingSource 5 + MovieRemoteMediator 7)
 - [x] 접근성 강화 (영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지, ProgressBar, decorative overlay)
