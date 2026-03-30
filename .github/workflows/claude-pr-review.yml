@@ -53,14 +53,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Run Claude Code Review
+      - name: Write review prompt
         if: steps.changed.outputs.skip == 'false'
-        id: review
         run: |
-          CHANGED_FILES=$(cat changed_files.txt | tr '\n' ', ' | sed 's/,$//')
-          DIFF_CONTENT=$(cat pr_diff.txt)
-
-          REVIEW_PROMPT=$(cat <<'PROMPT_END'
+          cat <<'EOF' > review_prompt.txt
           You are an expert Android code reviewer. Review the following PR diff using these 6 categories. Assign a grade (A/B/C/D) to each.
 
           ## Review Categories
@@ -132,11 +128,17 @@ jobs:
 
           Only review the changed code. Be concise and actionable.
           If no significant issues, say so briefly.
-          PROMPT_END
+          EOF
 
-          REQUEST_BODY=$(jq -n \
-            --arg prompt "$REVIEW_PROMPT" \
-            --arg diff "$DIFF_CONTENT" \
+      - name: Run Claude Code Review
+        if: steps.changed.outputs.skip == 'false'
+        id: review
+        run: |
+          CHANGED_FILES=$(cat changed_files.txt | tr '\n' ', ' | sed 's/,$//')
+
+          jq -n \
+            --rawfile prompt review_prompt.txt \
+            --rawfile diff pr_diff.txt \
             --arg files "$CHANGED_FILES" \
             '{
               model: "claude-sonnet-4-20250514",
@@ -147,26 +149,22 @@ jobs:
                   content: ($prompt + "\n\n## Changed Files\n" + $files + "\n\n## Diff\n```diff\n" + $diff + "\n```")
                 }
               ]
-            }')
+            }' > request_body.json
 
-          RESPONSE=$(curl -s -w "\n%{http_code}" \
+          HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" \
             https://api.anthropic.com/v1/messages \
             -H "content-type: application/json" \
             -H "x-api-key: $ANTHROPIC_API_KEY" \
             -H "anthropic-version: 2023-06-01" \
-            -d "$REQUEST_BODY")
-
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
+            -d @request_body.json)
 
           if [ "$HTTP_CODE" != "200" ]; then
             echo "::error::Claude API returned HTTP $HTTP_CODE"
-            echo "$BODY" | jq . 2>/dev/null || echo "$BODY"
+            jq . response.json 2>/dev/null || cat response.json
             exit 1
           fi
 
-          REVIEW=$(echo "$BODY" | jq -r '.content[0].text')
-          echo "$REVIEW" > review_result.md
+          jq -r '.content[0].text' response.json > review_result.md
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
