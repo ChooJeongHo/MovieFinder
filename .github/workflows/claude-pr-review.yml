@@ -41,8 +41,9 @@ jobs:
       - name: Get diff content
         if: steps.changed.outputs.skip == 'false'
         run: |
-          DIFF=$(gh pr diff ${{ github.event.pull_request.number }} -- $(cat changed_files.txt | tr '\n' ' '))
-          echo "$DIFF" > pr_diff.txt
+          gh pr diff ${{ github.event.pull_request.number }} > full_diff.txt
+          # Filter diff to only include .kt/.xml files
+          awk '/^diff --git/{keep=0} /^diff --git a\/.*\.(kt|xml) b\//{keep=1} keep' full_diff.txt > pr_diff.txt
           # Truncate if too large (Claude API limit)
           if [ $(wc -c < pr_diff.txt) -gt 100000 ]; then
             head -c 100000 pr_diff.txt > pr_diff_truncated.txt
