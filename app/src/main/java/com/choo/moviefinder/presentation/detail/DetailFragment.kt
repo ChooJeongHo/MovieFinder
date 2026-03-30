@@ -10,6 +10,7 @@ import android.transition.TransitionSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.text.InputFilter
 import android.widget.EditText
 import android.widget.RatingBar
 import android.widget.TextView
@@ -178,7 +179,11 @@ class DetailFragment : Fragment() {
             onEditClick = { memo -> showEditMemoDialog(memo) },
             onDeleteClick = { memo ->
                 viewModel.deleteMemo(memo.id)
-                Snackbar.make(binding.root, R.string.memo_deleted, Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(binding.root, R.string.memo_deleted, Snackbar.LENGTH_LONG)
+                    .setAction(R.string.undo) {
+                        viewModel.saveMemo(memo.content)
+                    }
+                    .show()
             }
         )
         binding.rvMemos.apply {
@@ -242,6 +247,9 @@ class DetailFragment : Fragment() {
                         R.drawable.ic_favorite_border
                     }
                     binding.fabFavorite.setImageResource(icon)
+                    binding.fabFavorite.contentDescription = getString(
+                        if (isFavorite) R.string.cd_fab_remove_favorite else R.string.cd_fab_add_favorite
+                    )
                 }
             }
         }
@@ -258,6 +266,9 @@ class DetailFragment : Fragment() {
                         R.drawable.ic_watchlist_border
                     }
                     binding.fabWatchlist.setImageResource(icon)
+                    binding.fabWatchlist.contentDescription = getString(
+                        if (inWatchlist) R.string.cd_fab_remove_watchlist else R.string.cd_fab_add_watchlist
+                    )
                 }
             }
         }
@@ -500,6 +511,7 @@ class DetailFragment : Fragment() {
 
     // 메모 입력 필드 및 저장 버튼 설정
     private fun setupMemoInput() {
+        binding.etMemo.filters = arrayOf(InputFilter.LengthFilter(MAX_MEMO_LENGTH))
         binding.tilMemo.setEndIconOnClickListener {
             val content = binding.etMemo.text?.toString()?.trim().orEmpty()
             if (content.isNotBlank()) {
@@ -522,11 +534,14 @@ class DetailFragment : Fragment() {
 
     // 메모 수정 다이얼로그 표시
     private fun showEditMemoDialog(memo: com.choo.moviefinder.domain.model.Memo) {
+        val horizontalPadding = resources.getDimensionPixelSize(R.dimen.dialog_padding_horizontal)
+        val verticalPadding = resources.getDimensionPixelSize(R.dimen.dialog_padding_vertical)
         val editText = EditText(requireContext()).apply {
             setText(memo.content)
-            setPadding(64, 32, 64, 32)
+            setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
             maxLines = 5
+            filters = arrayOf(InputFilter.LengthFilter(MAX_MEMO_LENGTH))
         }
         memoEditDialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.memo_edit_dialog_title)
@@ -551,5 +566,9 @@ class DetailFragment : Fragment() {
         memoEditDialog = null
         binding.rvMemos.adapter = null
         _binding = null
+    }
+
+    companion object {
+        private const val MAX_MEMO_LENGTH = 500
     }
 }

@@ -8,6 +8,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
+import com.choo.moviefinder.R
 
 class BarChartView @JvmOverloads constructor(
     context: Context,
@@ -15,7 +16,7 @@ class BarChartView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    private data class Bar(val label: String, val value: Int)
+    private data class Bar(val label: String, val value: Int, val valueText: String)
 
     private val bars = mutableListOf<Bar>()
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -55,6 +56,7 @@ class BarChartView @JvmOverloads constructor(
         gridPaint.alpha = 40
 
         minBarHeightPx = minBarHeightDp * context.resources.displayMetrics.density
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
     }
 
     // 월별 시청 데이터를 설정하고 바차트를 다시 그린다
@@ -63,9 +65,12 @@ class BarChartView @JvmOverloads constructor(
         val reversed = items.reversed()
         for ((yearMonth, count) in reversed) {
             val month = yearMonth.substringAfter("-").trimStart('0')
-            bars.add(Bar(label = "${month}월", value = count))
+            val label = context.getString(R.string.chart_month_format, month)
+            bars.add(Bar(label = label, value = count, valueText = count.toString()))
         }
-        contentDescription = bars.joinToString(", ") { "${it.label} ${it.value}편" }
+        contentDescription = bars.joinToString(", ") {
+            context.getString(R.string.chart_count_format, it.label, it.value)
+        }
         invalidate()
     }
 
@@ -112,7 +117,7 @@ class BarChartView @JvmOverloads constructor(
 
             textPaint.color = textColor
             canvas.drawText(
-                bar.value.toString(),
+                bar.valueText,
                 (barLeft + barRight) / 2f,
                 barTop - textPaint.textSize * 0.3f,
                 textPaint

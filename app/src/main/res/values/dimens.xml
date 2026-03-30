@@ -59,4 +59,8 @@
 
     <!-- 차트 -->
     <dimen name="chart_height">220dp</dimen>
+
+    <!-- 다이얼로그 -->
+    <dimen name="dialog_padding_horizontal">20dp</dimen>
+    <dimen name="dialog_padding_vertical">10dp</dimen>
 </resources>

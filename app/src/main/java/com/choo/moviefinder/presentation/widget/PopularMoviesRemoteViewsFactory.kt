@@ -10,6 +10,7 @@ import com.choo.moviefinder.R
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import timber.log.Timber
@@ -28,10 +29,7 @@ class PopularMoviesRemoteViewsFactory(
         isLenient = true
     }
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .build()
+    private val client get() = Companion.client
 
     // 초기 생성 시 호출 (데이터는 onDataSetChanged에서 로드)
     override fun onCreate() {
@@ -109,6 +107,21 @@ class PopularMoviesRemoteViewsFactory(
 
     companion object {
         private const val MAX_MOVIES = 10
+
+        private val client: OkHttpClient by lazy {
+            val certificatePinner = CertificatePinner.Builder()
+                .add(
+                    "api.themoviedb.org",
+                    "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
+                    "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
+                )
+                .build()
+            OkHttpClient.Builder()
+                .certificatePinner(certificatePinner)
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(15, TimeUnit.SECONDS)
+                .build()
+        }
     }
 }
 

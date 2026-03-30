@@ -209,6 +209,31 @@
     <string name="notification_goal_achieved_title">시청 목표 달성!</string>
     <string name="notification_goal_achieved_text">이번 달 시청 목표를 달성했습니다. 축하합니다!</string>
 
+    <!-- 차트 -->
+    <string name="chart_month_format">%s월</string>
+    <string name="chart_count_format">%1$s %2$d편</string>
+
+    <!-- 검색 추천 -->
+    <string-array name="search_suggestions">
+        <item>마블</item>
+        <item>스파이더맨</item>
+        <item>배트맨</item>
+        <item>스타워즈</item>
+        <item>해리포터</item>
+    </string-array>
+
+    <!-- 검색 기록 삭제 확인 -->
+    <string name="search_clear_history_confirm_title">검색 기록 삭제</string>
+    <string name="search_clear_history_confirm_message">모든 검색 기록을 삭제하시겠습니까?</string>
+
+    <!-- FAB 접근성 -->
+    <string name="cd_fab_add_favorite">즐겨찾기에 추가</string>
+    <string name="cd_fab_remove_favorite">즐겨찾기에서 제거</string>
+    <string name="cd_fab_add_watchlist">워치리스트에 추가</string>
+    <string name="cd_fab_remove_watchlist">워치리스트에서 제거</string>
+
+    <!-- 다이얼로그 패딩 (dimen 연동) -->
+
     <!-- 메모 -->
     <string name="memo_title">내 메모</string>
     <string name="memo_hint">이 영화에 대한 메모를 남겨보세요</string>

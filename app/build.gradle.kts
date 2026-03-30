@@ -117,6 +117,40 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     executionData.setFrom(files("${layout.buildDirectory.get()}/jacoco/testDebugUnitTest.exec"))
 }
 
+tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
+    dependsOn("testDebugUnitTest")
+    group = "Verification"
+    description = "Verify minimum JaCoCo test coverage"
+
+    val jacocoExcludes = listOf(
+        "**/R.class", "**/R\$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*_Hilt*.*", "**/Hilt_*.*",
+        "**/*_Factory.*", "**/*_MembersInjector.*",
+        "**/*Directions*.*", "**/*Args*.*",
+        "**/*Database_Impl*.*", "**/*Dao_Impl*.*"
+    )
+    val javaClasses = fileTree("${layout.buildDirectory.get()}/intermediates/javac/debug/classes") {
+        exclude(jacocoExcludes)
+    }
+    val kotlinClasses = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+        exclude(jacocoExcludes)
+    }
+
+    classDirectories.setFrom(files(javaClasses, kotlinClasses))
+    sourceDirectories.setFrom(files("src/main/java"))
+    executionData.setFrom(files("${layout.buildDirectory.get()}/jacoco/testDebugUnitTest.exec"))
+
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.50".toBigDecimal()
+            }
+        }
+    }
+}
+
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
