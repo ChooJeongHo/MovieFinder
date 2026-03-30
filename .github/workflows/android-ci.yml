@@ -48,35 +48,35 @@ jobs:
 
       - name: Upload Lint Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lint-results
           path: app/build/reports/lint-results-debug.html
 
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: app/build/reports/tests/testDebugUnitTest/
 
       - name: Upload Detekt Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: detekt-results
           path: app/build/reports/detekt/
 
       - name: Upload JaCoCo Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: app/build/reports/jacoco/jacocoTestReport/
 
       - name: Upload Debug APK
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: debug-apk
           path: app/build/outputs/apk/debug/*.apk
