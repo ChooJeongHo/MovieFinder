@@ -25,7 +25,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Create local.properties
         run: echo "TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" > local.properties
