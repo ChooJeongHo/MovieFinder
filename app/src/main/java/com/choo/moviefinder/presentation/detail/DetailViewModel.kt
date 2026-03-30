@@ -1,5 +1,6 @@
 package com.choo.moviefinder.presentation.detail
 
+// Detail screen ViewModel - manages movie detail UI state and user actions
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

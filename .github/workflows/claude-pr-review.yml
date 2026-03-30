@@ -1,0 +1,191 @@
+name: Claude PR Code Review
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed
+        run: |
+          FILES=$(gh pr diff ${{ github.event.pull_request.number }} --name-only | grep -E '\.kt$|\.xml$' || true)
+          if [ -z "$FILES" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "No Kotlin/XML files changed."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "$FILES" > changed_files.txt
+            echo "Changed files:"
+            cat changed_files.txt
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Get diff content
+        if: steps.changed.outputs.skip == 'false'
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} > full_diff.txt
+          # Filter diff to only include .kt/.xml files
+          awk '/^diff --git/{keep=0} /^diff --git a\/.*\.(kt|xml) b\//{keep=1} keep' full_diff.txt > pr_diff.txt
+          # Truncate if too large (Claude API limit)
+          if [ $(wc -c < pr_diff.txt) -gt 100000 ]; then
+            head -c 100000 pr_diff.txt > pr_diff_truncated.txt
+            mv pr_diff_truncated.txt pr_diff.txt
+            echo "::warning::Diff truncated to 100KB for API limit"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Write review prompt
+        if: steps.changed.outputs.skip == 'false'
+        run: |
+          cat <<'EOF' > review_prompt.txt
+          You are an expert Android code reviewer. Review the following PR diff using these 6 categories. Assign a grade (A/B/C/D) to each.
+
+          ## Review Categories
+
+          ### 1. Architecture & Clean Architecture Compliance
+          - Layer dependency rules (Presentation -> Domain only, no Data layer references)
+          - Single Responsibility Principle
+          - Proper use of UseCase/Repository pattern
+          - ViewModel state management (StateFlow, sealed class UI state)
+
+          ### 2. Coroutine & Concurrency Safety
+          - Proper scope usage (viewModelScope, lifecycleScope)
+          - CancellationException rethrow
+          - Thread safety (Mutex, atomic operations)
+          - Flow collection patterns (stateIn, WhileSubscribed)
+
+          ### 3. Memory & Resource Management
+          - ViewBinding null cleanup in onDestroyView
+          - Flow collection with repeatOnLifecycle
+          - Image loading cancellation (Coil dispose)
+          - Dialog lifecycle management
+
+          ### 4. Error Handling
+          - Exception classification (ErrorType mapping)
+          - Partial failure handling (graceful degradation)
+          - User-facing error feedback (Snackbar, error UI)
+          - CancellationException preservation
+
+          ### 5. Android Best Practices
+          - SavedStateHandle for process death survival
+          - Configuration change handling
+          - Navigation Safe Args usage
+          - Accessibility (contentDescription)
+          - Resource usage (@string, @dimen instead of hardcoded values)
+
+          ### 6. Code Quality
+          - Naming conventions (Kotlin style)
+          - Code duplication (DRY)
+          - Function length and complexity
+          - Unnecessary code or over-engineering
+
+          ## Output Format
+
+          Use this exact markdown format:
+
+          ## Claude Code Review
+
+          ### Summary
+          [1-2 sentence overall assessment]
+
+          ### Category Grades
+          | Category | Grade | Notes |
+          |----------|-------|-------|
+          | Architecture | ? | ... |
+          | Coroutine Safety | ? | ... |
+          | Memory Management | ? | ... |
+          | Error Handling | ? | ... |
+          | Android Best Practices | ? | ... |
+          | Code Quality | ? | ... |
+
+          ### Issues Found
+          [List with severity: Critical / Warning / Info]
+          - **[Severity]** `file:line`: Description + suggested fix
+
+          ### Good Patterns
+          [Well-implemented patterns worth noting]
+
+          ### Overall Grade: [A/B/C/D]
+
+          Only review the changed code. Be concise and actionable.
+          If no significant issues, say so briefly.
+          EOF
+
+      - name: Run Claude Code Review
+        if: steps.changed.outputs.skip == 'false'
+        id: review
+        run: |
+          CHANGED_FILES=$(cat changed_files.txt | tr '\n' ', ' | sed 's/,$//')
+
+          jq -n \
+            --rawfile prompt review_prompt.txt \
+            --rawfile diff pr_diff.txt \
+            --arg files "$CHANGED_FILES" \
+            '{
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 4096,
+              messages: [
+                {
+                  role: "user",
+                  content: ($prompt + "\n\n## Changed Files\n" + $files + "\n\n## Diff\n```diff\n" + $diff + "\n```")
+                }
+              ]
+            }' > request_body.json
+
+          HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" \
+            https://api.anthropic.com/v1/messages \
+            -H "content-type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d @request_body.json)
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Claude API returned HTTP $HTTP_CODE"
+            jq . response.json 2>/dev/null || cat response.json
+            exit 1
+          fi
+
+          jq -r '.content[0].text' response.json > review_result.md
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Post review comment
+        if: steps.changed.outputs.skip == 'false'
+        run: |
+          COMMENT_BODY=$(cat review_result.md)
+          HEADER="🤖 **Claude AI Code Review**"
+          FOOTER="---
+          *Automated review by Claude API | [android-code-review](/.claude/skills/android-code-review/SKILL.md) criteria*"
+          FULL_COMMENT=$(printf '%s\n\n%s\n\n%s' "$HEADER" "$COMMENT_BODY" "$FOOTER")
+
+          # Delete previous Claude review comment if exists
+          PREVIOUS_COMMENT_ID=$(gh api \
+            repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+            --jq '.[] | select(.body | startswith("🤖 **Claude AI Code Review**")) | .id' | head -1)
+
+          if [ -n "$PREVIOUS_COMMENT_ID" ]; then
+            gh api -X DELETE repos/${{ github.repository }}/issues/comments/$PREVIOUS_COMMENT_ID
+          fi
+
+          gh pr comment ${{ github.event.pull_request.number }} --body "$FULL_COMMENT"
+        env:
+          GH_TOKEN: ${{ github.token }}
