@@ -149,7 +149,14 @@ class SearchFragment : Fragment() {
         }
 
         binding.btnClearAll.setOnClickListener {
-            viewModel.onClearSearchHistory()
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.search_clear_history_confirm_title)
+                .setMessage(R.string.search_clear_history_confirm_message)
+                .setPositiveButton(R.string.confirm) { _, _ ->
+                    viewModel.onClearSearchHistory()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
         }
     }
 
@@ -394,7 +401,7 @@ class SearchFragment : Fragment() {
 
     // 결과 없을 때 표시할 추천 검색어 칩 동적 생성
     private fun setupSuggestionChips() {
-        val suggestions = listOf("마블", "스파이더맨", "배트맨", "스타워즈", "해리포터")
+        val suggestions = resources.getStringArray(R.array.search_suggestions).toList()
         binding.chipGroupSuggestions.removeAllViews()
         for (term in suggestions) {
             val chip = Chip(requireContext()).apply {

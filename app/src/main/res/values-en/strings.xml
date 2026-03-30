@@ -209,6 +209,29 @@
     <string name="notification_channel_description">Get notified when your watchlist movies are released</string>
     <string name="notification_release_today">Released today!</string>
 
+    <!-- Charts -->
+    <string name="chart_month_format">%s</string>
+    <string name="chart_count_format">%1$s %2$d</string>
+
+    <!-- Search Suggestions -->
+    <string-array name="search_suggestions">
+        <item>Marvel</item>
+        <item>Spider-Man</item>
+        <item>Batman</item>
+        <item>Star Wars</item>
+        <item>Harry Potter</item>
+    </string-array>
+
+    <!-- Clear Search History Confirmation -->
+    <string name="search_clear_history_confirm_title">Clear Search History</string>
+    <string name="search_clear_history_confirm_message">Delete all search history?</string>
+
+    <!-- FAB Accessibility -->
+    <string name="cd_fab_add_favorite">Add to favorites</string>
+    <string name="cd_fab_remove_favorite">Remove from favorites</string>
+    <string name="cd_fab_add_watchlist">Add to watchlist</string>
+    <string name="cd_fab_remove_watchlist">Remove from watchlist</string>
+
     <!-- Memos -->
     <string name="memo_title">My Memos</string>
     <string name="memo_hint">Write a memo about this movie</string>

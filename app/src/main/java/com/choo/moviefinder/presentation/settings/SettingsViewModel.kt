@@ -37,10 +37,10 @@ class SettingsViewModel @Inject constructor(
     val monthlyWatchGoal: StateFlow<Int> = getMonthlyWatchGoalUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    private val _snackbarEvent = Channel<ErrorType>(Channel.BUFFERED)
+    private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
-    private val _watchHistoryCleared = Channel<Unit>(Channel.BUFFERED)
+    private val _watchHistoryCleared = Channel<Unit>(Channel.CONFLATED)
     val watchHistoryCleared = _watchHistoryCleared.receiveAsFlow()
 
     // 테마 모드를 DataStore에 저장 (에러 시 Timber 로깅)

@@ -46,7 +46,7 @@ class FavoriteViewModel @Inject constructor(
     ) { movies, sort -> sort.apply(movies) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _snackbarEvent = Channel<ErrorType>(Channel.BUFFERED)
+    private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)

@@ -14,7 +14,7 @@ class PieChartView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    private data class Slice(val label: String, val value: Float, val color: Int)
+    private data class Slice(val label: String, val value: Float, val color: Int, val legendText: String)
 
     private val slices = mutableListOf<Slice>()
     private val slicePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -44,6 +44,7 @@ class PieChartView @JvmOverloads constructor(
             tv.data
         }
         textPaint.color = textColor
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
     }
 
     // 장르 데이터를 설정하고 파이차트를 다시 그린다
@@ -55,7 +56,8 @@ class PieChartView @JvmOverloads constructor(
             return
         }
         items.forEachIndexed { index, (label, value) ->
-            slices.add(Slice(label, value / total, defaultColors[index % defaultColors.size]))
+            val percent = (value / total * 100).toInt()
+            slices.add(Slice(label, value / total, defaultColors[index % defaultColors.size], "$label $percent%"))
         }
         contentDescription = items.joinToString(", ") { "${it.first} ${(it.second / total * 100).toInt()}%" }
         invalidate()
@@ -99,8 +101,7 @@ class PieChartView @JvmOverloads constructor(
             canvas.drawCircle(legendX, legendY - dotRadius, dotRadius, dotPaint)
 
             textPaint.color = textColor
-            val percent = (slice.value * 100).toInt()
-            canvas.drawText(slice.label + " " + percent + "%", legendX + dotRadius * 3, legendY, textPaint)
+            canvas.drawText(slice.legendText, legendX + dotRadius * 3, legendY, textPaint)
             legendY += lineHeight
         }
     }

@@ -314,17 +314,23 @@ class MovieRepositoryImpl @Inject constructor(
     override suspend fun saveMemo(movieId: Int, content: String) {
         require(movieId > 0) { "Movie ID must be positive" }
         require(content.isNotBlank()) { "Memo content must not be blank" }
+        require(content.length <= MAX_MEMO_LENGTH) { "Memo content must not exceed $MAX_MEMO_LENGTH characters" }
         memoDao.insert(MemoEntity(movieId = movieId, content = content))
     }
 
     // 기존 메모 내용을 수정
     override suspend fun updateMemo(memoId: Long, content: String) {
         require(content.isNotBlank()) { "Memo content must not be blank" }
+        require(content.length <= MAX_MEMO_LENGTH) { "Memo content must not exceed $MAX_MEMO_LENGTH characters" }
         memoDao.updateMemo(memoId = memoId, content = content, updatedAt = System.currentTimeMillis())
     }
 
     // 메모를 삭제
     override suspend fun deleteMemo(memoId: Long) {
         memoDao.deleteMemo(memoId)
+    }
+
+    companion object {
+        private const val MAX_MEMO_LENGTH = 500
     }
 }
