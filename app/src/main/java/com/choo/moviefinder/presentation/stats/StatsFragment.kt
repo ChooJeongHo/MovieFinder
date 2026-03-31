@@ -93,6 +93,8 @@ class StatsFragment : Fragment() {
         bindTopGenres(stats)
         bindGenrePieChart(stats)
         bindMonthlyBarChart(stats)
+        bindRatingHistogram(stats)
+        bindCalendarHeatmap(stats)
     }
 
     // 장르 Top 3 텍스트 바인딩
@@ -167,6 +169,30 @@ class StatsFragment : Fragment() {
             binding.barChartView.setData(
                 stats.monthlyWatchCounts.map { it.yearMonth to it.count }
             )
+        }
+    }
+
+    // 평점 분포 히스토그램 바인딩
+    private fun bindRatingHistogram(stats: WatchStats) {
+        if (stats.ratingDistribution.isEmpty()) {
+            binding.histogramView.isVisible = false
+            binding.tvHistogramEmpty.isVisible = true
+        } else {
+            binding.histogramView.isVisible = true
+            binding.tvHistogramEmpty.isVisible = false
+            binding.histogramView.setData(stats.ratingDistribution)
+        }
+    }
+
+    // 시청 캘린더 히트맵 바인딩
+    private fun bindCalendarHeatmap(stats: WatchStats) {
+        if (stats.dailyWatchCounts.isEmpty()) {
+            binding.calendarHeatmapView.isVisible = false
+            binding.tvCalendarEmpty.isVisible = true
+        } else {
+            binding.calendarHeatmapView.isVisible = true
+            binding.tvCalendarEmpty.isVisible = false
+            binding.calendarHeatmapView.setData(stats.dailyWatchCounts)
         }
     }
 

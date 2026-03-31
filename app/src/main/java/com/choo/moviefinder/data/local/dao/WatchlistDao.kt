@@ -40,4 +40,12 @@ abstract class WatchlistDao {
             insert(entity)
         }
     }
+
+    // 모든 워치리스트를 일회성으로 조회 (백업용)
+    @Query("SELECT * FROM watchlist_movies ORDER BY addedAt DESC")
+    abstract suspend fun getAllWatchlistOnce(): List<WatchlistEntity>
+
+    // 여러 워치리스트 항목을 한 번에 삽입 (복원용)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertAll(entities: List<WatchlistEntity>)
 }

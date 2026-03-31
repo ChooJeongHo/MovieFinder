@@ -90,8 +90,26 @@ class DetailViewModel @Inject constructor(
     val isInWatchlist = isInWatchlistUseCase(movieId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    val userRating = getUserRatingUseCase(movieId)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    private val memoDelegate = MemoDelegate(
+        getMemosUseCase = getMemosUseCase,
+        saveMemoUseCase = saveMemoUseCase,
+        updateMemoUseCase = updateMemoUseCase,
+        deleteMemoUseCase = deleteMemoUseCase,
+        movieId = movieId,
+        viewModelScope = viewModelScope,
+        snackbarChannel = _snackbarEvent
+    )
+
+    private val userRatingDelegate = UserRatingDelegate(
+        getUserRatingUseCase = getUserRatingUseCase,
+        setUserRatingUseCase = setUserRatingUseCase,
+        deleteUserRatingUseCase = deleteUserRatingUseCase,
+        movieId = movieId,
+        viewModelScope = viewModelScope,
+        snackbarChannel = _snackbarEvent
+    )
+
+    val userRating get() = userRatingDelegate.userRating
 
     init {
         loadMovieDetail()
@@ -202,34 +220,21 @@ class DetailViewModel @Inject constructor(
     }
 
     // 사용자 영화 평점을 Room DB에 저장
-    fun setUserRating(rating: Float) = launchWithSnackbar {
-        setUserRatingUseCase(movieId, rating)
-        Timber.d("User rating set to %.1f for movie %d", rating, movieId)
-    }
+    fun setUserRating(rating: Float) = userRatingDelegate.setUserRating(rating)
 
     // 사용자 영화 평점을 Room DB에서 삭제
-    fun deleteUserRating() = launchWithSnackbar {
-        deleteUserRatingUseCase(movieId)
-        Timber.d("User rating deleted for movie %d", movieId)
-    }
+    fun deleteUserRating() = userRatingDelegate.deleteUserRating()
 
-    val memos = getMemosUseCase(movieId)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val memos get() = memoDelegate.memos
 
     // 영화에 새 메모를 저장
-    fun saveMemo(content: String) = launchWithSnackbar {
-        saveMemoUseCase(movieId, content)
-    }
+    fun saveMemo(content: String) = memoDelegate.saveMemo(content)
 
     // 기존 메모 내용을 수정
-    fun updateMemo(memoId: Long, content: String) = launchWithSnackbar {
-        updateMemoUseCase(memoId, content)
-    }
+    fun updateMemo(memoId: Long, content: String) = memoDelegate.updateMemo(memoId, content)
 
     // 메모를 삭제
-    fun deleteMemo(memoId: Long) = launchWithSnackbar {
-        deleteMemoUseCase(memoId)
-    }
+    fun deleteMemo(memoId: Long) = memoDelegate.deleteMemo(memoId)
 
     // 코루틴 실행 후 예외 발생 시 Snackbar 에러 이벤트 전송
     private fun launchWithSnackbar(block: suspend () -> Unit) {

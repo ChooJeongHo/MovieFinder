@@ -30,11 +30,17 @@ import com.choo.moviefinder.data.util.Constants
 import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Memo
+import com.choo.moviefinder.domain.model.DailyWatchCount
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
+import com.choo.moviefinder.domain.model.RatingBucket
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.PersonDetail
+import com.choo.moviefinder.domain.model.BackupMemo
+import com.choo.moviefinder.domain.model.BackupMovie
+import com.choo.moviefinder.domain.model.BackupRating
 import com.choo.moviefinder.domain.model.Review
+import com.choo.moviefinder.domain.model.UserDataBackup
 import com.choo.moviefinder.domain.repository.MovieRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -306,6 +312,20 @@ class MovieRepositoryImpl @Inject constructor(
         }
     }
 
+    // 평점별 개수 분포를 도메인 모델로 변환하여 조회
+    override fun getRatingDistribution(): Flow<List<RatingBucket>> {
+        return userRatingDao.getRatingDistribution().map { counts ->
+            counts.map { RatingBucket(rating = it.rating, count = it.count) }
+        }
+    }
+
+    // 일별 시청 편수를 도메인 모델로 변환하여 조회
+    override fun getDailyWatchCounts(): Flow<List<DailyWatchCount>> {
+        return watchHistoryDao.getDailyWatchCounts().map { counts ->
+            counts.map { DailyWatchCount(date = it.date, count = it.count) }
+        }
+    }
+
     // 영화의 메모 목록을 최신순으로 실시간 Flow로 조회
     override fun getMemos(movieId: Int): Flow<List<Memo>> {
         require(movieId > 0) { "Movie ID must be positive" }
@@ -358,6 +378,89 @@ class MovieRepositoryImpl @Inject constructor(
     override suspend fun getPersonMovieCredits(personId: Int): List<Movie> {
         require(personId > 0) { "Person ID must be positive" }
         return apiService.getPersonMovieCredits(personId).cast.map { it.toDomain() }
+    }
+
+    // 즐겨찾기, 워치리스트, 평점, 메모를 백업 모델로 내보낸다
+    override suspend fun exportUserData(): UserDataBackup {
+        val favorites = favoriteMovieDao.getAllFavoritesOnce().map { entity ->
+            BackupMovie(
+                id = entity.id,
+                title = entity.title,
+                posterPath = entity.posterPath,
+                voteAverage = entity.voteAverage,
+                overview = entity.overview
+            )
+        }
+        val watchlist = watchlistDao.getAllWatchlistOnce().map { entity ->
+            BackupMovie(
+                id = entity.id,
+                title = entity.title,
+                posterPath = entity.posterPath,
+                voteAverage = entity.voteAverage,
+                overview = entity.overview
+            )
+        }
+        val ratings = userRatingDao.getAllRatings().map { entity ->
+            BackupRating(movieId = entity.movieId, rating = entity.rating)
+        }
+        val memos = memoDao.getAllMemos().map { entity ->
+            BackupMemo(movieId = entity.movieId, content = entity.content)
+        }
+        return UserDataBackup(
+            favorites = favorites,
+            watchlist = watchlist,
+            ratings = ratings,
+            memos = memos
+        )
+    }
+
+    // 백업 데이터를 기존 데이터와 병합한다 (중복 시 덮어쓰기)
+    override suspend fun importUserData(backup: UserDataBackup) {
+        val favoriteEntities = backup.favorites.map { movie ->
+            com.choo.moviefinder.data.local.entity.FavoriteMovieEntity(
+                id = movie.id,
+                title = movie.title,
+                posterPath = movie.posterPath,
+                backdropPath = null,
+                overview = movie.overview,
+                releaseDate = "",
+                voteAverage = movie.voteAverage,
+                voteCount = 0
+            )
+        }
+        if (favoriteEntities.isNotEmpty()) {
+            favoriteMovieDao.insertAll(favoriteEntities)
+        }
+
+        val watchlistEntities = backup.watchlist.map { movie ->
+            com.choo.moviefinder.data.local.entity.WatchlistEntity(
+                id = movie.id,
+                title = movie.title,
+                posterPath = movie.posterPath,
+                backdropPath = null,
+                overview = movie.overview,
+                releaseDate = "",
+                voteAverage = movie.voteAverage,
+                voteCount = 0
+            )
+        }
+        if (watchlistEntities.isNotEmpty()) {
+            watchlistDao.insertAll(watchlistEntities)
+        }
+
+        val ratingEntities = backup.ratings.map { rating ->
+            UserRatingEntity(movieId = rating.movieId, rating = rating.rating)
+        }
+        if (ratingEntities.isNotEmpty()) {
+            userRatingDao.insertAll(ratingEntities)
+        }
+
+        val memoEntities = backup.memos.map { memo ->
+            MemoEntity(movieId = memo.movieId, content = memo.content)
+        }
+        if (memoEntities.isNotEmpty()) {
+            memoDao.insertAll(memoEntities)
+        }
     }
 
     companion object {

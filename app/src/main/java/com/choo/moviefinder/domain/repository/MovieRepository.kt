@@ -5,10 +5,13 @@ import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Memo
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.model.DailyWatchCount
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
+import com.choo.moviefinder.domain.model.RatingBucket
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.PersonDetail
 import com.choo.moviefinder.domain.model.Review
+import com.choo.moviefinder.domain.model.UserDataBackup
 import kotlinx.coroutines.flow.Flow
 
 @Suppress("TooManyFunctions")
@@ -120,6 +123,12 @@ interface MovieRepository {
     // 월별 시청 편수를 Flow로 반환한다
     fun getMonthlyWatchCounts(): Flow<List<MonthlyWatchCount>>
 
+    // 평점별 개수 분포를 Flow로 반환한다
+    fun getRatingDistribution(): Flow<List<RatingBucket>>
+
+    // 일별 시청 편수를 Flow로 반환한다
+    fun getDailyWatchCounts(): Flow<List<DailyWatchCount>>
+
     // 영화의 메모 목록을 Flow로 반환한다
     fun getMemos(movieId: Int): Flow<List<Memo>>
 
@@ -140,4 +149,10 @@ interface MovieRepository {
 
     // 인물 ID로 출연 영화 목록을 조회한다
     suspend fun getPersonMovieCredits(personId: Int): List<Movie>
+
+    // 사용자 데이터(즐겨찾기, 워치리스트, 평점, 메모)를 백업 모델로 내보낸다
+    suspend fun exportUserData(): UserDataBackup
+
+    // 백업 모델에서 사용자 데이터를 가져와 기존 데이터와 병합한다
+    suspend fun importUserData(backup: UserDataBackup)
 }
