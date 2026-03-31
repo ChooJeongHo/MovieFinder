@@ -26,7 +26,7 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | Room Paging | 2.8.4 | Room + Paging 3 통합 (RemoteMediator) |
 | Paging 3 | 3.4.0 | 무한 스크롤 페이징 |
 | Retrofit 3 | 3.0.0 | REST API 통신 |
-| OkHttp 5 | 5.0.0-alpha.14 | HTTP 클라이언트 + 로깅 (kotlin.time.Duration API) |
+| OkHttp 5 | 5.0.0-alpha.14 | HTTP 클라이언트 + 로깅 + 응답 캐시 (kotlin.time.Duration API) |
 | kotlinx.serialization | 1.8.1 | JSON 직렬화/역직렬화 |
 | Coil 3 | 3.4.0 | 이미지 로딩 (View 버전, 메모리+디스크 캐시) |
 | Facebook Shimmer | 0.5.0 | 로딩 Shimmer 애니메이션 |
@@ -47,7 +47,7 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | 도구 | 버전 | 용도 |
 |---|---|---|
 | Detekt | 2.0.0-alpha.2 | Kotlin 정적 분석 + KtLint 규칙 |
-| JaCoCo | (Gradle 내장) | 테스트 코드 커버리지 리포트 |
+| JaCoCo | (Gradle 내장) | 테스트 코드 커버리지 리포트 (최소 50% 기준) |
 | LeakCanary | 2.14 | 메모리 누수 감지 (debugImplementation) |
 
 ### 테스트 라이브러리
@@ -83,7 +83,7 @@ app/src/main/java/com/choo/moviefinder/
 │   └── BaselineProfileGenerator.kt # 앱 시작 시나리오
 ├── data/                  # 데이터 레이어
 │   ├── local/
-│   │   ├── MovieDatabase.kt       # Room DB (version 9)
+│   │   ├── MovieDatabase.kt       # Room DB (version 11)
 │   │   ├── PreferencesRepositoryImpl.kt # DataStore 기반 설정 저장소
 │   │   ├── dao/                   # DAO (8개)
 │   │   │   ├── FavoriteMovieDao.kt  # abstract class (@Transaction toggleFavorite)
@@ -91,8 +91,8 @@ app/src/main/java/com/choo/moviefinder/
 │   │   │   ├── CachedMovieDao.kt  # 오프라인 캐시 (PagingSource 반환)
 │   │   │   ├── RemoteKeyDao.kt    # 페이징 키 관리
 │   │   │   ├── MemoDao.kt           # 영화 메모 CRUD (movieId 인덱스)
-│   │   │   ├── UserRatingDao.kt    # 사용자 평점 (CRUD, AVG 쿼리)
-│   │   │   ├── WatchHistoryDao.kt # 시청 기록 (최근 20개, 통계 쿼리 3개, 월별 통계)
+│   │   │   ├── UserRatingDao.kt    # 사용자 평점 (CRUD, AVG 쿼리, 분포 쿼리)
+│   │   │   ├── WatchHistoryDao.kt # 시청 기록 (최근 20개, 통계 쿼리 4개, 월별/일별 통계)
 │   │   │   └── WatchlistDao.kt    # abstract class (@Transaction toggleWatchlist)
 │   │   └── entity/                # Room Entity (8개)
 │   │       ├── FavoriteMovieEntity.kt  # 인덱스: addedAt
@@ -106,27 +106,29 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── paging/
 │   │   ├── MoviePagingSource.kt       # 네트워크 전용 PagingSource (검색용)
 │   │   ├── DiscoverPagingSource.kt    # 장르/정렬 기반 탐색 PagingSource
+│   │   ├── TrendingPagingSource.kt    # 일별 트렌딩 네트워크 PagingSource
 │   │   └── MovieRemoteMediator.kt     # 오프라인 지원 RemoteMediator (홈 화면, 1시간 캐시 만료)
-│   ├── remote/            # Retrofit API (Service, DTO)
+│   ├── remote/            # Retrofit API (Service, DTO, PersonDetailDto, PersonCreditsResponse)
 │   ├── repository/        # Repository 구현체
 │   └── util/              # 상수 정의 (PAGE_SIZE, PREFETCH_DISTANCE, DEFAULT_PAGING_CONFIG, API 언어 코드)
 ├── di/                    # Hilt DI 모듈
 │   ├── DatabaseModule.kt  # Room DB + DAO 제공 (destructive migration fallback)
 │   ├── DataStoreModule.kt # DataStore Preferences 제공
-│   ├── NetworkModule.kt   # Retrofit/OkHttp 제공 (API key interceptor, Certificate Pinning, @ImageOkHttpClient, NetworkMonitor)
+│   ├── NetworkModule.kt   # Retrofit/OkHttp 제공 (API key interceptor, Certificate Pinning, HTTP 응답 캐시 10MB, @ImageOkHttpClient, NetworkMonitor)
 │   └── RepositoryModule.kt # Repository 바인딩 (Movie + Preferences)
 ├── domain/                # 도메인 레이어
-│   ├── model/             # 도메인 모델 (Movie, MovieDetail(toMovie()), Cast, Review, ThemeMode, WatchStats(monthlyWatchGoal), GenreCount, Memo)
+│   ├── model/             # 도메인 모델 (Movie, MovieDetail(toMovie()), Cast, Review, ThemeMode, WatchStats(monthlyWatchGoal), GenreCount, Memo, PersonDetail, RatingBucket, DailyWatchCount, MonthlyWatchCount, UserDataBackup)
 │   ├── repository/        # Repository 인터페이스
-│   └── usecase/           # UseCase 클래스 (36개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점/시청통계/메모/시청목표 포함)
+│   └── usecase/           # UseCase 클래스 (42개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점/시청통계/메모/시청목표/트렌딩/추천/배우/데이터백업 포함)
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 (8개) + MovieGridViewHolder + MovieListViewHolder (뷰 모드별 ViewHolder)
-│   ├── common/            # CircularRatingView, PieChartView, BarChartView (커스텀 뷰), GridLayoutManagerFactory (LoadState-aware 그리드)
-│   ├── detail/            # 영화 상세 화면 (DetailFragment, DetailViewModel, Mutex 중복 호출/연타 방지)
+│   ├── common/            # CircularRatingView, PieChartView, BarChartView, HistogramView, CalendarHeatmapView (커스텀 뷰), GridLayoutManagerFactory (LoadState-aware 그리드)
+│   ├── detail/            # 영화 상세 화면 (DetailFragment, DetailViewModel, MemoDelegate.kt, UserRatingDelegate.kt, Mutex 중복 호출/연타 방지)
 │   ├── favorite/          # 즐겨찾기/워치리스트 화면 (FavoriteFragment, FavoriteViewModel, TabLayout 탭 전환, 정렬, FavoriteSortOrder)
 │   ├── home/              # 홈 화면 (HomeFragment, HomeViewModel, 시청 기록, 탭 상태 저장)
+│   ├── person/            # 배우 상세 화면 (PersonDetailFragment, PersonDetailViewModel)
 │   ├── search/            # 검색 화면 (SearchFragment, SearchViewModel, 장르/정렬 필터, SavedStateHandle)
-│   ├── settings/          # 설정 화면 (SettingsFragment, SettingsViewModel, 테마/캐시/시청기록/시청목표 관리)
+│   ├── settings/          # 설정 화면 (SettingsFragment, SettingsViewModel, 테마/캐시/시청기록/시청목표/데이터백업 관리)
 │   ├── stats/             # 시청 통계 화면 (StatsFragment, StatsViewModel, stateIn 패턴, 시청 목표 달성률)
 │   └── widget/            # 홈 화면 위젯 (PopularMoviesWidget, RemoteViewsService/Factory)
 ├── MainActivity.kt        # 진입점 (AppCompatActivity + NavHostFragment + 딥링크 처리 + 네트워크 Snackbar)
@@ -158,7 +160,8 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 
 ### 1. 홈 화면 (HomeFragment)
 - **시청 기록**: 최근 본 영화 가로 스크롤 RecyclerView (HorizontalMovieAdapter, 최근 20개)
-- TabLayout으로 "현재 상영작" / "인기 영화" 전환
+- TabLayout으로 "현재 상영작" / "인기 영화" / **"트렌딩"** 전환 (3탭)
+- **트렌딩 탭**: TMDB /trending/movie/day API, TrendingPagingSource 네트워크 페이징
 - **탭 상태 저장**: `savedInstanceState`로 화면 회전 시 현재 탭 복원
 - Paging 3 무한 스크롤 (페이지당 20개)
 - **Pull-to-Refresh**: SwipeRefreshLayout으로 당겨서 새로고침 (colorPrimary 색상, LoadState 연동)
@@ -181,8 +184,9 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **검색 자동완성**: 입력 중 최근 검색어 기반 필터링 제안 (기존 RecentSearchAdapter 활용)
 - **검색어 trim 처리**: `onSearch` 시 공백 제거하여 중복 저장 방지
 - 최근 검색어 Room DB 저장/삭제/전체삭제 (RecentSearchAdapter)
+- **전체삭제 확인 다이얼로그**: 검색 기록 전체삭제 시 MaterialAlertDialog 확인
 - 상태별 UI 전환 (초기/검색중/결과없음/결과표시)
-- **검색 추천**: 결과 없을 때 추천 검색어 칩 표시 (마블, 스파이더맨, 배트맨, 스타워즈, 해리포터)
+- **검색 추천**: 결과 없을 때 추천 검색어 칩 표시 (string-array 리소스에서 로드)
 - **맨 위로 FAB**: 스크롤 시 mini FAB 표시, 탭하면 최상단 이동
 - **보기 모드 전환**: Toolbar 메뉴 토글로 그리드 ↔ 리스트 뷰 전환 (SavedStateHandle 저장)
 - **장르 칩 복원 개선**: 장르 API 미로드 시 개수만 표시, 로드 완료 시 이름으로 갱신
@@ -193,25 +197,36 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - 배경 이미지, 제목, 평점, 개봉일, 런타임, 태그라인
 - **콘텐츠 등급 배지**: TMDB release_dates API로 KR/US 등급 조회 (Chip 표시)
 - ChipGroup으로 장르 칩 동적 추가
-- 출연진 (Cast) 가로 스크롤 RecyclerView (CastAdapter)
+- 출연진 (Cast) 가로 스크롤 RecyclerView (CastAdapter, onCastClick 콜백 → PersonDetailFragment 이동)
 - 비슷한 영화 추천 가로 스크롤 RecyclerView (HorizontalMovieAdapter)
+- **추천 영화**: TMDB /movie/{id}/recommendations API로 추천 영화 섹션 추가 (HorizontalMovieAdapter)
 - **확장 상세 정보**: 제작비, 수익, 원어, 상태, IMDb 링크
 - **영화 공유**: Toolbar 메뉴에서 Intent.ACTION_SEND로 영화 정보 공유
 - FAB으로 즐겨찾기 토글 + **워치리스트 FAB**: 보고 싶은 영화 토글
+- **FAB contentDescription 동적 갱신**: 즐겨찾기/워치리스트 상태에 따라 접근성 레이블 갱신
 - **FAB 바운스 애니메이션**: 토글 시 scale bounce 효과
 - **영화 예고편 재생**: TMDB Videos API로 YouTube 키 획득 → YouTube 앱/웹 브라우저로 연결 (Intent.ACTION_VIEW)
 - **Shared Element Transition**: 홈/검색/즐겨찾기 → 상세 화면 포스터 이미지 공유 전환 (ChangeBounds + ChangeTransform + ChangeImageTransform)
 - **영화 리뷰**: TMDB reviews API로 사용자 리뷰 표시 (ReviewAdapter, 클릭 시 확장/축소)
-- 상세/출연진/비슷한 영화/예고편/등급/리뷰 6개 API를 async로 병렬 호출
+- 상세/출연진/비슷한 영화/추천 영화/예고편/등급/리뷰 7개 API를 async로 병렬 호출
 - **시청 기록 자동 저장**: 상세 화면 진입 시 Room DB에 저장 + 시청 목표 달성 확인 (`WatchGoalNotificationHelper`)
-- **부분 실패 처리**: 출연진/비슷한 영화/예고편/등급/리뷰 API 실패 시 빈 리스트/null로 대체 (상세 정보는 유지, `loadOptional`/`loadOptionalNullable` 헬퍼)
+- **부분 실패 처리**: 출연진/비슷한 영화/추천/예고편/등급/리뷰 API 실패 시 빈 리스트/null로 대체 (상세 정보는 유지, `loadOptional`/`loadOptionalNullable` 헬퍼)
 - **중복 호출 방지**: `Mutex.tryLock()` 기반 원자적 로딩 가드로 중복 API 호출 차단 (에러 후 재시도 가능), FAB 연타 방지 `toggleMutex.withLock()`
 - **재시도 UI**: 에러 시 재시도 버튼 비활성화 → 완료 후 재활성화
 - **즐겨찾기 토글 실패 피드백**: Channel(CONFLATED) → `receiveAsFlow()` → Snackbar로 에러 메시지 표시 (이벤트 유실 방지)
 - **출연진 정렬**: `order` 필드 기준 오름차순 정렬
-- **사용자 평점**: RatingBar로 0.5~5.0 별점 매기기 (Room DB 저장), 삭제 버튼
-- **영화 메모**: 영화별 메모 작성/수정/삭제 (MemoEntity, Room DB v11, stateIn 패턴, RecyclerView MemoAdapter)
+- **사용자 평점**: RatingBar로 0.5~5.0 별점 매기기 (Room DB 저장), 삭제 버튼 — `UserRatingDelegate`로 로직 분리
+- **영화 메모**: 영화별 메모 작성/수정/삭제 (MemoEntity, Room DB v11, 500자 길이 제한, stateIn 패턴, RecyclerView MemoAdapter, 삭제 Undo) — `MemoDelegate`로 로직 분리
+- **DetailViewModel Delegate 분리**: MemoDelegate(메모 CRUD) + UserRatingDelegate(평점 CRUD) 로 생성자 의존성 19개 → 13개 축소
 - NestedScrollView 기반 스크롤
+
+### 3-1. 배우 상세 화면 (PersonDetailFragment)
+- 출연진 클릭 시 CastAdapter `onCastClick` 콜백 → PersonDetailFragment 네비게이션
+- CollapsingToolbarLayout 패턴 (프로필 이미지 패럴랙스)
+- 배우 프로필, 이름, 생년월일, 바이오그래피 표시
+- **필모그래피**: TMDB /person/{id}/movie_credits API로 출연작 목록 (HorizontalMovieAdapter)
+- `PersonDetailViewModel` + GetPersonDetailUseCase + GetPersonCreditsUseCase
+- **딥링크**: `moviefinder://person/{personId}`
 
 ### 4. 즐겨찾기/워치리스트 화면 (FavoriteFragment)
 - **TabLayout 탭 전환**: "즐겨찾기" / "보고 싶은 영화" 탭
@@ -219,7 +234,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - Flow를 통한 실시간 업데이트 (repeatOnLifecycle)
 - **정렬 옵션**: Toolbar 메뉴 → MaterialAlertDialog (추가 날짜순/제목순/평점순, FavoriteSortOrder enum)
 - **스와이프 삭제**: ItemTouchHelper 왼쪽 스와이프로 삭제 + Snackbar 실행취소 (Undo, 양 탭 모두 지원)
-- **토글 에러 피드백**: Channel → `receiveAsFlow()` → Snackbar로 에러 메시지 표시 (DetailViewModel과 동일 패턴)
+- **토글 에러 피드백**: Channel(CONFLATED) → `receiveAsFlow()` → Snackbar로 에러 메시지 표시 (DetailViewModel과 동일 패턴)
 - 빈 상태 UI (EmptyState layout include, 탭별 다른 아이콘/메시지)
 - MovieAdapter (ListAdapter) 사용
 - **탭 상태 저장**: `savedInstanceState`로 화면 회전 시 현재 탭 복원
@@ -230,6 +245,8 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **캐시 삭제**: Coil 메모리 + 디스크 캐시 클리어
 - **시청 기록 삭제**: WatchHistoryDao.clearAll() + Channel 기반 성공/에러 이벤트 분리
 - **시청 통계**: Settings → StatsFragment 네비게이션 (Navigation Component action)
+- **데이터 내보내기**: JSON 백업 (ActivityResultContracts.CreateDocument), ExportUserDataUseCase
+- **데이터 가져오기**: JSON 복원 (ActivityResultContracts.OpenDocument), ImportUserDataUseCase
 - **앱 정보**: `getString(R.string.settings_version, VERSION_NAME)` 포맷으로 표시
 - BottomNavigationView 4번째 탭으로 접근
 - **에러 처리**: setThemeMode/clearWatchHistory/setMonthlyWatchGoal에 try-catch + CancellationException rethrow + Snackbar 에러 피드백
@@ -240,21 +257,28 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **시청 목표 달성률**: `LinearProgressIndicator` + 달성/남은 편수 표시, 목표 0이면 카드 숨김, 달성 시 `colorPrimary` 강조
 - **내 평균 별점**: `UserRatingDao.getAverageRating()` Flow (평점 없을 시 "아직 평점을 매기지 않았습니다")
 - **가장 많이 본 장르 Top 3**: `WatchHistoryEntity.genres` 콤마 split → 빈도 계산 → `GenreCount` (장르 없을 시 빈 상태 표시)
-- **장르별 시청 비율 파이차트**: `PieChartView` 커스텀 뷰 (Canvas 기반, 범례 포함, 접근성 contentDescription)
-- **월별 시청 편수 바차트**: `BarChartView` 커스텀 뷰 (Canvas 기반, 최근 6개월, 그리드 라인, 둥근 모서리 바)
+- **장르별 시청 비율 파이차트**: `PieChartView` 커스텀 뷰 (Canvas 기반, draw 캐싱, 범례 포함, 접근성 contentDescription)
+- **월별 시청 편수 바차트**: `BarChartView` 커스텀 뷰 (Canvas 기반, draw 캐싱, 최근 6개월, 그리드 라인, 둥근 모서리 바, 레이블 string resource)
+- **평점 분포 히스토그램**: `HistogramView` 커스텀 뷰 (Canvas 기반, 0.5★~5.0★ 분포, `UserRatingDao.getRatingDistribution()` 쿼리, `RatingBucket` 도메인 모델)
+- **시청 기록 캘린더 히트맵**: `CalendarHeatmapView` 커스텀 뷰 (GitHub 스타일, 최근 3개월, `WatchHistoryDao.getDailyWatchCounts()` 쿼리, `DailyWatchCount` 도메인 모델)
 - **GetWatchStatsUseCase**: 5개 Room Flow + 1개 DataStore Flow를 nested `combine()`으로 합성 → `WatchStats` 도메인 모델 (BaseStats 중간 홀더)
 - **WatchHistoryDao.getMonthlyWatchCounts()**: `strftime` 기반 월별 GROUP BY 쿼리 (최근 6개월)
+- **WatchHistoryDao.getDailyWatchCounts()**: `strftime` 기반 일별 GROUP BY 쿼리 (최근 3개월)
+- **UserRatingDao.getRatingDistribution()**: 별점별 COUNT 쿼리 → `RatingBucket` 리스트
 - **MonthlyCount**: Room 쿼리 결과 매핑용 POJO (`data/local/dao/`)
 - **MonthlyWatchCount**: 도메인 모델 (`domain/model/WatchStats.kt`)
+- **DailyWatchCount**: 도메인 모델 (`domain/model/WatchStats.kt`)
+- **RatingBucket**: 도메인 모델 (`domain/model/WatchStats.kt`)
 - **StatsViewModel**: `stateIn(WhileSubscribed(5000))` + `map` + `catch` 패턴 (Room Flow 자동 갱신, retry 불필요)
 - **StatsUiState**: sealed class (Loading/Success/Error)
-- 7개 MaterialCardView로 통계 카드 표시 (기본 4개 + 목표 달성률 + 파이차트 + 바차트)
+- 9개 MaterialCardView로 통계 카드 표시 (기본 4개 + 목표 달성률 + 파이차트 + 바차트 + 히스토그램 + 히트맵)
 - Settings → Stats: Navigation Component `action_settings_to_stats` (slide 애니메이션)
 - **딥링크**: `moviefinder://stats` (nav_graph deepLink, 목표 달성 알림에서 연결)
 
 ### 6. 딥링크 지원
 - **커스텀 스킴**: `moviefinder://movie/{movieId}` (Navigation Component 자동 처리)
 - **커스텀 스킴**: `moviefinder://stats` (시청 통계 화면 직접 이동, 목표 달성 알림 연동)
+- **커스텀 스킴**: `moviefinder://person/{personId}` (배우 상세 화면 직접 이동)
 - **TMDB 웹 URL**: `https://www.themoviedb.org/movie/{movieId}` (MainActivity에서 수동 파싱)
 - `onNewIntent()` 처리로 기존 Activity에서도 딥링크 수신
 
@@ -265,7 +289,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **새로고침 버튼**: 수동 갱신 (ACTION_REFRESH 브로드캐스트)
 - **클릭 → 상세 화면**: 딥링크 (`moviefinder://movie/{movieId}`) PendingIntent
 - **다크 모드 지원**: `widget_background.xml` + `drawable-night/` 다크 배경
-- OkHttp + kotlinx.serialization으로 직접 API 호출 (Hilt DI 미사용)
+- OkHttp 싱글턴 + kotlinx.serialization으로 직접 API 호출 (Hilt DI 미사용), SSL CertificatePinner 적용
 
 ### 8. 개봉일 알림 (WorkManager)
 - **ReleaseNotificationScheduler**: 워치리스트 추가 시 개봉일 알림 예약, 삭제 시 취소
@@ -284,9 +308,10 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **GOAL_NOTIFICATION_ID**: 9999 (고정 ID, 기존 알림 덮어쓰기)
 
 ### 9. 다국어 지원 (i18n)
-- **한국어** (기본): `values/strings.xml`
-- **영어**: `values-en/strings.xml` (161개 문자열 완전 번역)
+- **한국어** (기본): `values/strings.xml` (192개 문자열 + string-array)
+- **영어**: `values-en/strings.xml` (192개 문자열 완전 번역)
 - 포맷 문자열 (%s, %d, %,d 등) 모든 specifier 보존
+- 검색 추천어, 차트 레이블 등 하드코딩 문자열 → string resource / string-array 이동
 
 ### 10. 에러 처리
 - **ErrorMessageProvider + ErrorType**: 예외 → ErrorType 열거형 매핑 + Context 기반 한국어 메시지 변환
@@ -302,16 +327,22 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - Empty State UI 구현 (layout_empty_state.xml include)
 - Paging append 에러 처리 (MovieLoadStateAdapter)
 
+### 11. 데이터 내보내기/가져오기
+- **UserDataBackup**: `@Serializable` data class (즐겨찾기, 시청기록, 평점, 메모 포함)
+- **ExportUserDataUseCase**: Room DB → JSON 직렬화 → Uri로 파일 저장 (ActivityResultContracts.CreateDocument)
+- **ImportUserDataUseCase**: Uri 파일 → JSON 역직렬화 → Room DB 복원
+- 설정 화면 내보내기/가져오기 항목에서 접근
+
 ## RecyclerView 어댑터 (7개 + 공유 ViewHolder)
 | 어댑터 | 부모 클래스 | 용도 |
 |---|---|---|
 | `MoviePagingAdapter` | `PagingDataAdapter` | 홈/검색 그리드 (무한 스크롤) |
 | `MovieAdapter` | `ListAdapter` | 즐겨찾기/워치리스트 목록 |
-| `CastAdapter` | `ListAdapter` | 상세 화면 출연진 |
-| `HorizontalMovieAdapter` | `ListAdapter` | 가로 스크롤 영화 카드 (비슷한 영화 + 시청 기록, transitionPrefix 파라미터) |
+| `CastAdapter` | `ListAdapter` | 상세 화면 출연진 (onCastClick 콜백 파라미터) |
+| `HorizontalMovieAdapter` | `ListAdapter` | 가로 스크롤 영화 카드 (비슷한 영화 + 추천 영화 + 시청 기록, transitionPrefix 파라미터) |
 | `ReviewAdapter` | `ListAdapter` | 상세 화면 리뷰 (클릭 시 확장/축소) |
 | `RecentSearchAdapter` | `ListAdapter` | 검색 화면 최근 검색어 |
-| `MemoAdapter` | `ListAdapter` | 상세 화면 메모 목록 (수정/삭제) |
+| `MemoAdapter` | `ListAdapter` | 상세 화면 메모 목록 (수정/삭제, Undo) |
 | `MovieLoadStateAdapter` | `LoadStateAdapter` | 페이징 로딩/에러 footer |
 | `MovieGridViewHolder` | `ViewHolder` | MoviePagingAdapter/MovieAdapter 공유 ViewHolder (그리드 뷰) |
 | `MovieListViewHolder` | `ViewHolder` | MoviePagingAdapter 리스트 뷰 ViewHolder |
@@ -333,21 +364,26 @@ API 키 발급: https://www.themoviedb.org/settings/api
 - API Service 메서드에서는 API 키 파라미터 불필요
 - **HttpLoggingInterceptor**: 디버그 빌드에서만 생성/추가 (릴리스 빌드 시 객체 자체 미생성)
 - **CertificatePinner**: `api.themoviedb.org` + `image.tmdb.org` leaf + intermediate 인증서 SHA-256 핀 적용 (중간자 공격 방지)
+- **HTTP 응답 캐시**: OkHttp Cache 10MB (`NetworkModule`) — 상세/출연진/리뷰 등 반복 API 요청 캐싱
 
 ### 사용 엔드포인트
 | 엔드포인트 | 용도 |
 |---|---|
 | GET /movie/now_playing | 현재 상영작 (RemoteMediator 페이징) |
 | GET /movie/popular | 인기 영화 (RemoteMediator 페이징) |
+| GET /trending/movie/day | 일별 트렌딩 영화 (TrendingPagingSource 네트워크 페이징) |
 | GET /search/movie | 영화 검색 (네트워크 페이징, year 필터 지원) |
 | GET /discover/movie | 장르/정렬 기반 영화 탐색 (네트워크 페이징) |
 | GET /genre/movie/list | 장르 목록 조회 |
 | GET /movie/{id} | 영화 상세 정보 |
 | GET /movie/{id}/credits | 출연진 정보 |
 | GET /movie/{id}/similar | 비슷한 영화 |
+| GET /movie/{id}/recommendations | 추천 영화 |
 | GET /movie/{id}/videos | 예고편 영상 (YouTube 키) |
 | GET /movie/{id}/release_dates | 콘텐츠 등급 (KR 우선, US 폴백) |
 | GET /movie/{id}/reviews | 사용자 리뷰 |
+| GET /person/{id} | 배우 상세 정보 (프로필, 바이오그래피) |
+| GET /person/{id}/movie_credits | 배우 출연작 목록 |
 
 ## 오프라인 지원 (RemoteMediator 패턴)
 
@@ -368,7 +404,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 
 ## 테스트
 
-### 유닛 테스트 (161개)
+### 유닛 테스트 (185개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -387,6 +423,9 @@ API 키 발급: https://www.themoviedb.org/settings/api
 | `HomeViewModelTest` | 5 | UseCase 호출 검증 (nowPlaying, popular, 동시 호출), 시청기록 목록, 시청기록 빈 목록 |
 | `PreferencesRepositoryImplTest` | 9 | 테마 기본값, DARK/LIGHT 저장, 테마 변경, 시청 목표 기본값/저장/변경, 알림 월 기본값/저장 |
 | `WatchGoalNotificationHelperTest` | 7 | 목표 0/음수 조기 반환, 미달성 스킵, 달성+미통보 알림, 달성+이미통보 스킵, 초과달성, 전월통보+금월달성 |
+| `StatsViewModelTest` | 7 | 초기 Loading 상태, Success 상태 전파, Error 상태 처리, 빈 장르 목록, null 평점 처리, 시청 목표 0 전파, 시청 목표 달성률 계산 |
+| `GetWatchStatsUseCaseTest` | 10 | combine 로직 검증, 장르 빈도 정렬, Top 3 잘라내기, 공백 장르 trim, 목표 전파, 월별 카운트 매핑, 일별 카운트 매핑, 평점 분포 통합, 총 시청/이번 달 계산 |
+| `ReleaseNotificationSchedulerTest` | 7 | WorkManager 스케줄링 검증, 알림 취소 검증, 과거 날짜 스킵, 무효 날짜 스킵, API 레벨 가드, ExistingWorkPolicy.KEEP 검증 |
 
 ### Espresso UI 테스트 (5개)
 ```bash
@@ -432,8 +471,11 @@ API 키 발급: https://www.themoviedb.org/settings/api
 
 ### 딥링크 테스트 (adb)
 ```bash
-# 커스텀 스킴
+# 커스텀 스킴 (영화 상세)
 adb shell am start -a android.intent.action.VIEW -d "moviefinder://movie/550"
+
+# 커스텀 스킴 (배우 상세)
+adb shell am start -a android.intent.action.VIEW -d "moviefinder://person/6193"
 
 # TMDB 웹 URL
 adb shell am start -a android.intent.action.VIEW -d "https://www.themoviedb.org/movie/550"
@@ -448,6 +490,8 @@ adb shell am start -a android.intent.action.VIEW -d "https://www.themoviedb.org/
 - **Artifact 업로드**: Lint 결과 HTML + 테스트 결과 HTML + Detekt 결과 + JaCoCo 커버리지 리포트 + Debug APK
 - **API Key**: GitHub Secrets에서 `TMDB_API_KEY` 주입 → `local.properties` 생성
 - **Concurrency**: 동일 브랜치 중복 실행 시 이전 실행 자동 취소
+- **JaCoCo 최소 커버리지**: 50% (미달 시 빌드 실패)
+- **Dependabot**: 라이브러리 자동 버전 업데이트 설정
 
 ### GitHub Secrets 설정 필요
 Repository Settings > Secrets and variables > Actions에서:
@@ -470,6 +514,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - BottomNavigationView + `NavigationUI.setupWithNavController()` 연동
 - Detail 화면에서 BottomNavigationView 자동 숨김
 - Detail self-navigation에 `launchSingleTop="true"` 적용 (백스택 중복 방지)
+- PersonDetailFragment destination + `moviefinder://person/{personId}` deepLink 등록
 
 ### Room DB
 - 스키마 export 위치: `app/schemas/`
@@ -528,6 +573,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - `NetworkModule.kt`에서 `CertificatePinner` 설정
 - `api.themoviedb.org`: leaf + intermediate SHA-256 핀 (API용 OkHttpClient)
 - `image.tmdb.org`: leaf + intermediate SHA-256 핀 (`@ImageOkHttpClient` → Coil `OkHttpNetworkFetcherFactory`에 주입)
+- 위젯 OkHttp 싱글턴에도 SSL CertificatePinner 적용
 - 인증서 갱신 시 핀 업데이트 필요 (openssl 명령으로 새 해시 획득)
 
 ### Baseline Profiles
@@ -556,19 +602,20 @@ Repository Settings > Secrets and variables > Actions에서:
 - 빌드 설정 단계를 캐시하여 반복 빌드 속도 개선
 
 ### ProGuard / R8
-- `proguard-rules.pro`에 Retrofit, OkHttp, kotlinx.serialization, Room, Coil, Hilt, Paging, ViewModel, WorkManager, Widget 규칙 포함
+- `proguard-rules.pro`에 Retrofit, OkHttp, kotlinx.serialization, Room, Coil, Hilt, Paging, ViewModel, WorkManager, Widget, UserDataBackup 규칙 포함
 
 ## XML 레이아웃 구조
 ### 주요 레이아웃 파일
 | 파일 | 용도 |
 |---|---|
 | `activity_main.xml` | NavHostFragment + BottomNavigationView |
-| `fragment_home.xml` | Toolbar + TabLayout + RecyclerView + Shimmer |
+| `fragment_home.xml` | Toolbar + TabLayout(3탭) + RecyclerView + Shimmer |
 | `fragment_search.xml` | Toolbar + SearchInput + YearFilter ChipGroup + RecentSearches + Results |
 | `fragment_detail.xml` | CoordinatorLayout + CollapsingToolbar + NestedScrollView + FAB |
 | `fragment_favorite.xml` | Toolbar + TabLayout + RecyclerView + EmptyState |
 | `fragment_settings.xml` | Toolbar + NestedScrollView + 설정 항목 목록 |
-| `fragment_stats.xml` | Toolbar + ProgressBar + 4개 MaterialCardView (시청 통계) |
+| `fragment_stats.xml` | Toolbar + ProgressBar + 9개 MaterialCardView (시청 통계) |
+| `fragment_person_detail.xml` | CoordinatorLayout + CollapsingToolbar + 프로필 + 필모그래피 |
 | `item_movie_grid.xml` | 그리드용 영화 카드 |
 | `item_movie_horizontal.xml` | 가로 스크롤용 영화 카드 |
 | `item_cast.xml` | 출연진 아이템 |
@@ -604,7 +651,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Coil 캐시: 메모리 25% + 디스크 5% 설정
 - [x] Room 인덱스: 자주 쿼리되는 컬럼에 인덱스 추가
 - [x] LoggingInterceptor: 릴리스 빌드에서 객체 미생성
-- [x] 유닛 테스트: 161개 (ViewModel 80개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개)
+- [x] 유닛 테스트: 185개 (ViewModel 87개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개 + GetWatchStatsUseCase 10개)
 - [x] Espresso UI 테스트: 5개 (네비게이션 + 화면 표시 검증, HiltTestRunner)
 - [x] 접근성 강화: 영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지 접근성, ProgressBar/overlay 접근성
 - [x] 다크 모드 아이콘: `@color/icon_default` + `values-night/colors.xml` 테마 대응
@@ -616,7 +663,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Baseline Profiles: ProfileInstaller + 생성 모듈 구성
 - [x] GitHub Actions CI/CD: Lint + Build + Test 자동화 워크플로우
 - [x] Detekt + KtLint: 정적 분석 (Detekt 2.0.0-alpha.2 + KtLint 규칙)
-- [x] JaCoCo: 테스트 코드 커버리지 리포트 (HTML + XML)
+- [x] JaCoCo: 테스트 코드 커버리지 리포트 (HTML + XML, 최소 50% 기준)
 - [x] App Startup: Timber 초기화 최적화 (TimberInitializer)
 - [x] LeakCanary: 디버그 빌드 메모리 누수 감지
 - [x] Timber: 구조화 로깅 (OkHttp 로깅 통합)
@@ -667,7 +714,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Gradle 빌드 최적화: parallel=true, caching=true, shrinkResources, Version Catalog bundles
 - [x] 홈 화면 Pull-to-Refresh: SwipeRefreshLayout, LoadState 기반 초기 로딩/새로고침 분리
 - [x] 즐겨찾기 정렬 옵션: FavoriteSortOrder enum (추가 날짜순/제목순/평점순), Toolbar 메뉴 다이얼로그
-- [x] 즐겨찾기 에러 피드백: Channel → Snackbar (DetailViewModel과 동일 패턴)
+- [x] 즐겨찾기 에러 피드백: Channel(CONFLATED) → Snackbar (DetailViewModel과 동일 패턴)
 - [x] SearchViewModel 필터 SavedStateHandle 복원: genres (IntArray), sortBy (String name)
 - [x] Discover 모드 표시: 검색어 없이 필터 탐색 시 Chip 표시
 - [x] 검색 자동완성: 입력 중 최근 검색어 필터링 제안
@@ -686,10 +733,10 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Shared Element Transition 이미지 연동: Coil listener(onSuccess, onError)로 이미지 로드 완료 후 전환 시작
 - [x] 영화 리뷰 표시: TMDB reviews API + ReviewAdapter (클릭 시 확장/축소), DetailUiState.Success에 reviews 필드 추가
 - [x] 맨 위로 FAB: HomeFragment/SearchFragment 스크롤 시 mini FAB 표시 (canScrollVertically 기반)
-- [x] 검색 추천: 결과 없을 때 추천 검색어 칩 (마블, 스파이더맨, 배트맨, 스타워즈, 해리포터)
+- [x] 검색 추천: 결과 없을 때 추천 검색어 칩 (string-array 리소스)
 - [x] 홈 화면 위젯: PopularMoviesWidget + RemoteViewsService/Factory (인기 영화 Top 10, 1시간 갱신, 딥링크 클릭)
 - [x] 개봉일 알림: WorkManager + ReleaseNotificationScheduler/Worker (워치리스트 추가 시 예약, 삭제 시 취소)
-- [x] 다국어 지원: values-en/strings.xml 영어 번역 (161개 문자열)
+- [x] 다국어 지원: values-en/strings.xml 영어 번역 (192개 문자열)
 - [x] DetailViewModel 부분 실패 리팩토링: loadOptional/loadOptionalNullable 헬퍼 추출
 - [x] 사용자 영화 평점: RatingBar (0.5~5.0 별점), Room DB UserRatingEntity 저장, 삭제 버튼
 - [x] 검색 결과 보기 모드 전환: 그리드 ↔ 리스트 토글 (Toolbar 메뉴, SavedStateHandle 저장)
@@ -704,6 +751,26 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 캐시 삭제 안정성: `try-finally`로 memoryCache 실패해도 diskCache 클리어 보장
 - [x] DetailViewModel 보일러플레이트 제거: `launchWithSnackbar` 헬퍼 추출 (4개 함수 중복 try-catch 통합)
 - [x] 위젯 리소스 누수 수정: OkHttp `response.use {}` 패턴으로 Response 자동 닫힘 보장
+- [x] 트렌딩 탭 (TMDB /trending/movie/day, 홈 화면 3번째 탭, TrendingPagingSource)
+- [x] 추천 영화 (TMDB /movie/{id}/recommendations, 상세 화면 섹션, HorizontalMovieAdapter)
+- [x] 배우 상세 화면 (PersonDetailFragment + PersonDetailViewModel, 프로필/바이오/필모그래피, CollapsingToolbarLayout)
+- [x] CastAdapter onCastClick 콜백: 출연진 클릭 → PersonDetailFragment 네비게이션
+- [x] HTTP 응답 캐시 (OkHttp Cache 10MB, NetworkModule)
+- [x] 평점 분포 히스토그램 (HistogramView 커스텀 뷰, UserRatingDao.getRatingDistribution(), RatingBucket 도메인 모델)
+- [x] 시청 기록 캘린더 히트맵 (CalendarHeatmapView 커스텀 뷰, GitHub 스타일 3개월, DailyWatchCount 도메인 모델)
+- [x] DetailViewModel delegate 분리 (MemoDelegate + UserRatingDelegate, 생성자 의존성 19개 → 13개)
+- [x] 데이터 내보내기/가져오기 (JSON 백업, ActivityResultContracts, UserDataBackup @Serializable)
+- [x] Channel.CONFLATED 통일 (FavoriteViewModel, SettingsViewModel, DetailViewModel 전체 일관성)
+- [x] Widget OkHttpClient 싱글턴 + SSL CertificatePinner (위젯 보안 강화)
+- [x] 메모 500자 길이 제한 + 삭제 Undo (MemoAdapter + TextInputLayout maxLength)
+- [x] FAB contentDescription 동적 갱신 (즐겨찾기/워치리스트 토글 시 접근성 레이블 갱신)
+- [x] 검색 추천어/차트 레이블 i18n (string-array 리소스, BarChartView string resource 레이블)
+- [x] 검색 기록 전체삭제 확인 다이얼로그 (MaterialAlertDialog)
+- [x] JaCoCo 커버리지 최소 50% 기준 + Dependabot 설정
+- [x] PieChartView/BarChartView draw 캐싱 + 접근성 (onSizeChanged 캐싱, contentDescription)
+- [x] GetPersonDetailUseCase + GetPersonCreditsUseCase (배우 상세 정보 + 출연작)
+- [x] GetTrendingMoviesUseCase + GetMovieRecommendationsUseCase (트렌딩 + 추천 영화)
+- [x] ExportUserDataUseCase + ImportUserDataUseCase (데이터 백업/복원)
 
 ## 보너스 기능 구현 현황
 - [x] 다크 모드 지원 (MaterialComponents.DayNight 테마 + 테마 대응 아이콘/색상)
@@ -716,7 +783,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 딥링크 지원 (커스텀 스킴 + TMDB URL)
 - [x] 스와이프 삭제 + 실행취소
 - [x] 검색 연도 필터
-- [x] Unit Test 작성 (161개: ViewModel 80개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + Settings 1개 추가)
+- [x] Unit Test 작성 (185개: ViewModel 87개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개 + GetWatchStatsUseCase 10개)
 - [x] 영화 예고편 재생 (YouTube 앱/웹 연결, TMDB Videos API 연동)
 - [x] Shared Element Transition (포스터 이미지 공유 전환)
 - [x] DataStore 기반 다크모드 설정 (라이트/다크/시스템 전환)
@@ -724,7 +791,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Baseline Profiles (앱 시작 성능 최적화)
 - [x] GitHub Actions CI/CD (Detekt + Lint + Build + Test 자동화)
 - [x] Detekt + KtLint 정적 분석 (Kotlin 코드 품질 검사)
-- [x] JaCoCo 테스트 커버리지 리포트
+- [x] JaCoCo 테스트 커버리지 리포트 (최소 50% 기준)
 - [x] App Startup 초기화 최적화 (Timber)
 - [x] LeakCanary 메모리 누수 감지 (디버그 전용)
 - [x] Timber 구조화 로깅
@@ -735,7 +802,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] PagingConfig 최적화 (prefetchDistance, initialLoadSize 튜닝)
 - [x] 어댑터 이미지 메모리 관리 (onViewRecycled + Coil dispose)
 - [x] 접근성 개선 (CircularRatingView, 에러/로딩 상태 contentDescription)
-- [x] Channel 기반 일회성 UI 이벤트 (Snackbar 이벤트 유실 방지)
+- [x] Channel 기반 일회성 UI 이벤트 (Snackbar 이벤트 유실 방지, Channel.CONFLATED 전체 통일)
 - [x] 검색 즉시 실행 (merge 패턴: debounced + immediate flow)
 - [x] 홈 화면 탭 상태 저장 (savedInstanceState로 화면 회전 시 복원)
 - [x] DetailViewModel 중복 호출 방지 (isLoading 플래그) + FAB 연타 방지 (toggleMutex)
@@ -772,10 +839,10 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] ProGuard 규칙 현대화 (OkHttp 5.x/Retrofit 3.x consumer rules 기반)
 - [x] 영화 리뷰 표시 (TMDB reviews API, ReviewAdapter 확장/축소)
 - [x] 맨 위로 FAB (홈/검색 화면, mini FAB, canScrollVertically 기반)
-- [x] 검색 추천 (결과 없을 때 추천 검색어 칩)
+- [x] 검색 추천 (결과 없을 때 추천 검색어 칩, string-array 리소스)
 - [x] 홈 화면 위젯 (AppWidgetProvider, RemoteViewsService, 인기 영화 Top 10)
 - [x] 개봉일 알림 (WorkManager, 워치리스트 연동, NotificationChannel)
-- [x] 다국어 지원 (values-en/strings.xml 영어 번역 161개)
+- [x] 다국어 지원 (values-en/strings.xml 영어 번역 192개)
 - [x] Espresso UI 테스트 (HiltTestRunner + 네비게이션/화면 검증 5개)
 - [x] PagingSource/RemoteMediator 유닛 테스트 (19개: MoviePagingSource 7 + DiscoverPagingSource 5 + MovieRemoteMediator 7)
 - [x] 접근성 강화 (영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지, ProgressBar, decorative overlay)
@@ -794,21 +861,16 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 위젯 OkHttp Response 리소스 누수 수정 (response.use 패턴)
 - [x] 시청 통계 화면 (StatsFragment, 총 시청/이번 달/평균 별점/장르 Top 3, stateIn 패턴)
 - [x] WatchHistoryEntity genres 필드 추가 (Room DB v10, 장르 통계용)
-- [x] GetWatchStatsUseCase: 4개 Room Flow combine + kotlinx-datetime 월 시작 계산
+- [x] GetWatchStatsUseCase: 5개 Room Flow + 1개 DataStore Flow combine + kotlinx-datetime 월 시작 계산
 - [x] SaveWatchHistoryUseCase genres 파라미터 추가 (DetailViewModel에서 장르 전달)
 - [x] MovieDetail.toMovie() 도메인 이동: ViewModel private 확장 함수 → MovieDetail 멤버 함수 (재사용성 향상)
 - [x] saveWatchHistory coroutineScope 분리: 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
 - [x] FAB 연타 방어: toggleMutex.withLock()으로 즐겨찾기/워치리스트 동시 실행 방지
-- [x] Channel.BUFFERED → Channel.CONFLATED: 스낵바 이벤트에 적합한 최소 버퍼로 축소
-- [x] 장르별 시청 비율 파이차트: PieChartView 커스텀 뷰 (Canvas 기반, 범례, 접근성)
-- [x] 월별 시청 편수 바차트: BarChartView 커스텀 뷰 (Canvas 기반, 최근 6개월, 그리드 라인)
+- [x] 장르별 시청 비율 파이차트: PieChartView 커스텀 뷰 (Canvas 기반, draw 캐싱, 범례, 접근성)
+- [x] 월별 시청 편수 바차트: BarChartView 커스텀 뷰 (Canvas 기반, draw 캐싱, 최근 6개월, 그리드 라인, string resource 레이블)
 - [x] WatchHistoryDao 월별 통계 쿼리: strftime GROUP BY (MonthlyCount POJO)
-- [x] 영화 메모 기능: MemoEntity + MemoDao + 4개 UseCase (Get/Save/Update/Delete) + MemoAdapter
+- [x] 영화 메모 기능: MemoEntity + MemoDao + 4개 UseCase (Get/Save/Update/Delete) + MemoAdapter + 500자 제한 + 삭제 Undo
 - [x] 영화 메모 UI: 상세 화면 하단 메모 섹션 (TextInputLayout + RecyclerView + 수정/삭제)
-- [x] MovieDetail.toMovie() 도메인 이동: ViewModel private 확장 함수 → MovieDetail 멤버 함수 (재사용성 향상)
-- [x] saveWatchHistory coroutineScope 분리: 시청 기록 저장 실패가 UI 상태에 영향 주지 않도록 구조적 분리
-- [x] FAB 연타 방어: toggleMutex.withLock()으로 즐겨찾기/워치리스트 동시 실행 방지
-- [x] Channel.BUFFERED → Channel.CONFLATED: 스낵바 이벤트에 적합한 최소 버퍼로 축소
 - [x] 시청 목표 설정: SettingsFragment NumberPicker 다이얼로그 (0~100편), DataStore 저장, SettingsViewModel StateFlow
 - [x] 시청 목표 달성률: StatsFragment LinearProgressIndicator + 달성/남은 편수 표시, 목표 0이면 카드 숨김
 - [x] 시청 목표 달성 알림: WatchGoalNotificationHelper (Mutex 중복 방지, lastGoalNotifiedMonth 월 1회, moviefinder://stats 딥링크)
@@ -816,3 +878,19 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] SetMonthlyWatchGoalUseCase 입력 검증: require(goal in 0..100)
 - [x] WatchGoalNotificationHelper race condition 수정: Mutex.withLock()으로 원자적 체크
 - [x] StatsFragment tvGoalStatus 텍스트 색상 복원: 목표 미달성 시 textColorSecondary로 리셋
+- [x] 트렌딩 탭 (TMDB /trending/movie/day, 홈 화면 3번째 탭)
+- [x] 추천 영화 (TMDB /movie/{id}/recommendations, 상세 화면 섹션)
+- [x] 배우 상세 화면 (PersonDetailFragment, 프로필/바이오/필모그래피, CollapsingToolbarLayout)
+- [x] HTTP 응답 캐시 (OkHttp Cache 10MB)
+- [x] 평점 분포 히스토그램 (HistogramView, UserRatingDao 분포 쿼리, RatingBucket)
+- [x] 시청 기록 캘린더 히트맵 (CalendarHeatmapView, GitHub 스타일 3개월, DailyWatchCount)
+- [x] DetailViewModel delegate 분리 (MemoDelegate + UserRatingDelegate)
+- [x] 데이터 내보내기/가져오기 (JSON 백업, ActivityResultContracts, UserDataBackup)
+- [x] Channel.CONFLATED 통일 (FavoriteViewModel, SettingsViewModel)
+- [x] Widget OkHttpClient 싱글턴 + SSL CertificatePinner
+- [x] 메모 500자 길이 제한 + Undo 삭제
+- [x] FAB contentDescription 동적 갱신 (접근성)
+- [x] 검색 추천어/차트 레이블 i18n (string-array / string resource)
+- [x] 검색 기록 전체삭제 확인 다이얼로그
+- [x] JaCoCo 커버리지 최소 50% + Dependabot
+- [x] PieChartView/BarChartView draw 캐싱 + 접근성
