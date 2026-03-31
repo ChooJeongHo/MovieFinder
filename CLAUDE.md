@@ -115,10 +115,10 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── DatabaseModule.kt  # Room DB + DAO 제공 (destructive migration fallback)
 │   ├── DataStoreModule.kt # DataStore Preferences 제공
 │   ├── NetworkModule.kt   # Retrofit/OkHttp 제공 (API key interceptor, Certificate Pinning, HTTP 응답 캐시 10MB, @ImageOkHttpClient, NetworkMonitor)
-│   └── RepositoryModule.kt # Repository 바인딩 (Movie + Preferences)
+│   └── RepositoryModule.kt # Repository 바인딩 (9개 도메인 @Binds + Preferences)
 ├── domain/                # 도메인 레이어
 │   ├── model/             # 도메인 모델 (Movie, MovieDetail(toMovie()), Cast, Review, ThemeMode, WatchStats(monthlyWatchGoal), GenreCount, Memo, PersonDetail, RatingBucket, DailyWatchCount, MonthlyWatchCount, UserDataBackup)
-│   ├── repository/        # Repository 인터페이스
+│   ├── repository/        # Repository 인터페이스 (10개: Movie, Favorite, Watchlist, SearchHistory, WatchHistory, UserRating, Memo, Person, Backup, Preferences)
 │   └── usecase/           # UseCase 클래스 (43개, 테마/시청기록/워치리스트/장르/등급/리뷰/사용자평점/시청통계/메모/시청목표/트렌딩/추천/배우/데이터백업 포함)
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 (8개) + MovieGridViewHolder + MovieListViewHolder (뷰 모드별 ViewHolder)
@@ -144,6 +144,7 @@ app/src/main/java/com/choo/moviefinder/
 ### 레이어 규칙
 - **Core 레이어**: 공유 유틸리티 (ImageUrlProvider, ErrorMessageProvider 등), 모든 레이어에서 접근 가능
 - **Domain 레이어**: 순수 Kotlin, Android 프레임워크 의존성 없음 (Paging은 예외)
+- **Repository 인터페이스**: ISP(인터페이스 분리 원칙) 기반 도메인별 분리 — Movie, Favorite, Watchlist, SearchHistory, WatchHistory, UserRating, Memo, Person, Backup (9개) + Preferences (1개)
 - **Data 레이어**: API 통신, DB 접근, Domain 레이어의 Repository 인터페이스 구현
 - **Presentation 레이어**: ViewModel + Fragment/XML UI, Domain UseCase와 Core에만 의존 (Data 레이어 직접 참조 금지)
 
@@ -788,6 +789,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] GetPersonDetailUseCase + GetPersonCreditsUseCase (배우 상세 정보 + 출연작)
 - [x] GetTrendingMoviesUseCase + GetMovieRecommendationsUseCase (트렌딩 + 추천 영화)
 - [x] ExportUserDataUseCase + ImportUserDataUseCase (데이터 백업/복원)
+- [x] Repository ISP 분리: MovieRepository 40+ 메서드 → 9개 도메인별 인터페이스 (Movie, Favorite, Watchlist, SearchHistory, WatchHistory, UserRating, Memo, Person, Backup)
 
 ## 보너스 기능 구현 현황
 - [x] 다크 모드 지원 (MaterialComponents.DayNight 테마 + 테마 대응 아이콘/색상)
@@ -911,3 +913,4 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 검색 기록 전체삭제 확인 다이얼로그
 - [x] JaCoCo 커버리지 최소 50% + Dependabot
 - [x] PieChartView/BarChartView draw 캐싱 + 접근성
+- [x] Repository ISP 분리 (MovieRepository → 9개 도메인별 인터페이스, Hilt RepositoryModule 9개 @Binds)
