@@ -264,6 +264,11 @@
     <string name="export_error">Export failed</string>
     <string name="import_error">Import failed</string>
 
+    <!-- Debug -->
+    <string name="share_debug_logs">Share Debug Logs</string>
+    <string name="share_debug_logs_description">Share app logs (debug only)</string>
+    <string name="share_debug_logs_empty">No log file found</string>
+
     <!-- Memos -->
     <string name="memo_title">My Memos</string>
     <string name="memo_hint">Write a memo about this movie</string>

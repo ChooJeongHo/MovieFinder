@@ -1,0 +1,22 @@
+#!/bin/bash
+echo "Running pre-commit checks..."
+
+# Run Detekt
+echo "Running Detekt..."
+./gradlew :app:detekt --daemon --quiet 2>&1
+if [ $? -ne 0 ]; then
+    echo "Detekt failed. Fix issues before committing."
+    exit 1
+fi
+echo "Detekt passed"
+
+# Run compile check (faster than full build)
+echo "Checking compilation..."
+./gradlew :app:compileDebugKotlin --daemon --quiet 2>&1
+if [ $? -ne 0 ]; then
+    echo "Compilation failed. Fix errors before committing."
+    exit 1
+fi
+echo "Compilation passed"
+
+echo "All pre-commit checks passed!"

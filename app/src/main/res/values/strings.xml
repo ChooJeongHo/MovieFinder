@@ -289,4 +289,9 @@
     <string name="stats_share_monthly">이번 달: %d편</string>
     <string name="stats_share_rating">평균 별점: %.1f</string>
     <string name="stats_share_genres">선호 장르: %s</string>
+
+    <!-- 디버그 로그 공유 (디버그 빌드 전용) -->
+    <string name="share_debug_logs">디버그 로그 공유</string>
+    <string name="share_debug_logs_description">앱 로그를 공유합니다 (디버그 전용)</string>
+    <string name="share_debug_logs_empty">로그 파일이 없습니다</string>
 </resources>
