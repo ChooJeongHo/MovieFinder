@@ -43,6 +43,7 @@ import com.choo.moviefinder.domain.model.BackupRating
 import com.choo.moviefinder.domain.model.Review
 import com.choo.moviefinder.domain.model.UserDataBackup
 import com.choo.moviefinder.domain.repository.MovieRepository
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -421,52 +422,54 @@ class MovieRepositoryImpl @Inject constructor(
         )
     }
 
-    // 백업 데이터를 기존 데이터와 병합한다 (중복 시 덮어쓰기)
+    // 백업 데이터를 기존 데이터와 병합한다 (중복 시 덮어쓰기, 원자적 트랜잭션)
     override suspend fun importUserData(backup: UserDataBackup) {
-        val favoriteEntities = backup.favorites.map { movie ->
-            com.choo.moviefinder.data.local.entity.FavoriteMovieEntity(
-                id = movie.id,
-                title = movie.title,
-                posterPath = movie.posterPath,
-                backdropPath = null,
-                overview = movie.overview,
-                releaseDate = "",
-                voteAverage = movie.voteAverage,
-                voteCount = 0
-            )
-        }
-        if (favoriteEntities.isNotEmpty()) {
-            favoriteMovieDao.insertAll(favoriteEntities)
-        }
+        database.withTransaction {
+            val favoriteEntities = backup.favorites.map { movie ->
+                com.choo.moviefinder.data.local.entity.FavoriteMovieEntity(
+                    id = movie.id,
+                    title = movie.title,
+                    posterPath = movie.posterPath,
+                    backdropPath = null,
+                    overview = movie.overview,
+                    releaseDate = "",
+                    voteAverage = movie.voteAverage,
+                    voteCount = 0
+                )
+            }
+            if (favoriteEntities.isNotEmpty()) {
+                favoriteMovieDao.insertAll(favoriteEntities)
+            }
 
-        val watchlistEntities = backup.watchlist.map { movie ->
-            com.choo.moviefinder.data.local.entity.WatchlistEntity(
-                id = movie.id,
-                title = movie.title,
-                posterPath = movie.posterPath,
-                backdropPath = null,
-                overview = movie.overview,
-                releaseDate = "",
-                voteAverage = movie.voteAverage,
-                voteCount = 0
-            )
-        }
-        if (watchlistEntities.isNotEmpty()) {
-            watchlistDao.insertAll(watchlistEntities)
-        }
+            val watchlistEntities = backup.watchlist.map { movie ->
+                com.choo.moviefinder.data.local.entity.WatchlistEntity(
+                    id = movie.id,
+                    title = movie.title,
+                    posterPath = movie.posterPath,
+                    backdropPath = null,
+                    overview = movie.overview,
+                    releaseDate = "",
+                    voteAverage = movie.voteAverage,
+                    voteCount = 0
+                )
+            }
+            if (watchlistEntities.isNotEmpty()) {
+                watchlistDao.insertAll(watchlistEntities)
+            }
 
-        val ratingEntities = backup.ratings.map { rating ->
-            UserRatingEntity(movieId = rating.movieId, rating = rating.rating)
-        }
-        if (ratingEntities.isNotEmpty()) {
-            userRatingDao.insertAll(ratingEntities)
-        }
+            val ratingEntities = backup.ratings.map { rating ->
+                UserRatingEntity(movieId = rating.movieId, rating = rating.rating)
+            }
+            if (ratingEntities.isNotEmpty()) {
+                userRatingDao.insertAll(ratingEntities)
+            }
 
-        val memoEntities = backup.memos.map { memo ->
-            MemoEntity(movieId = memo.movieId, content = memo.content)
-        }
-        if (memoEntities.isNotEmpty()) {
-            memoDao.insertAll(memoEntities)
+            val memoEntities = backup.memos.map { memo ->
+                MemoEntity(movieId = memo.movieId, content = memo.content)
+            }
+            if (memoEntities.isNotEmpty()) {
+                memoDao.insertAll(memoEntities)
+            }
         }
     }
 

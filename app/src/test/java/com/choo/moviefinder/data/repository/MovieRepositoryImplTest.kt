@@ -38,10 +38,12 @@ import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.BackupRating
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.UserDataBackup
+import androidx.room.withTransaction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -115,8 +117,13 @@ class MovieRepositoryImplTest {
 
     @Before
     fun setup() {
+        mockkStatic("androidx.room.RoomDatabaseKt__RoomDatabase_androidKt")
         apiService = mockk()
         database = mockk()
+        coEvery { database.withTransaction<Unit>(any()) } coAnswers {
+            @Suppress("UNCHECKED_CAST")
+            (invocation.args[1] as suspend () -> Unit).invoke()
+        }
         favoriteMovieDao = mockk(relaxUnitFun = true)
         recentSearchDao = mockk(relaxUnitFun = true)
         cachedMovieDao = mockk()

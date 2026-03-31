@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.PersonSearchItem
@@ -21,12 +23,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -92,6 +96,9 @@ class SearchViewModel @Inject constructor(
 
     private val _isPersonSearchLoading = MutableStateFlow(false)
     val isPersonSearchLoading: StateFlow<Boolean> = _isPersonSearchLoading.asStateFlow()
+
+    private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
+    val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
     val recentSearches = getRecentSearchesUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -238,6 +245,7 @@ class SearchViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.w(e, "Person search failed for query: $trimmed")
                 _personResults.value = emptyList()
+                _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(e))
             } finally {
                 _isPersonSearchLoading.value = false
             }

@@ -165,15 +165,26 @@ class DetailViewModel @Inject constructor(
         }
     }
 
+    // CancellationException을 재전파하는 runCatching 대체 헬퍼
+    private inline fun <T> suspendRunCatching(block: () -> T): Result<T> {
+        return try {
+            Result.success(block())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     // 부분 실패 허용 로드 (실패 시 빈 리스트 반환)
     private suspend fun <T> loadOptional(tag: String, block: suspend () -> List<T>): List<T> =
-        runCatching { block() }
+        suspendRunCatching { block() }
             .onFailure { Timber.w(it, "Failed to load %s for movie %d", tag, movieId) }
             .getOrElse { emptyList() }
 
     // 부분 실패 허용 로드 (실패 시 null 반환)
     private suspend fun <T> loadOptionalNullable(tag: String, block: suspend () -> T?): T? =
-        runCatching { block() }
+        suspendRunCatching { block() }
             .onFailure { Timber.w(it, "Failed to load %s for movie %d", tag, movieId) }
             .getOrNull()
 
@@ -181,9 +192,9 @@ class DetailViewModel @Inject constructor(
     private suspend fun saveWatchHistory(detail: MovieDetail) {
         val movie = detail.toMovie()
         val genres = detail.genres.joinToString(",") { it.name }
-        runCatching { saveWatchHistoryUseCase(movie, genres) }
+        suspendRunCatching { saveWatchHistoryUseCase(movie, genres) }
             .onFailure { Timber.w(it, "Failed to save watch history for movie %d", movieId) }
-        runCatching { watchGoalNotificationHelper.checkAndNotifyGoalAchieved() }
+        suspendRunCatching { watchGoalNotificationHelper.checkAndNotifyGoalAchieved() }
             .onFailure { Timber.w(it, "Failed to check watch goal for movie %d", movieId) }
     }
 

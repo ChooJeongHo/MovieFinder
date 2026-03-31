@@ -29,7 +29,9 @@ import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.databinding.FragmentStatsBinding
 import com.choo.moviefinder.domain.model.WatchStats
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
@@ -240,63 +242,107 @@ class StatsFragment : Fragment() {
         binding.errorView.btnRetry.isVisible = false
     }
 
-    // 시청 통계 공유 이미지를 생성하고 Intent.ACTION_SEND로 공유
-    private fun shareStatsImage(stats: WatchStats) {
-        val bitmap = createStatsCardBitmap(stats)
-        val shareFile = saveBitmapToCache(bitmap)
-        bitmap.recycle()
-        val uri = FileProvider.getUriForFile(
-            requireContext(),
-            "${requireContext().packageName}.fileprovider",
-            shareFile
-        )
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "image/png"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        startActivity(Intent.createChooser(intent, getString(R.string.stats_share_title)))
-    }
+    // 테마 색상을 메인 스레드에서 미리 해석한 데이터 클래스
+    private data class StatsCardColors(
+        val primaryColor: Int,
+        val surfaceColor: Int,
+        val textPrimaryColor: Int,
+        val textSecondaryColor: Int
+    )
 
-    // Canvas 기반 통계 카드 Bitmap 생성
-    @Suppress("LongMethod")
-    private fun createStatsCardBitmap(stats: WatchStats): Bitmap {
-        val cardWidth = 800
-        val padding = 48
-        val lineHeight = 52
-
-        // 카드에 표시할 줄 수 계산 (제목 + 총 시청 + 이번 달 + 평점(옵션) + 장르(옵션) + 목표(옵션))
-        var lineCount = 3 // 제목 + 총시청 + 이번달
-        if (stats.averageRating != null) lineCount++
-        if (stats.topGenres.isNotEmpty()) lineCount++
-        if (stats.monthlyWatchGoal > 0) lineCount++
-
-        val cardHeight = padding * 2 + lineHeight * lineCount + 24
-
-        val bitmap = Bitmap.createBitmap(cardWidth, cardHeight, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-
-        // 테마 색상 해석
+    // 메인 스레드에서 테마 색상을 해석하여 반환
+    private fun resolveStatsCardColors(): StatsCardColors {
         val typedValue = TypedValue()
         val theme = requireContext().theme
-
         val primaryColor = requireContext().getColor(R.color.colorPrimary)
-
         theme.resolveAttribute(android.R.attr.windowBackground, typedValue, true)
         val surfaceColor = if (typedValue.resourceId != 0) {
             requireContext().getColor(typedValue.resourceId)
         } else {
             typedValue.data
         }
-
         theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true)
         val textPrimaryColor = requireContext().getColor(typedValue.resourceId)
-
         theme.resolveAttribute(android.R.attr.textColorSecondary, typedValue, true)
         val textSecondaryColor = requireContext().getColor(typedValue.resourceId)
+        return StatsCardColors(primaryColor, surfaceColor, textPrimaryColor, textSecondaryColor)
+    }
+
+    // 시청 통계 공유 이미지를 생성하고 Intent.ACTION_SEND로 공유 (백그라운드에서 비트맵 생성)
+    private fun shareStatsImage(stats: WatchStats) {
+        // 테마 색상과 문자열은 메인 스레드에서 미리 해석
+        val colors = resolveStatsCardColors()
+        val cardTitle = getString(R.string.stats_share_card_title)
+        val totalText = getString(R.string.stats_share_total, stats.totalWatched)
+        val monthlyText = getString(R.string.stats_share_monthly, stats.monthlyWatched)
+        val ratingText = stats.averageRating?.let { getString(R.string.stats_share_rating, it) }
+        val genreText = if (stats.topGenres.isNotEmpty()) {
+            val names = stats.topGenres.take(3).joinToString(", ") { it.name }
+            getString(R.string.stats_share_genres, names)
+        } else {
+            null
+        }
+        val goalText = if (stats.monthlyWatchGoal > 0) {
+            getString(R.string.stats_goal_progress_format, stats.monthlyWatched, stats.monthlyWatchGoal)
+        } else {
+            null
+        }
+        val shareTitle = getString(R.string.stats_share_title)
+        val packageName = requireContext().packageName
+        val cacheDir = requireContext().cacheDir
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.Default) {
+                createStatsCardBitmap(colors, cardTitle, totalText, monthlyText, ratingText, genreText, goalText)
+            }
+            val shareFile = withContext(Dispatchers.IO) {
+                val shareDir = File(cacheDir, "share_images")
+                shareDir.mkdirs()
+                val file = File(shareDir, "stats_card.png")
+                FileOutputStream(file).use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                }
+                file
+            }
+            bitmap.recycle()
+            val uri = FileProvider.getUriForFile(requireContext(), "$packageName.fileprovider", shareFile)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(intent, shareTitle))
+        }
+    }
+
+    // Canvas 기반 통계 카드 Bitmap 생성 (백그라운드 스레드에서 호출 가능)
+    @Suppress("LongMethod", "LongParameterList")
+    private fun createStatsCardBitmap(
+        colors: StatsCardColors,
+        cardTitle: String,
+        totalText: String,
+        monthlyText: String,
+        ratingText: String?,
+        genreText: String?,
+        goalText: String?
+    ): Bitmap {
+        val cardWidth = 800
+        val padding = 48
+        val lineHeight = 52
+
+        // 카드에 표시할 줄 수 계산 (제목 + 총 시청 + 이번 달 + 평점(옵션) + 장르(옵션) + 목표(옵션))
+        var lineCount = 3 // 제목 + 총시청 + 이번달
+        if (ratingText != null) lineCount++
+        if (genreText != null) lineCount++
+        if (goalText != null) lineCount++
+
+        val cardHeight = padding * 2 + lineHeight * lineCount + 24
+
+        val bitmap = Bitmap.createBitmap(cardWidth, cardHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
 
         // 배경 (둥근 모서리 카드)
-        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = surfaceColor }
+        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colors.surfaceColor }
         val cornerRadius = 24f
         canvas.drawRoundRect(
             RectF(0f, 0f, cardWidth.toFloat(), cardHeight.toFloat()),
@@ -304,35 +350,35 @@ class StatsFragment : Fragment() {
         )
 
         // 상단 강조 바
-        val accentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = primaryColor }
+        val accentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colors.primaryColor }
         canvas.drawRoundRect(
             RectF(0f, 0f, cardWidth.toFloat(), 8f),
             cornerRadius, cornerRadius, accentPaint
         )
 
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = primaryColor
+            color = colors.primaryColor
             textSize = 36f
             typeface = Typeface.DEFAULT_BOLD
         }
         val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = textPrimaryColor
+            color = colors.textPrimaryColor
             textSize = 28f
         }
         val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = textSecondaryColor
+            color = colors.textSecondaryColor
             textSize = 24f
         }
 
         var y = padding.toFloat() + 36f
 
         // 제목
-        canvas.drawText(getString(R.string.stats_share_card_title), padding.toFloat(), y, titlePaint)
+        canvas.drawText(cardTitle, padding.toFloat(), y, titlePaint)
         y += lineHeight
 
         // 구분선
         val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = textSecondaryColor
+            color = colors.textSecondaryColor
             alpha = 60
             strokeWidth = 1f
         }
@@ -341,32 +387,27 @@ class StatsFragment : Fragment() {
         canvas.drawLine(dividerStartX, y - lineHeight / 2f, dividerEndX, y - lineHeight / 2f, dividerPaint)
 
         // 총 시청 편수
-        val totalText = getString(R.string.stats_share_total, stats.totalWatched)
         canvas.drawText(totalText, padding.toFloat(), y, bodyPaint)
         y += lineHeight
 
         // 이번 달 시청 편수
-        val monthlyText = getString(R.string.stats_share_monthly, stats.monthlyWatched)
         canvas.drawText(monthlyText, padding.toFloat(), y, bodyPaint)
         y += lineHeight
 
         // 평균 별점
-        if (stats.averageRating != null) {
-            val ratingText = getString(R.string.stats_share_rating, stats.averageRating)
+        if (ratingText != null) {
             canvas.drawText(ratingText, padding.toFloat(), y, bodyPaint)
             y += lineHeight
         }
 
         // 선호 장르 Top 3
-        if (stats.topGenres.isNotEmpty()) {
-            val genreNames = stats.topGenres.take(3).joinToString(", ") { it.name }
-            canvas.drawText(getString(R.string.stats_share_genres, genreNames), padding.toFloat(), y, bodyPaint)
+        if (genreText != null) {
+            canvas.drawText(genreText, padding.toFloat(), y, bodyPaint)
             y += lineHeight
         }
 
         // 시청 목표 달성률
-        if (stats.monthlyWatchGoal > 0) {
-            val goalText = getString(R.string.stats_goal_progress_format, stats.monthlyWatched, stats.monthlyWatchGoal)
+        if (goalText != null) {
             canvas.drawText(goalText, padding.toFloat(), y, labelPaint)
         }
 
