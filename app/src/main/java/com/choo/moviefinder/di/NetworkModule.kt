@@ -105,8 +105,8 @@ object NetworkModule {
         val certificatePinner = CertificatePinner.Builder()
             .add(
                 "image.tmdb.org",
-                "sha256/lTfe0l8BsNLrIpmBOrNBdSg6TZn+VIEQ81pHilsTbqA=",
-                "sha256/AlSQhgtJirc8ahLyekmtX+Iw+v46yPYRLJt9Cq1GlB0="
+                "sha256/B/uFV1xlBj83gXfsZfdC7IUKMYq9E0EgYKJaTVUAbus=",
+                "sha256/kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ="
             )
             .build()
 
