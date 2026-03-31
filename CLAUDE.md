@@ -404,7 +404,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 
 ## 테스트
 
-### 유닛 테스트 (185개)
+### 유닛 테스트 (186개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -420,7 +420,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 | `MoviePagingSourceTest` | 7 | 첫 페이지 로드, 에러 처리, 다음 페이지 로드, 마지막 페이지 nextKey null, 첫 페이지 prevKey null, 연도 파라미터 전달, getRefreshKey null |
 | `DiscoverPagingSourceTest` | 5 | 첫 페이지 로드, 에러 처리, 파라미터 전달 검증, 마지막 페이지 nextKey null, 다음 페이지 키 |
 | `MovieRemoteMediatorTest` | 7 | 캐시 없을 때 REFRESH, 캐시 만료 시 REFRESH, 캐시 유효 시 SKIP, PREPEND 즉시 성공, APPEND 키 없음, APPEND nextKey null, API 에러 처리 |
-| `HomeViewModelTest` | 5 | UseCase 호출 검증 (nowPlaying, popular, 동시 호출), 시청기록 목록, 시청기록 빈 목록 |
+| `HomeViewModelTest` | 6 | UseCase 호출 검증 (nowPlaying, popular, trending, 동시 호출), 시청기록 목록, 시청기록 빈 목록 |
 | `PreferencesRepositoryImplTest` | 9 | 테마 기본값, DARK/LIGHT 저장, 테마 변경, 시청 목표 기본값/저장/변경, 알림 월 기본값/저장 |
 | `WatchGoalNotificationHelperTest` | 7 | 목표 0/음수 조기 반환, 미달성 스킵, 달성+미통보 알림, 달성+이미통보 스킵, 초과달성, 전월통보+금월달성 |
 | `StatsViewModelTest` | 7 | 초기 Loading 상태, Success 상태 전파, Error 상태 처리, 빈 장르 목록, null 평점 처리, 시청 목표 0 전파, 시청 목표 달성률 계산 |
@@ -651,7 +651,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Coil 캐시: 메모리 25% + 디스크 5% 설정
 - [x] Room 인덱스: 자주 쿼리되는 컬럼에 인덱스 추가
 - [x] LoggingInterceptor: 릴리스 빌드에서 객체 미생성
-- [x] 유닛 테스트: 185개 (ViewModel 87개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개 + GetWatchStatsUseCase 10개)
+- [x] 유닛 테스트: 186개 (ViewModel 88개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개 + GetWatchStatsUseCase 10개)
 - [x] Espresso UI 테스트: 5개 (네비게이션 + 화면 표시 검증, HiltTestRunner)
 - [x] 접근성 강화: 영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지 접근성, ProgressBar/overlay 접근성
 - [x] 다크 모드 아이콘: `@color/icon_default` + `values-night/colors.xml` 테마 대응
@@ -783,7 +783,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 딥링크 지원 (커스텀 스킴 + TMDB URL)
 - [x] 스와이프 삭제 + 실행취소
 - [x] 검색 연도 필터
-- [x] Unit Test 작성 (185개: ViewModel 87개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개 + GetWatchStatsUseCase 10개)
+- [x] Unit Test 작성 (186개: ViewModel 88개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개 + GetWatchStatsUseCase 10개)
 - [x] 영화 예고편 재생 (YouTube 앱/웹 연결, TMDB Videos API 연동)
 - [x] Shared Element Transition (포스터 이미지 공유 전환)
 - [x] DataStore 기반 다크모드 설정 (라이트/다크/시스템 전환)
