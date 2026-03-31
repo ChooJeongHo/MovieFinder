@@ -1,5 +1,6 @@
 package com.choo.moviefinder.presentation.settings
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.util.ErrorMessageProvider
@@ -29,6 +30,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     getThemeModeUseCase: GetThemeModeUseCase,
     private val setThemeModeUseCase: SetThemeModeUseCase,
     private val clearWatchHistoryUseCase: ClearWatchHistoryUseCase,
@@ -60,17 +62,12 @@ class SettingsViewModel @Inject constructor(
     private val _importSuccess = Channel<Unit>(Channel.CONFLATED)
     val importSuccess = _importSuccess.receiveAsFlow()
 
-    // 파일 저장 런처가 실행되기 전까지 JSON을 임시 보관한다
-    var pendingExportJson: String? = null
-        private set
-
-    fun setPendingExportJson(json: String) {
-        pendingExportJson = json
-    }
-
-    fun clearPendingExportJson() {
-        pendingExportJson = null
-    }
+    // 파일 저장 런처가 실행되기 전까지 JSON을 임시 보관한다 (프로세스 사망 시 복원 가능)
+    var pendingExportJson: String?
+        get() = savedStateHandle.get<String>("pendingExportJson")
+        set(value) {
+            savedStateHandle["pendingExportJson"] = value
+        }
 
     // 테마 모드를 DataStore에 저장 (에러 시 Timber 로깅)
     fun setThemeMode(mode: ThemeMode) {

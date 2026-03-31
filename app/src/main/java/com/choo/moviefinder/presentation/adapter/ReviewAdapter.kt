@@ -14,6 +14,9 @@ import java.util.Locale
 
 class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_CALLBACK) {
 
+    // 확장된 리뷰 ID 집합 — RecyclerView 재활용 시에도 상태가 보존된다
+    private val expandedIds = mutableSetOf<String>()
+
     // 리뷰 아이템 ViewHolder 생성
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReviewViewHolder {
         val binding = ItemReviewBinding.inflate(
@@ -24,17 +27,15 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
 
     // 리뷰 데이터를 ViewHolder에 바인딩
     override fun onBindViewHolder(holder: ReviewViewHolder, position: Int) {
-        getItem(position)?.let { holder.bind(it) }
+        getItem(position)?.let { holder.bind(it, expandedIds) }
     }
 
     class ReviewViewHolder(
         private val binding: ItemReviewBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        private var isExpanded = false
-
         // 접근성: 확장/축소 상태 설명 갱신
-        private fun updateStateDescription() {
+        private fun updateStateDescription(isExpanded: Boolean) {
             val desc = itemView.context.getString(
                 if (isExpanded) R.string.cd_review_expanded else R.string.cd_review_collapsed
             )
@@ -42,7 +43,7 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
         }
 
         // 리뷰 작성자, 평점, 내용, 날짜 바인딩 및 클릭 확장/축소 설정
-        fun bind(review: Review) {
+        fun bind(review: Review, expandedIds: MutableSet<String>) {
             binding.tvAuthor.text = review.author
 
             if (review.rating != null) {
@@ -53,16 +54,17 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
             }
 
             binding.tvContent.text = review.content
-            binding.tvContent.maxLines = 4
-            isExpanded = false
-            updateStateDescription()
+            val isExpanded = review.id in expandedIds
+            binding.tvContent.maxLines = if (isExpanded) Integer.MAX_VALUE else 4
+            updateStateDescription(isExpanded)
 
             binding.tvDate.text = review.createdAt.take(10)
 
             binding.root.setOnClickListener {
-                isExpanded = !isExpanded
-                binding.tvContent.maxLines = if (isExpanded) Integer.MAX_VALUE else 4
-                updateStateDescription()
+                val nowExpanded = review.id in expandedIds
+                if (nowExpanded) expandedIds.remove(review.id) else expandedIds.add(review.id)
+                binding.tvContent.maxLines = if (!nowExpanded) Integer.MAX_VALUE else 4
+                updateStateDescription(!nowExpanded)
             }
         }
     }

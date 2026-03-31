@@ -46,7 +46,7 @@ class SettingsFragment : Fragment() {
                     requireContext().contentResolver.openOutputStream(uri)?.use { stream ->
                         stream.write(json.toByteArray())
                     }
-                    viewModel.clearPendingExportJson()
+                    viewModel.pendingExportJson = null
                     Snackbar.make(binding.root, R.string.export_success, Snackbar.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
@@ -283,7 +283,7 @@ class SettingsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.exportedJson.collect { json ->
-                    viewModel.setPendingExportJson(json)
+                    viewModel.pendingExportJson = json
                     createDocumentLauncher.launch("moviefinder_backup.json")
                 }
             }

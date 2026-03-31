@@ -303,23 +303,26 @@ class StatsFragment : Fragment() {
             val bitmap = withContext(Dispatchers.Default) {
                 createStatsCardBitmap(colors, cardTitle, totalText, monthlyText, ratingText, genreText, goalText)
             }
-            val shareFile = withContext(Dispatchers.IO) {
-                val shareDir = File(cacheDir, "share_images")
-                shareDir.mkdirs()
-                val file = File(shareDir, "stats_card.png")
-                FileOutputStream(file).use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            try {
+                val shareFile = withContext(Dispatchers.IO) {
+                    val shareDir = File(cacheDir, "share_images")
+                    shareDir.mkdirs()
+                    val file = File(shareDir, "stats_card.png")
+                    FileOutputStream(file).use { out ->
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                    }
+                    file
                 }
-                file
+                val uri = FileProvider.getUriForFile(requireContext(), "$packageName.fileprovider", shareFile)
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/png"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(Intent.createChooser(intent, shareTitle))
+            } finally {
+                bitmap.recycle()
             }
-            bitmap.recycle()
-            val uri = FileProvider.getUriForFile(requireContext(), "$packageName.fileprovider", shareFile)
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/png"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            startActivity(Intent.createChooser(intent, shareTitle))
         }
     }
 
