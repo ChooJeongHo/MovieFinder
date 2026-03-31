@@ -55,13 +55,6 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .cache(cache)
             .certificatePinner(certificatePinner)
-            .addInterceptor { chain ->
-                val original = chain.request()
-                val url = original.url.newBuilder()
-                    .addQueryParameter("api_key", BuildConfig.TMDB_API_KEY)
-                    .build()
-                chain.proceed(original.newBuilder().url(url).build())
-            }
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(
@@ -72,6 +65,13 @@ object NetworkModule {
                         }
                     )
                 }
+            }
+            .addInterceptor { chain ->
+                val original = chain.request()
+                val url = original.url.newBuilder()
+                    .addQueryParameter("api_key", BuildConfig.TMDB_API_KEY)
+                    .build()
+                chain.proceed(original.newBuilder().url(url).build())
             }
             .connectTimeout(30.seconds)
             .readTimeout(30.seconds)

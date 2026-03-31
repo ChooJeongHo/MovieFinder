@@ -42,7 +42,13 @@ class PersonDetailViewModel @Inject constructor(
                 coroutineScope {
                     val personDeferred = async { getPersonDetailUseCase(personId) }
                     val moviesDeferred = async {
-                        runCatching { getPersonCreditsUseCase(personId) }.getOrElse { emptyList() }
+                        try {
+                            getPersonCreditsUseCase(personId)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            emptyList()
+                        }
                     }
                     _uiState.value = PersonDetailUiState.Success(
                         person = personDeferred.await(),

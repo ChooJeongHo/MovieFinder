@@ -21,6 +21,7 @@ import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.R
+import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.databinding.FragmentSearchBinding
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
@@ -84,6 +85,7 @@ class SearchFragment : Fragment() {
         observeViewMode()
         observeSearchMode()
         observeData()
+        observeSnackbarEvents()
     }
 
     // 검색 입력 텍스트 변경 감지 및 키보드 검색 액션 리스너 설정
@@ -672,6 +674,21 @@ class SearchFragment : Fragment() {
         binding.rvSearchResults.isVisible = false
         binding.noResultsSection.isVisible = false
         binding.fabScrollTop.hide()
+    }
+
+    // 배우 검색 실패 시 Snackbar 에러 메시지 표시
+    private fun observeSnackbarEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.snackbarEvent.collect { errorType ->
+                    Snackbar.make(
+                        binding.root,
+                        ErrorMessageProvider.getMessage(requireContext(), errorType),
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
     }
 
     // 다이얼로그 dismiss, Shimmer 중지, 어댑터 해제 및 바인딩 null 처리
