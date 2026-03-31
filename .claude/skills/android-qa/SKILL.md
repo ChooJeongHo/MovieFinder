@@ -44,7 +44,7 @@ Summarize results in a table:
 | Check | Status | Details |
 |-------|--------|---------|
 | Detekt | PASS/FAIL | N issues found |
-| Unit Tests | PASS/FAIL | N/186 passed |
+| Unit Tests | PASS/FAIL | N/201 passed |
 | Coverage | PASS/FAIL | Line: N%, Branch: N% |
 
 If any step fails, provide actionable fix suggestions referencing specific files and line numbers.
