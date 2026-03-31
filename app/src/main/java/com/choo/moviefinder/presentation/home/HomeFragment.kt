@@ -145,10 +145,11 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // 현재 상영작/인기 영화 탭 생성 및 탭 전환 리스너 설정
+    // 현재 상영작/인기 영화/트렌딩 탭 생성 및 탭 전환 리스너 설정
     private fun setupTabs() {
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_now_playing))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_popular))
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_trending))
 
         if (currentTab != 0) {
             binding.tabLayout.getTabAt(currentTab)?.select()
@@ -204,10 +205,10 @@ class HomeFragment : Fragment() {
         collectJob?.cancel()
         collectJob = viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                val flow = if (currentTab == 0) {
-                    viewModel.nowPlayingMovies
-                } else {
-                    viewModel.popularMovies
+                val flow = when (currentTab) {
+                    0 -> viewModel.nowPlayingMovies
+                    1 -> viewModel.popularMovies
+                    else -> viewModel.trendingMovies
                 }
                 flow.collectLatest { pagingData ->
                     movieAdapter.submitData(pagingData)

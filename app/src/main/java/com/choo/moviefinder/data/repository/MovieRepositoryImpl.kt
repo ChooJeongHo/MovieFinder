@@ -23,6 +23,7 @@ import com.choo.moviefinder.data.local.entity.toWatchlistEntity
 import com.choo.moviefinder.data.paging.DiscoverPagingSource
 import com.choo.moviefinder.data.paging.MoviePagingSource
 import com.choo.moviefinder.data.paging.MovieRemoteMediator
+import com.choo.moviefinder.data.paging.TrendingPagingSource
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.data.util.Constants
@@ -32,6 +33,7 @@ import com.choo.moviefinder.domain.model.Memo
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
+import com.choo.moviefinder.domain.model.PersonDetail
 import com.choo.moviefinder.domain.model.Review
 import com.choo.moviefinder.domain.repository.MovieRepository
 import kotlinx.coroutines.flow.Flow
@@ -86,6 +88,16 @@ class MovieRepositoryImpl @Inject constructor(
                 cachedMovieDao.getMoviesByCategory(MovieRemoteMediator.CATEGORY_POPULAR)
             }
         ).flow.map { pagingData -> pagingData.map { it.toDomain() } }
+    }
+
+    // 일별 트렌딩 영화를 네트워크 페이징 조회
+    override fun getTrendingMovies(): Flow<PagingData<Movie>> {
+        return Pager(
+            config = Constants.DEFAULT_PAGING_CONFIG,
+            pagingSourceFactory = {
+                TrendingPagingSource(apiService)
+            }
+        ).flow
     }
 
     // 검색어와 연도 필터로 영화를 네트워크 페이징 검색
@@ -328,6 +340,24 @@ class MovieRepositoryImpl @Inject constructor(
     // 메모를 삭제
     override suspend fun deleteMemo(memoId: Long) {
         memoDao.deleteMemo(memoId)
+    }
+
+    // 추천 영화 목록을 API에서 조회
+    override suspend fun getMovieRecommendations(movieId: Int): List<Movie> {
+        require(movieId > 0) { "Movie ID must be positive" }
+        return apiService.getMovieRecommendations(movieId).results.map { it.toDomain() }
+    }
+
+    // 인물 상세 정보를 API에서 조회
+    override suspend fun getPersonDetail(personId: Int): PersonDetail {
+        require(personId > 0) { "Person ID must be positive" }
+        return apiService.getPersonDetail(personId).toDomain()
+    }
+
+    // 인물 출연 영화 목록을 API에서 조회
+    override suspend fun getPersonMovieCredits(personId: Int): List<Movie> {
+        require(personId > 0) { "Person ID must be positive" }
+        return apiService.getPersonMovieCredits(personId).cast.map { it.toDomain() }
     }
 
     companion object {

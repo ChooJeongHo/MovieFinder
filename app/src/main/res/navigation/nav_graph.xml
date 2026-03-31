@@ -74,6 +74,31 @@
             app:exitAnim="@anim/fade_out"
             app:popEnterAnim="@anim/fade_in"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_detailFragment_to_personDetailFragment"
+            app:destination="@id/personDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/fade_out"
+            app:popEnterAnim="@anim/fade_in"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/personDetailFragment"
+        android:name="com.choo.moviefinder.presentation.person.PersonDetailFragment"
+        android:label=""
+        tools:layout="@layout/fragment_person_detail">
+        <argument
+            android:name="personId"
+            app:argType="integer" />
+        <deepLink app:uri="moviefinder://person/{personId}" />
+        <action
+            android:id="@+id/action_personDetailFragment_to_detailFragment"
+            app:destination="@id/detailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/fade_out"
+            app:popEnterAnim="@anim/fade_in"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
 </navigation>

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
 import com.choo.moviefinder.domain.usecase.GetNowPlayingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetPopularMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetTrendingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,6 +16,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     getNowPlayingMoviesUseCase: GetNowPlayingMoviesUseCase,
     getPopularMoviesUseCase: GetPopularMoviesUseCase,
+    getTrendingMoviesUseCase: GetTrendingMoviesUseCase,
     getWatchHistoryUseCase: GetWatchHistoryUseCase
 ) : ViewModel() {
 
@@ -22,6 +24,9 @@ class HomeViewModel @Inject constructor(
         .cachedIn(viewModelScope)
 
     val popularMovies = getPopularMoviesUseCase()
+        .cachedIn(viewModelScope)
+
+    val trendingMovies = getTrendingMoviesUseCase()
         .cachedIn(viewModelScope)
 
     val watchHistory = getWatchHistoryUseCase()

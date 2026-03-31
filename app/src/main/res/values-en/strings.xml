@@ -9,6 +9,7 @@
     <!-- Home Screen -->
     <string name="tab_now_playing">Now Playing</string>
     <string name="tab_popular">Popular</string>
+    <string name="tab_trending">Trending</string>
 
     <!-- Search Screen -->
     <string name="search_hint">Search movies</string>
@@ -231,6 +232,17 @@
     <string name="cd_fab_remove_favorite">Remove from favorites</string>
     <string name="cd_fab_add_watchlist">Add to watchlist</string>
     <string name="cd_fab_remove_watchlist">Remove from watchlist</string>
+
+    <!-- Recommendations -->
+    <string name="recommendations_title">Recommended Movies</string>
+
+    <!-- Person Detail -->
+    <string name="person_biography">Biography</string>
+    <string name="person_filmography">Filmography</string>
+    <string name="person_birthday_format">Born: %s</string>
+    <string name="person_birthplace_format">Birthplace: %s</string>
+    <string name="person_known_for">Known for: %s</string>
+    <string name="person_no_biography">No biography available</string>
 
     <!-- Memos -->
     <string name="memo_title">My Memos</string>

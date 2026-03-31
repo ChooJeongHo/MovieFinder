@@ -4,6 +4,7 @@ import androidx.paging.PagingData
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.GetNowPlayingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetPopularMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetTrendingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
 import app.cash.turbine.test
 import io.mockk.every
@@ -30,6 +31,7 @@ class HomeViewModelTest {
 
     private lateinit var getNowPlayingMoviesUseCase: GetNowPlayingMoviesUseCase
     private lateinit var getPopularMoviesUseCase: GetPopularMoviesUseCase
+    private lateinit var getTrendingMoviesUseCase: GetTrendingMoviesUseCase
     private lateinit var getWatchHistoryUseCase: GetWatchHistoryUseCase
 
     private val testMovies = listOf(
@@ -42,10 +44,12 @@ class HomeViewModelTest {
         Dispatchers.setMain(testDispatcher)
         getNowPlayingMoviesUseCase = mockk()
         getPopularMoviesUseCase = mockk()
+        getTrendingMoviesUseCase = mockk()
         getWatchHistoryUseCase = mockk()
 
         every { getNowPlayingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getPopularMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
+        every { getTrendingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getWatchHistoryUseCase() } returns flowOf(emptyList())
     }
 
@@ -58,6 +62,7 @@ class HomeViewModelTest {
         return HomeViewModel(
             getNowPlayingMoviesUseCase = getNowPlayingMoviesUseCase,
             getPopularMoviesUseCase = getPopularMoviesUseCase,
+            getTrendingMoviesUseCase = getTrendingMoviesUseCase,
             getWatchHistoryUseCase = getWatchHistoryUseCase
         )
     }
@@ -108,5 +113,13 @@ class HomeViewModelTest {
         viewModel.watchHistory.test {
             assertTrue(awaitItem().isEmpty())
         }
+    }
+
+    @Test
+    fun `trending movies flow is created from use case`() {
+        val viewModel = createViewModel()
+
+        assertNotNull(viewModel.trendingMovies)
+        verify(exactly = 1) { getTrendingMoviesUseCase() }
     }
 }

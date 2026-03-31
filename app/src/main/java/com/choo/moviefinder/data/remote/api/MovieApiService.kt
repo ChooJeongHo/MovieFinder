@@ -4,6 +4,8 @@ import com.choo.moviefinder.data.remote.dto.CreditsResponse
 import com.choo.moviefinder.data.remote.dto.GenreListResponse
 import com.choo.moviefinder.data.remote.dto.MovieDetailDto
 import com.choo.moviefinder.data.remote.dto.MovieListResponse
+import com.choo.moviefinder.data.remote.dto.PersonCreditsResponse
+import com.choo.moviefinder.data.remote.dto.PersonDetailDto
 import com.choo.moviefinder.data.remote.dto.ReleaseDateResponse
 import com.choo.moviefinder.data.remote.dto.ReviewResponse
 import com.choo.moviefinder.data.remote.dto.VideoResponse
@@ -85,6 +87,13 @@ interface MovieApiService {
         @Query("language") language: String = Constants.LANGUAGE_KO
     ): GenreListResponse
 
+    // 일별 트렌딩 영화 목록 조회
+    @GET("trending/movie/day")
+    suspend fun getTrendingMovies(
+        @Query("page") page: Int = 1,
+        @Query("language") language: String = Constants.LANGUAGE_KO
+    ): MovieListResponse
+
     // 장르/정렬/연도 기반 영화 탐색
     @GET("discover/movie")
     suspend fun discoverMovies(
@@ -94,4 +103,26 @@ interface MovieApiService {
         @Query("year") year: Int? = null,
         @Query("language") language: String = Constants.LANGUAGE_KO
     ): MovieListResponse
+
+    // 추천 영화 목록 조회
+    @GET("movie/{movie_id}/recommendations")
+    suspend fun getMovieRecommendations(
+        @Path("movie_id") movieId: Int,
+        @Query("page") page: Int = 1,
+        @Query("language") language: String = Constants.LANGUAGE_KO
+    ): MovieListResponse
+
+    // 배우/감독 상세 정보 조회
+    @GET("person/{person_id}")
+    suspend fun getPersonDetail(
+        @Path("person_id") personId: Int,
+        @Query("language") language: String = Constants.LANGUAGE_KO
+    ): PersonDetailDto
+
+    // 배우/감독 출연 영화 크레딧 조회
+    @GET("person/{person_id}/movie_credits")
+    suspend fun getPersonMovieCredits(
+        @Path("person_id") personId: Int,
+        @Query("language") language: String = Constants.LANGUAGE_KO
+    ): PersonCreditsResponse
 }

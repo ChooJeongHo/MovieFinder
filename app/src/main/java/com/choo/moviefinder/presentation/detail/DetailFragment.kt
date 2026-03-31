@@ -59,6 +59,7 @@ class DetailFragment : Fragment() {
 
     private lateinit var castAdapter: CastAdapter
     private lateinit var similarMovieAdapter: HorizontalMovieAdapter
+    private lateinit var recommendationAdapter: HorizontalMovieAdapter
     private lateinit var reviewAdapter: ReviewAdapter
     private lateinit var memoAdapter: MemoAdapter
     private var memoEditDialog: android.app.Dialog? = null
@@ -147,9 +148,14 @@ class DetailFragment : Fragment() {
         startActivity(Intent.createChooser(intent, getString(R.string.share_chooser_title)))
     }
 
-    // 출연진, 비슷한 영화, 리뷰 RecyclerView 초기화
+    // 출연진, 비슷한 영화, 추천 영화, 리뷰 RecyclerView 초기화
     private fun setupRecyclerViews() {
-        castAdapter = CastAdapter()
+        castAdapter = CastAdapter { personId ->
+            findNavController().navigate(
+                R.id.action_detailFragment_to_personDetailFragment,
+                com.choo.moviefinder.presentation.person.PersonDetailFragmentArgs(personId).toBundle()
+            )
+        }
         binding.rvCast.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = castAdapter
@@ -167,6 +173,20 @@ class DetailFragment : Fragment() {
         binding.rvSimilar.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = similarMovieAdapter
+        }
+
+        // 추천 영화 클릭 시 같은 DetailFragment를 새 인스턴스로 재생성 (self-navigation)
+        recommendationAdapter = HorizontalMovieAdapter { movieId ->
+            if (findNavController().currentDestination?.id == R.id.detailFragment) {
+                findNavController().navigate(
+                    R.id.action_detailFragment_self,
+                    DetailFragmentArgs(movieId).toBundle()
+                )
+            }
+        }
+        binding.rvRecommendations.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = recommendationAdapter
         }
 
         reviewAdapter = ReviewAdapter()
@@ -344,6 +364,11 @@ class DetailFragment : Fragment() {
         similarMovieAdapter.submitList(state.similarMovies)
         binding.tvSimilarLabel.isVisible = state.similarMovies.isNotEmpty()
         binding.rvSimilar.isVisible = state.similarMovies.isNotEmpty()
+
+        // 추천 영화
+        recommendationAdapter.submitList(state.recommendations)
+        binding.tvRecommendationsLabel.isVisible = state.recommendations.isNotEmpty()
+        binding.rvRecommendations.isVisible = state.recommendations.isNotEmpty()
 
         // 리뷰
         reviewAdapter.submitList(state.reviews)
@@ -561,6 +586,7 @@ class DetailFragment : Fragment() {
         super.onDestroyView()
         binding.rvCast.adapter = null
         binding.rvSimilar.adapter = null
+        binding.rvRecommendations.adapter = null
         binding.rvReviews.adapter = null
         memoEditDialog?.dismiss()
         memoEditDialog = null

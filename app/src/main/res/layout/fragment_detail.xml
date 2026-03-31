@@ -244,6 +244,26 @@
                 android:orientation="horizontal"
                 android:visibility="gone" />
 
+            <!-- 추천 영화 -->
+            <TextView
+                android:id="@+id/tv_recommendations_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_lg"
+                android:text="@string/recommendations_title"
+                android:textAppearance="?attr/textAppearanceHeadline6"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_recommendations"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:visibility="gone" />
+
             <!-- 리뷰 -->
             <TextView
                 android:id="@+id/tv_reviews_label"
