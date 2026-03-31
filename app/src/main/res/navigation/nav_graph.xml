@@ -23,6 +23,13 @@
         <action
             android:id="@+id/action_search_to_detail"
             app:destination="@id/detailFragment" />
+        <action
+            android:id="@+id/action_search_to_person_detail"
+            app:destination="@id/personDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/fade_out"
+            app:popEnterAnim="@anim/fade_in"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment

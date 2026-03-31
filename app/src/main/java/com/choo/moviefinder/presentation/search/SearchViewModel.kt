@@ -7,6 +7,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.domain.usecase.ClearSearchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.DiscoverMoviesUseCase
@@ -14,6 +15,7 @@ import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
+import com.choo.moviefinder.domain.usecase.SearchPersonUseCase
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -45,7 +47,8 @@ class SearchViewModel @Inject constructor(
     private val getRecentSearchesUseCase: GetRecentSearchesUseCase,
     private val saveSearchQueryUseCase: SaveSearchQueryUseCase,
     private val deleteSearchQueryUseCase: DeleteSearchQueryUseCase,
-    private val clearSearchHistoryUseCase: ClearSearchHistoryUseCase
+    private val clearSearchHistoryUseCase: ClearSearchHistoryUseCase,
+    private val searchPersonUseCase: SearchPersonUseCase
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow(savedStateHandle.get<String>(KEY_QUERY) ?: "")
@@ -80,6 +83,15 @@ class SearchViewModel @Inject constructor(
     val genres: StateFlow<List<Genre>> = _genres.asStateFlow()
 
     private var genreLoadFailed = false
+
+    private val _searchMode = MutableStateFlow(SearchMode.MOVIE)
+    val searchMode: StateFlow<SearchMode> = _searchMode.asStateFlow()
+
+    private val _personResults = MutableStateFlow<List<PersonSearchItem>>(emptyList())
+    val personResults: StateFlow<List<PersonSearchItem>> = _personResults.asStateFlow()
+
+    private val _isPersonSearchLoading = MutableStateFlow(false)
+    val isPersonSearchLoading: StateFlow<Boolean> = _isPersonSearchLoading.asStateFlow()
 
     val recentSearches = getRecentSearchesUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -200,6 +212,38 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    // 영화/배우 검색 모드 전환
+    fun toggleSearchMode() {
+        _searchMode.value = if (_searchMode.value == SearchMode.MOVIE) {
+            SearchMode.PERSON
+        } else {
+            SearchMode.MOVIE
+        }
+        _personResults.value = emptyList()
+    }
+
+    // 배우 검색 실행 (쿼리가 비어있으면 결과 초기화)
+    fun onPersonSearch(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) {
+            _personResults.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            _isPersonSearchLoading.value = true
+            try {
+                _personResults.value = searchPersonUseCase(trimmed)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Person search failed for query: $trimmed")
+                _personResults.value = emptyList()
+            } finally {
+                _isPersonSearchLoading.value = false
+            }
+        }
+    }
+
     private data class SearchParams(
         val query: String,
         val year: Int?,
@@ -214,6 +258,11 @@ class SearchViewModel @Inject constructor(
         private const val KEY_SORT = "selected_sort"
         private const val KEY_VIEW_MODE = "view_mode"
     }
+}
+
+enum class SearchMode {
+    MOVIE,
+    PERSON,
 }
 
 enum class SortOption(val apiValue: String) {

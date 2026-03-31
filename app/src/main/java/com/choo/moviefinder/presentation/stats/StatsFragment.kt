@@ -1,10 +1,22 @@
 package com.choo.moviefinder.presentation.stats
 
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Typeface
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.FileProvider
+import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -18,7 +30,10 @@ import com.choo.moviefinder.databinding.FragmentStatsBinding
 import com.choo.moviefinder.domain.model.WatchStats
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
+@Suppress("TooManyFunctions")
 @AndroidEntryPoint
 class StatsFragment : Fragment() {
 
@@ -26,6 +41,8 @@ class StatsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: StatsViewModel by viewModels()
+
+    private var currentStats: WatchStats? = null
 
     // 통계 화면 레이아웃을 인플레이트하고 바인딩 초기화
     override fun onCreateView(
@@ -44,11 +61,26 @@ class StatsFragment : Fragment() {
         observeUiState()
     }
 
-    // 툴바 뒤로가기 버튼 설정
+    // 툴바 뒤로가기 버튼 및 메뉴 설정
     private fun setupToolbar() {
         binding.toolbar.setNavigationOnClickListener {
             findNavController().navigateUp()
         }
+        binding.toolbar.addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.menu_stats, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    R.id.action_share_stats -> {
+                        currentStats?.let { shareStatsImage(it) }
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     // UI 상태(Loading/Success/Error) Flow를 수집하여 화면 전환
@@ -75,6 +107,7 @@ class StatsFragment : Fragment() {
 
     // 성공 상태 표시 (통계 데이터 바인딩)
     private fun showContent(stats: WatchStats) {
+        currentStats = stats
         binding.progressBar.isVisible = false
         binding.contentLayout.isVisible = true
         binding.errorView.layoutError.isVisible = false
@@ -150,7 +183,7 @@ class StatsFragment : Fragment() {
         } else {
             val remaining = stats.monthlyWatchGoal - stats.monthlyWatched
             binding.tvGoalStatus.text = getString(R.string.stats_goal_remaining, remaining)
-            val typedValue = android.util.TypedValue()
+            val typedValue = TypedValue()
             requireContext().theme.resolveAttribute(android.R.attr.textColorSecondary, typedValue, true)
             binding.tvGoalStatus.setTextColor(
                 requireContext().getColor(typedValue.resourceId)
@@ -205,6 +238,150 @@ class StatsFragment : Fragment() {
         binding.errorView.tvErrorMessage.text =
             ErrorMessageProvider.getMessage(requireContext(), errorType)
         binding.errorView.btnRetry.isVisible = false
+    }
+
+    // 시청 통계 공유 이미지를 생성하고 Intent.ACTION_SEND로 공유
+    private fun shareStatsImage(stats: WatchStats) {
+        val bitmap = createStatsCardBitmap(stats)
+        val shareFile = saveBitmapToCache(bitmap)
+        bitmap.recycle()
+        val uri = FileProvider.getUriForFile(
+            requireContext(),
+            "${requireContext().packageName}.fileprovider",
+            shareFile
+        )
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(intent, getString(R.string.stats_share_title)))
+    }
+
+    // Canvas 기반 통계 카드 Bitmap 생성
+    @Suppress("LongMethod")
+    private fun createStatsCardBitmap(stats: WatchStats): Bitmap {
+        val cardWidth = 800
+        val padding = 48
+        val lineHeight = 52
+
+        // 카드에 표시할 줄 수 계산 (제목 + 총 시청 + 이번 달 + 평점(옵션) + 장르(옵션) + 목표(옵션))
+        var lineCount = 3 // 제목 + 총시청 + 이번달
+        if (stats.averageRating != null) lineCount++
+        if (stats.topGenres.isNotEmpty()) lineCount++
+        if (stats.monthlyWatchGoal > 0) lineCount++
+
+        val cardHeight = padding * 2 + lineHeight * lineCount + 24
+
+        val bitmap = Bitmap.createBitmap(cardWidth, cardHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        // 테마 색상 해석
+        val typedValue = TypedValue()
+        val theme = requireContext().theme
+
+        val primaryColor = requireContext().getColor(R.color.colorPrimary)
+
+        theme.resolveAttribute(android.R.attr.windowBackground, typedValue, true)
+        val surfaceColor = if (typedValue.resourceId != 0) {
+            requireContext().getColor(typedValue.resourceId)
+        } else {
+            typedValue.data
+        }
+
+        theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true)
+        val textPrimaryColor = requireContext().getColor(typedValue.resourceId)
+
+        theme.resolveAttribute(android.R.attr.textColorSecondary, typedValue, true)
+        val textSecondaryColor = requireContext().getColor(typedValue.resourceId)
+
+        // 배경 (둥근 모서리 카드)
+        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = surfaceColor }
+        val cornerRadius = 24f
+        canvas.drawRoundRect(
+            RectF(0f, 0f, cardWidth.toFloat(), cardHeight.toFloat()),
+            cornerRadius, cornerRadius, bgPaint
+        )
+
+        // 상단 강조 바
+        val accentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = primaryColor }
+        canvas.drawRoundRect(
+            RectF(0f, 0f, cardWidth.toFloat(), 8f),
+            cornerRadius, cornerRadius, accentPaint
+        )
+
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = primaryColor
+            textSize = 36f
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = textPrimaryColor
+            textSize = 28f
+        }
+        val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = textSecondaryColor
+            textSize = 24f
+        }
+
+        var y = padding.toFloat() + 36f
+
+        // 제목
+        canvas.drawText(getString(R.string.stats_share_card_title), padding.toFloat(), y, titlePaint)
+        y += lineHeight
+
+        // 구분선
+        val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = textSecondaryColor
+            alpha = 60
+            strokeWidth = 1f
+        }
+        val dividerStartX = padding.toFloat()
+        val dividerEndX = (cardWidth - padding).toFloat()
+        canvas.drawLine(dividerStartX, y - lineHeight / 2f, dividerEndX, y - lineHeight / 2f, dividerPaint)
+
+        // 총 시청 편수
+        val totalText = getString(R.string.stats_share_total, stats.totalWatched)
+        canvas.drawText(totalText, padding.toFloat(), y, bodyPaint)
+        y += lineHeight
+
+        // 이번 달 시청 편수
+        val monthlyText = getString(R.string.stats_share_monthly, stats.monthlyWatched)
+        canvas.drawText(monthlyText, padding.toFloat(), y, bodyPaint)
+        y += lineHeight
+
+        // 평균 별점
+        if (stats.averageRating != null) {
+            val ratingText = getString(R.string.stats_share_rating, stats.averageRating)
+            canvas.drawText(ratingText, padding.toFloat(), y, bodyPaint)
+            y += lineHeight
+        }
+
+        // 선호 장르 Top 3
+        if (stats.topGenres.isNotEmpty()) {
+            val genreNames = stats.topGenres.take(3).joinToString(", ") { it.name }
+            canvas.drawText(getString(R.string.stats_share_genres, genreNames), padding.toFloat(), y, bodyPaint)
+            y += lineHeight
+        }
+
+        // 시청 목표 달성률
+        if (stats.monthlyWatchGoal > 0) {
+            val goalText = getString(R.string.stats_goal_progress_format, stats.monthlyWatched, stats.monthlyWatchGoal)
+            canvas.drawText(goalText, padding.toFloat(), y, labelPaint)
+        }
+
+        return bitmap
+    }
+
+    // Bitmap을 캐시 디렉토리에 PNG 파일로 저장
+    private fun saveBitmapToCache(bitmap: Bitmap): File {
+        val shareDir = File(requireContext().cacheDir, "share_images")
+        shareDir.mkdirs()
+        val file = File(shareDir, "stats_card.png")
+        FileOutputStream(file).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        return file
     }
 
     // 바인딩 null 처리로 메모리 누수 방지

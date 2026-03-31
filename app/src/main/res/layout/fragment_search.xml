@@ -34,6 +34,33 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chip_group_search_mode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/spacing_md"
+        android:paddingBottom="@dimen/spacing_xs"
+        app:singleLine="true"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_mode_movie"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/search_mode_movie"
+            android:checked="true" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_mode_person"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/search_mode_person" />
+
+    </com.google.android.material.chip.ChipGroup>
+
+    <com.google.android.material.chip.ChipGroup
         android:id="@+id/chip_group_filters"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -126,6 +153,13 @@
                 android:layout_height="match_parent" />
 
         </LinearLayout>
+
+        <!-- 배우 검색 결과 -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_person_results"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
 
         <!-- 검색 결과 -->
         <androidx.recyclerview.widget.RecyclerView

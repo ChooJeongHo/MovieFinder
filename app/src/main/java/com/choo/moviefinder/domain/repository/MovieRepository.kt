@@ -4,6 +4,7 @@ import androidx.paging.PagingData
 import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Memo
 import com.choo.moviefinder.domain.model.Genre
+import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.DailyWatchCount
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
@@ -155,4 +156,7 @@ interface MovieRepository {
 
     // 백업 모델에서 사용자 데이터를 가져와 기존 데이터와 병합한다
     suspend fun importUserData(backup: UserDataBackup)
+
+    // 이름으로 배우/인물을 검색하여 결과 목록을 반환한다
+    suspend fun searchPerson(query: String): List<PersonSearchItem>
 }

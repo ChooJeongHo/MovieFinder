@@ -36,6 +36,7 @@ import com.choo.moviefinder.domain.model.RatingBucket
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.PersonDetail
+import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.domain.model.BackupMemo
 import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.BackupRating
@@ -378,6 +379,12 @@ class MovieRepositoryImpl @Inject constructor(
     override suspend fun getPersonMovieCredits(personId: Int): List<Movie> {
         require(personId > 0) { "Person ID must be positive" }
         return apiService.getPersonMovieCredits(personId).cast.map { it.toDomain() }
+    }
+
+    // 이름으로 배우/인물을 검색하여 결과 목록을 반환한다
+    override suspend fun searchPerson(query: String): List<PersonSearchItem> {
+        require(query.isNotBlank()) { "Search query must not be blank" }
+        return apiService.searchPerson(query).results.map { it.toDomain() }
     }
 
     // 즐겨찾기, 워치리스트, 평점, 메모를 백업 모델로 내보낸다
