@@ -14,7 +14,9 @@ import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.databinding.ItemCastBinding
 import com.choo.moviefinder.domain.model.Cast
 
-class CastAdapter : ListAdapter<Cast, CastAdapter.CastViewHolder>(DIFF_CALLBACK) {
+class CastAdapter(
+    private val onCastClick: (Int) -> Unit = {}
+) : ListAdapter<Cast, CastAdapter.CastViewHolder>(DIFF_CALLBACK) {
 
     // 출연진 아이템 ViewHolder 생성
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CastViewHolder {
@@ -35,7 +37,7 @@ class CastAdapter : ListAdapter<Cast, CastAdapter.CastViewHolder>(DIFF_CALLBACK)
         holder.binding.ivProfile.dispose()
     }
 
-    class CastViewHolder(
+    inner class CastViewHolder(
         val binding: ItemCastBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
@@ -48,6 +50,10 @@ class CastAdapter : ListAdapter<Cast, CastAdapter.CastViewHolder>(DIFF_CALLBACK)
                 crossfade(true)
                 placeholder(com.choo.moviefinder.R.drawable.bg_circle)
                 error(com.choo.moviefinder.R.drawable.bg_circle)
+            }
+
+            binding.root.setOnClickListener {
+                onCastClick(cast.id)
             }
         }
     }

@@ -12,6 +12,7 @@ import com.choo.moviefinder.domain.model.Review
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
+import com.choo.moviefinder.domain.usecase.GetMovieRecommendationsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieReviewsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
 import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
@@ -51,6 +52,7 @@ class DetailViewModelTest {
     private lateinit var getMovieTrailerUseCase: GetMovieTrailerUseCase
     private lateinit var getMovieCertificationUseCase: GetMovieCertificationUseCase
     private lateinit var getMovieReviewsUseCase: GetMovieReviewsUseCase
+    private lateinit var getMovieRecommendationsUseCase: GetMovieRecommendationsUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var isFavoriteUseCase: IsFavoriteUseCase
     private lateinit var toggleWatchlistUseCase: ToggleWatchlistUseCase
@@ -118,9 +120,12 @@ class DetailViewModelTest {
 
         every { getUserRatingUseCase(any()) } returns flowOf(null)
 
+        getMovieRecommendationsUseCase = mockk()
+
         coEvery { getMovieTrailerUseCase(any()) } returns null
         coEvery { getMovieCertificationUseCase(any()) } returns null
         coEvery { getMovieReviewsUseCase(any()) } returns emptyList()
+        coEvery { getMovieRecommendationsUseCase(any()) } returns emptyList()
         coEvery { saveWatchHistoryUseCase(any(), any()) } returns Unit
 
         every { isFavoriteUseCase(any()) } returns flowOf(false)
@@ -142,6 +147,7 @@ class DetailViewModelTest {
             getMovieTrailerUseCase = getMovieTrailerUseCase,
             getMovieCertificationUseCase = getMovieCertificationUseCase,
             getMovieReviewsUseCase = getMovieReviewsUseCase,
+            getMovieRecommendationsUseCase = getMovieRecommendationsUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
             isFavoriteUseCase = isFavoriteUseCase,
             toggleWatchlistUseCase = toggleWatchlistUseCase,

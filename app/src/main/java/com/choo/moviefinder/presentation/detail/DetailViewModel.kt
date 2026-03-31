@@ -13,6 +13,7 @@ import com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
 import com.choo.moviefinder.domain.usecase.GetMemosUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.DeleteUserRatingUseCase
+import com.choo.moviefinder.domain.usecase.GetMovieRecommendationsUseCase
 import com.choo.moviefinder.domain.usecase.SaveMemoUseCase
 import com.choo.moviefinder.domain.usecase.UpdateMemoUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
@@ -53,6 +54,7 @@ class DetailViewModel @Inject constructor(
     private val getMovieTrailerUseCase: GetMovieTrailerUseCase,
     private val getMovieCertificationUseCase: GetMovieCertificationUseCase,
     private val getMovieReviewsUseCase: GetMovieReviewsUseCase,
+    private val getMovieRecommendationsUseCase: GetMovieRecommendationsUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val isFavoriteUseCase: IsFavoriteUseCase,
     private val toggleWatchlistUseCase: ToggleWatchlistUseCase,
@@ -119,6 +121,9 @@ class DetailViewModel @Inject constructor(
                     val certDeferred = async {
                         loadOptionalNullable("cert") { getMovieCertificationUseCase(movieId) }
                     }
+                    val recommendationsDeferred = async {
+                        loadOptional("recommendations") { getMovieRecommendationsUseCase(movieId) }
+                    }
 
                     detail = detailDeferred.await()
                     _uiState.value = DetailUiState.Success(
@@ -127,7 +132,8 @@ class DetailViewModel @Inject constructor(
                         similarMovies = similarDeferred.await(),
                         trailerKey = trailerDeferred.await(),
                         certification = certDeferred.await(),
-                        reviews = reviewsDeferred.await()
+                        reviews = reviewsDeferred.await(),
+                        recommendations = recommendationsDeferred.await()
                     )
                 }
                 saveWatchHistory(detail)

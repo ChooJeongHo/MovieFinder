@@ -7,6 +7,7 @@ import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
 import com.choo.moviefinder.domain.model.MovieDetail
+import com.choo.moviefinder.domain.model.PersonDetail
 import com.choo.moviefinder.domain.model.Review
 import kotlinx.coroutines.flow.Flow
 
@@ -21,6 +22,9 @@ interface MovieRepository {
 
     // 검색어와 연도 필터로 영화를 검색하여 페이징 데이터로 반환한다
     fun searchMovies(query: String, year: Int? = null): Flow<PagingData<Movie>>
+
+    // 일별 트렌딩 영화 목록을 페이징 데이터로 반환한다
+    fun getTrendingMovies(): Flow<PagingData<Movie>>
 
     // 장르, 정렬, 연도 필터로 영화를 탐색하여 페이징 데이터로 반환한다
     fun discoverMovies(
@@ -127,4 +131,13 @@ interface MovieRepository {
 
     // 메모를 삭제한다
     suspend fun deleteMemo(memoId: Long)
+
+    // 영화 ID로 추천 영화 목록을 조회한다
+    suspend fun getMovieRecommendations(movieId: Int): List<Movie>
+
+    // 인물 ID로 상세 정보를 조회한다
+    suspend fun getPersonDetail(personId: Int): PersonDetail
+
+    // 인물 ID로 출연 영화 목록을 조회한다
+    suspend fun getPersonMovieCredits(personId: Int): List<Movie>
 }

@@ -9,6 +9,7 @@
     <!-- 홈 화면 -->
     <string name="tab_now_playing">현재 상영작</string>
     <string name="tab_popular">인기 영화</string>
+    <string name="tab_trending">트렌딩</string>
 
     <!-- 검색 화면 -->
     <string name="search_hint">영화 검색</string>
@@ -231,6 +232,17 @@
     <string name="cd_fab_remove_favorite">즐겨찾기에서 제거</string>
     <string name="cd_fab_add_watchlist">워치리스트에 추가</string>
     <string name="cd_fab_remove_watchlist">워치리스트에서 제거</string>
+
+    <!-- 추천 영화 -->
+    <string name="recommendations_title">추천 영화</string>
+
+    <!-- 인물 상세 -->
+    <string name="person_biography">소개</string>
+    <string name="person_filmography">출연작</string>
+    <string name="person_birthday_format">생년월일: %s</string>
+    <string name="person_birthplace_format">출생지: %s</string>
+    <string name="person_known_for">분야: %s</string>
+    <string name="person_no_biography">소개 정보가 없습니다</string>
 
     <!-- 다이얼로그 패딩 (dimen 연동) -->
 

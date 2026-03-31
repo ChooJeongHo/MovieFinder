@@ -10,10 +10,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
+import okhttp3.Cache
 import okhttp3.CertificatePinner
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import java.io.File
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import javax.inject.Qualifier
@@ -40,7 +42,8 @@ object NetworkModule {
     // API 통신용 OkHttpClient를 인증서 피닝과 API 키 인터셉터를 포함하여 제공한다
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
+        val cache = Cache(File(context.cacheDir, "http_cache"), HTTP_CACHE_SIZE)
         val certificatePinner = CertificatePinner.Builder()
             .add(
                 "api.themoviedb.org",
@@ -50,6 +53,7 @@ object NetworkModule {
             .build()
 
         return OkHttpClient.Builder()
+            .cache(cache)
             .certificatePinner(certificatePinner)
             .addInterceptor { chain ->
                 val original = chain.request()
@@ -120,4 +124,6 @@ object NetworkModule {
     fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor {
         return NetworkMonitor(context)
     }
+
+    private const val HTTP_CACHE_SIZE = 10L * 1024 * 1024 // 10MB
 }

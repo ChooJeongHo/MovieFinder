@@ -14,7 +14,8 @@ sealed class DetailUiState {
         val similarMovies: List<Movie>,
         val trailerKey: String? = null,
         val certification: String? = null,
-        val reviews: List<Review> = emptyList()
+        val reviews: List<Review> = emptyList(),
+        val recommendations: List<Movie> = emptyList()
     ) : DetailUiState()
     data class Error(val errorType: ErrorType) : DetailUiState()
 }
