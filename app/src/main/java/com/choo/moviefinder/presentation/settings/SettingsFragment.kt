@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
@@ -25,6 +26,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
+@Suppress("TooManyFunctions")
 class SettingsFragment : Fragment() {
 
     private var _binding: FragmentSettingsBinding? = null
@@ -32,6 +34,43 @@ class SettingsFragment : Fragment() {
 
     private val viewModel: SettingsViewModel by viewModels()
     private var activeDialog: Dialog? = null
+
+    // 내보내기: JSON 파일 저장 위치 선택 후 내용을 기록
+    private val createDocumentLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        lifecycleScope.launch {
+            try {
+                viewModel.pendingExportJson?.let { json ->
+                    requireContext().contentResolver.openOutputStream(uri)?.use { stream ->
+                        stream.write(json.toByteArray())
+                    }
+                    viewModel.clearPendingExportJson()
+                    Snackbar.make(binding.root, R.string.export_success, Snackbar.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Snackbar.make(binding.root, R.string.export_error, Snackbar.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // 가져오기: JSON 파일 선택 후 내용을 읽어 ViewModel에 전달
+    private val openDocumentLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        lifecycleScope.launch {
+            try {
+                val json = requireContext().contentResolver.openInputStream(uri)?.use { stream ->
+                    stream.readBytes().toString(Charsets.UTF_8)
+                } ?: return@launch
+                showImportConfirmDialog(json)
+            } catch (e: Exception) {
+                Snackbar.make(binding.root, R.string.import_error, Snackbar.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     // 설정 화면 레이아웃을 인플레이트하고 바인딩 초기화
     override fun onCreateView(
@@ -53,7 +92,7 @@ class SettingsFragment : Fragment() {
         observeEvents()
     }
 
-    // 테마, 언어, 통계, 시청 목표, 캐시 삭제, 시청기록 삭제 항목 클릭 리스너 등록
+    // 테마, 언어, 통계, 시청 목표, 캐시 삭제, 시청기록 삭제, 내보내기, 가져오기 항목 클릭 리스너 등록
     private fun setupClickListeners() {
         binding.itemTheme.setOnClickListener { showThemeDialog() }
         binding.itemLanguage.setOnClickListener { showLanguageDialog() }
@@ -61,6 +100,10 @@ class SettingsFragment : Fragment() {
         binding.itemWatchGoal.setOnClickListener { showWatchGoalDialog() }
         binding.itemClearCache.setOnClickListener { showClearCacheDialog() }
         binding.itemClearWatchHistory.setOnClickListener { showClearWatchHistoryDialog() }
+        binding.itemExportData.setOnClickListener { viewModel.exportData() }
+        binding.itemImportData.setOnClickListener {
+            openDocumentLauncher.launch(arrayOf("application/json"))
+        }
     }
 
     // 시청 통계 화면으로 이동
@@ -220,7 +263,7 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    // 시청 기록 삭제 성공/에러 이벤트를 수집하여 Snackbar 표시
+    // 시청 기록 삭제 성공/에러/내보내기/가져오기 이벤트를 수집하여 Snackbar 표시
     private fun observeEvents() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -237,6 +280,34 @@ class SettingsFragment : Fragment() {
                 }
             }
         }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.exportedJson.collect { json ->
+                    viewModel.setPendingExportJson(json)
+                    createDocumentLauncher.launch("moviefinder_backup.json")
+                }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.importSuccess.collect {
+                    Snackbar.make(binding.root, R.string.import_success, Snackbar.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    // 가져오기 확인 다이얼로그 표시
+    private fun showImportConfirmDialog(json: String) {
+        activeDialog?.dismiss()
+        activeDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.import_confirm_title)
+            .setMessage(R.string.import_confirm_message)
+            .setPositiveButton(R.string.confirm) { _, _ ->
+                viewModel.importData(json)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     // 다이얼로그 dismiss 및 바인딩 null 처리

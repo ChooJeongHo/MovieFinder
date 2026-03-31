@@ -2,6 +2,7 @@ package com.choo.moviefinder.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.choo.moviefinder.data.local.entity.MemoEntity
 import kotlinx.coroutines.flow.Flow
@@ -24,4 +25,12 @@ interface MemoDao {
     // 메모 삭제
     @Query("DELETE FROM memos WHERE id = :memoId")
     suspend fun deleteMemo(memoId: Long)
+
+    // 모든 메모를 일회성으로 조회 (백업용)
+    @Query("SELECT * FROM memos")
+    suspend fun getAllMemos(): List<MemoEntity>
+
+    // 여러 메모를 한 번에 삽입 (복원용)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(memos: List<MemoEntity>)
 }

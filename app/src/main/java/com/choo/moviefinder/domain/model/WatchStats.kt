@@ -7,7 +7,9 @@ data class WatchStats(
     val topGenres: List<GenreCount>,
     val allGenreCounts: List<GenreCount>,
     val monthlyWatchCounts: List<MonthlyWatchCount>,
-    val monthlyWatchGoal: Int = 0
+    val monthlyWatchGoal: Int = 0,
+    val ratingDistribution: List<RatingBucket> = emptyList(),
+    val dailyWatchCounts: List<DailyWatchCount> = emptyList()
 )
 
 data class GenreCount(
@@ -17,5 +19,15 @@ data class GenreCount(
 
 data class MonthlyWatchCount(
     val yearMonth: String,
+    val count: Int
+)
+
+data class RatingBucket(
+    val rating: Float,
+    val count: Int
+)
+
+data class DailyWatchCount(
+    val date: String,
     val count: Int
 )

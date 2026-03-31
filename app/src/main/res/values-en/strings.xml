@@ -193,6 +193,11 @@
     <string name="stats_goal_progress_format">%1$d / %2$d movies</string>
     <string name="stats_goal_achieved">Goal achieved!</string>
     <string name="stats_goal_remaining">%d more to go</string>
+    <string name="stats_rating_distribution">Rating Distribution</string>
+    <string name="stats_no_rating_distribution">No rating data yet</string>
+    <string name="stats_watch_calendar">Watch Calendar</string>
+    <string name="stats_no_calendar_data">No watch history</string>
+    <string name="stats_calendar_cd">Days watched: %d</string>
     <string name="settings_stats">Watch Stats</string>
     <string name="settings_stats_description">View your watching history and rating statistics</string>
     <string name="settings_watch_goal">Monthly Watch Goal</string>
@@ -243,6 +248,18 @@
     <string name="person_birthplace_format">Birthplace: %s</string>
     <string name="person_known_for">Known for: %s</string>
     <string name="person_no_biography">No biography available</string>
+
+    <!-- Data Export/Import -->
+    <string name="settings_export_data">Export Data</string>
+    <string name="settings_export_data_description">Back up favorites, watchlist, ratings, and memos</string>
+    <string name="settings_import_data">Import Data</string>
+    <string name="settings_import_data_description">Restore data from a backup file</string>
+    <string name="export_success">Data exported successfully</string>
+    <string name="import_success">Data imported successfully</string>
+    <string name="import_confirm_title">Import Data</string>
+    <string name="import_confirm_message">This will merge with existing data. Continue?</string>
+    <string name="export_error">Export failed</string>
+    <string name="import_error">Import failed</string>
 
     <!-- Memos -->
     <string name="memo_title">My Memos</string>

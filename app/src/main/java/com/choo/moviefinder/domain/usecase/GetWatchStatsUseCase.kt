@@ -14,7 +14,7 @@ class GetWatchStatsUseCase @Inject constructor(
     private val repository: MovieRepository,
     private val preferencesRepository: PreferencesRepository
 ) {
-    // 시청 통계 데이터를 6개 Flow를 combine하여 반환한다
+    // 시청 통계 데이터를 여러 Flow를 combine하여 반환한다
     operator fun invoke(): Flow<WatchStats> {
         val monthStartMillis = currentMonthStartMillis()
 
@@ -30,8 +30,10 @@ class GetWatchStatsUseCase @Inject constructor(
 
         return combine(
             baseStatsFlow,
-            preferencesRepository.getMonthlyWatchGoal()
-        ) { base, watchGoal ->
+            preferencesRepository.getMonthlyWatchGoal(),
+            repository.getRatingDistribution(),
+            repository.getDailyWatchCounts()
+        ) { base, watchGoal, ratingDist, dailyCounts ->
             val allGenres = computeAllGenres(base.genreStrings)
             WatchStats(
                 totalWatched = base.total,
@@ -40,7 +42,9 @@ class GetWatchStatsUseCase @Inject constructor(
                 topGenres = allGenres.take(3),
                 allGenreCounts = allGenres,
                 monthlyWatchCounts = base.monthlyCounts,
-                monthlyWatchGoal = watchGoal
+                monthlyWatchGoal = watchGoal,
+                ratingDistribution = ratingDist,
+                dailyWatchCounts = dailyCounts
             )
         }
     }

@@ -4,8 +4,10 @@ import app.cash.turbine.test
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.usecase.ClearWatchHistoryUseCase
+import com.choo.moviefinder.domain.usecase.ExportUserDataUseCase
 import com.choo.moviefinder.domain.usecase.GetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.GetThemeModeUseCase
+import com.choo.moviefinder.domain.usecase.ImportUserDataUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import io.mockk.coEvery
@@ -35,6 +37,8 @@ class SettingsViewModelTest {
     private lateinit var clearWatchHistoryUseCase: ClearWatchHistoryUseCase
     private lateinit var getMonthlyWatchGoalUseCase: GetMonthlyWatchGoalUseCase
     private lateinit var setMonthlyWatchGoalUseCase: SetMonthlyWatchGoalUseCase
+    private lateinit var exportUserDataUseCase: ExportUserDataUseCase
+    private lateinit var importUserDataUseCase: ImportUserDataUseCase
 
     @Before
     fun setup() {
@@ -44,6 +48,8 @@ class SettingsViewModelTest {
         clearWatchHistoryUseCase = mockk()
         getMonthlyWatchGoalUseCase = mockk()
         setMonthlyWatchGoalUseCase = mockk()
+        exportUserDataUseCase = mockk()
+        importUserDataUseCase = mockk()
     }
 
     @After
@@ -61,7 +67,9 @@ class SettingsViewModelTest {
             setThemeModeUseCase,
             clearWatchHistoryUseCase,
             getMonthlyWatchGoalUseCase,
-            setMonthlyWatchGoalUseCase
+            setMonthlyWatchGoalUseCase,
+            exportUserDataUseCase,
+            importUserDataUseCase
         )
     }
 
@@ -191,7 +199,9 @@ class SettingsViewModelTest {
             setThemeModeUseCase,
             clearWatchHistoryUseCase,
             getMonthlyWatchGoalUseCase,
-            setMonthlyWatchGoalUseCase
+            setMonthlyWatchGoalUseCase,
+            exportUserDataUseCase,
+            importUserDataUseCase
         )
     }
 

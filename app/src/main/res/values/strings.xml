@@ -193,6 +193,11 @@
     <string name="stats_goal_progress_format">%1$d / %2$d편</string>
     <string name="stats_goal_achieved">목표 달성!</string>
     <string name="stats_goal_remaining">%d편 남았습니다</string>
+    <string name="stats_rating_distribution">내 평점 분포</string>
+    <string name="stats_no_rating_distribution">아직 평점 데이터가 없습니다</string>
+    <string name="stats_watch_calendar">시청 캘린더</string>
+    <string name="stats_no_calendar_data">시청 기록이 없습니다</string>
+    <string name="stats_calendar_cd">시청한 날: %d일</string>
     <string name="settings_stats">시청 통계</string>
     <string name="settings_stats_description">내 시청 기록과 평점 통계를 확인합니다</string>
     <string name="settings_watch_goal">이번 달 시청 목표</string>
@@ -245,6 +250,18 @@
     <string name="person_no_biography">소개 정보가 없습니다</string>
 
     <!-- 다이얼로그 패딩 (dimen 연동) -->
+
+    <!-- 데이터 내보내기/가져오기 -->
+    <string name="settings_export_data">데이터 내보내기</string>
+    <string name="settings_export_data_description">즐겨찾기, 워치리스트, 평점, 메모를 백업합니다</string>
+    <string name="settings_import_data">데이터 가져오기</string>
+    <string name="settings_import_data_description">백업 파일에서 데이터를 복원합니다</string>
+    <string name="export_success">데이터가 내보내기되었습니다</string>
+    <string name="import_success">데이터가 가져오기되었습니다</string>
+    <string name="import_confirm_title">데이터 가져오기</string>
+    <string name="import_confirm_message">기존 데이터와 병합됩니다. 계속하시겠습니까?</string>
+    <string name="export_error">내보내기 실패</string>
+    <string name="import_error">가져오기 실패</string>
 
     <!-- 메모 -->
     <string name="memo_title">내 메모</string>

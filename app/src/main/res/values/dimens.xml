@@ -59,6 +59,8 @@
 
     <!-- 차트 -->
     <dimen name="chart_height">220dp</dimen>
+    <dimen name="histogram_height">280dp</dimen>
+    <dimen name="heatmap_height">160dp</dimen>
 
     <!-- 다이얼로그 -->
     <dimen name="dialog_padding_horizontal">20dp</dimen>

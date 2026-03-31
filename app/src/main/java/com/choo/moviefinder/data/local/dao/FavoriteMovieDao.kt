@@ -40,4 +40,12 @@ abstract class FavoriteMovieDao {
             insert(movie)
         }
     }
+
+    // 모든 즐겨찾기를 일회성으로 조회 (백업용)
+    @Query("SELECT * FROM favorite_movies ORDER BY addedAt DESC")
+    abstract suspend fun getAllFavoritesOnce(): List<FavoriteMovieEntity>
+
+    // 여러 즐겨찾기를 한 번에 삽입 (복원용)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertAll(movies: List<FavoriteMovieEntity>)
 }
