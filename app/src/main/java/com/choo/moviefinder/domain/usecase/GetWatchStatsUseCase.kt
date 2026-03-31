@@ -4,8 +4,9 @@ import com.choo.moviefinder.core.util.currentMonthStartMillis
 import com.choo.moviefinder.domain.model.GenreCount
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
 import com.choo.moviefinder.domain.model.WatchStats
-import com.choo.moviefinder.domain.repository.MovieRepository
 import com.choo.moviefinder.domain.repository.PreferencesRepository
+import com.choo.moviefinder.domain.repository.UserRatingRepository
+import com.choo.moviefinder.domain.repository.WatchHistoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
@@ -13,7 +14,8 @@ import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class GetWatchStatsUseCase @Inject constructor(
-    private val repository: MovieRepository,
+    private val watchHistoryRepository: WatchHistoryRepository,
+    private val userRatingRepository: UserRatingRepository,
     private val preferencesRepository: PreferencesRepository
 ) {
     // 시청 통계 데이터를 여러 Flow를 combine하여 반환한다
@@ -22,11 +24,11 @@ class GetWatchStatsUseCase @Inject constructor(
         val monthStartMillis = currentMonthStartMillis()
 
         val baseStatsFlow = combine(
-            repository.getTotalWatchedCount(),
-            repository.getWatchedCountSince(monthStartMillis),
-            repository.getAverageUserRating(),
-            repository.getAllWatchedGenres(),
-            repository.getMonthlyWatchCounts()
+            watchHistoryRepository.getTotalWatchedCount(),
+            watchHistoryRepository.getWatchedCountSince(monthStartMillis),
+            userRatingRepository.getAverageUserRating(),
+            watchHistoryRepository.getAllWatchedGenres(),
+            watchHistoryRepository.getMonthlyWatchCounts()
         ) { total, monthly, avgRating, genreStrings, monthlyCounts ->
             BaseStats(total, monthly, avgRating, genreStrings, monthlyCounts)
         }
@@ -34,8 +36,8 @@ class GetWatchStatsUseCase @Inject constructor(
         val combinedFlow = combine(
             baseStatsFlow,
             preferencesRepository.getMonthlyWatchGoal(),
-            repository.getRatingDistribution(),
-            repository.getDailyWatchCounts()
+            userRatingRepository.getRatingDistribution(),
+            watchHistoryRepository.getDailyWatchCounts()
         ) { base, watchGoal, ratingDist, dailyCounts ->
             val allGenres = computeAllGenres(base.genreStrings)
             WatchStats(

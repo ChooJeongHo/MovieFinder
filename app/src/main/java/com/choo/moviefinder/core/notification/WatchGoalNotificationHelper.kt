@@ -13,8 +13,8 @@ import com.choo.moviefinder.MovieFinderApp
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.currentMonthStartMillis
 import com.choo.moviefinder.core.util.currentYearMonth
-import com.choo.moviefinder.domain.repository.MovieRepository
 import com.choo.moviefinder.domain.repository.PreferencesRepository
+import com.choo.moviefinder.domain.repository.WatchHistoryRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -27,7 +27,7 @@ import javax.inject.Singleton
 class WatchGoalNotificationHelper @Inject constructor(
     @ApplicationContext private val context: Context,
     private val preferencesRepository: PreferencesRepository,
-    private val movieRepository: MovieRepository
+    private val watchHistoryRepository: WatchHistoryRepository
 ) {
 
     private val checkMutex = Mutex()
@@ -38,7 +38,7 @@ class WatchGoalNotificationHelper @Inject constructor(
         if (goal <= 0) return
 
         val monthStartMillis = currentMonthStartMillis()
-        val currentCount = movieRepository.getWatchedCountSince(monthStartMillis).first()
+        val currentCount = watchHistoryRepository.getWatchedCountSince(monthStartMillis).first()
         if (currentCount < goal) return
 
         val yearMonth = currentYearMonth()
