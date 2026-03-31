@@ -322,8 +322,8 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **GOAL_NOTIFICATION_ID**: 9999 (고정 ID, 기존 알림 덮어쓰기)
 
 ### 9. 다국어 지원 (i18n)
-- **한국어** (기본): `values/strings.xml` (192개 문자열 + string-array)
-- **영어**: `values-en/strings.xml` (192개 문자열 완전 번역)
+- **한국어** (기본): `values/strings.xml` (194개 문자열 + string-array)
+- **영어**: `values-en/strings.xml` (194개 문자열 완전 번역)
 - 포맷 문자열 (%s, %d, %,d 등) 모든 specifier 보존
 - 검색 추천어, 차트 레이블 등 하드코딩 문자열 → string resource / string-array 이동
 
@@ -753,7 +753,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 검색 추천: 결과 없을 때 추천 검색어 칩 (string-array 리소스)
 - [x] 홈 화면 위젯: PopularMoviesWidget + RemoteViewsService/Factory (인기 영화 Top 10, 1시간 갱신, 딥링크 클릭)
 - [x] 개봉일 알림: WorkManager + ReleaseNotificationScheduler/Worker (워치리스트 추가 시 예약, 삭제 시 취소)
-- [x] 다국어 지원: values-en/strings.xml 영어 번역 (192개 문자열)
+- [x] 다국어 지원: values-en/strings.xml 영어 번역 (194개 문자열)
 - [x] DetailViewModel 부분 실패 리팩토링: loadOptional/loadOptionalNullable 헬퍼 추출
 - [x] 사용자 영화 평점: RatingBar (0.5~5.0 별점), Room DB UserRatingEntity 저장, 삭제 버튼
 - [x] 검색 결과 보기 모드 전환: 그리드 ↔ 리스트 토글 (Toolbar 메뉴, SavedStateHandle 저장)
@@ -859,7 +859,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 검색 추천 (결과 없을 때 추천 검색어 칩, string-array 리소스)
 - [x] 홈 화면 위젯 (AppWidgetProvider, RemoteViewsService, 인기 영화 Top 10)
 - [x] 개봉일 알림 (WorkManager, 워치리스트 연동, NotificationChannel)
-- [x] 다국어 지원 (values-en/strings.xml 영어 번역 192개)
+- [x] 다국어 지원 (values-en/strings.xml 영어 번역 194개)
 - [x] Espresso UI 테스트 (HiltTestRunner + 네비게이션/화면 검증 5개)
 - [x] PagingSource/RemoteMediator 유닛 테스트 (19개: MoviePagingSource 7 + DiscoverPagingSource 5 + MovieRemoteMediator 7)
 - [x] 접근성 강화 (영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지, ProgressBar, decorative overlay)
