@@ -404,7 +404,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 
 ## 테스트
 
-### 유닛 테스트 (186개)
+### 유닛 테스트 (201개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -419,12 +419,15 @@ API 키 발급: https://www.themoviedb.org/settings/api
 | `FavoriteViewModelTest` | 10 | 즐겨찾기 목록, 빈 목록, 토글, 토글 에러 Snackbar 이벤트, 워치리스트 목록, 워치리스트 토글, 정렬 순서 변경, 제목순 정렬, 평점순 정렬 |
 | `MoviePagingSourceTest` | 7 | 첫 페이지 로드, 에러 처리, 다음 페이지 로드, 마지막 페이지 nextKey null, 첫 페이지 prevKey null, 연도 파라미터 전달, getRefreshKey null |
 | `DiscoverPagingSourceTest` | 5 | 첫 페이지 로드, 에러 처리, 파라미터 전달 검증, 마지막 페이지 nextKey null, 다음 페이지 키 |
+| `TrendingPagingSourceTest` | 5 | 트렌딩 PagingSource: 첫 페이지/에러/다음 페이지/마지막 페이지/prevKey null |
 | `MovieRemoteMediatorTest` | 7 | 캐시 없을 때 REFRESH, 캐시 만료 시 REFRESH, 캐시 유효 시 SKIP, PREPEND 즉시 성공, APPEND 키 없음, APPEND nextKey null, API 에러 처리 |
 | `HomeViewModelTest` | 6 | UseCase 호출 검증 (nowPlaying, popular, trending, 동시 호출), 시청기록 목록, 시청기록 빈 목록 |
 | `PreferencesRepositoryImplTest` | 9 | 테마 기본값, DARK/LIGHT 저장, 테마 변경, 시청 목표 기본값/저장/변경, 알림 월 기본값/저장 |
 | `WatchGoalNotificationHelperTest` | 7 | 목표 0/음수 조기 반환, 미달성 스킵, 달성+미통보 알림, 달성+이미통보 스킵, 초과달성, 전월통보+금월달성 |
 | `StatsViewModelTest` | 7 | 초기 Loading 상태, Success 상태 전파, Error 상태 처리, 빈 장르 목록, null 평점 처리, 시청 목표 0 전파, 시청 목표 달성률 계산 |
 | `GetWatchStatsUseCaseTest` | 10 | combine 로직 검증, 장르 빈도 정렬, Top 3 잘라내기, 공백 장르 trim, 목표 전파, 월별 카운트 매핑, 일별 카운트 매핑, 평점 분포 통합, 총 시청/이번 달 계산 |
+| `ExportImportUseCaseTest` | 4 | 내보내기/가져오기 Repository 위임 검증, 데이터 정합성 |
+| `PersonDetailViewModelTest` | 6 | 초기 상태, Success/Error, 빈 필모그래피, 네트워크 에러, 병렬 호출 |
 | `ReleaseNotificationSchedulerTest` | 7 | WorkManager 스케줄링 검증, 알림 취소 검증, 과거 날짜 스킵, 무효 날짜 스킵, API 레벨 가드, ExistingWorkPolicy.KEEP 검증 |
 
 ### Espresso UI 테스트 (5개)
@@ -651,7 +654,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Coil 캐시: 메모리 25% + 디스크 5% 설정
 - [x] Room 인덱스: 자주 쿼리되는 컬럼에 인덱스 추가
 - [x] LoggingInterceptor: 릴리스 빌드에서 객체 미생성
-- [x] 유닛 테스트: 186개 (ViewModel 88개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개 + GetWatchStatsUseCase 10개)
+- [x] 유닛 테스트: 201개 (ViewModel 94개 + Repository 36개 + Paging 24개 + UseCase 14개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개)
 - [x] Espresso UI 테스트: 5개 (네비게이션 + 화면 표시 검증, HiltTestRunner)
 - [x] 접근성 강화: 영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지 접근성, ProgressBar/overlay 접근성
 - [x] 다크 모드 아이콘: `@color/icon_default` + `values-night/colors.xml` 테마 대응
@@ -783,7 +786,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 딥링크 지원 (커스텀 스킴 + TMDB URL)
 - [x] 스와이프 삭제 + 실행취소
 - [x] 검색 연도 필터
-- [x] Unit Test 작성 (186개: ViewModel 88개 + Repository 36개 + Paging 19개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개 + GetWatchStatsUseCase 10개)
+- [x] Unit Test 작성 (201개: ViewModel 94개 + Repository 36개 + Paging 24개 + UseCase 14개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개)
 - [x] 영화 예고편 재생 (YouTube 앱/웹 연결, TMDB Videos API 연동)
 - [x] Shared Element Transition (포스터 이미지 공유 전환)
 - [x] DataStore 기반 다크모드 설정 (라이트/다크/시스템 전환)
