@@ -26,7 +26,7 @@ class TrendingPagingSource(
             LoadResult.Page(
                 data = response.results.map { it.toDomain() },
                 prevKey = if (page == 1) null else page - 1,
-                nextKey = if (response.results.size < 20) null else page + 1
+                nextKey = if (response.results.size < params.loadSize) null else page + 1
             )
         } catch (e: Exception) {
             LoadResult.Error(e)

@@ -8,6 +8,8 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import com.choo.moviefinder.domain.model.DailyWatchCount
+import java.text.DateFormatSymbols
+import java.util.Locale
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -83,7 +85,7 @@ class CalendarHeatmapView @JvmOverloads constructor(
         var lastMonth = -1
         while (current <= today) {
             if (current.monthNumber != lastMonth && current >= startDate) {
-                monthLabels.add(col to MONTH_NAMES[current.monthNumber - 1])
+                monthLabels.add(col to DateFormatSymbols(Locale.getDefault()).shortMonths[current.monthNumber - 1])
                 lastMonth = current.monthNumber
             }
             val count = countMap[current.toString()]?.count ?: 0
@@ -145,8 +147,10 @@ class CalendarHeatmapView @JvmOverloads constructor(
             canvas.drawText(name, x, paddingTop + labelPaint.textSize, labelPaint)
         }
 
-        // draw day-of-week labels (Mon, Wed, Fri)
-        val dowLabels = listOf(1 to "Mon", 3 to "Wed", 5 to "Fri")
+        // draw day-of-week labels (Mon, Wed, Fri) — locale-aware
+        // DateFormatSymbols.shortWeekdays is 1-indexed: 1=Sun, 2=Mon, 3=Tue, 4=Wed, 5=Thu, 6=Fri, 7=Sat
+        val shortWeekdays = DateFormatSymbols(Locale.getDefault()).shortWeekdays
+        val dowLabels = listOf(1 to shortWeekdays[2], 3 to shortWeekdays[4], 5 to shortWeekdays[6])
         dowLabels.forEach { (row, label) ->
             val y = gridTop + row * (cellSize + gap) + cellSize * 0.75f
             canvas.drawText(label, paddingLeft + dayLabelWidth - gap, y, dayLabelPaint)
@@ -172,9 +176,5 @@ class CalendarHeatmapView @JvmOverloads constructor(
     companion object {
         private const val DAYS_IN_WEEK = 7
         private const val MONTHS_TO_SHOW = 3
-        private val MONTH_NAMES = listOf(
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        )
     }
 }

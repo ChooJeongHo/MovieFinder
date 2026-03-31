@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,15 +31,18 @@ class PersonDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<PersonDetailUiState>(PersonDetailUiState.Loading)
     val uiState: StateFlow<PersonDetailUiState> = _uiState.asStateFlow()
 
+    private val loadingMutex = Mutex()
+
     init {
         loadPersonDetail()
     }
 
     // 인물 상세 정보와 출연 영화 목록을 병렬로 조회한다
     fun loadPersonDetail() {
+        if (!loadingMutex.tryLock()) return
         viewModelScope.launch {
-            _uiState.value = PersonDetailUiState.Loading
             try {
+                _uiState.value = PersonDetailUiState.Loading
                 coroutineScope {
                     val personDeferred = async { getPersonDetailUseCase(personId) }
                     val moviesDeferred = async {
@@ -59,6 +63,8 @@ class PersonDetailViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _uiState.value = PersonDetailUiState.Error(ErrorMessageProvider.getErrorType(e))
+            } finally {
+                loadingMutex.unlock()
             }
         }
     }
