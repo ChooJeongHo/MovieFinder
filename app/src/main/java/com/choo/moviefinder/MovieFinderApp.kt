@@ -15,6 +15,10 @@ import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
+import com.choo.moviefinder.BuildConfig
+import com.choo.moviefinder.core.util.AnrWatchdog
+import com.choo.moviefinder.core.util.DebugHealthCheck
+import com.choo.moviefinder.core.util.FileLoggingTree
 import com.choo.moviefinder.di.ImageOkHttpClient
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.repository.PreferencesRepository
@@ -27,6 +31,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import timber.log.Timber
 
 @HiltAndroidApp
 class MovieFinderApp : Application(), SingletonImageLoader.Factory {
@@ -40,11 +45,16 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
         fun imageOkHttpClient(): OkHttpClient
     }
 
-    // 앱 초기화 시 알림 채널 생성 및 테마를 적용한다
+    // 앱 초기화 시 알림 채널 생성 및 테마를 적용한다. 디버그 빌드에서는 자가 점검 도구도 시작한다
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         applyTheme()
+        if (BuildConfig.DEBUG) {
+            Timber.plant(FileLoggingTree(this))
+            DebugHealthCheck(this).run(ProcessLifecycleOwner.get().lifecycleScope)
+            AnrWatchdog().start()
+        }
     }
 
     // 개봉일 알림용 및 시청 목표 알림용 NotificationChannel을 생성한다 (API 26+)

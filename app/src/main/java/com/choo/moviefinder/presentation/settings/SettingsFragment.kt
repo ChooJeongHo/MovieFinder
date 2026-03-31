@@ -1,13 +1,16 @@
 package com.choo.moviefinder.presentation.settings
 
 import android.app.Dialog
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.FileProvider
 import androidx.core.os.LocaleListCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -18,6 +21,7 @@ import coil3.imageLoader
 import com.choo.moviefinder.BuildConfig
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.FileLoggingTree
 import com.choo.moviefinder.databinding.FragmentSettingsBinding
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -92,7 +96,7 @@ class SettingsFragment : Fragment() {
         observeEvents()
     }
 
-    // 테마, 언어, 통계, 시청 목표, 캐시 삭제, 시청기록 삭제, 내보내기, 가져오기 항목 클릭 리스너 등록
+    // 테마, 언어, 통계, 시청 목표, 캐시 삭제, 시청기록 삭제, 내보내기, 가져오기, 로그 공유 항목 클릭 리스너 등록
     private fun setupClickListeners() {
         binding.itemTheme.setOnClickListener { showThemeDialog() }
         binding.itemLanguage.setOnClickListener { showLanguageDialog() }
@@ -104,6 +108,31 @@ class SettingsFragment : Fragment() {
         binding.itemImportData.setOnClickListener {
             openDocumentLauncher.launch(arrayOf("application/json"))
         }
+        if (BuildConfig.DEBUG) {
+            binding.itemShareLogs.isVisible = true
+            binding.dividerShareLogs.isVisible = true
+            binding.itemShareLogs.setOnClickListener { shareDebugLogs() }
+        }
+    }
+
+    // 디버그 로그 파일을 FileProvider를 통해 공유한다
+    private fun shareDebugLogs() {
+        val logFile = FileLoggingTree.getLogFile(requireContext())
+        if (!logFile.exists()) {
+            Snackbar.make(binding.root, R.string.share_debug_logs_empty, Snackbar.LENGTH_SHORT).show()
+            return
+        }
+        val uri = FileProvider.getUriForFile(
+            requireContext(),
+            "${requireContext().packageName}.fileprovider",
+            logFile
+        )
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(intent, getString(R.string.share_debug_logs)))
     }
 
     // 시청 통계 화면으로 이동
