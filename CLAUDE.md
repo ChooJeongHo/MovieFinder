@@ -78,7 +78,11 @@ app/src/main/java/com/choo/moviefinder/
 │       ├── DateUtils.kt           # currentMonthStartMillis(), currentYearMonth() 공유 유틸
 │       ├── ImageUrlProvider.kt    # 이미지 URL 빌더
 │       ├── ErrorMessageProvider.kt # 예외 → ErrorType 매핑 + 사용자 메시지 변환
-│       └── NetworkMonitor.kt      # 실시간 네트워크 상태 모니터링 (StateFlow)
+│       ├── NetworkMonitor.kt      # 실시간 네트워크 상태 모니터링 (StateFlow)
+│       ├── DebugHealthCheck.kt    # 앱 시작 시 API/이미지/DB 연결 헬스체크 (디버그 전용)
+│       ├── DebugEventListener.kt  # OkHttp SSL/연결 실패 로깅 (디버그 전용)
+│       ├── FileLoggingTree.kt     # Timber 파일 로깅 (2MB 로테이션, 디버그 전용)
+│       └── AnrWatchdog.kt         # 메인 스레드 5초+ 블로킹 감지 (디버그 전용)
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 │   └── BaselineProfileGenerator.kt # 앱 시작 시나리오
 ├── data/                  # 데이터 레이어
@@ -323,8 +327,8 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **GOAL_NOTIFICATION_ID**: 9999 (고정 ID, 기존 알림 덮어쓰기)
 
 ### 9. 다국어 지원 (i18n)
-- **한국어** (기본): `values/strings.xml` (205개 문자열 + string-array)
-- **영어**: `values-en/strings.xml` (205개 문자열 완전 번역)
+- **한국어** (기본): `values/strings.xml` (208개 문자열 + string-array)
+- **영어**: `values-en/strings.xml` (208개 문자열 완전 번역)
 - 포맷 문자열 (%s, %d, %,d 등) 모든 specifier 보존
 - 검색 추천어, 차트 레이블 등 하드코딩 문자열 → string resource / string-array 이동
 
@@ -511,6 +515,21 @@ adb shell am start -a android.intent.action.VIEW -d "https://www.themoviedb.org/
 - **JaCoCo 최소 커버리지**: 50% (미달 시 빌드 실패)
 - **Dependabot**: 라이브러리 자동 버전 업데이트 설정
 
+### 워크플로우: `.github/workflows/cert-pin-check.yml`
+- **트리거**: 매주 월요일 09:00 UTC (cron) + 수동 실행 (workflow_dispatch)
+- **검증**: api.themoviedb.org + image.tmdb.org + 위젯 인증서 핀을 실제 서버와 비교
+- **불일치 시**: GitHub Issue 자동 생성 (security + bug 라벨)
+
+### 워크플로우: `.github/workflows/pr-coverage.yml`
+- **트리거**: `pull_request` → `main` 브랜치
+- **JaCoCo 리포트**: Instruction/Line/Branch 커버리지 파싱 → PR 코멘트로 자동 게시
+- **기존 코멘트 업데이트**: 동일 PR에 push 시 코멘트 덮어쓰기
+
+### Pre-commit Hook (`.githooks/pre-commit`)
+- **검증**: Detekt 정적 분석 + Kotlin 컴파일 체크
+- **실패 시**: 커밋 차단, 에러 메시지 표시
+- **설정**: `git config core.hooksPath .githooks` (버전 관리 가능)
+
 ### GitHub Secrets 설정 필요
 Repository Settings > Secrets and variables > Actions에서:
 - `TMDB_API_KEY`: TMDB API 키 값 추가
@@ -607,6 +626,13 @@ Repository Settings > Secrets and variables > Actions에서:
 - `NetworkModule`에서 `@Singleton`으로 제공
 - `ACCESS_NETWORK_STATE` 권한 필요 (AndroidManifest.xml)
 
+### 디버그 자가 검증 (Debug Self-Verification)
+- **DebugHealthCheck**: 앱 시작 시 API 연결 + 이미지 로드 + DB 접근 자동 테스트, 실패 시 Toast 표시
+- **DebugEventListener**: OkHttp SSL 핸드셰이크/연결 실패를 Timber로 즉시 로깅
+- **FileLoggingTree**: Timber INFO+ 로그를 파일로 저장 (2MB 로테이션), 설정에서 공유 가능
+- **AnrWatchdog**: 메인 스레드 5초 이상 블로킹 감지 시 스택 트레이스 로깅
+- 모든 자가 검증 도구는 `BuildConfig.DEBUG` 가드로 릴리스 빌드에 영향 없음
+
 ### StrictMode (디버그 전용)
 - `StrictModeInitializer` (core/startup): App Startup `Initializer` 패턴
 - **디버그 매니페스트에서만 등록** (`app/src/debug/AndroidManifest.xml`) — 릴리스 빌드 시 클래스 미로드
@@ -676,6 +702,10 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Shared Element Transition: 포스터 이미지 공유 전환 (postponeEnterTransition 패턴)
 - [x] YouTube 예고편 재생: YouTube 앱/웹 브라우저 연결 (Intent.ACTION_VIEW)
 - [x] Certificate Pinning: OkHttp CertificatePinner (api.themoviedb.org + image.tmdb.org leaf + intermediate 핀)
+- [x] 디버그 자가 검증: DebugHealthCheck (앱 시작 헬스체크) + DebugEventListener (SSL 로깅) + FileLoggingTree (파일 로깅) + AnrWatchdog (ANR 감지)
+- [x] Pre-commit Hook: Detekt + 컴파일 체크 자동 실행 (.githooks/pre-commit)
+- [x] 인증서 핀 자동 검증: cert-pin-check.yml (매주 월요일, 불일치 시 Issue 생성)
+- [x] PR 커버리지 리포트: pr-coverage.yml (JaCoCo 결과 PR 코멘트 자동 게시)
 - [x] DataStore: 다크모드 설정 저장 (Preferences DataStore)
 - [x] 테마 전환 UI: SettingsFragment MaterialAlertDialog (라이트/다크/시스템)
 - [x] Baseline Profiles: ProfileInstaller + 생성 모듈 구성
@@ -754,7 +784,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 검색 추천: 결과 없을 때 추천 검색어 칩 (string-array 리소스)
 - [x] 홈 화면 위젯: PopularMoviesWidget + RemoteViewsService/Factory (인기 영화 Top 10, 1시간 갱신, 딥링크 클릭)
 - [x] 개봉일 알림: WorkManager + ReleaseNotificationScheduler/Worker (워치리스트 추가 시 예약, 삭제 시 취소)
-- [x] 다국어 지원: values-en/strings.xml 영어 번역 (205개 문자열)
+- [x] 다국어 지원: values-en/strings.xml 영어 번역 (208개 문자열)
 - [x] DetailViewModel 부분 실패 리팩토링: loadOptional/loadOptionalNullable 헬퍼 추출
 - [x] 사용자 영화 평점: RatingBar (0.5~5.0 별점), Room DB UserRatingEntity 저장, 삭제 버튼
 - [x] 검색 결과 보기 모드 전환: 그리드 ↔ 리스트 토글 (Toolbar 메뉴, SavedStateHandle 저장)
@@ -816,6 +846,10 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Timber 구조화 로깅
 - [x] 네트워크 상태 모니터링 (ConnectivityManager 콜백 + 오프라인 Snackbar)
 - [x] StrictMode 디버그 감지 (App Startup, penaltyLog)
+- [x] 디버그 자가 검증 (DebugHealthCheck + DebugEventListener + FileLoggingTree + AnrWatchdog)
+- [x] Pre-commit Hook (Detekt + 컴파일 체크, .githooks/pre-commit)
+- [x] 인증서 핀 자동 검증 (cert-pin-check.yml, 매주 월요일 cron)
+- [x] PR 커버리지 리포트 (pr-coverage.yml, JaCoCo PR 코멘트)
 - [x] Gradle Configuration Cache (빌드 속도 최적화)
 - [x] RemoteMediator 캐시 만료 (1시간 자동 새로고침)
 - [x] PagingConfig 최적화 (prefetchDistance, initialLoadSize 튜닝)
@@ -861,7 +895,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 검색 추천 (결과 없을 때 추천 검색어 칩, string-array 리소스)
 - [x] 홈 화면 위젯 (AppWidgetProvider, RemoteViewsService, 인기 영화 Top 10)
 - [x] 개봉일 알림 (WorkManager, 워치리스트 연동, NotificationChannel)
-- [x] 다국어 지원 (values-en/strings.xml 영어 번역 205개)
+- [x] 다국어 지원 (values-en/strings.xml 영어 번역 208개)
 - [x] Espresso UI 테스트 (HiltTestRunner + 네비게이션/화면 검증 23개)
 - [x] PagingSource/RemoteMediator 유닛 테스트 (19개: MoviePagingSource 7 + DiscoverPagingSource 5 + MovieRemoteMediator 7)
 - [x] 접근성 강화 (영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지, ProgressBar, decorative overlay)
