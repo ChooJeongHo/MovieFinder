@@ -9,6 +9,7 @@ import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
+import com.choo.moviefinder.domain.usecase.SearchPersonUseCase
 import androidx.lifecycle.SavedStateHandle
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -41,6 +42,7 @@ class SearchViewModelTest {
     private lateinit var saveSearchQueryUseCase: SaveSearchQueryUseCase
     private lateinit var deleteSearchQueryUseCase: DeleteSearchQueryUseCase
     private lateinit var clearSearchHistoryUseCase: ClearSearchHistoryUseCase
+    private lateinit var searchPersonUseCase: SearchPersonUseCase
 
     @Before
     fun setup() {
@@ -52,6 +54,7 @@ class SearchViewModelTest {
         saveSearchQueryUseCase = mockk()
         deleteSearchQueryUseCase = mockk()
         clearSearchHistoryUseCase = mockk()
+        searchPersonUseCase = mockk()
 
         coEvery { getGenreListUseCase() } returns emptyList()
     }
@@ -74,7 +77,8 @@ class SearchViewModelTest {
             getRecentSearchesUseCase = getRecentSearchesUseCase,
             saveSearchQueryUseCase = saveSearchQueryUseCase,
             deleteSearchQueryUseCase = deleteSearchQueryUseCase,
-            clearSearchHistoryUseCase = clearSearchHistoryUseCase
+            clearSearchHistoryUseCase = clearSearchHistoryUseCase,
+            searchPersonUseCase = searchPersonUseCase
         )
     }
 

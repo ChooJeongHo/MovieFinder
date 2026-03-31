@@ -19,6 +19,11 @@
     <string name="search_empty_message">다른 검색어로 시도해 보세요</string>
     <string name="search_initial_title">영화 검색</string>
     <string name="search_initial_message">영화 제목을 입력하여 검색해 보세요</string>
+    <string name="search_mode_movie">영화</string>
+    <string name="search_mode_person">배우</string>
+    <string name="search_person_initial_title">배우 검색</string>
+    <string name="search_person_initial_message">배우 이름을 입력하여 검색해 보세요</string>
+    <string name="person_known_for_format">%s 분야</string>
 
     <!-- 상세 화면 -->
     <string name="release_date_format">개봉일: %s</string>
@@ -276,4 +281,12 @@
     <string name="memo_updated">메모가 수정되었습니다</string>
     <string name="memo_edit_dialog_title">메모 수정</string>
     <string name="memo_empty">아직 메모가 없습니다</string>
+
+    <!-- 시청 통계 공유 -->
+    <string name="stats_share_title">시청 통계 공유</string>
+    <string name="stats_share_card_title">MovieFinder 시청 통계</string>
+    <string name="stats_share_total">총 시청: %d편</string>
+    <string name="stats_share_monthly">이번 달: %d편</string>
+    <string name="stats_share_rating">평균 별점: %.1f</string>
+    <string name="stats_share_genres">선호 장르: %s</string>
 </resources>

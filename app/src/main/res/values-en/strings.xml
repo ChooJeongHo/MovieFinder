@@ -249,6 +249,7 @@
     <string name="person_birthday_format">Born: %s</string>
     <string name="person_birthplace_format">Birthplace: %s</string>
     <string name="person_known_for">Known for: %s</string>
+    <string name="person_known_for_format">Known for: %s</string>
     <string name="person_no_biography">No biography available</string>
 
     <!-- Data Export/Import -->
@@ -274,4 +275,18 @@
     <string name="memo_updated">Memo updated</string>
     <string name="memo_edit_dialog_title">Edit Memo</string>
     <string name="memo_empty">No memos yet</string>
+
+    <!-- Search Mode -->
+    <string name="search_mode_movie">Movies</string>
+    <string name="search_mode_person">People</string>
+    <string name="search_person_initial_title">Search People</string>
+    <string name="search_person_initial_message">Enter an actor or director name to search</string>
+
+    <!-- Watch Stats Share -->
+    <string name="stats_share_title">Share Watch Stats</string>
+    <string name="stats_share_card_title">MovieFinder Watch Stats</string>
+    <string name="stats_share_total">Total: %d movies</string>
+    <string name="stats_share_monthly">This month: %d movies</string>
+    <string name="stats_share_rating">Avg rating: %.1f</string>
+    <string name="stats_share_genres">Top genres: %s</string>
 </resources>

@@ -6,6 +6,7 @@ import com.choo.moviefinder.data.remote.dto.MovieDetailDto
 import com.choo.moviefinder.data.remote.dto.MovieListResponse
 import com.choo.moviefinder.data.remote.dto.PersonCreditsResponse
 import com.choo.moviefinder.data.remote.dto.PersonDetailDto
+import com.choo.moviefinder.data.remote.dto.PersonSearchResponse
 import com.choo.moviefinder.data.remote.dto.ReleaseDateResponse
 import com.choo.moviefinder.data.remote.dto.ReviewResponse
 import com.choo.moviefinder.data.remote.dto.VideoResponse
@@ -14,6 +15,7 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
+@Suppress("TooManyFunctions")
 interface MovieApiService {
 
     // 현재 상영 중인 영화 목록 조회
@@ -125,4 +127,12 @@ interface MovieApiService {
         @Path("person_id") personId: Int,
         @Query("language") language: String = Constants.LANGUAGE_KO
     ): PersonCreditsResponse
+
+    // 배우/인물 이름으로 검색
+    @GET("search/person")
+    suspend fun searchPerson(
+        @Query("query") query: String,
+        @Query("page") page: Int = 1,
+        @Query("language") language: String = Constants.LANGUAGE_KO
+    ): PersonSearchResponse
 }
