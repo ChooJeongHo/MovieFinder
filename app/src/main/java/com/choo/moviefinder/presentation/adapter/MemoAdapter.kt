@@ -7,9 +7,9 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.databinding.ItemMemoBinding
 import com.choo.moviefinder.domain.model.Memo
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 class MemoAdapter(
     private val onEditClick: (Memo) -> Unit,
@@ -37,8 +37,12 @@ class MemoAdapter(
         }
 
         private fun formatDate(timestamp: Long): String {
-            val sdf = SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault())
-            return sdf.format(Date(timestamp))
+            val instant = Instant.fromEpochMilliseconds(timestamp)
+            val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+            return "%04d.%02d.%02d %02d:%02d".format(
+                dateTime.year, dateTime.monthNumber, dateTime.dayOfMonth,
+                dateTime.hour, dateTime.minute
+            )
         }
     }
 

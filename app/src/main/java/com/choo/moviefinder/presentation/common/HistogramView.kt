@@ -8,6 +8,7 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import com.choo.moviefinder.domain.model.RatingBucket
+import java.util.Locale
 
 class HistogramView @JvmOverloads constructor(
     context: Context,
@@ -50,7 +51,7 @@ class HistogramView @JvmOverloads constructor(
         buckets.clear()
         buckets.addAll(items)
         contentDescription = buckets.joinToString(", ") { bucket ->
-            "%.1f★: %d".format(bucket.rating, bucket.count)
+            "%.1f★: %d".format(Locale.US, bucket.rating, bucket.count)
         }
         invalidate()
     }
@@ -96,7 +97,7 @@ class HistogramView @JvmOverloads constructor(
 
             // rating label
             canvas.drawText(
-                "%.1f★".format(rating),
+                "%.1f★".format(Locale.US, rating),
                 left + labelWidth,
                 rowCenterY + labelPaint.textSize * 0.35f,
                 labelPaint

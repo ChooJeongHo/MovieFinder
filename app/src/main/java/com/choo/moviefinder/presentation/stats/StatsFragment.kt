@@ -262,9 +262,17 @@ class StatsFragment : Fragment() {
             typedValue.data
         }
         theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true)
-        val textPrimaryColor = requireContext().getColor(typedValue.resourceId)
+        val textPrimaryColor = if (typedValue.resourceId != 0) {
+            requireContext().getColor(typedValue.resourceId)
+        } else {
+            typedValue.data
+        }
         theme.resolveAttribute(android.R.attr.textColorSecondary, typedValue, true)
-        val textSecondaryColor = requireContext().getColor(typedValue.resourceId)
+        val textSecondaryColor = if (typedValue.resourceId != 0) {
+            requireContext().getColor(typedValue.resourceId)
+        } else {
+            typedValue.data
+        }
         return StatsCardColors(primaryColor, surfaceColor, textPrimaryColor, textSecondaryColor)
     }
 
