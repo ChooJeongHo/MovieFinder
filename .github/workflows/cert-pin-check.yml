@@ -1,0 +1,92 @@
+name: Certificate Pin Check
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9:00 AM UTC
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  check-pins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check api.themoviedb.org pins
+        id: check-api
+        run: |
+          ACTUAL_PIN=$(echo | openssl s_client -connect api.themoviedb.org:443 -servername api.themoviedb.org 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64)
+          echo "Actual API pin: $ACTUAL_PIN"
+
+          if grep -q "sha256/$ACTUAL_PIN" app/src/main/java/com/choo/moviefinder/di/NetworkModule.kt; then
+            echo "✅ api.themoviedb.org pin matches"
+            echo "api_status=ok" >> $GITHUB_OUTPUT
+          else
+            echo "❌ api.themoviedb.org pin MISMATCH!"
+            echo "Expected pin not found in NetworkModule.kt"
+            echo "Actual pin: sha256/$ACTUAL_PIN"
+            echo "api_status=mismatch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check image.tmdb.org pins
+        id: check-image
+        run: |
+          ACTUAL_PIN=$(echo | openssl s_client -connect image.tmdb.org:443 -servername image.tmdb.org 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64)
+          echo "Actual Image pin: $ACTUAL_PIN"
+
+          if grep -q "sha256/$ACTUAL_PIN" app/src/main/java/com/choo/moviefinder/di/NetworkModule.kt; then
+            echo "✅ image.tmdb.org pin matches"
+            echo "image_status=ok" >> $GITHUB_OUTPUT
+          else
+            echo "❌ image.tmdb.org pin MISMATCH!"
+            echo "Actual pin: sha256/$ACTUAL_PIN"
+            echo "image_status=mismatch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check widget pins
+        id: check-widget
+        run: |
+          ACTUAL_PIN=$(echo | openssl s_client -connect api.themoviedb.org:443 -servername api.themoviedb.org 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64)
+
+          if grep -q "sha256/$ACTUAL_PIN" app/src/main/java/com/choo/moviefinder/presentation/widget/PopularMoviesRemoteViewsFactory.kt; then
+            echo "✅ Widget pin matches"
+            echo "widget_status=ok" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Widget pin MISMATCH!"
+            echo "widget_status=mismatch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create issue on mismatch
+        if: steps.check-api.outputs.api_status == 'mismatch' || steps.check-image.outputs.image_status == 'mismatch' || steps.check-widget.outputs.widget_status == 'mismatch'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const apiStatus = '${{ steps.check-api.outputs.api_status }}';
+            const imageStatus = '${{ steps.check-image.outputs.image_status }}';
+            const widgetStatus = '${{ steps.check-widget.outputs.widget_status }}';
+
+            let body = '## Certificate Pin Mismatch Detected\n\n';
+            body += '| Server | Status |\n|--------|--------|\n';
+            body += `| api.themoviedb.org | ${apiStatus === 'ok' ? '✅ OK' : '❌ MISMATCH'} |\n`;
+            body += `| image.tmdb.org | ${imageStatus === 'ok' ? '✅ OK' : '❌ MISMATCH'} |\n`;
+            body += `| Widget (api) | ${widgetStatus === 'ok' ? '✅ OK' : '❌ MISMATCH'} |\n`;
+            body += '\n### Action Required\n';
+            body += 'Update certificate pins in `NetworkModule.kt` and/or `PopularMoviesRemoteViewsFactory.kt`.\n';
+            body += 'See CLAUDE.md for the openssl command to get new pin hashes.\n';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔒 Certificate Pin Mismatch Detected',
+              body: body,
+              labels: ['security', 'bug']
+            });
+
+      - name: Summary
+        run: |
+          echo "## Certificate Pin Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Server | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| api.themoviedb.org | ${{ steps.check-api.outputs.api_status == 'ok' && '✅ OK' || '❌ MISMATCH' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| image.tmdb.org | ${{ steps.check-image.outputs.image_status == 'ok' && '✅ OK' || '❌ MISMATCH' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Widget | ${{ steps.check-widget.outputs.widget_status == 'ok' && '✅ OK' || '❌ MISMATCH' }} |" >> $GITHUB_STEP_SUMMARY
