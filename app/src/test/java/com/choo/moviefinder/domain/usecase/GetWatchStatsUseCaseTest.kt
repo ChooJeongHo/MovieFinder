@@ -4,8 +4,9 @@ import app.cash.turbine.test
 import com.choo.moviefinder.domain.model.GenreCount
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
 
-import com.choo.moviefinder.domain.repository.MovieRepository
 import com.choo.moviefinder.domain.repository.PreferencesRepository
+import com.choo.moviefinder.domain.repository.UserRatingRepository
+import com.choo.moviefinder.domain.repository.WatchHistoryRepository
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -26,26 +27,28 @@ class GetWatchStatsUseCaseTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    private lateinit var movieRepository: MovieRepository
+    private lateinit var watchHistoryRepository: WatchHistoryRepository
+    private lateinit var userRatingRepository: UserRatingRepository
     private lateinit var preferencesRepository: PreferencesRepository
     private lateinit var useCase: GetWatchStatsUseCase
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        movieRepository = mockk()
+        watchHistoryRepository = mockk()
+        userRatingRepository = mockk()
         preferencesRepository = mockk()
 
-        every { movieRepository.getTotalWatchedCount() } returns flowOf(0)
-        every { movieRepository.getWatchedCountSince(any()) } returns flowOf(0)
-        every { movieRepository.getAverageUserRating() } returns flowOf(null)
-        every { movieRepository.getAllWatchedGenres() } returns flowOf(emptyList())
-        every { movieRepository.getMonthlyWatchCounts() } returns flowOf(emptyList())
-        every { movieRepository.getRatingDistribution() } returns flowOf(emptyList())
-        every { movieRepository.getDailyWatchCounts() } returns flowOf(emptyList())
+        every { watchHistoryRepository.getTotalWatchedCount() } returns flowOf(0)
+        every { watchHistoryRepository.getWatchedCountSince(any()) } returns flowOf(0)
+        every { userRatingRepository.getAverageUserRating() } returns flowOf(null)
+        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(emptyList())
+        every { watchHistoryRepository.getMonthlyWatchCounts() } returns flowOf(emptyList())
+        every { userRatingRepository.getRatingDistribution() } returns flowOf(emptyList())
+        every { watchHistoryRepository.getDailyWatchCounts() } returns flowOf(emptyList())
         every { preferencesRepository.getMonthlyWatchGoal() } returns flowOf(0)
 
-        useCase = GetWatchStatsUseCase(movieRepository, preferencesRepository)
+        useCase = GetWatchStatsUseCase(watchHistoryRepository, userRatingRepository, preferencesRepository)
     }
 
     @After
@@ -55,8 +58,8 @@ class GetWatchStatsUseCaseTest {
 
     @Test
     fun `returns correct total and monthly watched counts`() = runTest {
-        every { movieRepository.getTotalWatchedCount() } returns flowOf(42)
-        every { movieRepository.getWatchedCountSince(any()) } returns flowOf(7)
+        every { watchHistoryRepository.getTotalWatchedCount() } returns flowOf(42)
+        every { watchHistoryRepository.getWatchedCountSince(any()) } returns flowOf(7)
 
         useCase().test {
             val stats = awaitItem()
@@ -68,7 +71,7 @@ class GetWatchStatsUseCaseTest {
 
     @Test
     fun `returns correct average rating`() = runTest {
-        every { movieRepository.getAverageUserRating() } returns flowOf(4.5f)
+        every { userRatingRepository.getAverageUserRating() } returns flowOf(4.5f)
 
         useCase().test {
             val stats = awaitItem()
@@ -79,7 +82,7 @@ class GetWatchStatsUseCaseTest {
 
     @Test
     fun `returns null average rating when no ratings exist`() = runTest {
-        every { movieRepository.getAverageUserRating() } returns flowOf(null)
+        every { userRatingRepository.getAverageUserRating() } returns flowOf(null)
 
         useCase().test {
             val stats = awaitItem()
@@ -90,7 +93,7 @@ class GetWatchStatsUseCaseTest {
 
     @Test
     fun `computes genre counts sorted by frequency`() = runTest {
-        every { movieRepository.getAllWatchedGenres() } returns flowOf(
+        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(
             listOf("Action,Drama", "Action,Comedy", "Drama")
         )
 
@@ -106,7 +109,7 @@ class GetWatchStatsUseCaseTest {
 
     @Test
     fun `returns top 3 genres only in topGenres`() = runTest {
-        every { movieRepository.getAllWatchedGenres() } returns flowOf(
+        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(
             listOf("Action,Drama,Comedy,Thriller,Horror")
         )
 
@@ -119,7 +122,7 @@ class GetWatchStatsUseCaseTest {
 
     @Test
     fun `handles empty genre strings`() = runTest {
-        every { movieRepository.getAllWatchedGenres() } returns flowOf(emptyList())
+        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(emptyList())
 
         useCase().test {
             val stats = awaitItem()
@@ -131,7 +134,7 @@ class GetWatchStatsUseCaseTest {
 
     @Test
     fun `handles comma-separated genre strings correctly`() = runTest {
-        every { movieRepository.getAllWatchedGenres() } returns flowOf(
+        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(
             listOf("Action,Drama", "Action")
         )
 
@@ -152,7 +155,7 @@ class GetWatchStatsUseCaseTest {
             MonthlyWatchCount("2026-02", 8),
             MonthlyWatchCount("2026-03", 3)
         )
-        every { movieRepository.getMonthlyWatchCounts() } returns flowOf(monthlyCounts)
+        every { watchHistoryRepository.getMonthlyWatchCounts() } returns flowOf(monthlyCounts)
 
         useCase().test {
             val stats = awaitItem()
@@ -179,7 +182,7 @@ class GetWatchStatsUseCaseTest {
 
     @Test
     fun `handles genres with whitespace trimming`() = runTest {
-        every { movieRepository.getAllWatchedGenres() } returns flowOf(
+        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(
             listOf(" Action , Drama ", "Action")
         )
 

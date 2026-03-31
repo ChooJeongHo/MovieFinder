@@ -42,7 +42,15 @@ import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.BackupRating
 import com.choo.moviefinder.domain.model.Review
 import com.choo.moviefinder.domain.model.UserDataBackup
+import com.choo.moviefinder.domain.repository.BackupRepository
+import com.choo.moviefinder.domain.repository.FavoriteRepository
+import com.choo.moviefinder.domain.repository.MemoRepository
 import com.choo.moviefinder.domain.repository.MovieRepository
+import com.choo.moviefinder.domain.repository.PersonRepository
+import com.choo.moviefinder.domain.repository.SearchHistoryRepository
+import com.choo.moviefinder.domain.repository.UserRatingRepository
+import com.choo.moviefinder.domain.repository.WatchHistoryRepository
+import com.choo.moviefinder.domain.repository.WatchlistRepository
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -60,7 +68,15 @@ class MovieRepositoryImpl @Inject constructor(
     private val watchlistDao: WatchlistDao,
     private val userRatingDao: UserRatingDao,
     private val memoDao: MemoDao
-) : MovieRepository {
+) : MovieRepository,
+    FavoriteRepository,
+    WatchlistRepository,
+    SearchHistoryRepository,
+    WatchHistoryRepository,
+    UserRatingRepository,
+    MemoRepository,
+    PersonRepository,
+    BackupRepository {
 
     // 현재 상영작을 RemoteMediator 기반 오프라인 캐시로 페이징 조회
     @OptIn(ExperimentalPagingApi::class)

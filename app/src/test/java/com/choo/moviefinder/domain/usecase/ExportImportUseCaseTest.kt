@@ -4,7 +4,7 @@ import com.choo.moviefinder.domain.model.BackupMemo
 import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.BackupRating
 import com.choo.moviefinder.domain.model.UserDataBackup
-import com.choo.moviefinder.domain.repository.MovieRepository
+import com.choo.moviefinder.domain.repository.BackupRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -15,7 +15,7 @@ import org.junit.Test
 
 class ExportImportUseCaseTest {
 
-    private lateinit var repository: MovieRepository
+    private lateinit var repository: BackupRepository
     private lateinit var exportUseCase: ExportUserDataUseCase
     private lateinit var importUseCase: ImportUserDataUseCase
 

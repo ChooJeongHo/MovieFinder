@@ -2,7 +2,7 @@ package com.choo.moviefinder.core.notification
 
 import android.content.Context
 import com.choo.moviefinder.core.util.currentYearMonth
-import com.choo.moviefinder.domain.repository.MovieRepository
+import com.choo.moviefinder.domain.repository.WatchHistoryRepository
 import com.choo.moviefinder.domain.repository.PreferencesRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -21,16 +21,16 @@ class WatchGoalNotificationHelperTest {
 
     private lateinit var context: Context
     private lateinit var preferencesRepository: PreferencesRepository
-    private lateinit var movieRepository: MovieRepository
+    private lateinit var watchHistoryRepository: WatchHistoryRepository
     private lateinit var helper: WatchGoalNotificationHelper
 
     @Before
     fun setup() {
         context = mockk(relaxed = true)
         preferencesRepository = mockk(relaxed = true)
-        movieRepository = mockk(relaxed = true)
+        watchHistoryRepository = mockk(relaxed = true)
         helper = spyk(
-            WatchGoalNotificationHelper(context, preferencesRepository, movieRepository),
+            WatchGoalNotificationHelper(context, preferencesRepository, watchHistoryRepository),
             recordPrivateCalls = true
         )
         // Android 알림 API는 유닛 테스트에서 사용 불가하므로 스킵
@@ -43,7 +43,7 @@ class WatchGoalNotificationHelperTest {
 
         helper.checkAndNotifyGoalAchieved()
 
-        coVerify(exactly = 0) { movieRepository.getWatchedCountSince(any()) }
+        coVerify(exactly = 0) { watchHistoryRepository.getWatchedCountSince(any()) }
         verify(exactly = 0) { helper.showGoalAchievedNotification() }
     }
 
@@ -53,14 +53,14 @@ class WatchGoalNotificationHelperTest {
 
         helper.checkAndNotifyGoalAchieved()
 
-        coVerify(exactly = 0) { movieRepository.getWatchedCountSince(any()) }
+        coVerify(exactly = 0) { watchHistoryRepository.getWatchedCountSince(any()) }
         verify(exactly = 0) { helper.showGoalAchievedNotification() }
     }
 
     @Test
     fun `goal not yet reached - does not notify`() = runTest {
         every { preferencesRepository.getMonthlyWatchGoal() } returns flowOf(10)
-        every { movieRepository.getWatchedCountSince(any()) } returns flowOf(5)
+        every { watchHistoryRepository.getWatchedCountSince(any()) } returns flowOf(5)
 
         helper.checkAndNotifyGoalAchieved()
 
@@ -71,7 +71,7 @@ class WatchGoalNotificationHelperTest {
     @Test
     fun `goal reached and not yet notified - saves month and shows notification`() = runTest {
         every { preferencesRepository.getMonthlyWatchGoal() } returns flowOf(5)
-        every { movieRepository.getWatchedCountSince(any()) } returns flowOf(5)
+        every { watchHistoryRepository.getWatchedCountSince(any()) } returns flowOf(5)
         every { preferencesRepository.getLastGoalNotifiedMonth() } returns flowOf("")
         coEvery { preferencesRepository.setLastGoalNotifiedMonth(any()) } returns Unit
 
@@ -86,7 +86,7 @@ class WatchGoalNotificationHelperTest {
     @Test
     fun `goal reached but already notified this month - does not notify again`() = runTest {
         every { preferencesRepository.getMonthlyWatchGoal() } returns flowOf(5)
-        every { movieRepository.getWatchedCountSince(any()) } returns flowOf(10)
+        every { watchHistoryRepository.getWatchedCountSince(any()) } returns flowOf(10)
         every { preferencesRepository.getLastGoalNotifiedMonth() } returns flowOf(currentYearMonth())
 
         helper.checkAndNotifyGoalAchieved()
@@ -98,7 +98,7 @@ class WatchGoalNotificationHelperTest {
     @Test
     fun `goal exceeded - still triggers notification if not yet notified`() = runTest {
         every { preferencesRepository.getMonthlyWatchGoal() } returns flowOf(3)
-        every { movieRepository.getWatchedCountSince(any()) } returns flowOf(10)
+        every { watchHistoryRepository.getWatchedCountSince(any()) } returns flowOf(10)
         every { preferencesRepository.getLastGoalNotifiedMonth() } returns flowOf("")
         coEvery { preferencesRepository.setLastGoalNotifiedMonth(any()) } returns Unit
 
@@ -111,7 +111,7 @@ class WatchGoalNotificationHelperTest {
     @Test
     fun `notified last month but goal reached this month - notifies again`() = runTest {
         every { preferencesRepository.getMonthlyWatchGoal() } returns flowOf(5)
-        every { movieRepository.getWatchedCountSince(any()) } returns flowOf(5)
+        every { watchHistoryRepository.getWatchedCountSince(any()) } returns flowOf(5)
         every { preferencesRepository.getLastGoalNotifiedMonth() } returns flowOf("2025-01")
         coEvery { preferencesRepository.setLastGoalNotifiedMonth(any()) } returns Unit
 
