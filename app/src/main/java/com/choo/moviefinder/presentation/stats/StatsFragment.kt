@@ -414,17 +414,6 @@ class StatsFragment : Fragment() {
         return bitmap
     }
 
-    // Bitmap을 캐시 디렉토리에 PNG 파일로 저장
-    private fun saveBitmapToCache(bitmap: Bitmap): File {
-        val shareDir = File(requireContext().cacheDir, "share_images")
-        shareDir.mkdirs()
-        val file = File(shareDir, "stats_card.png")
-        FileOutputStream(file).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-        }
-        return file
-    }
-
     // 바인딩 null 처리로 메모리 누수 방지
     override fun onDestroyView() {
         super.onDestroyView()
