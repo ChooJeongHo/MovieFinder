@@ -217,16 +217,26 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **출연진 정렬**: `order` 필드 기준 오름차순 정렬
 - **사용자 평점**: RatingBar로 0.5~5.0 별점 매기기 (Room DB 저장), 삭제 버튼 — `UserRatingDelegate`로 로직 분리
 - **영화 메모**: 영화별 메모 작성/수정/삭제 (MemoEntity, Room DB v11, 500자 길이 제한, stateIn 패턴, RecyclerView MemoAdapter, 삭제 Undo) — `MemoDelegate`로 로직 분리
-- **DetailViewModel Delegate 분리**: MemoDelegate(메모 CRUD) + UserRatingDelegate(평점 CRUD) 로 생성자 의존성 19개 → 13개 축소
+- **DetailViewModel Delegate 분리**: `MemoDelegate` + `UserRatingDelegate` 위임 패턴으로 생성자 의존성 19개 → 13개 축소
+  - **MemoDelegate** (`presentation/detail/MemoDelegate.kt`): 생성자 파라미터 — `GetMemosUseCase`, `SaveMemoUseCase`, `UpdateMemoUseCase`, `DeleteMemoUseCase`, `movieId: Int`, `viewModelScope: CoroutineScope`, `snackbarChannel: Channel<ErrorType>`. `memos: StateFlow<List<Memo>>` (stateIn WhileSubscribed 5000), `saveMemo(content)` / `updateMemo(memoId, content)` / `deleteMemo(memoId)` 액션. 모든 액션은 내부 `launchWithSnackbar {}` 헬퍼를 통해 코루틴 실행 + 에러 시 snackbarChannel 전송
+  - **UserRatingDelegate** (`presentation/detail/UserRatingDelegate.kt`): 생성자 파라미터 — `GetUserRatingUseCase`, `SetUserRatingUseCase`, `DeleteUserRatingUseCase`, `movieId: Int`, `viewModelScope: CoroutineScope`, `snackbarChannel: Channel<ErrorType>`. `userRating: StateFlow<Float?>` (stateIn WhileSubscribed 5000), `setUserRating(rating)` / `deleteUserRating()` 액션. 동일한 `launchWithSnackbar {}` 패턴 사용
+  - **DetailViewModel**: `val memoDelegate = MemoDelegate(...)` / `val userRatingDelegate = UserRatingDelegate(...)` 프로퍼티로 보유. Fragment에서 `viewModel.memoDelegate.memos` / `viewModel.memoDelegate.saveMemo(content)` 형태로 직접 접근
+  - **공유 snackbarChannel**: DetailViewModel의 `_snackbarEvent` Channel을 두 delegate에 동일하게 전달 → 에러 메시지 단일 파이프라인 유지
 - NestedScrollView 기반 스크롤
 
 ### 3-1. 배우 상세 화면 (PersonDetailFragment)
 - 출연진 클릭 시 CastAdapter `onCastClick` 콜백 → PersonDetailFragment 네비게이션
-- CollapsingToolbarLayout 패턴 (프로필 이미지 패럴랙스)
-- 배우 프로필, 이름, 생년월일, 바이오그래피 표시
-- **필모그래피**: TMDB /person/{id}/movie_credits API로 출연작 목록 (HorizontalMovieAdapter)
-- `PersonDetailViewModel` + GetPersonDetailUseCase + GetPersonCreditsUseCase
-- **딥링크**: `moviefinder://person/{personId}`
+- **CoordinatorLayout + CollapsingToolbarLayout**: 프로필 이미지 패럴랙스 효과 (fragment_detail.xml 동일 구조)
+- **프로필 이미지**: Coil로 로드 (`crossfade`, placeholder/error drawable), `contentDescription`에 배우 이름 동적 설정 (`cd_person_profile` 형식 문자열)
+- **기본 정보**: 이름 (CollapsingToolbarLayout 타이틀 + 별도 TextView), 활동 분야(`knownForDepartment`), 생년월일(`birthday`), 출생지(`placeOfBirth`) — 값이 없으면 GONE 처리
+- **바이오그래피**: 비어있으면 `person_no_biography` 문자열 표시, `lineSpacingMultiplier=1.3`으로 가독성 향상
+- **필모그래피**: TMDB `/person/{id}/movie_credits` API → `HorizontalMovieAdapter` 가로 스크롤, 영화 클릭 시 DetailFragment 이동 (출연작 없으면 레이블+RecyclerView GONE)
+- **접근성**: 프로필 이미지 contentDescription에 배우 이름 포함 (`%s 프로필 사진`), 필모그래피 RecyclerView contentDescription에 배우 이름 포함 (`%s 출연작 목록`), ProgressBar `cd_loading`, 에러 아이콘 `cd_error_icon`
+- **PersonDetailUiState**: sealed class (Loading / Success(person, movies) / Error(errorType))
+- **PersonDetailViewModel**: `savedStateHandle.get<Int>("personId")` → `viewModelScope.launch` 로 두 API 병렬 호출 (`async` + `await`), 에러 시 ErrorType 매핑
+- `GetPersonDetailUseCase` (TMDB `/person/{id}`) + `GetPersonCreditsUseCase` (TMDB `/person/{id}/movie_credits`)
+- **재시도 UI**: 에러 시 재시도 버튼 비활성화 → 완료 후 재활성화 (DetailFragment 동일 패턴)
+- **딥링크**: `moviefinder://person/{personId}` (nav_graph deepLink)
 
 ### 4. 즐겨찾기/워치리스트 화면 (FavoriteFragment)
 - **TabLayout 탭 전환**: "즐겨찾기" / "보고 싶은 영화" 탭
@@ -245,8 +255,12 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - **캐시 삭제**: Coil 메모리 + 디스크 캐시 클리어
 - **시청 기록 삭제**: WatchHistoryDao.clearAll() + Channel 기반 성공/에러 이벤트 분리
 - **시청 통계**: Settings → StatsFragment 네비게이션 (Navigation Component action)
-- **데이터 내보내기**: JSON 백업 (ActivityResultContracts.CreateDocument), ExportUserDataUseCase
-- **데이터 가져오기**: JSON 복원 (ActivityResultContracts.OpenDocument), ImportUserDataUseCase
+- **데이터 내보내기**: `ExportUserDataUseCase` → `Json.encodeToString(UserDataBackup)` → `_exportedJson` Channel 이벤트 → `ActivityResultContracts.CreateDocument("application/json")` 런처로 저장 위치 선택 → `ContentResolver.openOutputStream(uri)` 로 파일 기록. `pendingExportJson` (ViewModel 프로퍼티)에 JSON 임시 보관 후 런처 콜백에서 소비
+- **데이터 가져오기**: `ActivityResultContracts.OpenDocument()` 런처로 JSON 파일 선택 → `ContentResolver.openInputStream(uri)` 로 읽기 → `showImportConfirmDialog()` 확인 다이얼로그 표시 → 확인 시 `viewModel.importData(json)` 호출 → `Json.decodeFromString<UserDataBackup>(json)` → `ImportUserDataUseCase(backup)` → `_importSuccess` Channel 이벤트
+- **JSON 포맷**: `UserDataBackup` (`@Serializable`) — `version: Int`, `exportedAt: Long` (epoch ms), `favorites: List<BackupMovie>`, `watchlist: List<BackupMovie>`, `ratings: List<BackupRating>`, `memos: List<BackupMemo>`. `BackupMovie` (id, title, posterPath, voteAverage, overview), `BackupRating` (movieId, rating), `BackupMemo` (movieId, content)
+- **가져오기 진행 표시**: `isImporting: StateFlow<Boolean>` → `item_import_data` 비활성화 + alpha 0.5 (진행 중), 완료 후 복원
+- **병합 전략**: 가져오기 시 기존 데이터 덮어쓰기 (`insertAll` REPLACE 전략), 빈 목록이면 각 DAO 호출 스킵
+- **ProGuard**: `UserDataBackup`, `BackupMovie`, `BackupRating`, `BackupMemo` 클래스에 kotlinx.serialization keep 규칙 추가
 - **앱 정보**: `getString(R.string.settings_version, VERSION_NAME)` 포맷으로 표시
 - BottomNavigationView 4번째 탭으로 접근
 - **에러 처리**: setThemeMode/clearWatchHistory/setMonthlyWatchGoal에 try-catch + CancellationException rethrow + Snackbar 에러 피드백
@@ -404,7 +418,7 @@ API 키 발급: https://www.themoviedb.org/settings/api
 
 ## 테스트
 
-### 유닛 테스트 (201개)
+### 유닛 테스트 (221개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -654,7 +668,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Coil 캐시: 메모리 25% + 디스크 5% 설정
 - [x] Room 인덱스: 자주 쿼리되는 컬럼에 인덱스 추가
 - [x] LoggingInterceptor: 릴리스 빌드에서 객체 미생성
-- [x] 유닛 테스트: 201개 (ViewModel 94개 + Repository 36개 + Paging 24개 + UseCase 14개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개)
+- [x] 유닛 테스트: 221개 (ViewModel 102개 + Repository 44개 + Paging 24개 + UseCase 14개 + Delegate 8개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개)
 - [x] Espresso UI 테스트: 5개 (네비게이션 + 화면 표시 검증, HiltTestRunner)
 - [x] 접근성 강화: 영화 카드 contentDescription, 리뷰 stateDescription, 등급 배지 접근성, ProgressBar/overlay 접근성
 - [x] 다크 모드 아이콘: `@color/icon_default` + `values-night/colors.xml` 테마 대응
@@ -786,7 +800,7 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 딥링크 지원 (커스텀 스킴 + TMDB URL)
 - [x] 스와이프 삭제 + 실행취소
 - [x] 검색 연도 필터
-- [x] Unit Test 작성 (201개: ViewModel 94개 + Repository 36개 + Paging 24개 + UseCase 14개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개)
+- [x] Unit Test 작성 (221개: ViewModel 102개 + Repository 44개 + Paging 24개 + UseCase 14개 + Delegate 8개 + ErrorMessageProvider 10개 + PreferencesRepository 9개 + WatchGoalNotificationHelper 7개 + ReleaseNotificationScheduler 7개)
 - [x] 영화 예고편 재생 (YouTube 앱/웹 연결, TMDB Videos API 연동)
 - [x] Shared Element Transition (포스터 이미지 공유 전환)
 - [x] DataStore 기반 다크모드 설정 (라이트/다크/시스템 전환)

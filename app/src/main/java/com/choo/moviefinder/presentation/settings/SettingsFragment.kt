@@ -295,6 +295,14 @@ class SettingsFragment : Fragment() {
                 }
             }
         }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.isImporting.collect { importing ->
+                    binding.itemImportData.isEnabled = !importing
+                    binding.itemImportData.alpha = if (importing) 0.5f else 1.0f
+                }
+            }
+        }
     }
 
     // 가져오기 확인 다이얼로그 표시

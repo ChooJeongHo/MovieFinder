@@ -23,13 +23,21 @@ import com.choo.moviefinder.data.remote.dto.MovieListResponse
 import com.choo.moviefinder.data.remote.dto.ReleaseDateInfo
 import com.choo.moviefinder.data.remote.dto.ReleaseDateResponse
 import com.choo.moviefinder.data.remote.dto.ReleaseDateResult
+import com.choo.moviefinder.data.local.entity.MemoEntity
+import com.choo.moviefinder.data.local.entity.UserRatingEntity
 import com.choo.moviefinder.data.remote.dto.AuthorDetailsDto
+import com.choo.moviefinder.data.remote.dto.PersonCreditsResponse
+import com.choo.moviefinder.data.remote.dto.PersonDetailDto
 import com.choo.moviefinder.data.remote.dto.ReviewDto
 import com.choo.moviefinder.data.remote.dto.ReviewResponse
 import com.choo.moviefinder.data.remote.dto.VideoDto
 import com.choo.moviefinder.data.remote.dto.VideoResponse
 import com.choo.moviefinder.data.util.Constants
+import com.choo.moviefinder.domain.model.BackupMemo
+import com.choo.moviefinder.domain.model.BackupMovie
+import com.choo.moviefinder.domain.model.BackupRating
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.model.UserDataBackup
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -610,5 +618,127 @@ class MovieRepositoryImplTest {
         repository.deleteUserRating(1)
 
         coVerify { userRatingDao.deleteRating(1) }
+    }
+
+    // --- getMovieRecommendations ---
+
+    @Test
+    fun `getMovieRecommendations returns mapped movies`() = runTest {
+        coEvery { apiService.getMovieRecommendations(1) } returns MovieListResponse(
+            page = 1, results = testMovieDtos, totalPages = 1, totalResults = 2
+        )
+
+        val result = repository.getMovieRecommendations(1)
+
+        assertEquals(2, result.size)
+        assertEquals("Similar 1", result[0].title)
+        assertEquals(10, result[0].id)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `getMovieRecommendations throws on invalid movieId`() = runTest {
+        repository.getMovieRecommendations(0)
+    }
+
+    // --- getPersonDetail ---
+
+    @Test
+    fun `getPersonDetail returns mapped domain model`() = runTest {
+        val dto = PersonDetailDto(
+            id = 42,
+            name = "Test Actor",
+            biography = "Some bio",
+            birthday = "1980-01-01",
+            placeOfBirth = "Los Angeles",
+            profilePath = "/profile.jpg",
+            knownForDepartment = "Acting"
+        )
+        coEvery { apiService.getPersonDetail(42) } returns dto
+
+        val result = repository.getPersonDetail(42)
+
+        assertEquals(42, result.id)
+        assertEquals("Test Actor", result.name)
+        assertEquals("Some bio", result.biography)
+        assertEquals("1980-01-01", result.birthday)
+        assertEquals("Acting", result.knownForDepartment)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `getPersonDetail throws on invalid personId`() = runTest {
+        repository.getPersonDetail(0)
+    }
+
+    // --- getPersonMovieCredits ---
+
+    @Test
+    fun `getPersonMovieCredits returns mapped movies`() = runTest {
+        coEvery { apiService.getPersonMovieCredits(5) } returns PersonCreditsResponse(
+            cast = testMovieDtos
+        )
+
+        val result = repository.getPersonMovieCredits(5)
+
+        assertEquals(2, result.size)
+        assertEquals("Similar 1", result[0].title)
+        assertEquals("Similar 2", result[1].title)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `getPersonMovieCredits throws on invalid personId`() = runTest {
+        repository.getPersonMovieCredits(-1)
+    }
+
+    // --- exportUserData ---
+
+    @Test
+    fun `exportUserData returns backup with all data`() = runTest {
+        val favEntities = testFavoriteEntities
+        val watchlistEntities = listOf(
+            WatchlistEntity(
+                id = 10, title = "Watch 1", posterPath = "/w1.jpg",
+                backdropPath = null, overview = "O1",
+                releaseDate = "2024-01-01", voteAverage = 7.0, voteCount = 100
+            )
+        )
+        val ratingEntities = listOf(UserRatingEntity(movieId = 1, rating = 4.5f))
+        val memoEntities = listOf(MemoEntity(movieId = 1, content = "Great film"))
+
+        coEvery { favoriteMovieDao.getAllFavoritesOnce() } returns favEntities
+        coEvery { watchlistDao.getAllWatchlistOnce() } returns watchlistEntities
+        coEvery { userRatingDao.getAllRatings() } returns ratingEntities
+        coEvery { memoDao.getAllMemos() } returns memoEntities
+
+        val result = repository.exportUserData()
+
+        assertEquals(2, result.favorites.size)
+        assertEquals(1, result.watchlist.size)
+        assertEquals(1, result.ratings.size)
+        assertEquals(1, result.memos.size)
+        assertEquals("Fav 1", result.favorites[0].title)
+        assertEquals("Watch 1", result.watchlist[0].title)
+        assertEquals(4.5f, result.ratings[0].rating)
+        assertEquals("Great film", result.memos[0].content)
+    }
+
+    // --- importUserData ---
+
+    @Test
+    fun `importUserData calls all DAO insert methods`() = runTest {
+        val favMovie = BackupMovie(id = 1, title = "F1", posterPath = null, voteAverage = 8.0, overview = "O1")
+        val watchMovie = BackupMovie(id = 2, title = "W1", posterPath = null, voteAverage = 7.0, overview = "O2")
+        val backup = UserDataBackup(
+            favorites = listOf(favMovie),
+            watchlist = listOf(watchMovie),
+            ratings = listOf(BackupRating(movieId = 1, rating = 4.0f)),
+            memos = listOf(BackupMemo(movieId = 1, content = "Note"))
+        )
+
+        repository.importUserData(backup)
+
+        coVerify { favoriteMovieDao.insertAll(match { it.size == 1 && it[0].id == 1 }) }
+        coVerify { watchlistDao.insertAll(match { it.size == 1 && it[0].id == 2 }) }
+        coVerify { userRatingDao.insertAll(match { it.size == 1 && it[0].movieId == 1 }) }
+        coVerify { memoDao.insertAll(match { it.size == 1 && it[0].content == "Note" }) }
     }
 }
