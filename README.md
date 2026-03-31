@@ -57,7 +57,7 @@ app/src/main/java/com/choo/moviefinder/
 │   └── util/              # 상수 (PAGE_SIZE, PREFETCH_DISTANCE, DEFAULT_PAGING_CONFIG, 언어 코드)
 ├── domain/                # 도메인 레이어 (순수 Kotlin)
 │   ├── model/             # Movie, MovieDetail, Cast, Review, Genre, ThemeMode, PersonDetail, WatchStats, UserDataBackup
-│   ├── repository/        # Repository 인터페이스
+│   ├── repository/        # Repository 인터페이스 (10개: ISP 원칙 기반 도메인별 분리)
 │   └── usecase/           # UseCase 43개
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 7개 + MovieGridViewHolder + MovieListViewHolder
@@ -78,6 +78,7 @@ app/src/main/java/com/choo/moviefinder/
 ### 레이어 규칙
 
 - **Domain 레이어**: 순수 Kotlin, Android 프레임워크 의존성 없음
+- **Repository 인터페이스**: ISP(인터페이스 분리 원칙) 기반 도메인별 분리 — 10개 인터페이스 (Movie, Favorite, Watchlist, SearchHistory, WatchHistory, UserRating, Memo, Person, Backup, Preferences)
 - **Data 레이어**: API 통신, DB 접근, Domain Repository 인터페이스 구현
 - **Presentation 레이어**: ViewModel + Fragment/XML UI, Domain UseCase에만 의존 (Data 레이어 직접 참조 금지)
 - **Core 레이어**: 공유 유틸리티, 모든 레이어에서 접근 가능
@@ -342,6 +343,7 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 ## 코드 품질
 
 ### 코드 중복 제거
+- **Repository ISP 분리**: `MovieRepository` 40+ 메서드 → 9개 도메인별 인터페이스로 분리 (ISP 원칙 적용, Hilt `RepositoryModule` 9개 `@Binds` 바인딩)
 - **PagingConfig 상수 추출**: `DEFAULT_PAGING_CONFIG`로 4곳 중복 제거
 - **GridLayoutManager 헬퍼**: `createMovieGridLayoutManager()`로 HomeFragment + SearchFragment 중복 제거
 - **HorizontalMovieAdapter 통합**: SimilarMovieAdapter + WatchHistoryAdapter → `transitionPrefix` 파라미터로 1개 어댑터로 통합
