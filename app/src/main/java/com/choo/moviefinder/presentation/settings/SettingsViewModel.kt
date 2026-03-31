@@ -16,6 +16,7 @@ import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -43,6 +44,9 @@ class SettingsViewModel @Inject constructor(
     // 이번 달 시청 목표 편수 Flow (0 = 목표 없음)
     val monthlyWatchGoal: StateFlow<Int> = getMonthlyWatchGoalUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    private val _isImporting = MutableStateFlow(false)
+    val isImporting: StateFlow<Boolean> = _isImporting
 
     private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
@@ -113,6 +117,7 @@ class SettingsViewModel @Inject constructor(
     // JSON 문자열에서 사용자 데이터를 가져온다 (성공 시 이벤트, 에러 시 Snackbar)
     fun importData(jsonString: String) {
         viewModelScope.launch {
+            _isImporting.value = true
             try {
                 val backup = Json.decodeFromString<UserDataBackup>(jsonString)
                 importUserDataUseCase(backup)
@@ -122,6 +127,8 @@ class SettingsViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "Failed to import user data")
                 _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
+            } finally {
+                _isImporting.value = false
             }
         }
     }

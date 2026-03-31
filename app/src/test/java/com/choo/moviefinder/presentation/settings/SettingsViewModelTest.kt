@@ -249,4 +249,56 @@ class SettingsViewModelTest {
 
         coVerify { setMonthlyWatchGoalUseCase(10) }
     }
+
+    @Test
+    fun `exportData emits json string on success`() = runTest {
+        val backup = com.choo.moviefinder.domain.model.UserDataBackup()
+        coEvery { exportUserDataUseCase() } returns backup
+        val viewModel = createViewModel()
+
+        viewModel.exportedJson.test {
+            viewModel.exportData()
+            advanceUntilIdle()
+            val json = awaitItem()
+            assert(json.isNotBlank())
+        }
+    }
+
+    @Test
+    fun `exportData sends snackbar on error`() = runTest {
+        coEvery { exportUserDataUseCase() } throws RuntimeException("Export error")
+        val viewModel = createViewModel()
+
+        viewModel.snackbarEvent.test {
+            viewModel.exportData()
+            advanceUntilIdle()
+            assertEquals(com.choo.moviefinder.core.util.ErrorType.UNKNOWN, awaitItem())
+        }
+    }
+
+    @Test
+    fun `importData sends success event`() = runTest {
+        coEvery { importUserDataUseCase(any()) } returns Unit
+        val viewModel = createViewModel()
+        val validJson = """{"version":1,"exportedAt":0,"favorites":[],"watchlist":[],"ratings":[],"memos":[]}"""
+
+        viewModel.importSuccess.test {
+            viewModel.importData(validJson)
+            advanceUntilIdle()
+            awaitItem()
+        }
+    }
+
+    @Test
+    fun `importData sends snackbar on error`() = runTest {
+        val viewModel = createViewModel()
+        val invalidJson = "not valid json"
+
+        viewModel.snackbarEvent.test {
+            viewModel.importData(invalidJson)
+            advanceUntilIdle()
+            val errorType = awaitItem()
+            assert(errorType != null)
+        }
+    }
 }

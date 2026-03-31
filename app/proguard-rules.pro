@@ -37,6 +37,52 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
+# Domain backup model serialization (export/import)
+-keep,includedescriptorclasses class com.choo.moviefinder.domain.model.UserDataBackup$$serializer { *; }
+-keep,includedescriptorclasses class com.choo.moviefinder.domain.model.BackupMovie$$serializer { *; }
+-keep,includedescriptorclasses class com.choo.moviefinder.domain.model.BackupRating$$serializer { *; }
+-keep,includedescriptorclasses class com.choo.moviefinder.domain.model.BackupMemo$$serializer { *; }
+-keepclassmembers class com.choo.moviefinder.domain.model.UserDataBackup {
+    *** Companion;
+}
+-keepclassmembers class com.choo.moviefinder.domain.model.BackupMovie {
+    *** Companion;
+}
+-keepclassmembers class com.choo.moviefinder.domain.model.BackupRating {
+    *** Companion;
+}
+-keepclassmembers class com.choo.moviefinder.domain.model.BackupMemo {
+    *** Companion;
+}
+-keepclasseswithmembers class com.choo.moviefinder.domain.model.UserDataBackup {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclasseswithmembers class com.choo.moviefinder.domain.model.BackupMovie {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclasseswithmembers class com.choo.moviefinder.domain.model.BackupRating {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclasseswithmembers class com.choo.moviefinder.domain.model.BackupMemo {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# Person detail DTO serialization
+-keep,includedescriptorclasses class com.choo.moviefinder.data.remote.dto.PersonDetailDto$$serializer { *; }
+-keep,includedescriptorclasses class com.choo.moviefinder.data.remote.dto.PersonCreditsResponse$$serializer { *; }
+-keepclassmembers class com.choo.moviefinder.data.remote.dto.PersonDetailDto {
+    *** Companion;
+}
+-keepclassmembers class com.choo.moviefinder.data.remote.dto.PersonCreditsResponse {
+    *** Companion;
+}
+-keepclasseswithmembers class com.choo.moviefinder.data.remote.dto.PersonDetailDto {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclasseswithmembers class com.choo.moviefinder.data.remote.dto.PersonCreditsResponse {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
 # Widget serialization classes
 -keep,includedescriptorclasses class com.choo.moviefinder.presentation.widget.**$$serializer { *; }
 -keepclassmembers class com.choo.moviefinder.presentation.widget.** {

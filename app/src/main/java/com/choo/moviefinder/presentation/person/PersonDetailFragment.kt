@@ -112,6 +112,10 @@ class PersonDetailFragment : Fragment() {
         filmographyAdapter.submitList(state.movies)
         binding.tvFilmographyLabel.isVisible = state.movies.isNotEmpty()
         binding.rvFilmography.isVisible = state.movies.isNotEmpty()
+        if (state.movies.isNotEmpty()) {
+            binding.rvFilmography.contentDescription =
+                getString(R.string.cd_filmography, state.person.name)
+        }
     }
 
     // 인물 기본 정보 바인딩
@@ -119,6 +123,7 @@ class PersonDetailFragment : Fragment() {
         binding.collapsingToolbar.title = person.name
         binding.tvName.text = person.name
 
+        binding.ivProfile.contentDescription = getString(R.string.cd_person_profile, person.name)
         binding.ivProfile.load(ImageUrlProvider.profileUrl(person.profilePath)) {
             crossfade(true)
             placeholder(R.drawable.bg_poster_placeholder)

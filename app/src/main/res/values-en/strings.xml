@@ -58,6 +58,8 @@
     <string name="cd_movie_poster">Movie poster</string>
     <string name="cd_movie_backdrop">Movie backdrop image</string>
     <string name="cd_cast_profile">Cast profile photo</string>
+    <string name="cd_person_profile">%s profile photo</string>
+    <string name="cd_filmography">%s filmography</string>
     <string name="cd_back">Go back</string>
     <string name="cd_clear_search">Clear search text</string>
     <string name="cd_delete_search">Delete search term</string>
