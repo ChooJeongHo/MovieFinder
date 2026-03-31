@@ -8,6 +8,8 @@ import com.choo.moviefinder.domain.repository.MovieRepository
 import com.choo.moviefinder.domain.repository.PreferencesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class GetWatchStatsUseCase @Inject constructor(
@@ -15,7 +17,8 @@ class GetWatchStatsUseCase @Inject constructor(
     private val preferencesRepository: PreferencesRepository
 ) {
     // 시청 통계 데이터를 여러 Flow를 combine하여 반환한다
-    operator fun invoke(): Flow<WatchStats> {
+    // flow { } 빌더로 감싸서 재수집 시마다 monthStartMillis를 새로 계산한다 (월 경계 넘김 대응)
+    operator fun invoke(): Flow<WatchStats> = flow {
         val monthStartMillis = currentMonthStartMillis()
 
         val baseStatsFlow = combine(
@@ -28,7 +31,7 @@ class GetWatchStatsUseCase @Inject constructor(
             BaseStats(total, monthly, avgRating, genreStrings, monthlyCounts)
         }
 
-        return combine(
+        val combinedFlow = combine(
             baseStatsFlow,
             preferencesRepository.getMonthlyWatchGoal(),
             repository.getRatingDistribution(),
@@ -47,6 +50,7 @@ class GetWatchStatsUseCase @Inject constructor(
                 dailyWatchCounts = dailyCounts
             )
         }
+        emitAll(combinedFlow)
     }
 
     // 장르 문자열 목록에서 출현 빈도순으로 전체 장르 카운트를 계산한다

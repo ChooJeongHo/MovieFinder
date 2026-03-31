@@ -10,6 +10,7 @@ import com.choo.moviefinder.domain.usecase.GetThemeModeUseCase
 import com.choo.moviefinder.domain.usecase.ImportUserDataUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
+import androidx.lifecycle.SavedStateHandle
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -63,6 +64,7 @@ class SettingsViewModelTest {
         every { getThemeModeUseCase() } returns themeFlow
         every { getMonthlyWatchGoalUseCase() } returns flowOf(0)
         return SettingsViewModel(
+            SavedStateHandle(),
             getThemeModeUseCase,
             setThemeModeUseCase,
             clearWatchHistoryUseCase,
@@ -195,6 +197,7 @@ class SettingsViewModelTest {
         every { getThemeModeUseCase() } returns flowOf(ThemeMode.SYSTEM)
         every { getMonthlyWatchGoalUseCase() } returns goalFlow
         return SettingsViewModel(
+            SavedStateHandle(),
             getThemeModeUseCase,
             setThemeModeUseCase,
             clearWatchHistoryUseCase,

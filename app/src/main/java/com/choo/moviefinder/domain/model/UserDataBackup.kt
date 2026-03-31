@@ -1,11 +1,12 @@
 package com.choo.moviefinder.domain.model
 
+import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class UserDataBackup(
     val version: Int = 1,
-    val exportedAt: Long = System.currentTimeMillis(),
+    val exportedAt: Long = Clock.System.now().toEpochMilliseconds(),
     val favorites: List<BackupMovie> = emptyList(),
     val watchlist: List<BackupMovie> = emptyList(),
     val ratings: List<BackupRating> = emptyList(),
