@@ -2,6 +2,7 @@ package com.choo.moviefinder.di
 
 import android.content.Context
 import com.choo.moviefinder.BuildConfig
+import com.choo.moviefinder.core.util.DebugEventListener
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import dagger.Module
@@ -64,6 +65,7 @@ object NetworkModule {
                             level = HttpLoggingInterceptor.Level.BODY
                         }
                     )
+                    eventListener(DebugEventListener())
                 }
             }
             .addInterceptor { chain ->
@@ -115,6 +117,11 @@ object NetworkModule {
             .connectTimeout(30.seconds)
             .readTimeout(30.seconds)
             .writeTimeout(30.seconds)
+            .apply {
+                if (BuildConfig.DEBUG) {
+                    eventListener(DebugEventListener())
+                }
+            }
             .build()
     }
 
