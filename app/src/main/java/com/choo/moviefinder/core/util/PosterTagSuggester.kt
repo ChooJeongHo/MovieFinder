@@ -30,11 +30,7 @@ class PosterTagSuggester @Inject constructor(
 
     // ML Kit이 반환하는 포스터 관련 무의미한 일반 레이블 제외
     private val blocklist = setOf(
-        "Poster", "Font", "Text", "Rectangle", "Graphic design",
-        "Stock photography", "Photo caption", "Logo", "Brand",
-        "Photography", "Darkness", "Black-and-white", "Pattern",
-        "Design", "Screenshot", "Picture frame", "Illustration",
-        "Visual arts", "Art", "Advertising"
+        "Poster", "Font", "Text", "Logo", "Brand"
     )
 
     // 포스터 URL로 ML Kit 이미지 레이블링을 수행하고 추천 태그를 반환한다
@@ -77,7 +73,7 @@ class PosterTagSuggester @Inject constructor(
         }
 
     companion object {
-        private const val CONFIDENCE_THRESHOLD = 0.70f
+        private const val CONFIDENCE_THRESHOLD = 0.50f
         private const val MAX_SUGGESTIONS = 5
     }
 }

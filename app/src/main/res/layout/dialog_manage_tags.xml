@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/tag_current_tags"
-        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle2"
         android:layout_marginBottom="@dimen/spacing_xs" />
 
     <com.google.android.material.chip.ChipGroup
@@ -43,7 +43,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/tag_suggested"
-                android:textAppearance="?attr/textAppearanceLabelMedium" />
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle2" />
 
             <ProgressBar
                 android:id="@+id/pb_suggestions"
@@ -65,8 +65,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/tag_no_suggestions"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+            android:textColor="?android:attr/textColorSecondary"
             android:visibility="gone" />
 
     </LinearLayout>
