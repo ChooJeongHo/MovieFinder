@@ -39,8 +39,8 @@ class PersonDetailViewModel @Inject constructor(
 
     // 인물 상세 정보와 출연 영화 목록을 병렬로 조회한다
     fun loadPersonDetail() {
-        if (!loadingMutex.tryLock()) return
         viewModelScope.launch {
+            if (!loadingMutex.tryLock()) return@launch
             try {
                 _uiState.value = PersonDetailUiState.Loading
                 coroutineScope {

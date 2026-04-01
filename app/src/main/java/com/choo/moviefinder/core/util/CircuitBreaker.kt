@@ -16,6 +16,7 @@ class CircuitBreaker(
     private val failureCount = AtomicInteger(0)
     private val lastFailureTime = AtomicLong(0)
 
+    @Synchronized
     fun recordSuccess() {
         if (state.get() == State.HALF_OPEN) {
             Timber.d("CircuitBreaker[$name]: HALF_OPEN → CLOSED (recovered)")
@@ -24,15 +25,17 @@ class CircuitBreaker(
         failureCount.set(0)
     }
 
+    @Synchronized
     fun recordFailure() {
         val count = failureCount.incrementAndGet()
         lastFailureTime.set(System.currentTimeMillis())
-        if (count >= failureThreshold) {
+        if (count >= failureThreshold && state.get() != State.OPEN) {
             state.set(State.OPEN)
             Timber.w("CircuitBreaker[$name]: → OPEN (failures: $count)")
         }
     }
 
+    @Synchronized
     fun canProceed(): Boolean {
         return when (state.get()) {
             State.CLOSED -> true

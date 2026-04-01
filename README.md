@@ -353,16 +353,16 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 
 ## 네트워크 복원력 (Resilience)
 
-- **Circuit Breaker**: API 3회 연속 실패 → 30초간 요청 자동 차단 → 자동 복구 (API + Image 별도 적용)
+- **Circuit Breaker**: API 3회 연속 실패 → 30초간 요청 자동 차단 → 자동 복구 (API + Image 별도 적용, `@Synchronized` 원자적 상태 전환)
 - **Exponential Backoff**: 재시도 간격 점진 증가 (1초→2초→4초, 최대 3회)
-- **Rate Limiter**: 재시도 버튼 2초 쿨다운 (과도한 재시도 방지)
+- **Rate Limiter**: 재시도 버튼 2초 쿨다운 (`compareAndSet` 원자적 처리)
 
 ## 디버그 자가 검증 (Debug Only)
 
-- **DebugHealthCheck**: 앱 시작 시 API/이미지/DB 연결 자동 테스트, 실패 시 Toast
+- **DebugHealthCheck**: 앱 시작 시 API/이미지/DB 연결 자동 테스트, 실패 시 Toast (API key 미노출)
 - **DebugEventListener**: OkHttp SSL 핸드셰이크/연결 실패 Timber 즉시 로깅
-- **FileLoggingTree**: Timber INFO+ 로그 파일 저장 (2MB 로테이션), 설정에서 공유
-- **AnrWatchdog**: 메인 스레드 5초+ 블로킹 감지, 스택 트레이스 로깅
+- **FileLoggingTree**: Timber INFO+ 로그 파일 저장 (2MB 로테이션, HandlerThread 비동기 쓰기), 설정에서 공유
+- **AnrWatchdog**: 메인 스레드 5초+ 블로킹 감지, ProcessLifecycleOwner 연동 (백그라운드 비활성)
 - 모든 도구는 `BuildConfig.DEBUG` 가드로 릴리스 빌드에 영향 없음
 - **Gradle Convention Plugins**: `buildSrc/AndroidConfig` 공유 빌드 상수 (compileSdk, minSdk, targetSdk 중앙 관리)
 - **HttpLoggingInterceptor**: 릴리스 빌드에서 객체 자체를 미생성하여 오버헤드 제거

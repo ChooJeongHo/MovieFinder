@@ -126,12 +126,12 @@ class PopularMoviesRemoteViewsFactory(
 }
 
 @Serializable
-private data class WidgetMovieListResponse(
+internal data class WidgetMovieListResponse(
     @SerialName("results") val results: List<WidgetMovie>
 )
 
 @Serializable
-private data class WidgetMovie(
+internal data class WidgetMovie(
     @SerialName("id") val id: Int,
     @SerialName("title") val title: String = "",
     @SerialName("vote_average") val voteAverage: Double = 0.0
