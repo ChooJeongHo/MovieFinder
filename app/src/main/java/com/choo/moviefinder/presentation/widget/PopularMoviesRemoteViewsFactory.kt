@@ -109,15 +109,21 @@ class PopularMoviesRemoteViewsFactory(
         private const val MAX_MOVIES = 10
 
         private val client: OkHttpClient by lazy {
-            val certificatePinner = CertificatePinner.Builder()
-                .add(
-                    "api.themoviedb.org",
-                    "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
-                    "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
-                )
-                .build()
             OkHttpClient.Builder()
-                .certificatePinner(certificatePinner)
+                .apply {
+                    // 디버그 빌드(에뮬레이터)에서는 인증서 피닝 비활성화
+                    if (!BuildConfig.DEBUG) {
+                        certificatePinner(
+                            CertificatePinner.Builder()
+                                .add(
+                                    "api.themoviedb.org",
+                                    "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
+                                    "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
+                                )
+                                .build()
+                        )
+                    }
+                }
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(15, TimeUnit.SECONDS)
                 .build()

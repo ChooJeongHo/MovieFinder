@@ -45,17 +45,23 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
         val cache = Cache(File(context.cacheDir, "http_cache"), HTTP_CACHE_SIZE)
-        val certificatePinner = CertificatePinner.Builder()
-            .add(
-                "api.themoviedb.org",
-                "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
-                "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
-            )
-            .build()
 
         return OkHttpClient.Builder()
             .cache(cache)
-            .certificatePinner(certificatePinner)
+            .apply {
+                // 디버그 빌드(에뮬레이터)에서는 인증서 피닝 비활성화
+                if (!BuildConfig.DEBUG) {
+                    certificatePinner(
+                        CertificatePinner.Builder()
+                            .add(
+                                "api.themoviedb.org",
+                                "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
+                                "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
+                            )
+                            .build()
+                    )
+                }
+            }
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(
@@ -104,24 +110,27 @@ object NetworkModule {
     @Singleton
     @ImageOkHttpClient
     fun provideImageOkHttpClient(): OkHttpClient {
-        val certificatePinner = CertificatePinner.Builder()
-            .add(
-                "image.tmdb.org",
-                "sha256/B/uFV1xlBj83gXfsZfdC7IUKMYq9E0EgYKJaTVUAbus=",
-                "sha256/kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ="
-            )
-            .build()
-
         return OkHttpClient.Builder()
-            .certificatePinner(certificatePinner)
-            .connectTimeout(30.seconds)
-            .readTimeout(30.seconds)
-            .writeTimeout(30.seconds)
             .apply {
+                // 디버그 빌드(에뮬레이터)에서는 인증서 피닝 비활성화
+                if (!BuildConfig.DEBUG) {
+                    certificatePinner(
+                        CertificatePinner.Builder()
+                            .add(
+                                "image.tmdb.org",
+                                "sha256/B/uFV1xlBj83gXfsZfdC7IUKMYq9E0EgYKJaTVUAbus=",
+                                "sha256/kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ="
+                            )
+                            .build()
+                    )
+                }
                 if (BuildConfig.DEBUG) {
                     eventListener(DebugEventListener())
                 }
             }
+            .connectTimeout(30.seconds)
+            .readTimeout(30.seconds)
+            .writeTimeout(30.seconds)
             .build()
     }
 

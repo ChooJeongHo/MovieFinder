@@ -277,7 +277,9 @@ class FavoriteFragment : Fragment() {
 
     // 태그 관리 다이얼로그: 기존 태그 삭제 + ML Kit 추천 태그 + 새 태그 추가
     private fun showTagManagementDialog(movie: Movie) {
-        val dialogView = LayoutInflater.from(requireContext())
+        // MaterialAlertDialogBuilder의 테마 컨텍스트로 inflate해야 ?attr 속성이 정상 해석됨
+        val dialogContext = MaterialAlertDialogBuilder(requireContext()).context
+        val dialogView = LayoutInflater.from(dialogContext)
             .inflate(R.layout.dialog_manage_tags, null)
         val chipGroupExisting = dialogView.findViewById<ChipGroup>(R.id.chip_group_existing_tags)
         val chipGroupSuggested = dialogView.findViewById<ChipGroup>(R.id.chip_group_suggested_tags)
