@@ -33,6 +33,7 @@ import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.ImageUrlProvider
+import com.choo.moviefinder.core.util.RateLimiter
 import com.choo.moviefinder.databinding.FragmentDetailBinding
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.presentation.adapter.CastAdapter
@@ -49,6 +50,8 @@ import java.util.concurrent.TimeUnit
 @Suppress("TooManyFunctions")
 @AndroidEntryPoint
 class DetailFragment : Fragment() {
+
+    private val retryRateLimiter = RateLimiter(2_000L)
 
     private var _binding: FragmentDetailBinding? = null
     private val binding get() = _binding!!
@@ -529,8 +532,10 @@ class DetailFragment : Fragment() {
         binding.errorView.tvErrorMessage.text =
             ErrorMessageProvider.getMessage(requireContext(), errorType)
         binding.errorView.btnRetry.setOnClickListener {
-            binding.errorView.btnRetry.isEnabled = false
-            viewModel.loadMovieDetail()
+            if (retryRateLimiter.tryAcquire()) {
+                binding.errorView.btnRetry.isEnabled = false
+                viewModel.loadMovieDetail()
+            }
         }
     }
 

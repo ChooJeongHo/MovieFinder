@@ -2,6 +2,8 @@ package com.choo.moviefinder.di
 
 import android.content.Context
 import com.choo.moviefinder.BuildConfig
+import com.choo.moviefinder.core.util.CircuitBreaker
+import com.choo.moviefinder.core.util.CircuitBreakerInterceptor
 import com.choo.moviefinder.core.util.DebugEventListener
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.remote.api.MovieApiService
@@ -31,6 +33,9 @@ annotation class ImageOkHttpClient
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
+    private val apiCircuitBreaker = CircuitBreaker("api")
+    private val imageCircuitBreaker = CircuitBreaker("image")
+
     // kotlinx.serialization JSON 파서를 설정하여 제공한다
     @Provides
     @Singleton
@@ -56,6 +61,7 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .cache(cache)
             .certificatePinner(certificatePinner)
+            .addInterceptor(CircuitBreakerInterceptor(apiCircuitBreaker))
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(
@@ -114,6 +120,7 @@ object NetworkModule {
 
         return OkHttpClient.Builder()
             .certificatePinner(certificatePinner)
+            .addInterceptor(CircuitBreakerInterceptor(imageCircuitBreaker))
             .connectTimeout(30.seconds)
             .readTimeout(30.seconds)
             .writeTimeout(30.seconds)

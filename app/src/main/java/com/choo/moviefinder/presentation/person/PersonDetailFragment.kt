@@ -20,6 +20,7 @@ import coil3.request.placeholder
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ImageUrlProvider
+import com.choo.moviefinder.core.util.RateLimiter
 import com.choo.moviefinder.databinding.FragmentPersonDetailBinding
 import com.choo.moviefinder.domain.model.PersonDetail
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
@@ -29,6 +30,8 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class PersonDetailFragment : Fragment() {
+
+    private val retryRateLimiter = RateLimiter(2_000L)
 
     private var _binding: FragmentPersonDetailBinding? = null
     private val binding get() = _binding!!
@@ -166,8 +169,10 @@ class PersonDetailFragment : Fragment() {
         binding.errorView.tvErrorMessage.text =
             ErrorMessageProvider.getMessage(requireContext(), state.errorType)
         binding.errorView.btnRetry.setOnClickListener {
-            binding.errorView.btnRetry.isEnabled = false
-            viewModel.loadPersonDetail()
+            if (retryRateLimiter.tryAcquire()) {
+                binding.errorView.btnRetry.isEnabled = false
+                viewModel.loadPersonDetail()
+            }
         }
     }
 

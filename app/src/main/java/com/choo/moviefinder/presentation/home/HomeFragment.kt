@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.RateLimiter
 import com.choo.moviefinder.databinding.FragmentHomeBinding
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
@@ -30,6 +31,8 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
+
+    private val retryRateLimiter = RateLimiter(2_000L)
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
@@ -192,7 +195,9 @@ class HomeFragment : Fragment() {
                         binding.errorView.tvErrorMessage.text =
                             ErrorMessageProvider.getErrorMessage(requireContext(), refreshState.error)
                         binding.errorView.btnRetry.setOnClickListener {
-                            movieAdapter.retry()
+                            if (retryRateLimiter.tryAcquire()) {
+                                movieAdapter.retry()
+                            }
                         }
                     }
                 }
