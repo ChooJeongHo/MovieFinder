@@ -64,7 +64,9 @@ class PosterTagSuggester @Inject constructor(
             val drawable = (result as? SuccessResult)?.image?.asDrawable(context.resources)
             val bitmap = (drawable as? BitmapDrawable)?.bitmap
             // Hardware bitmap은 ML Kit에서 사용 불가 → ARGB_8888 소프트웨어 비트맵으로 복사
-            if (bitmap?.config == Bitmap.Config.HARDWARE) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
+                bitmap?.config == Bitmap.Config.HARDWARE
+            ) {
                 bitmap.copy(Bitmap.Config.ARGB_8888, false)
             } else {
                 bitmap
