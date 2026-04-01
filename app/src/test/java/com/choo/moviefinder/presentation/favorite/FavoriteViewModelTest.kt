@@ -2,9 +2,15 @@ package com.choo.moviefinder.presentation.favorite
 
 import app.cash.turbine.test
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.PosterTagSuggester
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.usecase.AddTagToMovieUseCase
+import com.choo.moviefinder.domain.usecase.GetAllTagNamesUseCase
 import com.choo.moviefinder.domain.usecase.GetFavoriteMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetFavoritesByTagUseCase
+import com.choo.moviefinder.domain.usecase.GetTagsForMovieUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchlistUseCase
+import com.choo.moviefinder.domain.usecase.RemoveTagFromMovieUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import io.mockk.coEvery
@@ -31,9 +37,15 @@ class FavoriteViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var getFavoriteMoviesUseCase: GetFavoriteMoviesUseCase
+    private lateinit var getFavoritesByTagUseCase: GetFavoritesByTagUseCase
     private lateinit var getWatchlistUseCase: GetWatchlistUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var toggleWatchlistUseCase: ToggleWatchlistUseCase
+    private lateinit var getTagsForMovieUseCase: GetTagsForMovieUseCase
+    private lateinit var getAllTagNamesUseCase: GetAllTagNamesUseCase
+    private lateinit var addTagToMovieUseCase: AddTagToMovieUseCase
+    private lateinit var removeTagFromMovieUseCase: RemoveTagFromMovieUseCase
+    private lateinit var posterTagSuggester: PosterTagSuggester
 
     private val testMovies = listOf(
         Movie(1, "Movie 1", "/poster1.jpg", "/backdrop1.jpg", "Overview 1", "2024-01-01", 8.0, 500),
@@ -44,11 +56,18 @@ class FavoriteViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         getFavoriteMoviesUseCase = mockk()
+        getFavoritesByTagUseCase = mockk()
         getWatchlistUseCase = mockk()
         toggleFavoriteUseCase = mockk()
         toggleWatchlistUseCase = mockk()
+        getTagsForMovieUseCase = mockk()
+        getAllTagNamesUseCase = mockk()
+        addTagToMovieUseCase = mockk()
+        removeTagFromMovieUseCase = mockk()
+        posterTagSuggester = mockk()
 
         every { getWatchlistUseCase() } returns flowOf(emptyList())
+        every { getAllTagNamesUseCase() } returns flowOf(emptyList())
     }
 
     @After
@@ -59,9 +78,15 @@ class FavoriteViewModelTest {
     private fun createViewModel(): FavoriteViewModel {
         return FavoriteViewModel(
             getFavoriteMoviesUseCase,
+            getFavoritesByTagUseCase,
             getWatchlistUseCase,
             toggleFavoriteUseCase,
-            toggleWatchlistUseCase
+            toggleWatchlistUseCase,
+            getTagsForMovieUseCase,
+            getAllTagNamesUseCase,
+            addTagToMovieUseCase,
+            removeTagFromMovieUseCase,
+            posterTagSuggester
         )
     }
 

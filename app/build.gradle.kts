@@ -226,6 +226,9 @@ dependencies {
     // Timber
     implementation(libs.timber)
 
+    // ML Kit Image Labeling (포스터 태그 자동 추천)
+    implementation("com.google.mlkit:image-labeling:17.0.9")
+
     // LeakCanary (debug only)
     debugImplementation(libs.leakcanary)
 

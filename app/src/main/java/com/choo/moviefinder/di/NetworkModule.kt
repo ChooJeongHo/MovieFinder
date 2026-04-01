@@ -34,7 +34,6 @@ annotation class ImageOkHttpClient
 object NetworkModule {
 
     private val apiCircuitBreaker = CircuitBreaker("api")
-    private val imageCircuitBreaker = CircuitBreaker("image")
 
     // kotlinx.serialization JSON 파서를 설정하여 제공한다
     @Provides
@@ -120,7 +119,6 @@ object NetworkModule {
 
         return OkHttpClient.Builder()
             .certificatePinner(certificatePinner)
-            .addInterceptor(CircuitBreakerInterceptor(imageCircuitBreaker))
             .connectTimeout(30.seconds)
             .readTimeout(30.seconds)
             .writeTimeout(30.seconds)

@@ -6,6 +6,7 @@ import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.MemoDao
+import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
 import com.choo.moviefinder.data.local.dao.UserRatingDao
@@ -89,5 +90,12 @@ object DatabaseModule {
     @Singleton
     fun provideMemoDao(database: MovieDatabase): MemoDao {
         return database.memoDao()
+    }
+
+    // 영화 태그 DAO를 제공한다
+    @Provides
+    @Singleton
+    fun provideMovieTagDao(database: MovieDatabase): MovieTagDao {
+        return database.movieTagDao()
     }
 }
