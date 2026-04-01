@@ -57,8 +57,8 @@ app/src/main/java/com/choo/moviefinder/
 │   └── util/              # 상수 (PAGE_SIZE, PREFETCH_DISTANCE, DEFAULT_PAGING_CONFIG, 언어 코드)
 ├── domain/                # 도메인 레이어 (순수 Kotlin)
 │   ├── model/             # Movie, MovieDetail, Cast, Review, Genre, ThemeMode, PersonDetail, WatchStats, UserDataBackup
-│   ├── repository/        # Repository 인터페이스 (10개: ISP 원칙 기반 도메인별 분리)
-│   └── usecase/           # UseCase 43개
+│   ├── repository/        # Repository 인터페이스 (11개: ISP 원칙 기반 도메인별 분리)
+│   └── usecase/           # UseCase 48개
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 7개 + MovieGridViewHolder + MovieListViewHolder
 │   ├── common/            # CircularRatingView, PieChartView, BarChartView, HistogramView, CalendarHeatmapView, GridLayoutManagerFactory
@@ -190,7 +190,7 @@ app/src/main/java/com/choo/moviefinder/
 - 알림 탭 → `moviefinder://stats` 시청 통계 화면 딥링크 연동
 
 ### 8. 다국어 지원
-- **한국어** (기본) + **영어** (208개 문자열 완전 번역)
+- **한국어** (기본) + **영어** (215개 문자열 완전 번역)
 
 ### 9. 딥링크
 
