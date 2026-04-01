@@ -37,6 +37,7 @@ timber = "5.0.1"
 startup = "1.2.0"
 work = "2.10.1"
 kotlinxDatetime = "0.6.2"
+window = "1.3.0"
 
 [libraries]
 # Core
@@ -136,6 +137,9 @@ androidx-startup = { group = "androidx.startup", name = "startup-runtime", versi
 
 # WorkManager
 androidx-work-runtime = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+
+# Window
+androidx-window = { group = "androidx.window", name = "window", version.ref = "window" }
 
 [bundles]
 lifecycle = ["androidx-lifecycle-runtime-ktx", "androidx-lifecycle-viewmodel-ktx", "androidx-lifecycle-process"]

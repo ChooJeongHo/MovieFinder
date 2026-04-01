@@ -22,6 +22,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.computeWindowWidthSizeClass
+import com.choo.moviefinder.core.util.toMovieGridSpanCount
 import com.choo.moviefinder.databinding.FragmentSearchBinding
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
@@ -127,8 +129,9 @@ class SearchFragment : Fragment() {
             }
         }
 
+        val spanCount = requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount()
         binding.rvSearchResults.apply {
-            layoutManager = createMovieGridLayoutManager(requireContext()) {
+            layoutManager = createMovieGridLayoutManager(requireContext(), spanCount) {
                 searchAdapter.itemCount
             }
             adapter = searchAdapter.withLoadStateFooter(

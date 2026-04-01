@@ -802,6 +802,9 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 사용자 영화 평점: RatingBar (0.5~5.0 별점), Room DB UserRatingEntity 저장, 삭제 버튼
 - [x] 검색 결과 보기 모드 전환: 그리드 ↔ 리스트 토글 (Toolbar 메뉴, SavedStateHandle 저장)
 - [x] Predictive Back Gesture: `android:enableOnBackInvokedCallback="true"` (Android 14+ 뒤로가기 미리보기)
+- [x] Edge-to-Edge: `enableEdgeToEdge()` Android 15 필수 대응 (상태바/네비바 콘텐츠 확장)
+- [x] WindowSizeClass: 태블릿/폴더블 반응형 그리드 (COMPACT 2열 / MEDIUM 3열 / EXPANDED 4열)
+- [x] Macrobenchmark: Cold/Warm 시작 + 스크롤 프레임 성능 벤치마크
 - [x] kotlinx-datetime: Calendar/SimpleDateFormat → kotlinx.datetime.Clock, LocalDate, TimeZone (멀티플랫폼)
 - [x] Typed DataStore: Preferences DataStore → `DataStore<UserSettings>` (kotlinx.serialization JSON, 타입 안전)
 - [x] Per-App Language: `locales_config.xml` + `AppCompatDelegate.setApplicationLocales()` (시스템 설정 연동)
@@ -918,6 +921,9 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] 사용자 영화 평점 (RatingBar 0.5~5.0, Room DB UserRatingEntity, 삭제 버튼)
 - [x] 검색 결과 보기 모드 전환 (그리드 ↔ 리스트 토글, MovieListViewHolder, SavedStateHandle 저장)
 - [x] Predictive Back Gesture (Android 14+ 뒤로가기 미리보기 애니메이션)
+- [x] Edge-to-Edge (enableEdgeToEdge(), Android 15 필수 대응)
+- [x] WindowSizeClass (태블릿/폴더블 반응형 그리드, WindowMetricsCalculator)
+- [x] Macrobenchmark (Cold/Warm 시작 + 스크롤 프레임 벤치마크)
 - [x] kotlinx-datetime (Calendar/SimpleDateFormat 대체, 멀티플랫폼 날짜/시간 API)
 - [x] Typed DataStore (Preferences → kotlinx.serialization JSON 기반 타입 안전 저장)
 - [x] Per-App Language (locales_config.xml, AppCompatDelegate.setApplicationLocales)

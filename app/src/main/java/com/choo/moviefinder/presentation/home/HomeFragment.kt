@@ -18,6 +18,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.RateLimiter
+import com.choo.moviefinder.core.util.computeWindowWidthSizeClass
+import com.choo.moviefinder.core.util.toMovieGridSpanCount
 import com.choo.moviefinder.databinding.FragmentHomeBinding
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
@@ -84,8 +86,9 @@ class HomeFragment : Fragment() {
             }
         }
 
+        val spanCount = requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount()
         binding.rvMovies.apply {
-            layoutManager = createMovieGridLayoutManager(requireContext()) {
+            layoutManager = createMovieGridLayoutManager(requireContext(), spanCount) {
                 movieAdapter.itemCount
             }
             adapter = movieAdapter.withLoadStateFooter(
