@@ -201,6 +201,9 @@ app/src/main/java/com/choo/moviefinder/
 
 ### 10. 최신 Android 기술
 
+- **Edge-to-Edge**: `enableEdgeToEdge()` Android 15 필수 대응 (상태바/네비바 콘텐츠 확장)
+- **WindowSizeClass**: 태블릿/폴더블 반응형 그리드 (COMPACT 2열 / MEDIUM 3열 / EXPANDED 4열)
+- **Macrobenchmark**: Cold/Warm 시작 + 스크롤 프레임 성능 벤치마크
 - **Predictive Back Gesture**: Android 14+ 뒤로가기 미리보기 애니메이션 (`enableOnBackInvokedCallback`)
 - **Per-App Language**: 앱 내 언어 전환 (시스템 설정 연동, `locales_config.xml`)
 - **kotlinx-datetime**: Calendar/SimpleDateFormat 대체 멀티플랫폼 날짜/시간 API

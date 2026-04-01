@@ -220,6 +220,9 @@ dependencies {
     // WorkManager
     implementation(libs.androidx.work.runtime)
 
+    // Window
+    implementation(libs.androidx.window)
+
     // Timber
     implementation(libs.timber)
 
