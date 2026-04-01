@@ -15,10 +15,11 @@ import com.choo.moviefinder.domain.model.Movie
 
 class MovieGridViewHolder(
     private val binding: ItemMovieGridBinding,
-    private val onMovieClick: (Int, View) -> Unit
+    private val onMovieClick: (Int, View) -> Unit,
+    private val onMovieLongClick: ((Movie) -> Unit)? = null
 ) : RecyclerView.ViewHolder(binding.root) {
 
-    // 영화 제목, 개봉일, 평점, 포스터 이미지 및 클릭 리스너 바인딩
+    // 영화 제목, 개봉일, 평점, 포스터 이미지 및 클릭/롱클릭 리스너 바인딩
     fun bind(movie: Movie) {
         binding.tvTitle.text = movie.title
         binding.tvReleaseDate.text = movie.releaseDate
@@ -38,6 +39,15 @@ class MovieGridViewHolder(
 
         binding.cardMovie.setOnClickListener {
             onMovieClick(movie.id, binding.ivPoster)
+        }
+
+        if (onMovieLongClick != null) {
+            binding.cardMovie.setOnLongClickListener {
+                onMovieLongClick.invoke(movie)
+                true
+            }
+        } else {
+            binding.cardMovie.setOnLongClickListener(null)
         }
     }
 

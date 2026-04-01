@@ -294,4 +294,13 @@
     <string name="stats_share_monthly">This month: %d movies</string>
     <string name="stats_share_rating">Avg rating: %.1f</string>
     <string name="stats_share_genres">Top genres: %s</string>
+
+    <!-- Tag feature -->
+    <string name="tag_filter_all">All</string>
+    <string name="tag_current_tags">Current tags</string>
+    <string name="tag_input_hint">New tag (max 20 chars)</string>
+    <string name="tag_dialog_add">Add</string>
+    <string name="action_close">Close</string>
+    <string name="tag_suggested">AI Suggested Tags</string>
+    <string name="tag_no_suggestions">No suggestions found</string>
 </resources>

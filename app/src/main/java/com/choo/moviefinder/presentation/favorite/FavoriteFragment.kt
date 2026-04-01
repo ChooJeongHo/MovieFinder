@@ -20,14 +20,19 @@ import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.databinding.FragmentFavoriteBinding
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.model.MovieTag
 import com.choo.moviefinder.presentation.adapter.MovieAdapter
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
+import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
+@Suppress("TooManyFunctions")
 @AndroidEntryPoint
 class FavoriteFragment : Fragment() {
 
@@ -42,7 +47,6 @@ class FavoriteFragment : Fragment() {
     private var swipeHelper: ItemTouchHelper? = null
     private var activeDialog: Dialog? = null
 
-    // 즐겨찾기 화면 레이아웃을 인플레이트하고 바인딩 초기화
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -52,7 +56,6 @@ class FavoriteFragment : Fragment() {
         return binding.root
     }
 
-    // 뷰 생성 후 툴바, RecyclerView, 스와이프 삭제, 탭 등 UI 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         savedInstanceState?.let { currentTab = it.getInt(KEY_CURRENT_TAB, TAB_FAVORITES) }
@@ -63,15 +66,15 @@ class FavoriteFragment : Fragment() {
         updateSortLabel(viewModel.sortOrder.value)
         collectCurrentTab()
         observeSnackbar()
+        observeTagNames()
+        observeSelectedTag()
     }
 
-    // 현재 선택된 탭 인덱스를 저장하여 화면 회전 시 복원
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_CURRENT_TAB, currentTab)
     }
 
-    // 툴바에 정렬 메뉴 설정
     private fun setupToolbar() {
         binding.toolbar.inflateMenu(R.menu.menu_favorite)
         binding.toolbar.setOnMenuItemClickListener { item ->
@@ -85,7 +88,6 @@ class FavoriteFragment : Fragment() {
         }
     }
 
-    // 정렬 옵션 단일 선택 다이얼로그 표시
     private fun showSortDialog() {
         val sortOptions = FavoriteSortOrder.entries.toTypedArray()
         val sortLabels = arrayOf(
@@ -106,15 +108,22 @@ class FavoriteFragment : Fragment() {
             .show()
     }
 
-    // 영화 목록 RecyclerView에 GridLayoutManager와 MovieAdapter 설정
     private fun setupRecyclerView() {
-        movieAdapter = MovieAdapter { movieId, posterView ->
-            if (findNavController().currentDestination?.id == R.id.favoriteFragment) {
-                val action = FavoriteFragmentDirections.actionFavoriteToDetail(movieId)
-                val extras = FragmentNavigatorExtras(posterView to "poster_$movieId")
-                findNavController().navigate(action, extras)
+        movieAdapter = MovieAdapter(
+            onMovieClick = { movieId, posterView ->
+                if (findNavController().currentDestination?.id == R.id.favoriteFragment) {
+                    val action = FavoriteFragmentDirections.actionFavoriteToDetail(movieId)
+                    val extras = FragmentNavigatorExtras(posterView to "poster_$movieId")
+                    findNavController().navigate(action, extras)
+                }
+            },
+            onMovieLongClick = { movie ->
+                // 즐겨찾기 탭에서만 태그 관리 다이얼로그 표시
+                if (currentTab == TAB_FAVORITES) {
+                    showTagManagementDialog(movie)
+                }
             }
-        }
+        )
 
         binding.rvFavorites.apply {
             layoutManager = GridLayoutManager(requireContext(), 2)
@@ -122,14 +131,9 @@ class FavoriteFragment : Fragment() {
         }
     }
 
-    // 왼쪽 스와이프 삭제 ItemTouchHelper 설정
     private fun setupSwipeToDelete() {
         val callback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
-            override fun onMove(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ) = false
+            override fun onMove(rv: RecyclerView, vh: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) = false
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.bindingAdapterPosition
@@ -142,26 +146,20 @@ class FavoriteFragment : Fragment() {
         swipeHelper?.attachToRecyclerView(binding.rvFavorites)
     }
 
-    // 스와이프 삭제 처리 및 Undo Snackbar 표시
     private fun onSwipeDelete(movie: Movie) {
         if (currentTab == TAB_FAVORITES) {
             viewModel.toggleFavorite(movie)
             Snackbar.make(binding.root, getString(R.string.favorite_removed), Snackbar.LENGTH_LONG)
-                .setAction(getString(R.string.undo)) {
-                    viewModel.toggleFavorite(movie)
-                }
+                .setAction(getString(R.string.undo)) { viewModel.toggleFavorite(movie) }
                 .show()
         } else {
             viewModel.toggleWatchlist(movie)
             Snackbar.make(binding.root, getString(R.string.watchlist_removed), Snackbar.LENGTH_LONG)
-                .setAction(getString(R.string.undo)) {
-                    viewModel.toggleWatchlist(movie)
-                }
+                .setAction(getString(R.string.undo)) { viewModel.toggleWatchlist(movie) }
                 .show()
         }
     }
 
-    // 즐겨찾기/워치리스트 탭 생성 및 탭 전환 리스너 설정
     private fun setupTabs() {
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.favorite_title))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.watchlist_title))
@@ -173,6 +171,9 @@ class FavoriteFragment : Fragment() {
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 currentTab = tab.position
+                // 워치리스트 탭 전환 시 태그 필터 초기화
+                if (currentTab == TAB_WATCHLIST) viewModel.onTagSelected(null)
+                updateTagFilterVisibility()
                 collectCurrentTab()
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
@@ -180,7 +181,68 @@ class FavoriteFragment : Fragment() {
         })
     }
 
-    // 현재 탭에 해당하는 영화 목록 Flow를 수집하여 UI 갱신
+    // 태그 이름 목록 변경 시 칩 그룹 갱신
+    private fun observeTagNames() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.allTagNames.collect { tagNames ->
+                    updateTagChips(tagNames)
+                    updateTagFilterVisibility()
+                }
+            }
+        }
+    }
+
+    // 선택된 태그 변경 시 칩 선택 상태 동기화
+    private fun observeSelectedTag() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.selectedTag.collect { selectedTag ->
+                    syncChipSelection(selectedTag)
+                }
+            }
+        }
+    }
+
+    // "전체" + 태그 칩 동적 생성
+    private fun updateTagChips(tagNames: List<String>) {
+        val chipGroup = binding.chipGroupTags
+        chipGroup.removeAllViews()
+
+        val allChip = Chip(requireContext()).apply {
+            text = getString(R.string.tag_filter_all)
+            isCheckable = true
+            isChecked = viewModel.selectedTag.value == null
+            setOnClickListener { viewModel.onTagSelected(null) }
+        }
+        chipGroup.addView(allChip)
+
+        tagNames.forEach { tagName ->
+            val chip = Chip(requireContext()).apply {
+                text = tagName
+                isCheckable = true
+                isChecked = viewModel.selectedTag.value == tagName
+                setOnClickListener { viewModel.onTagSelected(tagName) }
+            }
+            chipGroup.addView(chip)
+        }
+    }
+
+    // selectedTag에 따라 칩 선택 상태 동기화
+    private fun syncChipSelection(selectedTag: String?) {
+        val chipGroup = binding.chipGroupTags
+        for (i in 0 until chipGroup.childCount) {
+            val chip = chipGroup.getChildAt(i) as? Chip ?: continue
+            chip.isChecked = if (i == 0) selectedTag == null else chip.text == selectedTag
+        }
+    }
+
+    // 즐겨찾기 탭이고 태그가 존재할 때만 필터 표시
+    private fun updateTagFilterVisibility() {
+        binding.tagFilterScroll.isVisible =
+            currentTab == TAB_FAVORITES && viewModel.allTagNames.value.isNotEmpty()
+    }
+
     private fun collectCurrentTab() {
         collectJob?.cancel()
         movieAdapter.submitList(emptyList())
@@ -202,7 +264,6 @@ class FavoriteFragment : Fragment() {
         }
     }
 
-    // 에러 이벤트를 수집하여 Snackbar로 표시
     private fun observeSnackbar() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -214,7 +275,81 @@ class FavoriteFragment : Fragment() {
         }
     }
 
-    // 현재 정렬 옵션을 툴바 subtitle로 표시
+    // 태그 관리 다이얼로그: 기존 태그 삭제 + ML Kit 추천 태그 + 새 태그 추가
+    private fun showTagManagementDialog(movie: Movie) {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_manage_tags, null)
+        val chipGroupExisting = dialogView.findViewById<ChipGroup>(R.id.chip_group_existing_tags)
+        val chipGroupSuggested = dialogView.findViewById<ChipGroup>(R.id.chip_group_suggested_tags)
+        val pbSuggestions = dialogView.findViewById<View>(R.id.pb_suggestions)
+        val tvNoSuggestions = dialogView.findViewById<View>(R.id.tv_no_suggestions)
+        val etNewTag = dialogView.findViewById<TextInputEditText>(R.id.et_new_tag)
+
+        fun renderExistingTags(tags: List<MovieTag>) {
+            chipGroupExisting.removeAllViews()
+            dialogView.findViewById<View>(R.id.tv_existing_tags_label).isVisible = tags.isNotEmpty()
+            tags.forEach { tag ->
+                val chip = Chip(requireContext()).apply {
+                    text = tag.tagName
+                    isCloseIconVisible = true
+                    setOnCloseIconClickListener {
+                        viewModel.removeTagFromMovie(movie.id, tag.tagName)
+                    }
+                }
+                chipGroupExisting.addView(chip)
+            }
+        }
+
+        fun renderSuggestedTags(suggestions: List<String>) {
+            pbSuggestions.isVisible = false
+            chipGroupSuggested.removeAllViews()
+            if (suggestions.isEmpty()) {
+                tvNoSuggestions.isVisible = true
+            } else {
+                tvNoSuggestions.isVisible = false
+                suggestions.forEach { suggestion ->
+                    val chip = Chip(requireContext()).apply {
+                        text = suggestion
+                        // 추천 태그 칩 클릭 시 입력창에 자동 채움
+                        setOnClickListener {
+                            etNewTag.setText(suggestion)
+                            etNewTag.setSelection(suggestion.length)
+                        }
+                    }
+                    chipGroupSuggested.addView(chip)
+                }
+            }
+        }
+
+        activeDialog?.dismiss()
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(movie.title)
+            .setView(dialogView)
+            .setPositiveButton(R.string.tag_dialog_add) { _, _ ->
+                val newTag = etNewTag.text?.toString()?.trim().orEmpty()
+                if (newTag.isNotBlank()) {
+                    viewModel.addTagToMovie(movie.id, newTag)
+                }
+            }
+            .setNegativeButton(R.string.action_close, null)
+            .show()
+        activeDialog = dialog
+
+        // 기존 태그 실시간 관찰
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.getTagsForMovie(movie.id).collect { tags ->
+                if (dialog.isShowing) renderExistingTags(tags)
+            }
+        }
+
+        // ML Kit 포스터 분석 → 추천 태그 로드
+        viewLifecycleOwner.lifecycleScope.launch {
+            pbSuggestions.isVisible = true
+            val suggestions = viewModel.suggestTagsForPoster(movie.posterPath)
+            if (dialog.isShowing) renderSuggestedTags(suggestions)
+        }
+    }
+
     private fun updateSortLabel(sort: FavoriteSortOrder) {
         val subtitle = when (sort) {
             FavoriteSortOrder.ADDED_DATE -> null
@@ -224,7 +359,6 @@ class FavoriteFragment : Fragment() {
         binding.toolbar.subtitle = subtitle
     }
 
-    // 현재 탭에 맞는 빈 상태 아이콘 및 메시지 설정
     private fun updateEmptyState() {
         if (currentTab == TAB_FAVORITES) {
             binding.emptyView.ivEmptyIcon.setImageResource(R.drawable.ic_favorite_border)
@@ -237,7 +371,6 @@ class FavoriteFragment : Fragment() {
         }
     }
 
-    // 다이얼로그 dismiss, SwipeHelper 해제, 어댑터 및 바인딩 null 처리
     override fun onDestroyView() {
         super.onDestroyView()
         activeDialog?.dismiss()

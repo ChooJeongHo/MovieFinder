@@ -8,7 +8,8 @@ import com.choo.moviefinder.databinding.ItemMovieGridBinding
 import com.choo.moviefinder.domain.model.Movie
 
 class MovieAdapter(
-    private val onMovieClick: (Int, View) -> Unit
+    private val onMovieClick: (Int, View) -> Unit,
+    private val onMovieLongClick: ((Movie) -> Unit)? = null
 ) : ListAdapter<Movie, MovieGridViewHolder>(MovieDiffCallback) {
 
     // 그리드 뷰 ViewHolder 생성
@@ -16,7 +17,7 @@ class MovieAdapter(
         val binding = ItemMovieGridBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
-        return MovieGridViewHolder(binding, onMovieClick)
+        return MovieGridViewHolder(binding, onMovieClick, onMovieLongClick)
     }
 
     // 영화 데이터를 ViewHolder에 바인딩

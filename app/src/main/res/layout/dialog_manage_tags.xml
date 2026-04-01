@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/spacing_md">
+
+    <!-- 현재 태그 -->
+    <TextView
+        android:id="@+id/tv_existing_tags_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/tag_current_tags"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:layout_marginBottom="@dimen/spacing_xs" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chip_group_existing_tags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacing_md"
+        app:chipSpacingVertical="4dp" />
+
+    <!-- ML Kit 추천 태그 -->
+    <LinearLayout
+        android:id="@+id/layout_suggestions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="@dimen/spacing_md">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="@dimen/spacing_xs">
+
+            <TextView
+                android:id="@+id/tv_suggested_tags_label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/tag_suggested"
+                android:textAppearance="?attr/textAppearanceLabelMedium" />
+
+            <ProgressBar
+                android:id="@+id/pb_suggestions"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group_suggested_tags"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:chipSpacingVertical="4dp" />
+
+        <TextView
+            android:id="@+id/tv_no_suggestions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/tag_no_suggestions"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- 새 태그 직접 입력 -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_new_tag"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/tag_input_hint">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_new_tag"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:imeOptions="actionDone"
+            android:maxLength="20" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+</LinearLayout>

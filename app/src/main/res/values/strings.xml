@@ -294,4 +294,13 @@
     <string name="share_debug_logs">디버그 로그 공유</string>
     <string name="share_debug_logs_description">앱 로그를 공유합니다 (디버그 전용)</string>
     <string name="share_debug_logs_empty">로그 파일이 없습니다</string>
+
+    <!-- 태그 기능 -->
+    <string name="tag_filter_all">전체</string>
+    <string name="tag_current_tags">현재 태그</string>
+    <string name="tag_input_hint">새 태그 입력 (최대 20자)</string>
+    <string name="tag_dialog_add">추가</string>
+    <string name="action_close">닫기</string>
+    <string name="tag_suggested">AI 추천 태그</string>
+    <string name="tag_no_suggestions">추천 태그를 찾을 수 없습니다</string>
 </resources>
