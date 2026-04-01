@@ -351,6 +351,12 @@ FragmentNavigatorExtras(posterView to "poster_$movieId")
 - **R8 Full Mode**: `android.enableR8.fullMode=true`로 최적화 강화 (ProGuard 규칙 보강)
 - **Gradle Configuration Cache**: 반복 빌드 속도 개선
 
+## 네트워크 복원력 (Resilience)
+
+- **Circuit Breaker**: API 3회 연속 실패 → 30초간 요청 자동 차단 → 자동 복구 (API + Image 별도 적용)
+- **Exponential Backoff**: 재시도 간격 점진 증가 (1초→2초→4초, 최대 3회)
+- **Rate Limiter**: 재시도 버튼 2초 쿨다운 (과도한 재시도 방지)
+
 ## 디버그 자가 검증 (Debug Only)
 
 - **DebugHealthCheck**: 앱 시작 시 API/이미지/DB 연결 자동 테스트, 실패 시 Toast

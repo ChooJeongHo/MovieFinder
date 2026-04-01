@@ -82,7 +82,11 @@ app/src/main/java/com/choo/moviefinder/
 │       ├── DebugHealthCheck.kt    # 앱 시작 시 API/이미지/DB 연결 헬스체크 (디버그 전용)
 │       ├── DebugEventListener.kt  # OkHttp SSL/연결 실패 로깅 (디버그 전용)
 │       ├── FileLoggingTree.kt     # Timber 파일 로깅 (2MB 로테이션, 디버그 전용)
-│       └── AnrWatchdog.kt         # 메인 스레드 5초+ 블로킹 감지 (디버그 전용)
+│       ├── AnrWatchdog.kt         # 메인 스레드 5초+ 블로킹 감지 (디버그 전용)
+│       ├── CircuitBreaker.kt      # API 서킷 브레이커 (3회 실패 → 30초 차단 → 자동 복구)
+│       ├── CircuitBreakerInterceptor.kt # OkHttp 서킷 브레이커 인터셉터
+│       ├── ExponentialBackoff.kt  # 재시도 간격 점진 증가 (1s→2s→4s, 최대 3회)
+│       └── RateLimiter.kt         # 재시도 버튼 2초 쿨다운
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 │   └── BaselineProfileGenerator.kt # 앱 시작 시나리오
 ├── data/                  # 데이터 레이어
@@ -626,6 +630,12 @@ Repository Settings > Secrets and variables > Actions에서:
 - `NetworkModule`에서 `@Singleton`으로 제공
 - `ACCESS_NETWORK_STATE` 권한 필요 (AndroidManifest.xml)
 
+### 네트워크 복원력 (Resilience Patterns)
+- **CircuitBreaker**: API 3회 연속 실패 → OPEN (30초간 요청 자동 차단) → HALF_OPEN (1회 시도) → 성공 시 CLOSED (자동 복구)
+- **CircuitBreakerInterceptor**: OkHttp 인터셉터로 API + Image 클라이언트에 각각 별도 서킷 브레이커 적용
+- **ExponentialBackoff**: `withExponentialBackoff()` suspend 유틸 함수 (1초→2초→4초, 최대 3회, CancellationException 안전)
+- **RateLimiter**: 재시도 버튼 2초 쿨다운 (AtomicLong 기반, DetailFragment/HomeFragment/PersonDetailFragment 적용)
+
 ### 디버그 자가 검증 (Debug Self-Verification)
 - **DebugHealthCheck**: 앱 시작 시 API 연결 + 이미지 로드 + DB 접근 자동 테스트, 실패 시 Toast 표시
 - **DebugEventListener**: OkHttp SSL 핸드셰이크/연결 실패를 Timber로 즉시 로깅
@@ -706,6 +716,9 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Pre-commit Hook: Detekt + 컴파일 체크 자동 실행 (.githooks/pre-commit)
 - [x] 인증서 핀 자동 검증: cert-pin-check.yml (매주 월요일, 불일치 시 Issue 생성)
 - [x] PR 커버리지 리포트: pr-coverage.yml (JaCoCo 결과 PR 코멘트 자동 게시)
+- [x] CircuitBreaker: API/이미지 서킷 브레이커 (3회 실패 → 30초 차단 → 자동 복구, OkHttp 인터셉터)
+- [x] ExponentialBackoff: 재시도 간격 점진 증가 유틸 (1s→2s→4s)
+- [x] RateLimiter: 재시도 버튼 2초 쿨다운 (Detail/Home/PersonDetail Fragment)
 - [x] DataStore: 다크모드 설정 저장 (Preferences DataStore)
 - [x] 테마 전환 UI: SettingsFragment MaterialAlertDialog (라이트/다크/시스템)
 - [x] Baseline Profiles: ProfileInstaller + 생성 모듈 구성
@@ -850,6 +863,9 @@ Repository Settings > Secrets and variables > Actions에서:
 - [x] Pre-commit Hook (Detekt + 컴파일 체크, .githooks/pre-commit)
 - [x] 인증서 핀 자동 검증 (cert-pin-check.yml, 매주 월요일 cron)
 - [x] PR 커버리지 리포트 (pr-coverage.yml, JaCoCo PR 코멘트)
+- [x] CircuitBreaker (API/이미지 서킷 브레이커, OkHttp 인터셉터, 3회 실패 → 30초 차단 → 자동 복구)
+- [x] ExponentialBackoff (재시도 간격 점진 증가 유틸 1s→2s→4s)
+- [x] RateLimiter (재시도 버튼 2초 쿨다운, Detail/Home/PersonDetail)
 - [x] Gradle Configuration Cache (빌드 속도 최적화)
 - [x] RemoteMediator 캐시 만료 (1시간 자동 새로고침)
 - [x] PagingConfig 최적화 (prefetchDistance, initialLoadSize 튜닝)
