@@ -9,8 +9,7 @@ class RateLimiter(private val minIntervalMs: Long = 2_000L) {
         val now = System.currentTimeMillis()
         val last = lastActionTime.get()
         return if (now - last >= minIntervalMs) {
-            lastActionTime.set(now)
-            true
+            lastActionTime.compareAndSet(last, now)
         } else {
             false
         }

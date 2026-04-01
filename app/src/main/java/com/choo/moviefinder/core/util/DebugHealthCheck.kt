@@ -3,7 +3,6 @@ package com.choo.moviefinder.core.util
 import android.content.Context
 import android.widget.Toast
 import com.choo.moviefinder.BuildConfig
-import com.choo.moviefinder.data.local.MovieDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,12 +20,14 @@ class DebugHealthCheck(private val context: Context) {
             val results = mutableListOf<String>()
 
             val apiOk = checkUrl(
-                "https://api.themoviedb.org/3/configuration?api_key=${BuildConfig.TMDB_API_KEY}"
+                "https://api.themoviedb.org/3/configuration?api_key=${BuildConfig.TMDB_API_KEY}",
+                "API"
             )
             results.add(if (apiOk) "API OK" else "API FAIL")
 
             val imageOk = checkUrl(
-                "https://image.tmdb.org/t/p/w92/wwemzKWzjKYJFfCeiB57q3r4Bcm.png"
+                "https://image.tmdb.org/t/p/w92/wwemzKWzjKYJFfCeiB57q3r4Bcm.png",
+                "Image"
             )
             results.add(if (imageOk) "Image OK" else "Image FAIL")
 
@@ -46,21 +47,15 @@ class DebugHealthCheck(private val context: Context) {
 
     private fun checkDatabase(): Boolean {
         return try {
-            val db = androidx.room.Room.databaseBuilder(
-                context,
-                MovieDatabase::class.java,
-                "movie_finder_db"
-            ).build()
-            db.openHelper.readableDatabase
-            db.close()
-            true
+            val dbFile = context.getDatabasePath("movie_finder_db")
+            dbFile.exists() && dbFile.canRead()
         } catch (e: Exception) {
-            Timber.e(e, "HealthCheck: DB check failed")
+            Timber.w(e, "DB health check failed")
             false
         }
     }
 
-    private fun checkUrl(url: String): Boolean {
+    private fun checkUrl(url: String, tag: String): Boolean {
         return try {
             val client = OkHttpClient.Builder()
                 .connectTimeout(5, TimeUnit.SECONDS)
@@ -69,7 +64,7 @@ class DebugHealthCheck(private val context: Context) {
             val request = Request.Builder().url(url).head().build()
             client.newCall(request).execute().use { it.isSuccessful }
         } catch (e: Exception) {
-            Timber.w(e, "HealthCheck: URL check failed for $url")
+            Timber.w(e, "Health check failed: $tag")
             false
         }
     }

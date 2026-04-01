@@ -278,6 +278,8 @@ class StatsFragment : Fragment() {
 
     // 시청 통계 공유 이미지를 생성하고 Intent.ACTION_SEND로 공유 (백그라운드에서 비트맵 생성)
     private fun shareStatsImage(stats: WatchStats) {
+        // requireContext()를 suspend 이전에 캡처하여 Fragment detach 후 접근 방지
+        val ctx = requireContext()
         // 테마 색상과 문자열은 메인 스레드에서 미리 해석
         val colors = resolveStatsCardColors()
         val cardTitle = getString(R.string.stats_share_card_title)
@@ -296,8 +298,8 @@ class StatsFragment : Fragment() {
             null
         }
         val shareTitle = getString(R.string.stats_share_title)
-        val packageName = requireContext().packageName
-        val cacheDir = requireContext().cacheDir
+        val packageName = ctx.packageName
+        val cacheDir = ctx.cacheDir
 
         viewLifecycleOwner.lifecycleScope.launch {
             val bitmap = withContext(Dispatchers.Default) {
@@ -313,7 +315,7 @@ class StatsFragment : Fragment() {
                     }
                     file
                 }
-                val uri = FileProvider.getUriForFile(requireContext(), "$packageName.fileprovider", shareFile)
+                val uri = FileProvider.getUriForFile(ctx, "$packageName.fileprovider", shareFile)
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "image/png"
                     putExtra(Intent.EXTRA_STREAM, uri)

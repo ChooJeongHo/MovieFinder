@@ -53,7 +53,9 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
         if (BuildConfig.DEBUG) {
             Timber.plant(FileLoggingTree(this))
             DebugHealthCheck(this).run(ProcessLifecycleOwner.get().lifecycleScope)
-            AnrWatchdog().start()
+            val watchdog = AnrWatchdog()
+            ProcessLifecycleOwner.get().lifecycle.addObserver(watchdog)
+            watchdog.start()
         }
     }
 

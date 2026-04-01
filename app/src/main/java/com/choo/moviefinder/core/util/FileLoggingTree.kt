@@ -1,6 +1,8 @@
 package com.choo.moviefinder.core.util
 
 import android.content.Context
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
 import timber.log.Timber
 import java.io.File
@@ -15,7 +17,13 @@ class FileLoggingTree(context: Context) : Timber.Tree() {
 
     private val logFile: File = File(context.cacheDir, "debug_log.txt")
     private val maxFileSize = 2L * 1024 * 1024 // 2MB
-    private val dateFormat = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
+
+    private val dateFormat = ThreadLocal.withInitial {
+        SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
+    }
+
+    private val handlerThread = HandlerThread("FileLogger").apply { start() }
+    private val handler = Handler(handlerThread.looper)
 
     init {
         // 파일이 최대 크기를 초과하면 이전 파일로 교체한다
@@ -26,28 +34,32 @@ class FileLoggingTree(context: Context) : Timber.Tree() {
         }
     }
 
-    // INFO 이상의 로그만 파일에 기록한다
+    // INFO 이상의 로그만 파일에 기록한다 (백그라운드 HandlerThread로 디스크 I/O 오프로드)
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
         if (priority < Log.INFO) return
 
-        try {
-            val timestamp = dateFormat.format(Date())
-            val level = when (priority) {
-                Log.INFO -> "I"
-                Log.WARN -> "W"
-                Log.ERROR -> "E"
-                else -> "D"
+        val timestamp = dateFormat.get()!!.format(Date())
+        val level = when (priority) {
+            Log.INFO -> "I"
+            Log.WARN -> "W"
+            Log.ERROR -> "E"
+            else -> "D"
+        }
+        val logLine = "$timestamp $level/$tag: $message" +
+            if (t != null) {
+                val sw = StringWriter()
+                t.printStackTrace(PrintWriter(sw))
+                "\n$sw"
+            } else {
+                ""
             }
-            FileWriter(logFile, true).use { writer ->
-                writer.appendLine("$timestamp $level/$tag: $message")
-                if (t != null) {
-                    val sw = StringWriter()
-                    t.printStackTrace(PrintWriter(sw))
-                    writer.appendLine(sw.toString())
-                }
+
+        handler.post {
+            try {
+                FileWriter(logFile, true).use { it.appendLine(logLine) }
+            } catch (_: Exception) {
+                // 파일 로깅 실패 시 앱 크래시를 방지한다
             }
-        } catch (_: Exception) {
-            // 파일 로깅 실패 시 앱 크래시를 방지한다
         }
     }
 

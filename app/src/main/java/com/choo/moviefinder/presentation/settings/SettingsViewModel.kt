@@ -37,7 +37,8 @@ class SettingsViewModel @Inject constructor(
     getMonthlyWatchGoalUseCase: GetMonthlyWatchGoalUseCase,
     private val setMonthlyWatchGoalUseCase: SetMonthlyWatchGoalUseCase,
     private val exportUserDataUseCase: ExportUserDataUseCase,
-    private val importUserDataUseCase: ImportUserDataUseCase
+    private val importUserDataUseCase: ImportUserDataUseCase,
+    private val json: Json
 ) : ViewModel() {
 
     val currentThemeMode: StateFlow<ThemeMode> = getThemeModeUseCase()
@@ -100,8 +101,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val backup = exportUserDataUseCase()
-                val json = Json.encodeToString(backup)
-                _exportedJson.send(json)
+                val jsonString = json.encodeToString(backup)
+                _exportedJson.send(jsonString)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -116,7 +117,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _isImporting.value = true
             try {
-                val backup = Json.decodeFromString<UserDataBackup>(jsonString)
+                val backup = json.decodeFromString<UserDataBackup>(jsonString)
                 importUserDataUseCase(backup)
                 _importSuccess.send(Unit)
             } catch (e: CancellationException) {

@@ -631,16 +631,16 @@ Repository Settings > Secrets and variables > Actions에서:
 - `ACCESS_NETWORK_STATE` 권한 필요 (AndroidManifest.xml)
 
 ### 네트워크 복원력 (Resilience Patterns)
-- **CircuitBreaker**: API 3회 연속 실패 → OPEN (30초간 요청 자동 차단) → HALF_OPEN (1회 시도) → 성공 시 CLOSED (자동 복구)
+- **CircuitBreaker**: API 3회 연속 실패 → OPEN (30초간 요청 자동 차단) → HALF_OPEN (1회 시도) → 성공 시 CLOSED (자동 복구), `@Synchronized` 원자적 상태 전환
 - **CircuitBreakerInterceptor**: OkHttp 인터셉터로 API + Image 클라이언트에 각각 별도 서킷 브레이커 적용
 - **ExponentialBackoff**: `withExponentialBackoff()` suspend 유틸 함수 (1초→2초→4초, 최대 3회, CancellationException 안전)
-- **RateLimiter**: 재시도 버튼 2초 쿨다운 (AtomicLong 기반, DetailFragment/HomeFragment/PersonDetailFragment 적용)
+- **RateLimiter**: 재시도 버튼 2초 쿨다운 (`AtomicLong.compareAndSet` 원자적 처리, DetailFragment/HomeFragment/PersonDetailFragment 적용)
 
 ### 디버그 자가 검증 (Debug Self-Verification)
-- **DebugHealthCheck**: 앱 시작 시 API 연결 + 이미지 로드 + DB 접근 자동 테스트, 실패 시 Toast 표시
+- **DebugHealthCheck**: 앱 시작 시 API 연결 + 이미지 로드 + DB 파일 접근 자동 테스트, 실패 시 Toast 표시 (API key 로그 미노출)
 - **DebugEventListener**: OkHttp SSL 핸드셰이크/연결 실패를 Timber로 즉시 로깅
-- **FileLoggingTree**: Timber INFO+ 로그를 파일로 저장 (2MB 로테이션), 설정에서 공유 가능
-- **AnrWatchdog**: 메인 스레드 5초 이상 블로킹 감지 시 스택 트레이스 로깅
+- **FileLoggingTree**: Timber INFO+ 로그를 파일로 저장 (2MB 로테이션, ThreadLocal DateFormat, HandlerThread 비동기 쓰기), 설정에서 공유 가능
+- **AnrWatchdog**: 메인 스레드 5초 이상 블로킹 감지 시 스택 트레이스 로깅 (ProcessLifecycleOwner 연동, 백그라운드 시 비활성)
 - 모든 자가 검증 도구는 `BuildConfig.DEBUG` 가드로 릴리스 빌드에 영향 없음
 
 ### StrictMode (디버그 전용)
