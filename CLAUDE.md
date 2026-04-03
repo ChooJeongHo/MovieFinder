@@ -194,30 +194,42 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (227개)
+### 유닛 테스트 (359개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
 
 | 테스트 클래스 | 수 | 대상 |
 |---|---|---|
-| `MovieRepositoryImplTest` | 36 | 영화 상세, 출연진, 즐겨찾기, 검색 기록, 시청기록, 워치리스트, 리뷰, 평점 |
-| `DetailViewModelTest` | 24 | 초기 상태, 에러, 부분 실패, FAB 토글, Snackbar, 재시도, 중복 방지 |
 | `SearchViewModelTest` | 27 | 검색, 필터, SavedStateHandle 복원, 뷰모드 토글, Discover 모드 |
+| `SplitRepositoryImplTest` | 25 | 분리된 Repository 구현체 (Favorite, Watchlist, SearchHistory 등) |
+| `DetailViewModelTest` | 24 | 초기 상태, 에러, 부분 실패, FAB 토글, Snackbar, 재시도, 중복 방지 |
+| `MovieUseCasesTest` | 23 | 영화 관련 UseCase 위임 검증 |
+| `PreferencesTagUseCasesTest` | 21 | 테마/시청목표 UseCase + 태그 UseCase 위임 검증 |
+| `MemoRatingPersonUseCasesTest` | 20 | 메모/평점/배우 UseCase 위임 검증 |
+| `MovieRepositoryImplTest` | 19 | 영화 API 호출 (상세, 출연진, 비슷한 영화, 예고편, 리뷰 등) |
+| `SettingsViewModelTest` | 18 | 테마, 시청기록 삭제, 시청 목표 |
 | `FavoriteViewModelTest` | 16 | 즐겨찾기/워치리스트 목록·토글·정렬, 태그 추가/삭제 |
-| `SettingsViewModelTest` | 14 | 테마, 시청기록 삭제, 시청 목표 |
+| `SearchWatchHistoryUseCasesTest` | 15 | 검색기록/시청기록 UseCase 위임 검증 |
+| `TagRepositoryImplTest` | 13 | 태그 Repository 구현체 |
+| `FavoriteWatchlistUseCasesTest` | 12 | 즐겨찾기/워치리스트 UseCase 위임 검증 |
 | `GetWatchStatsUseCaseTest` | 10 | combine 로직, 장르 빈도, 월별/일별 카운트, 평점 분포 |
 | `ErrorMessageProviderTest` | 10 | 예외 타입별 ErrorType 매핑 |
+| `CircuitBreakerTest` | 10 | 서킷 브레이커 상태 전환 (CLOSED→OPEN→HALF_OPEN→CLOSED) |
 | `PreferencesRepositoryImplTest` | 9 | 테마, 시청 목표, 알림 월 |
-| `MoviePagingSourceTest` | 7 | 페이지 로드, 에러, nextKey/prevKey |
-| `MovieRemoteMediatorTest` | 7 | REFRESH/APPEND/SKIP, 캐시 만료 |
-| `WatchGoalNotificationHelperTest` | 7 | 달성/미달/중복 알림 방지 |
+| `DelegateTest` | 8 | MemoDelegate + UserRatingDelegate 로직 |
 | `StatsViewModelTest` | 7 | Loading/Success/Error, 목표 달성률 |
+| `MovieRemoteMediatorTest` | 7 | REFRESH/APPEND/SKIP, 캐시 만료 |
+| `MoviePagingSourceTest` | 7 | 페이지 로드, 에러, nextKey/prevKey |
+| `CachedMovieEntityMapperTest` | 7 | Entity ↔ 도메인 모델 변환 |
+| `WatchGoalNotificationHelperTest` | 7 | 달성/미달/중복 알림 방지 |
 | `ReleaseNotificationSchedulerTest` | 7 | WorkManager 스케줄/취소, 과거날짜/API 레벨 가드 |
-| `HomeViewModelTest` | 6 | UseCase 호출, 시청기록 |
 | `PersonDetailViewModelTest` | 6 | 배우 상세 상태, 병렬 호출 |
-| `DiscoverPagingSourceTest` | 5 | Discover 페이징 |
+| `HomeViewModelTest` | 6 | UseCase 호출, 시청기록 |
+| `ExponentialBackoffTest` | 6 | 첫 성공, 재시도 후 성공, 전체 실패, CancellationException 처리 |
 | `TrendingPagingSourceTest` | 5 | 트렌딩 페이징 |
+| `DiscoverPagingSourceTest` | 5 | Discover 페이징 |
+| `RateLimiterTest` | 5 | 2초 쿨다운, 동시 호출 차단 |
 | `ExportImportUseCaseTest` | 4 | 내보내기/가져오기 검증 |
 
 ### Espresso UI 테스트 (23개)
