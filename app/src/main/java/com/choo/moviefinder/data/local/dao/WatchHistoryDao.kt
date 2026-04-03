@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.choo.moviefinder.data.local.entity.WatchHistoryEntity
+import com.choo.moviefinder.data.local.entity.WatchHistoryGenreEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -30,9 +31,21 @@ interface WatchHistoryDao {
     @Query("SELECT COUNT(*) FROM watch_history WHERE watchedAt >= :since")
     fun getCountSince(since: Long): Flow<Int>
 
-    // 모든 시청 기록의 장르 문자열 조회
+    // 장르 엔티티 목록을 일괄 삽입한다
+    @Insert
+    suspend fun insertGenres(genres: List<WatchHistoryGenreEntity>)
+
+    // 모든 시청 기록의 장르 문자열 조회 (하위 호환용)
     @Query("SELECT genres FROM watch_history WHERE genres != ''")
     fun getAllGenres(): Flow<List<String>>
+
+    // 정규화 테이블에서 장르별 시청 편수를 집계하여 조회한다
+    @Query(
+        "SELECT genre_name AS genre, COUNT(*) AS count " +
+            "FROM watch_history_genre " +
+            "GROUP BY genre_name ORDER BY count DESC"
+    )
+    fun getGenreCounts(): Flow<List<GenreCountResult>>
 
     // 월별 시청 편수를 최근 6개월 기준으로 조회
     @Query(

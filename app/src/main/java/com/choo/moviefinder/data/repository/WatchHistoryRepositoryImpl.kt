@@ -1,10 +1,12 @@
 package com.choo.moviefinder.data.repository
 
 import com.choo.moviefinder.data.local.dao.WatchHistoryDao
+import com.choo.moviefinder.data.local.entity.WatchHistoryGenreEntity
 import com.choo.moviefinder.data.local.entity.toDomain
 import com.choo.moviefinder.data.local.entity.toWatchHistoryEntity
 import com.choo.moviefinder.data.util.Constants
 import com.choo.moviefinder.domain.model.DailyWatchCount
+import com.choo.moviefinder.domain.model.GenreCount
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.repository.WatchHistoryRepository
@@ -28,9 +30,16 @@ class WatchHistoryRepositoryImpl @Inject constructor(
         watchHistoryDao.insert(movie.toWatchHistoryEntity())
     }
 
-    // 영화를 장르 정보와 함께 시청 기록에 저장
+    // 영화를 장르 정보와 함께 시청 기록에 저장하고 정규화 테이블에도 삽입
     override suspend fun saveWatchHistoryWithGenres(movie: Movie, genres: String) {
         watchHistoryDao.insert(movie.toWatchHistoryEntity(genres))
+        val genreEntities = genres.split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .map { WatchHistoryGenreEntity(watchHistoryId = movie.id, genreName = it) }
+        if (genreEntities.isNotEmpty()) {
+            watchHistoryDao.insertGenres(genreEntities)
+        }
     }
 
     // 모든 시청 기록 삭제
@@ -51,6 +60,13 @@ class WatchHistoryRepositoryImpl @Inject constructor(
     // 모든 시청 기록의 장르 문자열 목록을 실시간 Flow로 조회
     override fun getAllWatchedGenres(): Flow<List<String>> {
         return watchHistoryDao.getAllGenres()
+    }
+
+    // 정규화 테이블에서 장르별 시청 편수를 도메인 모델로 변환하여 조회
+    override fun getGenreCounts(): Flow<List<GenreCount>> {
+        return watchHistoryDao.getGenreCounts().map { results ->
+            results.map { GenreCount(name = it.genre, count = it.count) }
+        }
     }
 
     // 월별 시청 편수를 도메인 모델로 변환하여 조회

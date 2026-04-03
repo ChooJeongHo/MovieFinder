@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class GetWatchStatsUseCase @Inject constructor(
@@ -28,9 +27,8 @@ class GetWatchStatsUseCase @Inject constructor(
         val monthStartMillis = currentMonthStartMillis()
         val threeMonthsAgoMillis = System.currentTimeMillis() - THREE_MONTHS_MILLIS
 
-        val genreCountsFlow = watchHistoryRepository.getAllWatchedGenres()
+        val genreCountsFlow = watchHistoryRepository.getGenreCounts()
             .distinctUntilChanged()
-            .map { computeAllGenres(it) }
 
         val baseStatsFlow = combine(
             watchHistoryRepository.getTotalWatchedCount().distinctUntilChanged(),
@@ -62,19 +60,6 @@ class GetWatchStatsUseCase @Inject constructor(
         }
         emitAll(combinedFlow)
     }.flowOn(Dispatchers.Default)
-
-    // 장르 문자열 목록에서 출현 빈도순으로 전체 장르 카운트를 계산한다
-    private fun computeAllGenres(genreStrings: List<String>): List<GenreCount> {
-        return genreStrings
-            .flatMap { it.split(",") }
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .groupingBy { it }
-            .eachCount()
-            .entries
-            .sortedByDescending { it.value }
-            .map { GenreCount(name = it.key, count = it.value) }
-    }
 
     // 5개 기본 통계 Flow를 묶기 위한 내부 데이터 홀더
     private data class BaseStats(

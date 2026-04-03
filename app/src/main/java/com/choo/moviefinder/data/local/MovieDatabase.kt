@@ -19,6 +19,7 @@ import com.choo.moviefinder.data.local.entity.RecentSearchEntity
 import com.choo.moviefinder.data.local.entity.RemoteKeyEntity
 import com.choo.moviefinder.data.local.entity.UserRatingEntity
 import com.choo.moviefinder.data.local.entity.WatchHistoryEntity
+import com.choo.moviefinder.data.local.entity.WatchHistoryGenreEntity
 import com.choo.moviefinder.data.local.entity.WatchlistEntity
 
 @Database(
@@ -28,12 +29,13 @@ import com.choo.moviefinder.data.local.entity.WatchlistEntity
         CachedMovieEntity::class,
         RemoteKeyEntity::class,
         WatchHistoryEntity::class,
+        WatchHistoryGenreEntity::class,
         WatchlistEntity::class,
         UserRatingEntity::class,
         MemoEntity::class,
         MovieTagEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 abstract class MovieDatabase : RoomDatabase() {
