@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class GetWatchStatsUseCase @Inject constructor(
@@ -27,14 +28,18 @@ class GetWatchStatsUseCase @Inject constructor(
         val monthStartMillis = currentMonthStartMillis()
         val threeMonthsAgoMillis = System.currentTimeMillis() - THREE_MONTHS_MILLIS
 
+        val genreCountsFlow = watchHistoryRepository.getAllWatchedGenres()
+            .distinctUntilChanged()
+            .map { computeAllGenres(it) }
+
         val baseStatsFlow = combine(
             watchHistoryRepository.getTotalWatchedCount().distinctUntilChanged(),
             watchHistoryRepository.getWatchedCountSince(monthStartMillis).distinctUntilChanged(),
             userRatingRepository.getAverageUserRating().distinctUntilChanged(),
-            watchHistoryRepository.getAllWatchedGenres().distinctUntilChanged(),
+            genreCountsFlow,
             watchHistoryRepository.getMonthlyWatchCounts().distinctUntilChanged()
-        ) { total, monthly, avgRating, genreStrings, monthlyCounts ->
-            BaseStats(total, monthly, avgRating, genreStrings, monthlyCounts)
+        ) { total, monthly, avgRating, genreCounts, monthlyCounts ->
+            BaseStats(total, monthly, avgRating, genreCounts, monthlyCounts)
         }
 
         val combinedFlow = combine(
@@ -43,13 +48,12 @@ class GetWatchStatsUseCase @Inject constructor(
             userRatingRepository.getRatingDistribution().distinctUntilChanged(),
             watchHistoryRepository.getDailyWatchCounts(threeMonthsAgoMillis).distinctUntilChanged()
         ) { base, watchGoal, ratingDist, dailyCounts ->
-            val allGenres = computeAllGenres(base.genreStrings)
             WatchStats(
                 totalWatched = base.total,
                 monthlyWatched = base.monthly,
                 averageRating = base.avgRating,
-                topGenres = allGenres.take(3),
-                allGenreCounts = allGenres,
+                topGenres = base.genreCounts.take(3),
+                allGenreCounts = base.genreCounts,
                 monthlyWatchCounts = base.monthlyCounts,
                 monthlyWatchGoal = watchGoal,
                 ratingDistribution = ratingDist,
@@ -77,7 +81,7 @@ class GetWatchStatsUseCase @Inject constructor(
         val total: Int,
         val monthly: Int,
         val avgRating: Float?,
-        val genreStrings: List<String>,
+        val genreCounts: List<GenreCount>,
         val monthlyCounts: List<MonthlyWatchCount>
     )
 

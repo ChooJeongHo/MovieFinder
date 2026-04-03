@@ -133,6 +133,7 @@ class SearchFragment : Fragment() {
             layoutManager = createMovieGridLayoutManager(requireContext(), spanCount) {
                 searchAdapter.itemCount
             }
+            setHasFixedSize(true)
             adapter = searchAdapter.withLoadStateFooter(
                 footer = MovieLoadStateAdapter { searchAdapter.retry() }
             )
@@ -185,6 +186,7 @@ class SearchFragment : Fragment() {
 
         binding.rvPersonResults.apply {
             layoutManager = LinearLayoutManager(requireContext())
+            setHasFixedSize(true)
             adapter = personSearchAdapter
         }
     }
