@@ -1,6 +1,7 @@
 package com.choo.moviefinder.domain.repository
 
 import com.choo.moviefinder.domain.model.DailyWatchCount
+import com.choo.moviefinder.domain.model.GenreCount
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
 import com.choo.moviefinder.domain.model.Movie
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +28,9 @@ interface WatchHistoryRepository {
 
     // 모든 시청 기록의 장르 문자열 목록을 Flow로 반환한다
     fun getAllWatchedGenres(): Flow<List<String>>
+
+    // 정규화 테이블에서 장르별 시청 편수를 집계하여 반환한다
+    fun getGenreCounts(): Flow<List<GenreCount>>
 
     // 월별 시청 편수를 Flow로 반환한다
     fun getMonthlyWatchCounts(): Flow<List<MonthlyWatchCount>>

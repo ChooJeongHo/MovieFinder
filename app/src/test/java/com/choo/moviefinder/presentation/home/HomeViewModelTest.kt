@@ -68,27 +68,39 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `nowPlayingMovies is initialized and invokes use case`() {
+    fun `nowPlayingMovies is lazily initialized on first access`() {
         val viewModel = createViewModel()
 
+        verify(exactly = 0) { getNowPlayingMoviesUseCase() }
         assertNotNull(viewModel.nowPlayingMovies)
         verify(exactly = 1) { getNowPlayingMoviesUseCase() }
     }
 
     @Test
-    fun `popularMovies is initialized and invokes use case`() {
+    fun `popularMovies is lazily initialized on first access`() {
         val viewModel = createViewModel()
 
+        verify(exactly = 0) { getPopularMoviesUseCase() }
         assertNotNull(viewModel.popularMovies)
         verify(exactly = 1) { getPopularMoviesUseCase() }
     }
 
     @Test
-    fun `both use cases are invoked on construction`() {
+    fun `trendingMovies is lazily initialized on first access`() {
+        val viewModel = createViewModel()
+
+        verify(exactly = 0) { getTrendingMoviesUseCase() }
+        assertNotNull(viewModel.trendingMovies)
+        verify(exactly = 1) { getTrendingMoviesUseCase() }
+    }
+
+    @Test
+    fun `paging use cases are not invoked on construction`() {
         createViewModel()
 
-        verify(exactly = 1) { getNowPlayingMoviesUseCase() }
-        verify(exactly = 1) { getPopularMoviesUseCase() }
+        verify(exactly = 0) { getNowPlayingMoviesUseCase() }
+        verify(exactly = 0) { getPopularMoviesUseCase() }
+        verify(exactly = 0) { getTrendingMoviesUseCase() }
     }
 
     @Test
@@ -116,10 +128,20 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `trending movies flow is created from use case`() {
+    fun `selectedTab defaults to NOW_PLAYING`() {
         val viewModel = createViewModel()
 
-        assertNotNull(viewModel.trendingMovies)
-        verify(exactly = 1) { getTrendingMoviesUseCase() }
+        assertEquals(HomeTab.NOW_PLAYING, viewModel.selectedTab.value)
+    }
+
+    @Test
+    fun `onTabSelected updates selectedTab`() {
+        val viewModel = createViewModel()
+
+        viewModel.onTabSelected(HomeTab.POPULAR)
+        assertEquals(HomeTab.POPULAR, viewModel.selectedTab.value)
+
+        viewModel.onTabSelected(HomeTab.TRENDING)
+        assertEquals(HomeTab.TRENDING, viewModel.selectedTab.value)
     }
 }

@@ -42,7 +42,7 @@ class GetWatchStatsUseCaseTest {
         every { watchHistoryRepository.getTotalWatchedCount() } returns flowOf(0)
         every { watchHistoryRepository.getWatchedCountSince(any()) } returns flowOf(0)
         every { userRatingRepository.getAverageUserRating() } returns flowOf(null)
-        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(emptyList())
+        every { watchHistoryRepository.getGenreCounts() } returns flowOf(emptyList())
         every { watchHistoryRepository.getMonthlyWatchCounts() } returns flowOf(emptyList())
         every { userRatingRepository.getRatingDistribution() } returns flowOf(emptyList())
         every { watchHistoryRepository.getDailyWatchCounts(any()) } returns flowOf(emptyList())
@@ -92,9 +92,9 @@ class GetWatchStatsUseCaseTest {
     }
 
     @Test
-    fun `computes genre counts sorted by frequency`() = runTest {
-        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(
-            listOf("Action,Drama", "Action,Comedy", "Drama")
+    fun `returns genre counts sorted by frequency from normalized table`() = runTest {
+        every { watchHistoryRepository.getGenreCounts() } returns flowOf(
+            listOf(GenreCount("Action", 2), GenreCount("Drama", 2), GenreCount("Comedy", 1))
         )
 
         useCase().test {
@@ -109,8 +109,11 @@ class GetWatchStatsUseCaseTest {
 
     @Test
     fun `returns top 3 genres only in topGenres`() = runTest {
-        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(
-            listOf("Action,Drama,Comedy,Thriller,Horror")
+        every { watchHistoryRepository.getGenreCounts() } returns flowOf(
+            listOf(
+                GenreCount("Action", 5), GenreCount("Drama", 4), GenreCount("Comedy", 3),
+                GenreCount("Thriller", 2), GenreCount("Horror", 1)
+            )
         )
 
         useCase().test {
@@ -122,7 +125,7 @@ class GetWatchStatsUseCaseTest {
 
     @Test
     fun `handles empty genre strings`() = runTest {
-        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(emptyList())
+        every { watchHistoryRepository.getGenreCounts() } returns flowOf(emptyList())
 
         useCase().test {
             val stats = awaitItem()
@@ -133,9 +136,9 @@ class GetWatchStatsUseCaseTest {
     }
 
     @Test
-    fun `handles comma-separated genre strings correctly`() = runTest {
-        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(
-            listOf("Action,Drama", "Action")
+    fun `returns genre counts directly from repository`() = runTest {
+        every { watchHistoryRepository.getGenreCounts() } returns flowOf(
+            listOf(GenreCount("Action", 2), GenreCount("Drama", 1))
         )
 
         useCase().test {
@@ -181,16 +184,16 @@ class GetWatchStatsUseCaseTest {
     }
 
     @Test
-    fun `handles genres with whitespace trimming`() = runTest {
-        every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(
-            listOf(" Action , Drama ", "Action")
+    fun `passes through genre counts from repository without modification`() = runTest {
+        every { watchHistoryRepository.getGenreCounts() } returns flowOf(
+            listOf(GenreCount("Action", 3), GenreCount("Drama", 1))
         )
 
         useCase().test {
             val stats = awaitItem()
             val actionGenre = stats.allGenreCounts.find { it.name == "Action" }
             val dramaGenre = stats.allGenreCounts.find { it.name == "Drama" }
-            assertEquals(2, actionGenre?.count)
+            assertEquals(3, actionGenre?.count)
             assertEquals(1, dramaGenre?.count)
             cancelAndIgnoreRemainingEvents()
         }

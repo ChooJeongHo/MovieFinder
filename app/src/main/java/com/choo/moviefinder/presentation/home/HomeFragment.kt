@@ -166,6 +166,7 @@ class HomeFragment : Fragment() {
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 currentTab = tab.position
+                viewModel.onTabSelected(HomeTab.entries[tab.position])
                 collectMovies()
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}

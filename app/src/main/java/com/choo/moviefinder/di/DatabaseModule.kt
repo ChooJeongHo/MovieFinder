@@ -2,6 +2,8 @@ package com.choo.moviefinder.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
@@ -23,6 +25,28 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
+    // 장르 정규화 테이블 추가 마이그레이션 (v12 → v13)
+    val MIGRATION_12_13 = object : Migration(12, 13) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """CREATE TABLE IF NOT EXISTS `watch_history_genre` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `watch_history_id` INTEGER NOT NULL,
+                    `genre_name` TEXT NOT NULL,
+                    FOREIGN KEY(`watch_history_id`) REFERENCES `watch_history`(`id`) ON DELETE CASCADE
+                )"""
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_watch_history_genre_watch_history_id` " +
+                    "ON `watch_history_genre` (`watch_history_id`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_watch_history_genre_genre_name` " +
+                    "ON `watch_history_genre` (`genre_name`)"
+            )
+        }
+    }
+
     // Room 데이터베이스 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
@@ -32,6 +56,7 @@ object DatabaseModule {
             MovieDatabase::class.java,
             "movie_finder_db"
         )
+            .addMigrations(MIGRATION_12_13)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
