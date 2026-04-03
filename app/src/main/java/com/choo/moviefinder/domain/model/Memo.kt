@@ -7,3 +7,7 @@ data class Memo(
     val createdAt: Long,
     val updatedAt: Long
 )
+
+object MemoConstants {
+    const val MAX_LENGTH = 500
+}

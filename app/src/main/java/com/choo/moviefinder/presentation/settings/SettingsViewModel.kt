@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.model.UserDataBackup
 import com.choo.moviefinder.domain.usecase.ClearWatchHistoryUseCase
@@ -70,46 +71,36 @@ class SettingsViewModel @Inject constructor(
             savedStateHandle["pendingExportJson"] = value
         }
 
-    // 테마 모드를 DataStore에 저장 (에러 시 Timber 로깅)
-    fun setThemeMode(mode: ThemeMode) {
-        viewModelScope.launch {
-            try {
-                setThemeModeUseCase(mode)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to set theme mode to %s", mode)
-            }
+    // 테마 모드를 DataStore에 저장 (에러 시 Snackbar 피드백)
+    fun setThemeMode(mode: ThemeMode) = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("Failed to set theme mode to %s", mode)
+            _snackbarEvent.send(it)
         }
+    ) {
+        setThemeModeUseCase(mode)
     }
 
-    // 이번 달 시청 목표 편수 저장 (에러 시 Timber 로깅)
-    fun setMonthlyWatchGoal(goal: Int) {
-        viewModelScope.launch {
-            try {
-                setMonthlyWatchGoalUseCase(goal)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to set monthly watch goal to %d", goal)
-            }
+    // 이번 달 시청 목표 편수 저장 (에러 시 Snackbar 피드백)
+    fun setMonthlyWatchGoal(goal: Int) = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("Failed to set monthly watch goal to %d", goal)
+            _snackbarEvent.send(it)
         }
+    ) {
+        setMonthlyWatchGoalUseCase(goal)
     }
 
     // 사용자 데이터를 JSON 문자열로 내보낸다 (성공 시 JSON 이벤트, 에러 시 Snackbar)
-    fun exportData() {
-        viewModelScope.launch {
-            try {
-                val backup = exportUserDataUseCase()
-                val jsonString = json.encodeToString(backup)
-                _exportedJson.send(jsonString)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to export user data")
-                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
-            }
+    fun exportData() = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("Failed to export user data")
+            _snackbarEvent.send(it)
         }
+    ) {
+        val backup = exportUserDataUseCase()
+        val jsonString = json.encodeToString(backup)
+        _exportedJson.send(jsonString)
     }
 
     // JSON 문자열에서 사용자 데이터를 가져온다 (성공 시 이벤트, 에러 시 Snackbar)
@@ -132,17 +123,13 @@ class SettingsViewModel @Inject constructor(
     }
 
     // 시청 기록 전체 삭제 (성공 시 이벤트, 에러 시 Snackbar)
-    fun clearWatchHistory() {
-        viewModelScope.launch {
-            try {
-                clearWatchHistoryUseCase()
-                _watchHistoryCleared.send(Unit)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to clear watch history")
-                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
-            }
+    fun clearWatchHistory() = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("Failed to clear watch history")
+            _snackbarEvent.send(it)
         }
+    ) {
+        clearWatchHistoryUseCase()
+        _watchHistoryCleared.send(Unit)
     }
 }

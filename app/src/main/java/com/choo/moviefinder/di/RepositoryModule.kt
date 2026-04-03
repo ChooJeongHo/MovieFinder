@@ -1,8 +1,16 @@
 package com.choo.moviefinder.di
 
 import com.choo.moviefinder.data.local.PreferencesRepositoryImpl
+import com.choo.moviefinder.data.repository.BackupRepositoryImpl
+import com.choo.moviefinder.data.repository.FavoriteRepositoryImpl
+import com.choo.moviefinder.data.repository.MemoRepositoryImpl
 import com.choo.moviefinder.data.repository.MovieRepositoryImpl
+import com.choo.moviefinder.data.repository.PersonRepositoryImpl
+import com.choo.moviefinder.data.repository.SearchHistoryRepositoryImpl
 import com.choo.moviefinder.data.repository.TagRepositoryImpl
+import com.choo.moviefinder.data.repository.UserRatingRepositoryImpl
+import com.choo.moviefinder.data.repository.WatchHistoryRepositoryImpl
+import com.choo.moviefinder.data.repository.WatchlistRepositoryImpl
 import com.choo.moviefinder.domain.repository.BackupRepository
 import com.choo.moviefinder.domain.repository.FavoriteRepository
 import com.choo.moviefinder.domain.repository.MemoRepository
@@ -29,45 +37,45 @@ abstract class RepositoryModule {
     @Singleton
     abstract fun bindMovieRepository(impl: MovieRepositoryImpl): MovieRepository
 
-    // MovieRepositoryImpl을 FavoriteRepository 인터페이스에 바인딩한다
+    // FavoriteRepositoryImpl을 FavoriteRepository 인터페이스에 바인딩한다
     @Binds
     @Singleton
-    abstract fun bindFavoriteRepository(impl: MovieRepositoryImpl): FavoriteRepository
+    abstract fun bindFavoriteRepository(impl: FavoriteRepositoryImpl): FavoriteRepository
 
-    // MovieRepositoryImpl을 WatchlistRepository 인터페이스에 바인딩한다
+    // WatchlistRepositoryImpl을 WatchlistRepository 인터페이스에 바인딩한다
     @Binds
     @Singleton
-    abstract fun bindWatchlistRepository(impl: MovieRepositoryImpl): WatchlistRepository
+    abstract fun bindWatchlistRepository(impl: WatchlistRepositoryImpl): WatchlistRepository
 
-    // MovieRepositoryImpl을 SearchHistoryRepository 인터페이스에 바인딩한다
+    // SearchHistoryRepositoryImpl을 SearchHistoryRepository 인터페이스에 바인딩한다
     @Binds
     @Singleton
-    abstract fun bindSearchHistoryRepository(impl: MovieRepositoryImpl): SearchHistoryRepository
+    abstract fun bindSearchHistoryRepository(impl: SearchHistoryRepositoryImpl): SearchHistoryRepository
 
-    // MovieRepositoryImpl을 WatchHistoryRepository 인터페이스에 바인딩한다
+    // WatchHistoryRepositoryImpl을 WatchHistoryRepository 인터페이스에 바인딩한다
     @Binds
     @Singleton
-    abstract fun bindWatchHistoryRepository(impl: MovieRepositoryImpl): WatchHistoryRepository
+    abstract fun bindWatchHistoryRepository(impl: WatchHistoryRepositoryImpl): WatchHistoryRepository
 
-    // MovieRepositoryImpl을 UserRatingRepository 인터페이스에 바인딩한다
+    // UserRatingRepositoryImpl을 UserRatingRepository 인터페이스에 바인딩한다
     @Binds
     @Singleton
-    abstract fun bindUserRatingRepository(impl: MovieRepositoryImpl): UserRatingRepository
+    abstract fun bindUserRatingRepository(impl: UserRatingRepositoryImpl): UserRatingRepository
 
-    // MovieRepositoryImpl을 MemoRepository 인터페이스에 바인딩한다
+    // MemoRepositoryImpl을 MemoRepository 인터페이스에 바인딩한다
     @Binds
     @Singleton
-    abstract fun bindMemoRepository(impl: MovieRepositoryImpl): MemoRepository
+    abstract fun bindMemoRepository(impl: MemoRepositoryImpl): MemoRepository
 
-    // MovieRepositoryImpl을 PersonRepository 인터페이스에 바인딩한다
+    // PersonRepositoryImpl을 PersonRepository 인터페이스에 바인딩한다
     @Binds
     @Singleton
-    abstract fun bindPersonRepository(impl: MovieRepositoryImpl): PersonRepository
+    abstract fun bindPersonRepository(impl: PersonRepositoryImpl): PersonRepository
 
-    // MovieRepositoryImpl을 BackupRepository 인터페이스에 바인딩한다
+    // BackupRepositoryImpl을 BackupRepository 인터페이스에 바인딩한다
     @Binds
     @Singleton
-    abstract fun bindBackupRepository(impl: MovieRepositoryImpl): BackupRepository
+    abstract fun bindBackupRepository(impl: BackupRepositoryImpl): BackupRepository
 
     // PreferencesRepositoryImpl을 PreferencesRepository 인터페이스에 바인딩한다
     @Binds

@@ -35,6 +35,7 @@ import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.core.util.RateLimiter
 import com.choo.moviefinder.databinding.FragmentDetailBinding
+import com.choo.moviefinder.domain.model.MemoConstants
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.presentation.adapter.CastAdapter
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
@@ -541,7 +542,7 @@ class DetailFragment : Fragment() {
 
     // 메모 입력 필드 및 저장 버튼 설정
     private fun setupMemoInput() {
-        binding.etMemo.filters = arrayOf(InputFilter.LengthFilter(MAX_MEMO_LENGTH))
+        binding.etMemo.filters = arrayOf(InputFilter.LengthFilter(MemoConstants.MAX_LENGTH))
         binding.tilMemo.setEndIconOnClickListener {
             val content = binding.etMemo.text?.toString()?.trim().orEmpty()
             if (content.isNotBlank()) {
@@ -571,7 +572,7 @@ class DetailFragment : Fragment() {
             setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
             maxLines = 5
-            filters = arrayOf(InputFilter.LengthFilter(MAX_MEMO_LENGTH))
+            filters = arrayOf(InputFilter.LengthFilter(MemoConstants.MAX_LENGTH))
         }
         memoEditDialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.memo_edit_dialog_title)
@@ -599,7 +600,4 @@ class DetailFragment : Fragment() {
         _binding = null
     }
 
-    companion object {
-        private const val MAX_MEMO_LENGTH = 500
-    }
 }

@@ -2,8 +2,8 @@ package com.choo.moviefinder.presentation.favorite
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.core.util.PosterTagSuggester
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieTag
@@ -17,7 +17,6 @@ import com.choo.moviefinder.domain.usecase.RemoveTagFromMovieUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -29,7 +28,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -81,17 +79,13 @@ class FavoriteViewModel @Inject constructor(
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
-    fun toggleFavorite(movie: Movie) {
-        viewModelScope.launch {
-            try {
-                toggleFavoriteUseCase(movie)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to toggle favorite for movie %d", movie.id)
-                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
-            }
+    fun toggleFavorite(movie: Movie) = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("Failed to toggle favorite for movie %d", movie.id)
+            _snackbarEvent.send(it)
         }
+    ) {
+        toggleFavoriteUseCase(movie)
     }
 
     // 정렬 순서 변경
@@ -105,17 +99,13 @@ class FavoriteViewModel @Inject constructor(
     }
 
     // 워치리스트 상태 토글 (에러 시 Snackbar 이벤트 전송)
-    fun toggleWatchlist(movie: Movie) {
-        viewModelScope.launch {
-            try {
-                toggleWatchlistUseCase(movie)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to toggle watchlist for movie %d", movie.id)
-                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
-            }
+    fun toggleWatchlist(movie: Movie) = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("Failed to toggle watchlist for movie %d", movie.id)
+            _snackbarEvent.send(it)
         }
+    ) {
+        toggleWatchlistUseCase(movie)
     }
 
     // 특정 영화의 태그 목록 Flow 반환
@@ -123,17 +113,13 @@ class FavoriteViewModel @Inject constructor(
         getTagsForMovieUseCase(movieId)
 
     // 영화에 태그 추가 (에러 시 Snackbar 이벤트 전송)
-    fun addTagToMovie(movieId: Int, tagName: String) {
-        viewModelScope.launch {
-            try {
-                addTagToMovieUseCase(movieId, tagName)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to add tag '%s' to movie %d", tagName, movieId)
-                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
-            }
+    fun addTagToMovie(movieId: Int, tagName: String) = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("Failed to add tag '%s' to movie %d", tagName, movieId)
+            _snackbarEvent.send(it)
         }
+    ) {
+        addTagToMovieUseCase(movieId, tagName)
     }
 
     // 포스터 이미지를 ML Kit으로 분석하여 태그 추천 목록 반환
@@ -141,16 +127,12 @@ class FavoriteViewModel @Inject constructor(
         posterTagSuggester.suggestTags(posterPath)
 
     // 영화에서 태그 제거 (에러 시 Snackbar 이벤트 전송)
-    fun removeTagFromMovie(movieId: Int, tagName: String) {
-        viewModelScope.launch {
-            try {
-                removeTagFromMovieUseCase(movieId, tagName)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to remove tag '%s' from movie %d", tagName, movieId)
-                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
-            }
+    fun removeTagFromMovie(movieId: Int, tagName: String) = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("Failed to remove tag '%s' from movie %d", tagName, movieId)
+            _snackbarEvent.send(it)
         }
+    ) {
+        removeTagFromMovieUseCase(movieId, tagName)
     }
 }
