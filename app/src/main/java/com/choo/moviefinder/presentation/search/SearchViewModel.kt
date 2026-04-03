@@ -94,6 +94,8 @@ class SearchViewModel @Inject constructor(
     private val _personResults = MutableStateFlow<List<PersonSearchItem>>(emptyList())
     val personResults: StateFlow<List<PersonSearchItem>> = _personResults.asStateFlow()
 
+    private val _personSearchQuery = MutableStateFlow("")
+
     private val _isPersonSearchLoading = MutableStateFlow(false)
     val isPersonSearchLoading: StateFlow<Boolean> = _isPersonSearchLoading.asStateFlow()
 
@@ -128,6 +130,36 @@ class SearchViewModel @Inject constructor(
 
     init {
         loadGenres()
+        collectPersonSearchQuery()
+    }
+
+    // 배우 검색 쿼리를 300ms debounce 후 API 호출
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    private fun collectPersonSearchQuery() {
+        viewModelScope.launch {
+            _personSearchQuery
+                .debounce(PERSON_SEARCH_DEBOUNCE_MS)
+                .distinctUntilChanged()
+                .collect { query ->
+                    val trimmed = query.trim()
+                    if (trimmed.isBlank()) {
+                        _personResults.value = emptyList()
+                        return@collect
+                    }
+                    _isPersonSearchLoading.value = true
+                    try {
+                        _personResults.value = searchPersonUseCase(trimmed)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.w(e, "Person search failed for query: $trimmed")
+                        _personResults.value = emptyList()
+                        _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(e))
+                    } finally {
+                        _isPersonSearchLoading.value = false
+                    }
+                }
+        }
     }
 
     // TMDB API에서 장르 목록을 로드하여 StateFlow 갱신
@@ -226,30 +258,13 @@ class SearchViewModel @Inject constructor(
         } else {
             SearchMode.MOVIE
         }
+        _personSearchQuery.value = ""
         _personResults.value = emptyList()
     }
 
-    // 배우 검색 실행 (쿼리가 비어있으면 결과 초기화)
+    // 배우 검색 쿼리를 StateFlow에 전달 (300ms debounce 적용)
     fun onPersonSearch(query: String) {
-        val trimmed = query.trim()
-        if (trimmed.isBlank()) {
-            _personResults.value = emptyList()
-            return
-        }
-        viewModelScope.launch {
-            _isPersonSearchLoading.value = true
-            try {
-                _personResults.value = searchPersonUseCase(trimmed)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.w(e, "Person search failed for query: $trimmed")
-                _personResults.value = emptyList()
-                _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(e))
-            } finally {
-                _isPersonSearchLoading.value = false
-            }
-        }
+        _personSearchQuery.value = query
     }
 
     private data class SearchParams(
@@ -265,6 +280,7 @@ class SearchViewModel @Inject constructor(
         private const val KEY_GENRES = "selected_genres"
         private const val KEY_SORT = "selected_sort"
         private const val KEY_VIEW_MODE = "view_mode"
+        private const val PERSON_SEARCH_DEBOUNCE_MS = 300L
     }
 }
 

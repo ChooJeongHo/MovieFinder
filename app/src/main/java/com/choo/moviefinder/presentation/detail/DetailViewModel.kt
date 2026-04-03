@@ -8,6 +8,7 @@ import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
 import com.choo.moviefinder.core.notification.WatchGoalNotificationHelper
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
 import com.choo.moviefinder.domain.usecase.GetMemosUseCase
@@ -199,7 +200,9 @@ class DetailViewModel @Inject constructor(
     }
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
-    fun toggleFavorite() = launchWithSnackbar {
+    fun toggleFavorite() = viewModelScope.launchWithErrorHandler(
+        onError = { _snackbarEvent.send(it) }
+    ) {
         toggleMutex.withLock {
             val state = _uiState.value
             if (state is DetailUiState.Success) {
@@ -209,7 +212,9 @@ class DetailViewModel @Inject constructor(
     }
 
     // 워치리스트 토글 및 개봉일 알림 예약/취소
-    fun toggleWatchlist() = launchWithSnackbar {
+    fun toggleWatchlist() = viewModelScope.launchWithErrorHandler(
+        onError = { _snackbarEvent.send(it) }
+    ) {
         toggleMutex.withLock {
             val state = _uiState.value
             if (state is DetailUiState.Success) {
@@ -247,16 +252,4 @@ class DetailViewModel @Inject constructor(
     // 메모를 삭제
     fun deleteMemo(memoId: Long) = memoDelegate.deleteMemo(memoId)
 
-    // 코루틴 실행 후 예외 발생 시 Snackbar 에러 이벤트 전송
-    private fun launchWithSnackbar(block: suspend () -> Unit) {
-        viewModelScope.launch {
-            try {
-                block()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
-            }
-        }
-    }
 }

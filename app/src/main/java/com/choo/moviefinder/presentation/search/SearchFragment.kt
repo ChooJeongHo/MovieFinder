@@ -387,10 +387,10 @@ class SearchFragment : Fragment() {
     private fun updateSortChip(sort: SortOption) {
         if (sort != SortOption.POPULARITY_DESC) {
             val label = when (sort) {
-                SortOption.POPULARITY_DESC -> getString(R.string.sort_popularity)
                 SortOption.VOTE_AVERAGE_DESC -> getString(R.string.sort_vote_average)
                 SortOption.RELEASE_DATE_DESC -> getString(R.string.sort_release_date)
                 SortOption.REVENUE_DESC -> getString(R.string.sort_revenue)
+                SortOption.POPULARITY_DESC -> getString(R.string.sort_popularity)
             }
             binding.chipSort.text = label
             binding.chipSort.isCloseIconVisible = true
