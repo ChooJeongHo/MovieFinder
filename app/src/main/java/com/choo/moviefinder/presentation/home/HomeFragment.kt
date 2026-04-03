@@ -196,7 +196,7 @@ class HomeFragment : Fragment() {
 
                     if (refreshState is LoadState.Error) {
                         binding.errorView.tvErrorMessage.text =
-                            ErrorMessageProvider.getErrorMessage(requireContext(), refreshState.error)
+                            ErrorMessageProvider.getMessage(requireContext(), refreshState.error)
                         binding.errorView.btnRetry.setOnClickListener {
                             if (retryRateLimiter.tryAcquire()) {
                                 movieAdapter.retry()

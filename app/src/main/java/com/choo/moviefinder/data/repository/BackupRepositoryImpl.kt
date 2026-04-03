@@ -33,7 +33,10 @@ class BackupRepositoryImpl @Inject constructor(
                 title = entity.title,
                 posterPath = entity.posterPath,
                 voteAverage = entity.voteAverage,
-                overview = entity.overview
+                overview = entity.overview,
+                releaseDate = entity.releaseDate,
+                backdropPath = entity.backdropPath,
+                voteCount = entity.voteCount
             )
         }
         val watchlist = watchlistDao.getAllWatchlistOnce().map { entity ->
@@ -42,7 +45,10 @@ class BackupRepositoryImpl @Inject constructor(
                 title = entity.title,
                 posterPath = entity.posterPath,
                 voteAverage = entity.voteAverage,
-                overview = entity.overview
+                overview = entity.overview,
+                releaseDate = entity.releaseDate,
+                backdropPath = entity.backdropPath,
+                voteCount = entity.voteCount
             )
         }
         val ratings = userRatingDao.getAllRatings().map { entity ->
@@ -67,11 +73,11 @@ class BackupRepositoryImpl @Inject constructor(
                     id = movie.id,
                     title = movie.title,
                     posterPath = movie.posterPath,
-                    backdropPath = null,
+                    backdropPath = movie.backdropPath,
                     overview = movie.overview,
-                    releaseDate = "",
+                    releaseDate = movie.releaseDate,
                     voteAverage = movie.voteAverage,
-                    voteCount = 0
+                    voteCount = movie.voteCount
                 )
             }
             if (favoriteEntities.isNotEmpty()) {
@@ -83,11 +89,11 @@ class BackupRepositoryImpl @Inject constructor(
                     id = movie.id,
                     title = movie.title,
                     posterPath = movie.posterPath,
-                    backdropPath = null,
+                    backdropPath = movie.backdropPath,
                     overview = movie.overview,
-                    releaseDate = "",
+                    releaseDate = movie.releaseDate,
                     voteAverage = movie.voteAverage,
-                    voteCount = 0
+                    voteCount = movie.voteCount
                 )
             }
             if (watchlistEntities.isNotEmpty()) {

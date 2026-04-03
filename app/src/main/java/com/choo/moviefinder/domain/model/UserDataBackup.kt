@@ -19,7 +19,10 @@ data class BackupMovie(
     val title: String,
     val posterPath: String?,
     val voteAverage: Double,
-    val overview: String
+    val overview: String,
+    val releaseDate: String = "",
+    val backdropPath: String? = null,
+    val voteCount: Int = 0
 )
 
 @Serializable
