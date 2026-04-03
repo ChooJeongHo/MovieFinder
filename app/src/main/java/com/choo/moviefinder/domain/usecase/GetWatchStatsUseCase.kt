@@ -10,6 +10,7 @@ import com.choo.moviefinder.domain.repository.WatchHistoryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -27,20 +28,20 @@ class GetWatchStatsUseCase @Inject constructor(
         val threeMonthsAgoMillis = System.currentTimeMillis() - THREE_MONTHS_MILLIS
 
         val baseStatsFlow = combine(
-            watchHistoryRepository.getTotalWatchedCount(),
-            watchHistoryRepository.getWatchedCountSince(monthStartMillis),
-            userRatingRepository.getAverageUserRating(),
-            watchHistoryRepository.getAllWatchedGenres(),
-            watchHistoryRepository.getMonthlyWatchCounts()
+            watchHistoryRepository.getTotalWatchedCount().distinctUntilChanged(),
+            watchHistoryRepository.getWatchedCountSince(monthStartMillis).distinctUntilChanged(),
+            userRatingRepository.getAverageUserRating().distinctUntilChanged(),
+            watchHistoryRepository.getAllWatchedGenres().distinctUntilChanged(),
+            watchHistoryRepository.getMonthlyWatchCounts().distinctUntilChanged()
         ) { total, monthly, avgRating, genreStrings, monthlyCounts ->
             BaseStats(total, monthly, avgRating, genreStrings, monthlyCounts)
         }
 
         val combinedFlow = combine(
             baseStatsFlow,
-            preferencesRepository.getMonthlyWatchGoal(),
-            userRatingRepository.getRatingDistribution(),
-            watchHistoryRepository.getDailyWatchCounts(threeMonthsAgoMillis)
+            preferencesRepository.getMonthlyWatchGoal().distinctUntilChanged(),
+            userRatingRepository.getRatingDistribution().distinctUntilChanged(),
+            watchHistoryRepository.getDailyWatchCounts(threeMonthsAgoMillis).distinctUntilChanged()
         ) { base, watchGoal, ratingDist, dailyCounts ->
             val allGenres = computeAllGenres(base.genreStrings)
             WatchStats(

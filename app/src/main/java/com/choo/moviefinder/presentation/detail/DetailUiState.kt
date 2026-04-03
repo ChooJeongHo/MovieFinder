@@ -10,12 +10,12 @@ sealed class DetailUiState {
     data object Loading : DetailUiState()
     data class Success(
         val movieDetail: MovieDetail,
-        val credits: List<Cast>,
-        val similarMovies: List<Movie>,
+        val credits: List<Cast>? = null,
+        val similarMovies: List<Movie>? = null,
         val trailerKey: String? = null,
         val certification: String? = null,
-        val reviews: List<Review> = emptyList(),
-        val recommendations: List<Movie> = emptyList()
+        val reviews: List<Review>? = null,
+        val recommendations: List<Movie>? = null
     ) : DetailUiState()
     data class Error(val errorType: ErrorType) : DetailUiState()
 }

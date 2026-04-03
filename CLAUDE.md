@@ -139,7 +139,8 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - 홈 (오프라인): API → RemoteMediator → Room DB → PagingSource → PagingDataAdapter
 - 검색 (네트워크 전용): API → MoviePagingSource → PagingDataAdapter
 - 즐겨찾기: `Flow<List<Entity>>` → `stateIn()` → `repeatOnLifecycle` 수집
-- UI 상태: `viewLifecycleOwner.lifecycleScope.launch { repeatOnLifecycle(STARTED) { flow.collect {} } }`
+- UI 상태: 하나의 `repeatOnLifecycle(STARTED)` 블록 안에서 여러 `launch { flow.collect {} }` 병렬 수집 (DetailFragment 6개, SearchFragment 9개)
+- 즐겨찾기/워치리스트 정렬: 앱 레벨 `sortedBy` 대신 Room DAO `ORDER BY` 쿼리로 DB 레벨 처리 (`FavoriteSortOrder` → domain 레이어로 이동)
 
 ## RecyclerView 어댑터
 | 어댑터 | 부모 클래스 | 용도 |
@@ -296,9 +297,10 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - Room의 `withTransaction`은 MockK로 모킹 어려움 → `@Transaction` on abstract DAO 사용
 
 ### Coil 이미지 캐시
-- 메모리 25%, 디스크 5% (`cacheDir/image_cache`)
+- 메모리 25%, 디스크 50MB 고정 (`cacheDir/image_cache`, `maxSizeBytes(50L * 1024 * 1024)`)
 - `@ImageOkHttpClient`로 `image.tmdb.org` Certificate Pinning 적용
 - 모든 어댑터: `onViewRecycled()` → `dispose()`
+- 모든 어댑터 `load()` 블록: `size(ViewSizeResolver(imageView))` 명시 → 실제 표시 크기로 다운샘플링
 
 ### 다크 모드
 - `values-night/colors.xml`: `icon_default`, `backdrop_overlay`
@@ -337,6 +339,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `Mutex.tryLock()`: 중복 API 호출 차단, `finally`에서 unlock (에러 후 재시도 가능)
 - `toggleMutex.withLock()`: FAB 즐겨찾기/워치리스트 연타 방지
 - `loadOptional`/`loadOptionalNullable`: 출연진/추천 등 부분 실패 graceful degradation
+- **점진적 로딩**: 핵심 데이터(상세+등급) 먼저 `DetailUiState.Success` emit → 이후 출연진/비슷한 영화/리뷰/예고편/추천 각각 완료 시 `_uiState.update { it.copy(...) }` — `DetailUiState.Success`의 secondary 필드는 nullable (null = 로딩 중)
 - `saveWatchHistory`: 별도 `coroutineScope` fire-and-forget (UI 상태 영향 없음)
 - `launchWithErrorHandler`: 공통 에러 처리 (`core/util/CoroutineExt.kt`)
 - **MemoDelegate** / **UserRatingDelegate**: 생성자 의존성 19개 → 13개 (`snackbarChannel` 공유)

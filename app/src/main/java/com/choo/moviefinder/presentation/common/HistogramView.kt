@@ -17,9 +17,15 @@ class HistogramView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val buckets = mutableListOf<RatingBucket>()
+
     // onDraw 할당 방지: setData()에서 미리 계산
     private var countMap: Map<Float, RatingBucket> = emptyMap()
     private val ratingLabels: MutableMap<Float, String> = mutableMapOf()
+    private var cachedMaxCount: Int = 1
+
+    // onDraw 할당 방지: onSizeChanged()에서 미리 계산
+    private var cachedLabelWidth: Float = 0f
+    private var cachedValueAreaWidth: Float = 0f
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val barStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -55,6 +61,7 @@ class HistogramView @JvmOverloads constructor(
         buckets.addAll(items)
         // onDraw에서 매 프레임 생성되던 객체들을 미리 계산
         countMap = items.associateBy { it.rating }
+        cachedMaxCount = items.maxOfOrNull { it.count }?.coerceAtLeast(1) ?: 1
         ratingLabels.clear()
         ALL_RATINGS.forEach { rating -> ratingLabels[rating] = "%.1f★".format(Locale.US, rating) }
         contentDescription = buckets.joinToString(", ") { bucket ->
@@ -69,6 +76,8 @@ class HistogramView @JvmOverloads constructor(
         val rowHeight = computeRowHeight(h)
         labelPaint.textSize = rowHeight * 0.45f
         valuePaint.textSize = rowHeight * 0.40f
+        cachedLabelWidth = labelPaint.measureText("5.0★") * 1.2f
+        cachedValueAreaWidth = valuePaint.measureText("999") * 1.5f
     }
 
     private fun computeRowHeight(h: Int): Float {
@@ -81,14 +90,15 @@ class HistogramView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        val maxCount = buckets.maxOfOrNull { it.count }?.coerceAtLeast(1) ?: return
+        val maxCount = cachedMaxCount
+        if (buckets.isEmpty()) return
 
         val totalRows = ALL_RATINGS.size
         val availableHeight = (height - paddingTop - paddingBottom).toFloat()
         val rowHeight = availableHeight / totalRows
 
-        val labelWidth = labelPaint.measureText("5.0★") * 1.2f
-        val valueAreaWidth = valuePaint.measureText("999") * 1.5f
+        val labelWidth = cachedLabelWidth
+        val valueAreaWidth = cachedValueAreaWidth
         val left = paddingLeft.toFloat()
         val right = (width - paddingRight).toFloat()
         val barAreaLeft = left + labelWidth + LABEL_BAR_GAP

@@ -172,19 +172,14 @@ class DetailViewModelTest {
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
 
         val viewModel = createViewModel()
+        advanceUntilIdle()
 
-        viewModel.uiState.test {
-            // init 호출로 Loading 후 Success
-            val loading = awaitItem()
-            assertTrue(loading is DetailUiState.Loading)
-
-            val success = awaitItem()
-            assertTrue(success is DetailUiState.Success)
-            success as DetailUiState.Success
-            assertEquals(testMovieDetail, success.movieDetail)
-            assertEquals(testCasts, success.credits)
-            assertEquals(testSimilarMovies, success.similarMovies)
-        }
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertEquals(testMovieDetail, state.movieDetail)
+        assertEquals(testCasts, state.credits)
+        assertEquals(testSimilarMovies, state.similarMovies)
     }
 
     @Test
@@ -195,13 +190,11 @@ class DetailViewModelTest {
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
 
         val viewModel = createViewModel()
+        advanceUntilIdle()
 
-        viewModel.uiState.test {
-            awaitItem() // Loading
-            val error = awaitItem()
-            assertTrue(error is DetailUiState.Error)
-            assertEquals(ErrorType.NETWORK, (error as DetailUiState.Error).errorType)
-        }
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Error)
+        assertEquals(ErrorType.NETWORK, (state as DetailUiState.Error).errorType)
     }
 
     @Test
@@ -211,16 +204,14 @@ class DetailViewModelTest {
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
 
         val viewModel = createViewModel()
+        advanceUntilIdle()
 
-        viewModel.uiState.test {
-            awaitItem() // Loading
-            val success = awaitItem()
-            assertTrue(success is DetailUiState.Success)
-            success as DetailUiState.Success
-            assertEquals(testMovieDetail, success.movieDetail)
-            assertTrue(success.credits.isEmpty())
-            assertEquals(testSimilarMovies, success.similarMovies)
-        }
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertEquals(testMovieDetail, state.movieDetail)
+        assertTrue(state.credits!!.isEmpty())
+        assertEquals(testSimilarMovies, state.similarMovies)
     }
 
     @Test
@@ -230,15 +221,13 @@ class DetailViewModelTest {
         coEvery { getSimilarMoviesUseCase(1) } throws RuntimeException("similar failed")
 
         val viewModel = createViewModel()
+        advanceUntilIdle()
 
-        viewModel.uiState.test {
-            awaitItem() // Loading
-            val success = awaitItem()
-            assertTrue(success is DetailUiState.Success)
-            success as DetailUiState.Success
-            assertTrue(success.similarMovies.isEmpty())
-            assertEquals(testCasts, success.credits)
-        }
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertTrue(state.similarMovies!!.isEmpty())
+        assertEquals(testCasts, state.credits)
     }
 
     @Test
@@ -318,15 +307,13 @@ class DetailViewModelTest {
         coEvery { getMovieTrailerUseCase(1) } throws RuntimeException("trailer failed")
 
         val viewModel = createViewModel()
+        advanceUntilIdle()
 
-        viewModel.uiState.test {
-            awaitItem() // Loading
-            val success = awaitItem()
-            assertTrue(success is DetailUiState.Success)
-            success as DetailUiState.Success
-            assertEquals(null, success.trailerKey)
-            assertEquals(testMovieDetail, success.movieDetail)
-        }
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertEquals(null, state.trailerKey)
+        assertEquals(testMovieDetail, state.movieDetail)
     }
 
     @Test
@@ -427,14 +414,12 @@ class DetailViewModelTest {
         coEvery { getMovieCertificationUseCase(1) } returns "15"
 
         val viewModel = createViewModel()
+        advanceUntilIdle()
 
-        viewModel.uiState.test {
-            awaitItem() // Loading
-            val success = awaitItem()
-            assertTrue(success is DetailUiState.Success)
-            success as DetailUiState.Success
-            assertEquals("15", success.certification)
-        }
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertEquals("15", state.certification)
     }
 
     @Test
@@ -449,15 +434,13 @@ class DetailViewModelTest {
         coEvery { getMovieReviewsUseCase(1) } returns testReviews
 
         val viewModel = createViewModel()
+        advanceUntilIdle()
 
-        viewModel.uiState.test {
-            awaitItem() // Loading
-            val success = awaitItem()
-            assertTrue(success is DetailUiState.Success)
-            success as DetailUiState.Success
-            assertEquals(2, success.reviews.size)
-            assertEquals("Author1", success.reviews[0].author)
-        }
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertEquals(2, state.reviews!!.size)
+        assertEquals("Author1", state.reviews!![0].author)
     }
 
     @Test
@@ -468,14 +451,12 @@ class DetailViewModelTest {
         coEvery { getMovieReviewsUseCase(1) } throws RuntimeException("reviews failed")
 
         val viewModel = createViewModel()
+        advanceUntilIdle()
 
-        viewModel.uiState.test {
-            awaitItem() // Loading
-            val success = awaitItem()
-            assertTrue(success is DetailUiState.Success)
-            success as DetailUiState.Success
-            assertTrue(success.reviews.isEmpty())
-        }
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertTrue(state.reviews!!.isEmpty())
     }
 
     @Test

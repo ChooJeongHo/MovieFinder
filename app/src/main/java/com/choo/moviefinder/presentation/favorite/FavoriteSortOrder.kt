@@ -1,16 +1,5 @@
 package com.choo.moviefinder.presentation.favorite
 
-import com.choo.moviefinder.domain.model.Movie
-
-enum class FavoriteSortOrder {
-    ADDED_DATE,
-    TITLE,
-    RATING;
-
-    // 정렬 옵션에 따라 영화 목록 정렬 (추가일/제목/평점)
-    fun apply(movies: List<Movie>): List<Movie> = when (this) {
-        ADDED_DATE -> movies
-        TITLE -> movies.sortedBy { it.title }
-        RATING -> movies.sortedByDescending { it.voteAverage }
-    }
-}
+// FavoriteSortOrder는 domain 레이어로 이동되었습니다.
+// 하위 호환성을 위해 typealias로 재노출합니다.
+typealias FavoriteSortOrder = com.choo.moviefinder.domain.model.FavoriteSortOrder

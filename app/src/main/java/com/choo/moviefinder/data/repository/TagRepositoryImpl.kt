@@ -3,6 +3,7 @@ package com.choo.moviefinder.data.repository
 import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.entity.MovieTagEntity
 import com.choo.moviefinder.data.local.entity.toDomain
+import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieTag
 import com.choo.moviefinder.domain.repository.TagRepository
@@ -35,4 +36,14 @@ class TagRepositoryImpl @Inject constructor(
         movieTagDao.getFavoritesByTag(tagName).map { entities ->
             entities.map { it.toDomain() }
         }
+
+    // 정렬 순서를 지정하여 태그 필터링 즐겨찾기 목록을 DB ORDER BY로 조회
+    override fun getFavoritesByTagSorted(tagName: String, sortOrder: FavoriteSortOrder): Flow<List<Movie>> {
+        val raw = when (sortOrder) {
+            FavoriteSortOrder.ADDED_DATE -> movieTagDao.getFavoritesByTag(tagName)
+            FavoriteSortOrder.TITLE -> movieTagDao.getFavoritesByTagSortedByTitle(tagName)
+            FavoriteSortOrder.RATING -> movieTagDao.getFavoritesByTagSortedByRating(tagName)
+        }
+        return raw.map { entities -> entities.map { it.toDomain() } }
+    }
 }

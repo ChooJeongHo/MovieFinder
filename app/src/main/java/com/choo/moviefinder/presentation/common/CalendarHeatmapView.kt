@@ -28,8 +28,10 @@ class CalendarHeatmapView @JvmOverloads constructor(
 
     private val cells = mutableListOf<Cell>()
     private val monthLabels = mutableListOf<Pair<Int, String>>() // column index to label
+
     // onDraw 할당 방지: setData()에서 미리 계산
     private var cachedShortWeekdays: Array<String> = emptyArray()
+    private var dowLabels: List<Pair<Int, String>> = emptyList()
 
     private val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val level1Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -72,6 +74,7 @@ class CalendarHeatmapView @JvmOverloads constructor(
         cells.clear()
         monthLabels.clear()
         cachedShortWeekdays = DateFormatSymbols(Locale.getDefault()).shortWeekdays
+        dowLabels = listOf(1 to cachedShortWeekdays[2], 3 to cachedShortWeekdays[4], 5 to cachedShortWeekdays[6])
 
         val tz = TimeZone.currentSystemDefault()
         val today = Clock.System.now().toLocalDateTime(tz).date
@@ -152,7 +155,6 @@ class CalendarHeatmapView @JvmOverloads constructor(
 
         // draw day-of-week labels (Mon, Wed, Fri) — locale-aware
         // DateFormatSymbols.shortWeekdays is 1-indexed: 1=Sun, 2=Mon, 3=Tue, 4=Wed, 5=Thu, 6=Fri, 7=Sat
-        val dowLabels = listOf(1 to cachedShortWeekdays[2], 3 to cachedShortWeekdays[4], 5 to cachedShortWeekdays[6])
         dowLabels.forEach { (row, label) ->
             val y = gridTop + row * (cellSize + gap) + cellSize * 0.75f
             canvas.drawText(label, paddingLeft + dayLabelWidth - gap, y, dayLabelPaint)
