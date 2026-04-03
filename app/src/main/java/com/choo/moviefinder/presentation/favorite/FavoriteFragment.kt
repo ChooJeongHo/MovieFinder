@@ -337,12 +337,13 @@ class FavoriteFragment : Fragment() {
             .show()
         activeDialog = dialog
 
-        // 기존 태그 실시간 관찰
-        viewLifecycleOwner.lifecycleScope.launch {
+        // 기존 태그 실시간 관찰 (다이얼로그 닫힐 때 Job 취소하여 Room 쿼리 누수 방지)
+        val tagJob = viewLifecycleOwner.lifecycleScope.launch {
             viewModel.getTagsForMovie(movie.id).collect { tags ->
                 if (dialog.isShowing) renderExistingTags(tags)
             }
         }
+        dialog.setOnDismissListener { tagJob.cancel() }
 
         // ML Kit 포스터 분석 → 추천 태그 로드
         viewLifecycleOwner.lifecycleScope.launch {

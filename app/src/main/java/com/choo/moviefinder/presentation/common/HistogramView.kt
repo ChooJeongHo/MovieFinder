@@ -17,6 +17,9 @@ class HistogramView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val buckets = mutableListOf<RatingBucket>()
+    // onDraw 할당 방지: setData()에서 미리 계산
+    private var countMap: Map<Float, RatingBucket> = emptyMap()
+    private val ratingLabels: MutableMap<Float, String> = mutableMapOf()
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val barStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -50,6 +53,10 @@ class HistogramView @JvmOverloads constructor(
     fun setData(items: List<RatingBucket>) {
         buckets.clear()
         buckets.addAll(items)
+        // onDraw에서 매 프레임 생성되던 객체들을 미리 계산
+        countMap = items.associateBy { it.rating }
+        ratingLabels.clear()
+        ALL_RATINGS.forEach { rating -> ratingLabels[rating] = "%.1f★".format(Locale.US, rating) }
         contentDescription = buckets.joinToString(", ") { bucket ->
             "%.1f★: %d".format(Locale.US, bucket.rating, bucket.count)
         }
@@ -75,7 +82,6 @@ class HistogramView @JvmOverloads constructor(
         super.onDraw(canvas)
 
         val maxCount = buckets.maxOfOrNull { it.count }?.coerceAtLeast(1) ?: return
-        val countMap = buckets.associateBy { it.rating }
 
         val totalRows = ALL_RATINGS.size
         val availableHeight = (height - paddingTop - paddingBottom).toFloat()
@@ -97,7 +103,7 @@ class HistogramView @JvmOverloads constructor(
 
             // rating label
             canvas.drawText(
-                "%.1f★".format(Locale.US, rating),
+                ratingLabels[rating] ?: "",
                 left + labelWidth,
                 rowCenterY + labelPaint.textSize * 0.35f,
                 labelPaint
