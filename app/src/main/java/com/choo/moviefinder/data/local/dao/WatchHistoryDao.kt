@@ -42,12 +42,12 @@ interface WatchHistoryDao {
     )
     fun getMonthlyWatchCounts(): Flow<List<MonthlyCount>>
 
-    // 일별 시청 편수를 조회하여 캘린더 히트맵 데이터를 반환한다
+    // 일별 시청 편수를 조회하여 캘린더 히트맵 데이터를 반환한다 (since 이후 기록만 조회)
     @Query(
         "SELECT date(watchedAt / 1000, 'unixepoch', 'localtime') as date, " +
-            "COUNT(*) as count FROM watch_history GROUP BY date ORDER BY date ASC"
+            "COUNT(*) as count FROM watch_history WHERE watchedAt >= :since GROUP BY date ORDER BY date ASC"
     )
-    fun getDailyWatchCounts(): Flow<List<DailyCount>>
+    fun getDailyWatchCounts(since: Long): Flow<List<DailyCount>>
 }
 
 data class DailyCount(val date: String, val count: Int)

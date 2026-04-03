@@ -31,6 +31,6 @@ interface WatchHistoryRepository {
     // 월별 시청 편수를 Flow로 반환한다
     fun getMonthlyWatchCounts(): Flow<List<MonthlyWatchCount>>
 
-    // 일별 시청 편수를 Flow로 반환한다
-    fun getDailyWatchCounts(): Flow<List<DailyWatchCount>>
+    // 일별 시청 편수를 Flow로 반환한다 (since 이후 기록만 조회)
+    fun getDailyWatchCounts(since: Long): Flow<List<DailyWatchCount>>
 }

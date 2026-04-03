@@ -60,9 +60,9 @@ class WatchHistoryRepositoryImpl @Inject constructor(
         }
     }
 
-    // 일별 시청 편수를 도메인 모델로 변환하여 조회
-    override fun getDailyWatchCounts(): Flow<List<DailyWatchCount>> {
-        return watchHistoryDao.getDailyWatchCounts().map { counts ->
+    // 일별 시청 편수를 도메인 모델로 변환하여 조회 (since 이후 기록만)
+    override fun getDailyWatchCounts(since: Long): Flow<List<DailyWatchCount>> {
+        return watchHistoryDao.getDailyWatchCounts(since).map { counts ->
             counts.map { DailyWatchCount(date = it.date, count = it.count) }
         }
     }
