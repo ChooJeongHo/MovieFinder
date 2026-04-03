@@ -10,6 +10,7 @@ import coil3.load
 import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
+import coil3.size.ViewSizeResolver
 import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.databinding.ItemCastBinding
 import com.choo.moviefinder.domain.model.Cast
@@ -50,6 +51,7 @@ class CastAdapter(
                 crossfade(true)
                 placeholder(com.choo.moviefinder.R.drawable.bg_circle)
                 error(com.choo.moviefinder.R.drawable.bg_circle)
+                size(ViewSizeResolver(binding.ivProfile))
             }
 
             binding.root.setOnClickListener {

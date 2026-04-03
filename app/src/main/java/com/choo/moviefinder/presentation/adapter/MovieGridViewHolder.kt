@@ -8,6 +8,7 @@ import coil3.load
 import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
+import coil3.size.ViewSizeResolver
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.databinding.ItemMovieGridBinding
@@ -35,6 +36,7 @@ class MovieGridViewHolder(
             crossfade(true)
             placeholder(R.drawable.bg_poster_placeholder)
             error(R.drawable.bg_poster_placeholder)
+            size(ViewSizeResolver(binding.ivPoster))
         }
 
         binding.cardMovie.setOnClickListener {

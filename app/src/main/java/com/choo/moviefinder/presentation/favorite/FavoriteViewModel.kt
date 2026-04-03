@@ -24,7 +24,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -36,7 +35,7 @@ import javax.inject.Inject
 class FavoriteViewModel @Inject constructor(
     private val getFavoriteMoviesUseCase: GetFavoriteMoviesUseCase,
     private val getFavoritesByTagUseCase: GetFavoritesByTagUseCase,
-    getWatchlistUseCase: GetWatchlistUseCase,
+    private val getWatchlistUseCase: GetWatchlistUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val toggleWatchlistUseCase: ToggleWatchlistUseCase,
     private val getTagsForMovieUseCase: GetTagsForMovieUseCase,
@@ -56,24 +55,21 @@ class FavoriteViewModel @Inject constructor(
     val allTagNames: StateFlow<List<String>> = getAllTagNamesUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // 선택된 태그로 필터링된 즐겨찾기 목록
-    val favoriteMovies = combine(
+    // 선택된 태그·정렬 순서에 따라 DB ORDER BY로 정렬된 즐겨찾기 목록
+    val favoriteMovies: StateFlow<List<Movie>> = _sortOrder.flatMapLatest { sort ->
         _selectedTag.flatMapLatest { tag ->
             if (tag == null) {
-                getFavoriteMoviesUseCase()
+                getFavoriteMoviesUseCase(sort)
             } else {
-                getFavoritesByTagUseCase(tag)
+                getFavoritesByTagUseCase(tag, sort)
             }
-        },
-        _sortOrder
-    ) { movies, sort -> sort.apply(movies) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val watchlistMovies = combine(
-        getWatchlistUseCase(),
-        _sortOrder
-    ) { movies, sort -> sort.apply(movies) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    // 정렬 순서에 따라 DB ORDER BY로 정렬된 워치리스트 목록
+    val watchlistMovies: StateFlow<List<Movie>> = _sortOrder.flatMapLatest { sort ->
+        getWatchlistUseCase(sort)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()

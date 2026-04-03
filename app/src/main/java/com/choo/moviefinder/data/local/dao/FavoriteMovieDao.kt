@@ -15,6 +15,14 @@ abstract class FavoriteMovieDao {
     @Query("SELECT * FROM favorite_movies ORDER BY addedAt DESC")
     abstract fun getAllFavorites(): Flow<List<FavoriteMovieEntity>>
 
+    // 제목 오름차순으로 즐겨찾기 목록 조회
+    @Query("SELECT * FROM favorite_movies ORDER BY title ASC")
+    abstract fun getAllFavoritesSortedByTitle(): Flow<List<FavoriteMovieEntity>>
+
+    // 평점 내림차순으로 즐겨찾기 목록 조회
+    @Query("SELECT * FROM favorite_movies ORDER BY voteAverage DESC")
+    abstract fun getAllFavoritesSortedByRating(): Flow<List<FavoriteMovieEntity>>
+
     // 즐겨찾기 영화 삽입 (중복 시 교체)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insert(movie: FavoriteMovieEntity)

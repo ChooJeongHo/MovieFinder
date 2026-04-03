@@ -127,6 +127,7 @@ class FavoriteFragment : Fragment() {
 
         binding.rvFavorites.apply {
             layoutManager = GridLayoutManager(requireContext(), 2)
+            setHasFixedSize(true)
             adapter = movieAdapter
         }
     }

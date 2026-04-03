@@ -21,7 +21,10 @@ import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.R
+import androidx.paging.CombinedLoadStates
 import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.core.util.computeWindowWidthSizeClass
 import com.choo.moviefinder.core.util.toMovieGridSpanCount
 import com.choo.moviefinder.databinding.FragmentSearchBinding
@@ -83,11 +86,7 @@ class SearchFragment : Fragment() {
         setupSortFilter()
         setupEmptyStates()
         setupSuggestionChips()
-        observeGenres()
-        observeViewMode()
-        observeSearchMode()
-        observeData()
-        observeSnackbarEvents()
+        observeViewModelFlows()
     }
 
     // 검색 입력 텍스트 변경 감지 및 키보드 검색 액션 리스너 설정
@@ -205,17 +204,135 @@ class SearchFragment : Fragment() {
         }
     }
 
-    // 보기 모드 StateFlow를 수집하여 어댑터 및 아이콘 갱신
-    private fun observeViewMode() {
+    private fun observeViewModelFlows() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.viewMode.collect { mode ->
-                    searchAdapter.viewMode = mode
-                    updateViewModeIcon(mode)
-                    applyLayoutManager(mode)
+                launch { viewModel.viewMode.collect { handleViewMode(it) } }
+                launch { viewModel.searchMode.collect { handleSearchMode(it) } }
+                launch { viewModel.personResults.collect { handlePersonResults(it) } }
+                launch { viewModel.isPersonSearchLoading.collect { handlePersonLoading(it) } }
+                launch {
+                    viewModel.genres.collect { genres ->
+                        if (genres.isNotEmpty()) updateGenreChip(viewModel.selectedGenres.value)
+                    }
                 }
+                launch { viewModel.recentSearches.collect { handleRecentSearches(it) } }
+                launch { viewModel.searchResults.collectLatest { searchAdapter.submitData(it) } }
+                launch { searchAdapter.loadStateFlow.collectLatest { handleLoadStates(it) } }
+                launch { viewModel.snackbarEvent.collect { showSearchSnackbar(it) } }
             }
         }
+    }
+
+    private fun handleViewMode(mode: MoviePagingAdapter.ViewMode) {
+        searchAdapter.viewMode = mode
+        updateViewModeIcon(mode)
+        applyLayoutManager(mode)
+    }
+
+    private fun handleSearchMode(mode: SearchMode) {
+        val isPersonMode = mode == SearchMode.PERSON
+        binding.chipGroupFilters.isVisible = !isPersonMode
+        binding.chipDiscoverMode.isVisible = false
+        binding.rvPersonResults.isVisible = false
+        binding.rvSearchResults.isVisible = false
+        binding.noResultsSection.isVisible = false
+        binding.shimmerView.shimmerLayout.isVisible = false
+        if (isPersonMode) {
+            binding.recentSearchesSection.isVisible = false
+            binding.emptyInitial.layoutEmpty.isVisible = true
+            binding.emptyInitial.ivEmptyIcon.setImageResource(R.drawable.ic_person)
+            binding.emptyInitial.tvEmptyTitle.text = getString(R.string.search_person_initial_title)
+            binding.emptyInitial.tvEmptyMessage.text = getString(R.string.search_person_initial_message)
+            val query = binding.etSearch.text?.toString() ?: ""
+            if (query.isNotBlank()) viewModel.onPersonSearch(query)
+        } else {
+            binding.emptyInitial.ivEmptyIcon.setImageResource(R.drawable.ic_search)
+            binding.emptyInitial.tvEmptyTitle.text = getString(R.string.search_initial_title)
+            binding.emptyInitial.tvEmptyMessage.text = getString(R.string.search_initial_message)
+            updateVisibility(binding.etSearch.text?.toString() ?: "")
+        }
+    }
+
+    private fun handlePersonResults(results: List<PersonSearchItem>) {
+        if (viewModel.searchMode.value != SearchMode.PERSON) return
+        personSearchAdapter.submitList(results)
+        val query = binding.etSearch.text?.toString()?.trim() ?: ""
+        when {
+            query.isBlank() -> {
+                binding.rvPersonResults.isVisible = false
+                binding.emptyInitial.layoutEmpty.isVisible = true
+                binding.noResultsSection.isVisible = false
+            }
+            results.isEmpty() && !viewModel.isPersonSearchLoading.value -> {
+                binding.rvPersonResults.isVisible = false
+                binding.emptyInitial.layoutEmpty.isVisible = false
+                binding.noResultsSection.isVisible = true
+            }
+            else -> {
+                binding.rvPersonResults.isVisible = results.isNotEmpty()
+                binding.emptyInitial.layoutEmpty.isVisible = false
+                binding.noResultsSection.isVisible = false
+            }
+        }
+    }
+
+    private fun handlePersonLoading(isLoading: Boolean) {
+        if (viewModel.searchMode.value != SearchMode.PERSON) return
+        binding.shimmerView.shimmerLayout.isVisible = isLoading
+        if (isLoading) {
+            binding.shimmerView.shimmerLayout.startShimmer()
+            binding.rvPersonResults.isVisible = false
+            binding.noResultsSection.isVisible = false
+        } else {
+            binding.shimmerView.shimmerLayout.stopShimmer()
+        }
+    }
+
+    private fun handleRecentSearches(searches: List<String>) {
+        val query = binding.etSearch.text?.toString()?.trim() ?: ""
+        if (query.isBlank()) {
+            recentSearchAdapter.submitList(searches)
+            if (viewModel.selectedGenres.value.isEmpty() && searches.isNotEmpty()) {
+                showRecentSearches()
+            } else if (viewModel.selectedGenres.value.isEmpty()) {
+                showInitialState()
+            }
+        } else {
+            val filtered = searches.filter { it.contains(query, ignoreCase = true) && it != query }
+            recentSearchAdapter.submitList(filtered)
+            if (filtered.isNotEmpty()) binding.recentSearchesSection.isVisible = true
+        }
+    }
+
+    private fun handleLoadStates(loadStates: CombinedLoadStates) {
+        val query = viewModel.searchQuery.value
+        val hasGenreFilter = viewModel.selectedGenres.value.isNotEmpty()
+        if (query.isBlank() && !hasGenreFilter) return
+        val refreshState = loadStates.refresh
+        binding.shimmerView.shimmerLayout.isVisible = refreshState is LoadState.Loading
+        binding.rvSearchResults.isVisible = refreshState is LoadState.NotLoading
+        binding.recentSearchesSection.isVisible = false
+        binding.emptyInitial.layoutEmpty.isVisible = false
+        if (refreshState is LoadState.Loading) {
+            binding.shimmerView.shimmerLayout.startShimmer()
+            binding.noResultsSection.isVisible = false
+        } else {
+            binding.shimmerView.shimmerLayout.stopShimmer()
+        }
+        if (refreshState is LoadState.NotLoading) {
+            val isEmpty = searchAdapter.itemCount == 0
+            binding.noResultsSection.isVisible = isEmpty
+            binding.rvSearchResults.isVisible = !isEmpty
+        }
+    }
+
+    private fun showSearchSnackbar(errorType: ErrorType) {
+        Snackbar.make(
+            binding.root,
+            ErrorMessageProvider.getMessage(requireContext(), errorType),
+            Snackbar.LENGTH_SHORT
+        ).show()
     }
 
     // 보기 모드에 따라 GridLayoutManager 또는 LinearLayoutManager 적용
@@ -449,11 +566,6 @@ class SearchFragment : Fragment() {
         }
     }
 
-    // 4개의 독립적인 Flow를 각각 별도 coroutine으로 수집
-    // - genres: 장르 목록 로드 완료 시 칩 텍스트 갱신 (프로세스 복원 대응)
-    // - recentSearches: 검색어가 비어있을 때 최근 검색어 목록 표시 여부 결정
-    // - searchResults: ViewModel의 debounce된 검색 결과 PagingData 수신
-    // - loadStateFlow: 검색 결과의 로딩/에러/빈 상태에 따라 화면 전환
     // 검색 모드 전환 칩 그룹 설정 (영화/배우)
     private fun setupSearchModeToggle() {
         binding.chipGroupSearchMode.setOnCheckedStateChangeListener { _, checkedIds ->
@@ -464,167 +576,6 @@ class SearchFragment : Fragment() {
             }
             if (viewModel.searchMode.value != newMode) {
                 viewModel.toggleSearchMode()
-            }
-        }
-    }
-
-    // 검색 모드 StateFlow 수집하여 UI 전환 (필터 칩 표시/숨김, 결과 목록 전환)
-    @Suppress("LongMethod")
-    private fun observeSearchMode() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.searchMode.collect { mode ->
-                    val isPersonMode = mode == SearchMode.PERSON
-                    binding.chipGroupFilters.isVisible = !isPersonMode
-                    binding.chipDiscoverMode.isVisible = false
-                    binding.rvPersonResults.isVisible = false
-                    binding.rvSearchResults.isVisible = false
-                    binding.noResultsSection.isVisible = false
-                    binding.shimmerView.shimmerLayout.isVisible = false
-
-                    if (isPersonMode) {
-                        binding.recentSearchesSection.isVisible = false
-                        binding.emptyInitial.layoutEmpty.isVisible = true
-                        binding.emptyInitial.ivEmptyIcon.setImageResource(R.drawable.ic_person)
-                        binding.emptyInitial.tvEmptyTitle.text =
-                            getString(R.string.search_person_initial_title)
-                        binding.emptyInitial.tvEmptyMessage.text =
-                            getString(R.string.search_person_initial_message)
-                        // 배우 모드: 기존 쿼리로 즉시 검색
-                        val query = binding.etSearch.text?.toString() ?: ""
-                        if (query.isNotBlank()) {
-                            viewModel.onPersonSearch(query)
-                        }
-                    } else {
-                        binding.emptyInitial.ivEmptyIcon.setImageResource(R.drawable.ic_search)
-                        binding.emptyInitial.tvEmptyTitle.text =
-                            getString(R.string.search_initial_title)
-                        binding.emptyInitial.tvEmptyMessage.text =
-                            getString(R.string.search_initial_message)
-                        updateVisibility(binding.etSearch.text?.toString() ?: "")
-                    }
-                }
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.personResults.collect { results ->
-                    if (viewModel.searchMode.value == SearchMode.PERSON) {
-                        personSearchAdapter.submitList(results)
-                        val query = binding.etSearch.text?.toString()?.trim() ?: ""
-                        if (query.isBlank()) {
-                            binding.rvPersonResults.isVisible = false
-                            binding.emptyInitial.layoutEmpty.isVisible = true
-                            binding.noResultsSection.isVisible = false
-                        } else if (results.isEmpty() && !viewModel.isPersonSearchLoading.value) {
-                            binding.rvPersonResults.isVisible = false
-                            binding.emptyInitial.layoutEmpty.isVisible = false
-                            binding.noResultsSection.isVisible = true
-                        } else {
-                            binding.rvPersonResults.isVisible = results.isNotEmpty()
-                            binding.emptyInitial.layoutEmpty.isVisible = false
-                            binding.noResultsSection.isVisible = false
-                        }
-                    }
-                }
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.isPersonSearchLoading.collect { isLoading ->
-                    if (viewModel.searchMode.value == SearchMode.PERSON) {
-                        binding.shimmerView.shimmerLayout.isVisible = isLoading
-                        if (isLoading) {
-                            binding.shimmerView.shimmerLayout.startShimmer()
-                            binding.rvPersonResults.isVisible = false
-                            binding.noResultsSection.isVisible = false
-                        } else {
-                            binding.shimmerView.shimmerLayout.stopShimmer()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // 장르 목록 로드 완료 시 칩 텍스트 갱신 (프로세스 복원 대응)
-    private fun observeGenres() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.genres.collect { genres ->
-                    if (genres.isNotEmpty()) {
-                        updateGenreChip(viewModel.selectedGenres.value)
-                    }
-                }
-            }
-        }
-    }
-
-    // 최근 검색어, 검색 결과 PagingData, LoadState를 각각 수집하여 UI 전환
-    private fun observeData() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.recentSearches.collect { searches ->
-                    val query = binding.etSearch.text?.toString()?.trim() ?: ""
-                    if (query.isBlank()) {
-                        recentSearchAdapter.submitList(searches)
-                        if (viewModel.selectedGenres.value.isEmpty() && searches.isNotEmpty()) {
-                            showRecentSearches()
-                        } else if (viewModel.selectedGenres.value.isEmpty()) {
-                            showInitialState()
-                        }
-                    } else {
-                        // 입력 중 자동완성: 최근 검색어 중 매칭되는 항목 필터링
-                        val filtered = searches.filter {
-                            it.contains(query, ignoreCase = true) && it != query
-                        }
-                        recentSearchAdapter.submitList(filtered)
-                        if (filtered.isNotEmpty()) {
-                            binding.recentSearchesSection.isVisible = true
-                        }
-                    }
-                }
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.searchResults.collectLatest { pagingData ->
-                    searchAdapter.submitData(pagingData)
-                }
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                searchAdapter.loadStateFlow.collectLatest { loadStates ->
-                    // 검색어가 비어있고 장르 필터도 없으면 loadState 변화를 무시 (최근 검색어 화면 유지)
-                    val query = viewModel.searchQuery.value
-                    val hasGenreFilter = viewModel.selectedGenres.value.isNotEmpty()
-                    if (query.isBlank() && !hasGenreFilter) return@collectLatest
-
-                    val refreshState = loadStates.refresh
-
-                    binding.shimmerView.shimmerLayout.isVisible = refreshState is LoadState.Loading
-                    binding.rvSearchResults.isVisible = refreshState is LoadState.NotLoading
-                    binding.recentSearchesSection.isVisible = false
-                    binding.emptyInitial.layoutEmpty.isVisible = false
-
-                    if (refreshState is LoadState.Loading) {
-                        binding.shimmerView.shimmerLayout.startShimmer()
-                        binding.noResultsSection.isVisible = false
-                    } else {
-                        binding.shimmerView.shimmerLayout.stopShimmer()
-                    }
-
-                    if (refreshState is LoadState.NotLoading) {
-                        val isEmpty = searchAdapter.itemCount == 0
-                        binding.noResultsSection.isVisible = isEmpty
-                        binding.rvSearchResults.isVisible = !isEmpty
-                    }
-                }
             }
         }
     }
@@ -677,21 +628,6 @@ class SearchFragment : Fragment() {
         binding.rvSearchResults.isVisible = false
         binding.noResultsSection.isVisible = false
         binding.fabScrollTop.hide()
-    }
-
-    // 배우 검색 실패 시 Snackbar 에러 메시지 표시
-    private fun observeSnackbarEvents() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.snackbarEvent.collect { errorType ->
-                    Snackbar.make(
-                        binding.root,
-                        ErrorMessageProvider.getMessage(requireContext(), errorType),
-                        Snackbar.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
     }
 
     // 다이얼로그 dismiss, Shimmer 중지, 어댑터 해제 및 바인딩 null 처리

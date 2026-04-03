@@ -102,13 +102,8 @@ class DetailFragment : Fragment() {
         setupToolbar()
         setupRecyclerViews()
         setupFab()
-        observeUiState()
-        observeFavorite()
-        observeWatchlist()
-        observeUserRating()
-        observeSnackbar()
         setupMemoInput()
-        observeMemos()
+        observeViewModelFlows()
     }
 
     // 툴바 뒤로가기 및 공유 메뉴 설정
@@ -248,97 +243,62 @@ class DetailFragment : Fragment() {
             .start()
     }
 
-    // UI 상태(Loading/Success/Error) Flow를 수집하여 화면 전환
-    private fun observeUiState() {
+    private fun observeViewModelFlows() {
+        setupRatingListeners()
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state ->
-                    when (state) {
-                        is DetailUiState.Loading -> showLoading()
-                        is DetailUiState.Success -> showContent(state)
-                        is DetailUiState.Error -> showError(state.errorType)
-                    }
-                }
+                launch { viewModel.uiState.collect { handleUiState(it) } }
+                launch { viewModel.isFavorite.collect { updateFavoriteFab(it) } }
+                launch { viewModel.isInWatchlist.collect { updateWatchlistFab(it) } }
+                launch { viewModel.userRating.collect { updateRatingBar(it) } }
+                launch { viewModel.snackbarEvent.collect { showFlowSnackbar(it) } }
+                launch { viewModel.memos.collect { memoAdapter.submitList(it) } }
             }
         }
     }
 
-    // 즐겨찾기 상태를 수집하여 FAB 아이콘 갱신
-    private fun observeFavorite() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.isFavorite.collect { isFavorite ->
-                    val icon = if (isFavorite) {
-                        R.drawable.ic_favorite
-                    } else {
-                        R.drawable.ic_favorite_border
-                    }
-                    binding.fabFavorite.setImageResource(icon)
-                    binding.fabFavorite.contentDescription = getString(
-                        if (isFavorite) R.string.cd_fab_remove_favorite else R.string.cd_fab_add_favorite
-                    )
-                }
-            }
-        }
-    }
-
-    // 워치리스트 상태를 수집하여 FAB 아이콘 갱신
-    private fun observeWatchlist() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.isInWatchlist.collect { inWatchlist ->
-                    val icon = if (inWatchlist) {
-                        R.drawable.ic_watchlist
-                    } else {
-                        R.drawable.ic_watchlist_border
-                    }
-                    binding.fabWatchlist.setImageResource(icon)
-                    binding.fabWatchlist.contentDescription = getString(
-                        if (inWatchlist) R.string.cd_fab_remove_watchlist else R.string.cd_fab_add_watchlist
-                    )
-                }
-            }
-        }
-    }
-
-    // 사용자 평점 수집 및 RatingBar/삭제 버튼 리스너 설정
-    private fun observeUserRating() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.userRating.collect { rating ->
-                    if (rating != null) {
-                        binding.ratingBarUser.rating = rating
-                        binding.btnClearRating.isVisible = true
-                    } else {
-                        binding.ratingBarUser.rating = 0f
-                        binding.btnClearRating.isVisible = false
-                    }
-                }
-            }
-        }
-
+    private fun setupRatingListeners() {
         binding.ratingBarUser.onRatingBarChangeListener =
             RatingBar.OnRatingBarChangeListener { _, rating, fromUser ->
-                if (fromUser && rating > 0f) {
-                    viewModel.setUserRating(rating)
-                }
+                if (fromUser && rating > 0f) viewModel.setUserRating(rating)
             }
+        binding.btnClearRating.setOnClickListener { viewModel.deleteUserRating() }
+    }
 
-        binding.btnClearRating.setOnClickListener {
-            viewModel.deleteUserRating()
+    private fun handleUiState(state: DetailUiState) {
+        when (state) {
+            is DetailUiState.Loading -> showLoading()
+            is DetailUiState.Success -> showContent(state)
+            is DetailUiState.Error -> showError(state.errorType)
         }
     }
 
-    // 에러 이벤트를 수집하여 Snackbar로 표시
-    private fun observeSnackbar() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.snackbarEvent.collect { errorType ->
-                    val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
-                    Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
-                }
-            }
-        }
+    private fun updateFavoriteFab(isFavorite: Boolean) {
+        binding.fabFavorite.setImageResource(
+            if (isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border
+        )
+        binding.fabFavorite.contentDescription = getString(
+            if (isFavorite) R.string.cd_fab_remove_favorite else R.string.cd_fab_add_favorite
+        )
+    }
+
+    private fun updateWatchlistFab(inWatchlist: Boolean) {
+        binding.fabWatchlist.setImageResource(
+            if (inWatchlist) R.drawable.ic_watchlist else R.drawable.ic_watchlist_border
+        )
+        binding.fabWatchlist.contentDescription = getString(
+            if (inWatchlist) R.string.cd_fab_remove_watchlist else R.string.cd_fab_add_watchlist
+        )
+    }
+
+    private fun updateRatingBar(rating: Float?) {
+        binding.ratingBarUser.rating = rating ?: 0f
+        binding.btnClearRating.isVisible = rating != null
+    }
+
+    private fun showFlowSnackbar(errorType: ErrorType) {
+        val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
 
     // 로딩 상태 표시 (ProgressBar 표시, 콘텐츠/FAB 숨김)
@@ -362,25 +322,29 @@ class DetailFragment : Fragment() {
         bindMovieDetail(detail)
         bindTrailer(state.trailerKey)
 
-        // Cast (self-navigation 시 이전 영화 데이터가 남지 않도록 항상 리스트를 갱신)
-        castAdapter.submitList(state.credits)
-        binding.tvCastLabel.isVisible = state.credits.isNotEmpty()
-        binding.rvCast.isVisible = state.credits.isNotEmpty()
+        // Cast (null = 로딩 중 → 숨김, 빈 리스트 = 데이터 없음 → 숨김, 데이터 있음 → 표시)
+        val credits = state.credits
+        castAdapter.submitList(credits.orEmpty())
+        binding.tvCastLabel.isVisible = credits != null && credits.isNotEmpty()
+        binding.rvCast.isVisible = credits != null && credits.isNotEmpty()
 
         // 비슷한 영화
-        similarMovieAdapter.submitList(state.similarMovies)
-        binding.tvSimilarLabel.isVisible = state.similarMovies.isNotEmpty()
-        binding.rvSimilar.isVisible = state.similarMovies.isNotEmpty()
+        val similarMovies = state.similarMovies
+        similarMovieAdapter.submitList(similarMovies.orEmpty())
+        binding.tvSimilarLabel.isVisible = similarMovies != null && similarMovies.isNotEmpty()
+        binding.rvSimilar.isVisible = similarMovies != null && similarMovies.isNotEmpty()
 
         // 추천 영화
-        recommendationAdapter.submitList(state.recommendations)
-        binding.tvRecommendationsLabel.isVisible = state.recommendations.isNotEmpty()
-        binding.rvRecommendations.isVisible = state.recommendations.isNotEmpty()
+        val recommendations = state.recommendations
+        recommendationAdapter.submitList(recommendations.orEmpty())
+        binding.tvRecommendationsLabel.isVisible = recommendations != null && recommendations.isNotEmpty()
+        binding.rvRecommendations.isVisible = recommendations != null && recommendations.isNotEmpty()
 
         // 리뷰
-        reviewAdapter.submitList(state.reviews)
-        binding.tvReviewsLabel.isVisible = state.reviews.isNotEmpty()
-        binding.rvReviews.isVisible = state.reviews.isNotEmpty()
+        val reviews = state.reviews
+        reviewAdapter.submitList(reviews.orEmpty())
+        binding.tvReviewsLabel.isVisible = reviews != null && reviews.isNotEmpty()
+        binding.rvReviews.isVisible = reviews != null && reviews.isNotEmpty()
 
         // 등급 배지
         bindCertification(state.certification)
@@ -551,17 +515,6 @@ class DetailFragment : Fragment() {
             if (content.isNotBlank()) {
                 viewModel.saveMemo(content)
                 binding.etMemo.text?.clear()
-            }
-        }
-    }
-
-    // 메모 목록을 수집하여 RecyclerView 갱신
-    private fun observeMemos() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.memos.collect { memos ->
-                    memoAdapter.submitList(memos)
-                }
             }
         }
     }

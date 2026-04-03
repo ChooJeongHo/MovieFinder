@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -116,45 +117,54 @@ class DetailViewModel @Inject constructor(
         loadMovieDetail()
     }
 
-    // 영화 상세/출연진/비슷한 영화/리뷰/예고편/등급 6개 API 병렬 호출
+    // 핵심 데이터(영화 상세 + 등급) 먼저 표시 후 나머지 API를 점진적으로 업데이트
     fun loadMovieDetail() {
         viewModelScope.launch {
             if (!loadingMutex.tryLock()) return@launch
             _uiState.value = DetailUiState.Loading
             try {
+                // 1단계: 핵심 데이터 (영화 상세 + 등급) 병렬 로드
                 val detail: MovieDetail
+                val certification: String?
                 coroutineScope {
                     val detailDeferred = async { getMovieDetailUseCase(movieId) }
-                    val creditsDeferred = async {
-                        loadOptional("credits") { getMovieCreditsUseCase(movieId) }
-                    }
-                    val similarDeferred = async {
-                        loadOptional("similar") { getSimilarMoviesUseCase(movieId) }
-                    }
-                    val reviewsDeferred = async {
-                        loadOptional("reviews") { getMovieReviewsUseCase(movieId) }
-                    }
-                    val trailerDeferred = async {
-                        loadOptionalNullable("trailer") { getMovieTrailerUseCase(movieId) }
-                    }
                     val certDeferred = async {
                         loadOptionalNullable("cert") { getMovieCertificationUseCase(movieId) }
                     }
-                    val recommendationsDeferred = async {
-                        loadOptional("recommendations") { getMovieRecommendationsUseCase(movieId) }
-                    }
-
                     detail = detailDeferred.await()
-                    _uiState.value = DetailUiState.Success(
-                        movieDetail = detail,
-                        credits = creditsDeferred.await(),
-                        similarMovies = similarDeferred.await(),
-                        trailerKey = trailerDeferred.await(),
-                        certification = certDeferred.await(),
-                        reviews = reviewsDeferred.await(),
-                        recommendations = recommendationsDeferred.await()
-                    )
+                    certification = certDeferred.await()
                 }
+
+                // 핵심 데이터로 즉시 Success emit (나머지는 null = 로딩 중)
+                _uiState.value = DetailUiState.Success(
+                    movieDetail = detail,
+                    certification = certification
+                )
+
+                // 2단계: 보조 데이터 병렬 로드, 각각 완료 시 점진적 업데이트
+                coroutineScope {
+                    launch {
+                        val credits = loadOptional("credits") { getMovieCreditsUseCase(movieId) }
+                        updateSuccess { it.copy(credits = credits) }
+                    }
+                    launch {
+                        val similar = loadOptional("similar") { getSimilarMoviesUseCase(movieId) }
+                        updateSuccess { it.copy(similarMovies = similar) }
+                    }
+                    launch {
+                        val reviews = loadOptional("reviews") { getMovieReviewsUseCase(movieId) }
+                        updateSuccess { it.copy(reviews = reviews) }
+                    }
+                    launch {
+                        val trailer = loadOptionalNullable("trailer") { getMovieTrailerUseCase(movieId) }
+                        updateSuccess { it.copy(trailerKey = trailer) }
+                    }
+                    launch {
+                        val recs = loadOptional("recommendations") { getMovieRecommendationsUseCase(movieId) }
+                        updateSuccess { it.copy(recommendations = recs) }
+                    }
+                }
+
                 saveWatchHistory(detail)
             } catch (e: CancellationException) {
                 throw e
@@ -163,6 +173,13 @@ class DetailViewModel @Inject constructor(
             } finally {
                 loadingMutex.unlock()
             }
+        }
+    }
+
+    // 현재 상태가 Success인 경우에만 필드를 업데이트
+    private fun updateSuccess(transform: (DetailUiState.Success) -> DetailUiState.Success) {
+        _uiState.update { current ->
+            if (current is DetailUiState.Success) transform(current) else current
         }
     }
 

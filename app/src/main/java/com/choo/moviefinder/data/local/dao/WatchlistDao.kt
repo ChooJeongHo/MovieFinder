@@ -15,6 +15,14 @@ abstract class WatchlistDao {
     @Query("SELECT * FROM watchlist_movies ORDER BY addedAt DESC")
     abstract fun getAllWatchlist(): Flow<List<WatchlistEntity>>
 
+    // 제목 오름차순으로 워치리스트 목록 조회
+    @Query("SELECT * FROM watchlist_movies ORDER BY title ASC")
+    abstract fun getAllWatchlistSortedByTitle(): Flow<List<WatchlistEntity>>
+
+    // 평점 내림차순으로 워치리스트 목록 조회
+    @Query("SELECT * FROM watchlist_movies ORDER BY voteAverage DESC")
+    abstract fun getAllWatchlistSortedByRating(): Flow<List<WatchlistEntity>>
+
     // 워치리스트 영화 삽입 (중복 시 교체)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insert(entity: WatchlistEntity)

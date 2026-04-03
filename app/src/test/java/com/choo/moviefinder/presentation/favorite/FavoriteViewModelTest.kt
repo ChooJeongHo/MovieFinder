@@ -3,6 +3,7 @@ package com.choo.moviefinder.presentation.favorite
 import app.cash.turbine.test
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.PosterTagSuggester
+import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.AddTagToMovieUseCase
 import com.choo.moviefinder.domain.usecase.GetAllTagNamesUseCase
@@ -66,7 +67,7 @@ class FavoriteViewModelTest {
         removeTagFromMovieUseCase = mockk()
         posterTagSuggester = mockk()
 
-        every { getWatchlistUseCase() } returns flowOf(emptyList())
+        every { getWatchlistUseCase(any<FavoriteSortOrder>()) } returns flowOf(emptyList())
         every { getAllTagNamesUseCase() } returns flowOf(emptyList())
     }
 
@@ -92,7 +93,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `favoriteMovies emits movie list from use case`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
 
         val viewModel = createViewModel()
 
@@ -108,7 +109,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `favoriteMovies emits empty list when no favorites`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(emptyList())
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(emptyList())
 
         val viewModel = createViewModel()
 
@@ -120,7 +121,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `toggleFavorite calls toggle use case`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
         coEvery { toggleFavoriteUseCase(any()) } returns Unit
 
         val viewModel = createViewModel()
@@ -133,7 +134,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `toggleFavorite does not crash on error`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
         coEvery { toggleFavoriteUseCase(any()) } throws RuntimeException("DB error")
 
         val viewModel = createViewModel()
@@ -146,8 +147,8 @@ class FavoriteViewModelTest {
 
     @Test
     fun `watchlistMovies emits movie list from use case`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(emptyList())
-        every { getWatchlistUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(emptyList())
+        every { getWatchlistUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
 
         val viewModel = createViewModel()
 
@@ -163,7 +164,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `toggleWatchlist calls use case and handles error`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
         coEvery { toggleWatchlistUseCase(any()) } returns Unit
 
         val viewModel = createViewModel()
@@ -183,7 +184,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `toggleFavorite error sends snackbar event`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
         coEvery { toggleFavoriteUseCase(any()) } throws RuntimeException("DB error")
 
         val viewModel = createViewModel()
@@ -199,7 +200,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `onSortOrderSelected changes sort order`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
 
         val viewModel = createViewModel()
 
@@ -215,7 +216,9 @@ class FavoriteViewModelTest {
             Movie(1, "Zorro", "/p1.jpg", "/b1.jpg", "O1", "2024-01-01", 8.0, 500),
             Movie(2, "Avengers", "/p2.jpg", "/b2.jpg", "O2", "2024-02-01", 7.5, 300)
         )
-        every { getFavoriteMoviesUseCase() } returns flowOf(movies)
+        val sortedMovies = listOf(movies[1], movies[0]) // Avengers first
+        every { getFavoriteMoviesUseCase(FavoriteSortOrder.ADDED_DATE) } returns flowOf(movies)
+        every { getFavoriteMoviesUseCase(FavoriteSortOrder.TITLE) } returns flowOf(sortedMovies)
 
         val viewModel = createViewModel()
         viewModel.onSortOrderSelected(FavoriteSortOrder.TITLE)
@@ -239,7 +242,9 @@ class FavoriteViewModelTest {
             Movie(1, "Movie A", "/p1.jpg", "/b1.jpg", "O1", "2024-01-01", 6.0, 500),
             Movie(2, "Movie B", "/p2.jpg", "/b2.jpg", "O2", "2024-02-01", 9.0, 300)
         )
-        every { getFavoriteMoviesUseCase() } returns flowOf(movies)
+        val sortedMovies = listOf(movies[1], movies[0]) // Movie B (9.0) first
+        every { getFavoriteMoviesUseCase(FavoriteSortOrder.ADDED_DATE) } returns flowOf(movies)
+        every { getFavoriteMoviesUseCase(FavoriteSortOrder.RATING) } returns flowOf(sortedMovies)
 
         val viewModel = createViewModel()
         viewModel.onSortOrderSelected(FavoriteSortOrder.RATING)
@@ -259,7 +264,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `addTagToMovie calls use case`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
         coEvery { addTagToMovieUseCase(any(), any()) } returns Unit
 
         val viewModel = createViewModel()
@@ -272,7 +277,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `addTagToMovie error sends snackbar event`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
         coEvery { addTagToMovieUseCase(any(), any()) } throws RuntimeException("DB error")
 
         val viewModel = createViewModel()
@@ -288,7 +293,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `removeTagFromMovie calls use case`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
         coEvery { removeTagFromMovieUseCase(any(), any()) } returns Unit
 
         val viewModel = createViewModel()
@@ -301,7 +306,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `removeTagFromMovie error sends snackbar event`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
         coEvery { removeTagFromMovieUseCase(any(), any()) } throws RuntimeException("DB error")
 
         val viewModel = createViewModel()
@@ -317,8 +322,8 @@ class FavoriteViewModelTest {
 
     @Test
     fun `onTagSelected changes selectedTag state`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
-        every { getFavoritesByTagUseCase(any()) } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
+        every { getFavoritesByTagUseCase(any(), any<FavoriteSortOrder>()) } returns flowOf(testMovies)
 
         val viewModel = createViewModel()
 
@@ -333,7 +338,7 @@ class FavoriteViewModelTest {
 
     @Test
     fun `allTagNames emits tag names from use case`() = runTest {
-        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
         val tagNames = listOf("Action", "Drama", "Comedy")
         every { getAllTagNamesUseCase() } returns flowOf(tagNames)
 

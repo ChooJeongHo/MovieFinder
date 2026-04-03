@@ -1,5 +1,6 @@
 package com.choo.moviefinder.domain.repository
 
+import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieTag
 import kotlinx.coroutines.flow.Flow
@@ -10,4 +11,5 @@ interface TagRepository {
     suspend fun addTag(movieId: Int, tagName: String)
     suspend fun removeTag(movieId: Int, tagName: String)
     fun getFavoritesByTag(tagName: String): Flow<List<Movie>>
+    fun getFavoritesByTagSorted(tagName: String, sortOrder: FavoriteSortOrder): Flow<List<Movie>>
 }

@@ -130,7 +130,7 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
             .diskCache {
                 DiskCache.Builder()
                     .directory(cacheDir.resolve("image_cache"))
-                    .maxSizePercent(0.05)
+                    .maxSizeBytes(50L * 1024 * 1024)
                     .build()
             }
             .build()

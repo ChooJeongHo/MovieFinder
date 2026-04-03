@@ -91,6 +91,7 @@ class HomeFragment : Fragment() {
             layoutManager = createMovieGridLayoutManager(requireContext(), spanCount) {
                 movieAdapter.itemCount
             }
+            setHasFixedSize(true)
             adapter = movieAdapter.withLoadStateFooter(
                 footer = MovieLoadStateAdapter { movieAdapter.retry() }
             )
@@ -107,6 +108,7 @@ class HomeFragment : Fragment() {
         }
         binding.rvWatchHistory.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            setHasFixedSize(true)
             adapter = watchHistoryAdapter
         }
     }

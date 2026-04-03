@@ -31,7 +31,7 @@ interface MovieTagDao {
     @Query("DELETE FROM movie_tags WHERE movieId = :movieId")
     suspend fun deleteAllTagsForMovie(movieId: Int)
 
-    // 태그로 즐겨찾기 영화 필터링 (JOIN 쿼리)
+    // 태그로 즐겨찾기 영화 필터링 - 추가일 역순
     @Query("""
         SELECT f.* FROM favorite_movies f
         INNER JOIN movie_tags t ON f.id = t.movieId
@@ -39,4 +39,22 @@ interface MovieTagDao {
         ORDER BY f.addedAt DESC
     """)
     fun getFavoritesByTag(tagName: String): Flow<List<FavoriteMovieEntity>>
+
+    // 태그로 즐겨찾기 영화 필터링 - 제목 오름차순
+    @Query("""
+        SELECT f.* FROM favorite_movies f
+        INNER JOIN movie_tags t ON f.id = t.movieId
+        WHERE t.tagName = :tagName
+        ORDER BY f.title ASC
+    """)
+    fun getFavoritesByTagSortedByTitle(tagName: String): Flow<List<FavoriteMovieEntity>>
+
+    // 태그로 즐겨찾기 영화 필터링 - 평점 내림차순
+    @Query("""
+        SELECT f.* FROM favorite_movies f
+        INNER JOIN movie_tags t ON f.id = t.movieId
+        WHERE t.tagName = :tagName
+        ORDER BY f.voteAverage DESC
+    """)
+    fun getFavoritesByTagSortedByRating(tagName: String): Flow<List<FavoriteMovieEntity>>
 }
