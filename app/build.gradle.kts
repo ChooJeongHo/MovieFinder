@@ -97,24 +97,40 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     }
 
     val jacocoExcludes = listOf(
+        // Generated
         "**/R.class", "**/R\$*.class",
         "**/BuildConfig.*",
         "**/Manifest*.*",
         "**/*_Hilt*.*", "**/Hilt_*.*",
         "**/*_Factory.*", "**/*_MembersInjector.*",
         "**/*Directions*.*", "**/*Args*.*",
-        "**/*Database_Impl*.*", "**/*Dao_Impl*.*"
+        "**/*Database_Impl*.*", "**/*Dao_Impl*.*",
+        // UI — only testable via Espresso
+        "**/presentation/**/*Fragment*.*",
+        "**/presentation/**/*Adapter*.*",
+        "**/presentation/**/*ViewHolder*.*",
+        "**/presentation/widget/**",
+        "**/presentation/common/**",
+        // Application / Activity
+        "**/MovieFinderApp*.*",
+        "**/MainActivity*.*",
+        // Debug-only utilities
+        "**/core/startup/**",
+        "**/core/util/DebugHealthCheck*.*",
+        "**/core/util/AnrWatchdog*.*",
+        "**/core/util/FileLoggingTree*.*",
+        "**/core/util/DebugEventListener*.*",
+        "**/core/util/StrictModeInitializer*.*",
+        // WorkManager workers
+        "**/core/notification/*Worker*.*"
     )
-    val javaClasses = fileTree("${layout.buildDirectory.get()}/intermediates/javac/debug/classes") {
-        exclude(jacocoExcludes)
-    }
-    val kotlinClasses = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+    val kotlinClasses = fileTree("${layout.buildDirectory.get()}/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes") {
         exclude(jacocoExcludes)
     }
 
-    classDirectories.setFrom(files(javaClasses, kotlinClasses))
+    classDirectories.setFrom(files(kotlinClasses))
     sourceDirectories.setFrom(files("src/main/java"))
-    executionData.setFrom(files("${layout.buildDirectory.get()}/jacoco/testDebugUnitTest.exec"))
+    executionData.setFrom(files("${layout.buildDirectory.get()}/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"))
 }
 
 tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
@@ -123,24 +139,40 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
     description = "Verify minimum JaCoCo test coverage"
 
     val jacocoExcludes = listOf(
+        // Generated
         "**/R.class", "**/R\$*.class",
         "**/BuildConfig.*",
         "**/Manifest*.*",
         "**/*_Hilt*.*", "**/Hilt_*.*",
         "**/*_Factory.*", "**/*_MembersInjector.*",
         "**/*Directions*.*", "**/*Args*.*",
-        "**/*Database_Impl*.*", "**/*Dao_Impl*.*"
+        "**/*Database_Impl*.*", "**/*Dao_Impl*.*",
+        // UI — only testable via Espresso
+        "**/presentation/**/*Fragment*.*",
+        "**/presentation/**/*Adapter*.*",
+        "**/presentation/**/*ViewHolder*.*",
+        "**/presentation/widget/**",
+        "**/presentation/common/**",
+        // Application / Activity
+        "**/MovieFinderApp*.*",
+        "**/MainActivity*.*",
+        // Debug-only utilities
+        "**/core/startup/**",
+        "**/core/util/DebugHealthCheck*.*",
+        "**/core/util/AnrWatchdog*.*",
+        "**/core/util/FileLoggingTree*.*",
+        "**/core/util/DebugEventListener*.*",
+        "**/core/util/StrictModeInitializer*.*",
+        // WorkManager workers
+        "**/core/notification/*Worker*.*"
     )
-    val javaClasses = fileTree("${layout.buildDirectory.get()}/intermediates/javac/debug/classes") {
-        exclude(jacocoExcludes)
-    }
-    val kotlinClasses = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+    val kotlinClasses = fileTree("${layout.buildDirectory.get()}/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes") {
         exclude(jacocoExcludes)
     }
 
-    classDirectories.setFrom(files(javaClasses, kotlinClasses))
+    classDirectories.setFrom(files(kotlinClasses))
     sourceDirectories.setFrom(files("src/main/java"))
-    executionData.setFrom(files("${layout.buildDirectory.get()}/jacoco/testDebugUnitTest.exec"))
+    executionData.setFrom(files("${layout.buildDirectory.get()}/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"))
 
     violationRules {
         rule {
