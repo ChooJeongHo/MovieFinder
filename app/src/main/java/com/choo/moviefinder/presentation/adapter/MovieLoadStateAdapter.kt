@@ -42,7 +42,7 @@ class MovieLoadStateAdapter(
 
             if (loadState is LoadState.Error) {
                 binding.tvErrorMessage.text =
-                    ErrorMessageProvider.getErrorMessage(itemView.context, loadState.error)
+                    ErrorMessageProvider.getMessage(itemView.context, loadState.error)
             }
         }
     }

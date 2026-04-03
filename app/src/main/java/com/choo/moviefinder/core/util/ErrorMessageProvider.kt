@@ -52,7 +52,7 @@ object ErrorMessageProvider {
     }
 
     // 예외로부터 직접 사용자 친화적 에러 메시지를 반환한다
-    fun getErrorMessage(context: Context, throwable: Throwable): String {
+    fun getMessage(context: Context, throwable: Throwable): String {
         return getMessage(context, getErrorType(throwable))
     }
 }

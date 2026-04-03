@@ -256,4 +256,96 @@ class FavoriteViewModelTest {
             }
         }
     }
+
+    @Test
+    fun `addTagToMovie calls use case`() = runTest {
+        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        coEvery { addTagToMovieUseCase(any(), any()) } returns Unit
+
+        val viewModel = createViewModel()
+
+        viewModel.addTagToMovie(1, "Action")
+        advanceUntilIdle()
+
+        coVerify { addTagToMovieUseCase(1, "Action") }
+    }
+
+    @Test
+    fun `addTagToMovie error sends snackbar event`() = runTest {
+        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        coEvery { addTagToMovieUseCase(any(), any()) } throws RuntimeException("DB error")
+
+        val viewModel = createViewModel()
+
+        viewModel.snackbarEvent.test {
+            viewModel.addTagToMovie(1, "Action")
+            advanceUntilIdle()
+
+            val errorType = awaitItem()
+            assertEquals(ErrorType.UNKNOWN, errorType)
+        }
+    }
+
+    @Test
+    fun `removeTagFromMovie calls use case`() = runTest {
+        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        coEvery { removeTagFromMovieUseCase(any(), any()) } returns Unit
+
+        val viewModel = createViewModel()
+
+        viewModel.removeTagFromMovie(1, "Action")
+        advanceUntilIdle()
+
+        coVerify { removeTagFromMovieUseCase(1, "Action") }
+    }
+
+    @Test
+    fun `removeTagFromMovie error sends snackbar event`() = runTest {
+        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        coEvery { removeTagFromMovieUseCase(any(), any()) } throws RuntimeException("DB error")
+
+        val viewModel = createViewModel()
+
+        viewModel.snackbarEvent.test {
+            viewModel.removeTagFromMovie(1, "Action")
+            advanceUntilIdle()
+
+            val errorType = awaitItem()
+            assertEquals(ErrorType.UNKNOWN, errorType)
+        }
+    }
+
+    @Test
+    fun `onTagSelected changes selectedTag state`() = runTest {
+        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        every { getFavoritesByTagUseCase(any()) } returns flowOf(testMovies)
+
+        val viewModel = createViewModel()
+
+        assertEquals(null, viewModel.selectedTag.value)
+
+        viewModel.onTagSelected("Action")
+        assertEquals("Action", viewModel.selectedTag.value)
+
+        viewModel.onTagSelected(null)
+        assertEquals(null, viewModel.selectedTag.value)
+    }
+
+    @Test
+    fun `allTagNames emits tag names from use case`() = runTest {
+        every { getFavoriteMoviesUseCase() } returns flowOf(testMovies)
+        val tagNames = listOf("Action", "Drama", "Comedy")
+        every { getAllTagNamesUseCase() } returns flowOf(tagNames)
+
+        val viewModel = createViewModel()
+
+        viewModel.allTagNames.test {
+            val item = awaitItem()
+            if (item.isEmpty()) {
+                assertEquals(tagNames, awaitItem())
+            } else {
+                assertEquals(tagNames, item)
+            }
+        }
+    }
 }
