@@ -306,7 +306,7 @@ class SettingsViewModelTest {
             viewModel.importData(invalidJson)
             advanceUntilIdle()
             val errorType = awaitItem()
-            assert(errorType != null)
+            assert(errorType == com.choo.moviefinder.core.util.ErrorType.PARSE)
         }
     }
 }

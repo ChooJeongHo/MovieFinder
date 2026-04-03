@@ -30,6 +30,7 @@ class PopularMoviesWidget : AppWidgetProvider() {
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val componentName = ComponentName(context, PopularMoviesWidget::class.java)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            @Suppress("DEPRECATION")
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.list_view)
         }
     }
@@ -50,6 +51,7 @@ class PopularMoviesWidget : AppWidgetProvider() {
             }
 
             val views = RemoteViews(context.packageName, R.layout.widget_popular_movies).apply {
+                @Suppress("DEPRECATION")
                 setRemoteAdapter(R.id.list_view, serviceIntent)
                 setEmptyView(R.id.list_view, R.id.empty_view)
             }

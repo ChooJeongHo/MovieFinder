@@ -18,6 +18,7 @@ import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class FavoriteViewModel @Inject constructor(
     private val getFavoriteMoviesUseCase: GetFavoriteMoviesUseCase,

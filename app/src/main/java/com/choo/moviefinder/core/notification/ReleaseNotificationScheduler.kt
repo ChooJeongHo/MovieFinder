@@ -19,7 +19,7 @@ import javax.inject.Singleton
 
 @Singleton
 class ReleaseNotificationScheduler @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
 
     // 영화 개봉일에 맞춰 알림을 WorkManager로 예약한다
