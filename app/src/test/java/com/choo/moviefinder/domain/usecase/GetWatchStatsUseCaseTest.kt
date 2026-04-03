@@ -45,7 +45,7 @@ class GetWatchStatsUseCaseTest {
         every { watchHistoryRepository.getAllWatchedGenres() } returns flowOf(emptyList())
         every { watchHistoryRepository.getMonthlyWatchCounts() } returns flowOf(emptyList())
         every { userRatingRepository.getRatingDistribution() } returns flowOf(emptyList())
-        every { watchHistoryRepository.getDailyWatchCounts() } returns flowOf(emptyList())
+        every { watchHistoryRepository.getDailyWatchCounts(any()) } returns flowOf(emptyList())
         every { preferencesRepository.getMonthlyWatchGoal() } returns flowOf(0)
 
         useCase = GetWatchStatsUseCase(watchHistoryRepository, userRatingRepository, preferencesRepository)

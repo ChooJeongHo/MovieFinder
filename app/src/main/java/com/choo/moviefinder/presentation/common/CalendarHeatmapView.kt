@@ -71,6 +71,7 @@ class CalendarHeatmapView @JvmOverloads constructor(
     fun setData(items: List<DailyWatchCount>) {
         cells.clear()
         monthLabels.clear()
+        cachedShortWeekdays = DateFormatSymbols(Locale.getDefault()).shortWeekdays
 
         val tz = TimeZone.currentSystemDefault()
         val today = Clock.System.now().toLocalDateTime(tz).date
@@ -151,8 +152,7 @@ class CalendarHeatmapView @JvmOverloads constructor(
 
         // draw day-of-week labels (Mon, Wed, Fri) — locale-aware
         // DateFormatSymbols.shortWeekdays is 1-indexed: 1=Sun, 2=Mon, 3=Tue, 4=Wed, 5=Thu, 6=Fri, 7=Sat
-        val shortWeekdays = DateFormatSymbols(Locale.getDefault()).shortWeekdays
-        val dowLabels = listOf(1 to shortWeekdays[2], 3 to shortWeekdays[4], 5 to shortWeekdays[6])
+        val dowLabels = listOf(1 to cachedShortWeekdays[2], 3 to cachedShortWeekdays[4], 5 to cachedShortWeekdays[6])
         dowLabels.forEach { (row, label) ->
             val y = gridTop + row * (cellSize + gap) + cellSize * 0.75f
             canvas.drawText(label, paddingLeft + dayLabelWidth - gap, y, dayLabelPaint)
