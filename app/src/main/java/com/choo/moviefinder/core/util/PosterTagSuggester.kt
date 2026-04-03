@@ -20,7 +20,7 @@ import kotlin.coroutines.resumeWithException
 
 @Singleton
 class PosterTagSuggester @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val labeler = ImageLabeling.getClient(
         ImageLabelerOptions.Builder()

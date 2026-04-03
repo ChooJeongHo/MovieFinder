@@ -25,7 +25,7 @@ import javax.inject.Singleton
 
 @Singleton
 class WatchGoalNotificationHelper @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val preferencesRepository: PreferencesRepository,
     private val watchHistoryRepository: WatchHistoryRepository
 ) {
@@ -50,7 +50,7 @@ class WatchGoalNotificationHelper @Inject constructor(
     }
 
     // 목표 달성 축하 알림을 표시한다 (테스트에서 오버라이드 가능)
-    internal open fun showGoalAchievedNotification() {
+    internal fun showGoalAchievedNotification() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val permission = ContextCompat.checkSelfPermission(
                 context,

@@ -51,6 +51,7 @@ class ReleaseNotificationSchedulerTest {
     }
 
     // sun.misc.Unsafe is the only reliable way to write a final static field on JDK 12+
+    @Suppress("DEPRECATION")
     private fun setSdkInt(value: Int) {
         val unsafeField = sun.misc.Unsafe::class.java.getDeclaredField("theUnsafe")
         unsafeField.isAccessible = true
