@@ -92,6 +92,9 @@ class HomeFragment : Fragment() {
                 movieAdapter.itemCount
             }
             setHasFixedSize(true)
+            // 탭 전환 시 ViewHolder 재생성 비용 절감: 탭 수(3) × 화면에 보이는 최대 아이템 수 기준으로 풀 크기 확장
+            recycledViewPool.setMaxRecycledViews(MoviePagingAdapter.VIEW_TYPE_GRID, POOL_SIZE_GRID)
+            recycledViewPool.setMaxRecycledViews(MoviePagingAdapter.VIEW_TYPE_LIST, POOL_SIZE_LIST)
             adapter = movieAdapter.withLoadStateFooter(
                 footer = MovieLoadStateAdapter { movieAdapter.retry() }
             )
@@ -240,5 +243,9 @@ class HomeFragment : Fragment() {
 
     companion object {
         private const val KEY_CURRENT_TAB = "current_tab"
+
+        // 탭 3개 × 화면에 동시에 보이는 최대 아이템 수 기준 (그리드: 3열×3행=9 → 여유 포함 20, 리스트: 5행 → 여유 포함 10)
+        private const val POOL_SIZE_GRID = 20
+        private const val POOL_SIZE_LIST = 10
     }
 }

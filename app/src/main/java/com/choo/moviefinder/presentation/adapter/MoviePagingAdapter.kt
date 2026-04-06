@@ -62,4 +62,9 @@ class MoviePagingAdapter(
         GRID,
         LIST,
     }
+
+    companion object {
+        val VIEW_TYPE_GRID = ViewMode.GRID.ordinal
+        val VIEW_TYPE_LIST = ViewMode.LIST.ordinal
+    }
 }
