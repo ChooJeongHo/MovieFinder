@@ -57,7 +57,7 @@ class WatchGoalNotificationHelper @Inject constructor(
                 android.Manifest.permission.POST_NOTIFICATIONS
             )
             if (permission != PackageManager.PERMISSION_GRANTED) {
-                Timber.w("POST_NOTIFICATIONS permission not granted, skipping goal notification")
+                Timber.w("POST_NOTIFICATIONS 권한 미부여, 목표 알림 건너뜀")
                 return
             }
         }
@@ -82,7 +82,7 @@ class WatchGoalNotificationHelper @Inject constructor(
             .build()
 
         NotificationManagerCompat.from(context).notify(GOAL_NOTIFICATION_ID, notification)
-        Timber.d("Watch goal achieved notification shown")
+        Timber.d("시청 목표 달성 알림 표시됨")
     }
 
     companion object {

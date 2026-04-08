@@ -17,16 +17,16 @@ class DebugEventListener : EventListener() {
         protocol: Protocol?,
         ioe: IOException
     ) {
-        Timber.e(ioe, "🔴 Connection failed: ${call.request().url.host}")
+        Timber.e(ioe, "🔴 연결 실패: ${call.request().url.host}")
     }
 
     override fun secureConnectEnd(call: Call, handshake: Handshake?) {
         if (handshake != null) {
-            Timber.d("🟢 SSL handshake OK: ${call.request().url.host} (${handshake.cipherSuite})")
+            Timber.d("🟢 SSL 핸드셰이크 성공: ${call.request().url.host} (${handshake.cipherSuite})")
         }
     }
 
     override fun callFailed(call: Call, ioe: IOException) {
-        Timber.e(ioe, "🔴 Call failed: ${call.request().url} - ${ioe.message}")
+        Timber.e(ioe, "🔴 호출 실패: ${call.request().url} - ${ioe.message}")
     }
 }

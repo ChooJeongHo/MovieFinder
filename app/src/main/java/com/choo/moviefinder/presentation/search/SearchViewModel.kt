@@ -152,7 +152,7 @@ class SearchViewModel @Inject constructor(
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        Timber.w(e, "Person search failed for query: $trimmed")
+                        Timber.w(e, "배우 검색 실패, 검색어: $trimmed")
                         _personResults.value = emptyList()
                         _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(e))
                     } finally {
@@ -172,7 +172,7 @@ class SearchViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 genreLoadFailed = true
-                Timber.w(e, "Failed to load genre list")
+                Timber.w(e, "장르 목록 로드 실패")
             }
         }
     }
