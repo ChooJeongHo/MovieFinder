@@ -47,6 +47,39 @@ object DatabaseModule {
         }
     }
 
+    // (watch_history_id, genre_name) UNIQUE 제약 추가 마이그레이션 (v13 → v14)
+    val MIGRATION_13_14 = object : Migration(13, 14) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """CREATE TABLE IF NOT EXISTS `watch_history_genre_new` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `watch_history_id` INTEGER NOT NULL,
+                    `genre_name` TEXT NOT NULL,
+                    FOREIGN KEY(`watch_history_id`) REFERENCES `watch_history`(`id`) ON DELETE CASCADE,
+                    UNIQUE(`watch_history_id`, `genre_name`)
+                )"""
+            )
+            db.execSQL(
+                "INSERT OR IGNORE INTO `watch_history_genre_new` (watch_history_id, genre_name) " +
+                    "SELECT watch_history_id, genre_name FROM `watch_history_genre`"
+            )
+            db.execSQL("DROP TABLE `watch_history_genre`")
+            db.execSQL("ALTER TABLE `watch_history_genre_new` RENAME TO `watch_history_genre`")
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_watch_history_genre_watch_history_id` " +
+                    "ON `watch_history_genre` (`watch_history_id`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_watch_history_genre_genre_name` " +
+                    "ON `watch_history_genre` (`genre_name`)"
+            )
+            db.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS `index_watch_history_genre_watch_history_id_genre_name` " +
+                    "ON `watch_history_genre` (`watch_history_id`, `genre_name`)"
+            )
+        }
+    }
+
     // Room 데이터베이스 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
@@ -56,7 +89,7 @@ object DatabaseModule {
             MovieDatabase::class.java,
             "movie_finder_db"
         )
-            .addMigrations(MIGRATION_12_13)
+            .addMigrations(MIGRATION_12_13, MIGRATION_13_14)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }

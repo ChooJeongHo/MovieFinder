@@ -14,7 +14,11 @@ import androidx.room.PrimaryKey
         childColumns = ["watch_history_id"],
         onDelete = ForeignKey.CASCADE
     )],
-    indices = [Index("watch_history_id"), Index("genre_name")]
+    indices = [
+        Index("watch_history_id"),
+        Index("genre_name"),
+        Index(value = ["watch_history_id", "genre_name"], unique = true)
+    ]
 )
 data class WatchHistoryGenreEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
