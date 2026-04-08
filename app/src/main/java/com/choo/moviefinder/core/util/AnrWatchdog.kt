@@ -39,8 +39,8 @@ class AnrWatchdog : Thread("AnrWatchdog"), DefaultLifecycleObserver {
             if (!responded && isActive) {
                 val stackTrace = Looper.getMainLooper().thread.stackTrace
                     .joinToString("\n\t")
-                Timber.e("ANR detected! Main thread blocked for ${ANR_TIMEOUT}ms")
-                Timber.e("Main thread stack:\n\t$stackTrace")
+                Timber.e("ANR 감지! 메인 스레드가 ${ANR_TIMEOUT}ms 동안 블로킹됨")
+                Timber.e("메인 스레드 스택:\n\t$stackTrace")
             }
         }
     }

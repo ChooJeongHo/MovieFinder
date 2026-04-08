@@ -31,8 +31,8 @@ interface WatchHistoryDao {
     @Query("SELECT COUNT(*) FROM watch_history WHERE watchedAt >= :since")
     fun getCountSince(since: Long): Flow<Int>
 
-    // 장르 엔티티 목록을 일괄 삽입한다
-    @Insert
+    // 장르 엔티티 목록을 일괄 삽입한다 (중복 시 무시)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertGenres(genres: List<WatchHistoryGenreEntity>)
 
     // 모든 시청 기록의 장르 문자열 조회 (하위 호환용)

@@ -51,7 +51,7 @@ class PopularMoviesRemoteViewsFactory(
                 }
             }
         } catch (e: Exception) {
-            Timber.w(e, "Widget: Failed to fetch popular movies")
+            Timber.w(e, "위젯: 인기 영화 가져오기 실패")
         }
     }
 

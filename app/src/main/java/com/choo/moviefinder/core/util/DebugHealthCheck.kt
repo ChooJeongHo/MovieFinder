@@ -35,7 +35,7 @@ class DebugHealthCheck(private val context: Context) {
             results.add(if (dbOk) "DB OK" else "DB FAIL")
 
             val summary = "Health: ${results.joinToString(" | ")}"
-            Timber.i("HealthCheck: $summary")
+            Timber.i("헬스체크: $summary")
 
             if (!apiOk || !imageOk || !dbOk) {
                 withContext(Dispatchers.Main) {
@@ -50,7 +50,7 @@ class DebugHealthCheck(private val context: Context) {
             val dbFile = context.getDatabasePath("movie_finder_db")
             dbFile.exists() && dbFile.canRead()
         } catch (e: Exception) {
-            Timber.w(e, "DB health check failed")
+            Timber.w(e, "DB 헬스체크 실패")
             false
         }
     }
@@ -64,7 +64,7 @@ class DebugHealthCheck(private val context: Context) {
             val request = Request.Builder().url(url).head().build()
             client.newCall(request).execute().use { it.isSuccessful }
         } catch (e: Exception) {
-            Timber.w(e, "Health check failed: $tag")
+            Timber.w(e, "헬스체크 실패: $tag")
             false
         }
     }
