@@ -10,7 +10,7 @@ class CircuitBreakerInterceptor(
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         if (!circuitBreaker.canProceed()) {
-            Timber.w("CircuitBreakerInterceptor: Request to ${chain.request().url.host} blocked")
+            Timber.w("CircuitBreakerInterceptor: ${chain.request().url.host}에 대한 요청 차단됨")
             throw IOException("Circuit breaker is OPEN - request blocked")
         }
 

@@ -19,7 +19,7 @@ class CircuitBreaker(
     @Synchronized
     fun recordSuccess() {
         if (state.get() == State.HALF_OPEN) {
-            Timber.d("CircuitBreaker[$name]: HALF_OPEN → CLOSED (recovered)")
+            Timber.d("CircuitBreaker[$name]: HALF_OPEN → CLOSED (복구됨)")
         }
         state.set(State.CLOSED)
         failureCount.set(0)
@@ -31,7 +31,7 @@ class CircuitBreaker(
         lastFailureTime.set(System.currentTimeMillis())
         if (count >= failureThreshold && state.get() != State.OPEN) {
             state.set(State.OPEN)
-            Timber.w("CircuitBreaker[$name]: → OPEN (failures: $count)")
+            Timber.w("CircuitBreaker[$name]: → OPEN (실패 횟수: $count)")
         }
     }
 
@@ -43,7 +43,7 @@ class CircuitBreaker(
             State.OPEN -> {
                 if (System.currentTimeMillis() - lastFailureTime.get() >= resetTimeoutMs) {
                     state.set(State.HALF_OPEN)
-                    Timber.d("CircuitBreaker[$name]: OPEN → HALF_OPEN")
+                    Timber.d("CircuitBreaker[$name]: OPEN → HALF_OPEN (재시도 허용)")
                     true
                 } else {
                     false

@@ -77,7 +77,7 @@ class FavoriteViewModel @Inject constructor(
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleFavorite(movie: Movie) = viewModelScope.launchWithErrorHandler(
         onError = {
-            Timber.e("Failed to toggle favorite for movie %d", movie.id)
+            Timber.e("영화 %d 즐겨찾기 토글 실패", movie.id)
             _snackbarEvent.send(it)
         }
     ) {
@@ -97,7 +97,7 @@ class FavoriteViewModel @Inject constructor(
     // 워치리스트 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleWatchlist(movie: Movie) = viewModelScope.launchWithErrorHandler(
         onError = {
-            Timber.e("Failed to toggle watchlist for movie %d", movie.id)
+            Timber.e("영화 %d 워치리스트 토글 실패", movie.id)
             _snackbarEvent.send(it)
         }
     ) {
@@ -111,7 +111,7 @@ class FavoriteViewModel @Inject constructor(
     // 영화에 태그 추가 (에러 시 Snackbar 이벤트 전송)
     fun addTagToMovie(movieId: Int, tagName: String) = viewModelScope.launchWithErrorHandler(
         onError = {
-            Timber.e("Failed to add tag '%s' to movie %d", tagName, movieId)
+            Timber.e("영화 %d에 태그 '%s' 추가 실패", movieId, tagName)
             _snackbarEvent.send(it)
         }
     ) {
@@ -125,7 +125,7 @@ class FavoriteViewModel @Inject constructor(
     // 영화에서 태그 제거 (에러 시 Snackbar 이벤트 전송)
     fun removeTagFromMovie(movieId: Int, tagName: String) = viewModelScope.launchWithErrorHandler(
         onError = {
-            Timber.e("Failed to remove tag '%s' from movie %d", tagName, movieId)
+            Timber.e("영화 %d에서 태그 '%s' 제거 실패", movieId, tagName)
             _snackbarEvent.send(it)
         }
     ) {

@@ -33,7 +33,7 @@ class ReleaseNotificationWorker(
                 android.Manifest.permission.POST_NOTIFICATIONS
             )
             if (permission != PackageManager.PERMISSION_GRANTED) {
-                Timber.w("POST_NOTIFICATIONS permission not granted, skipping notification for movie %d", movieId)
+                Timber.w("POST_NOTIFICATIONS 권한 미부여, 영화 %d 알림 건너뜀", movieId)
                 return Result.success()
             }
         }
