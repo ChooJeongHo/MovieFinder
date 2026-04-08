@@ -30,7 +30,7 @@ class UserRatingDelegate(
         onError = { snackbarChannel.send(it) }
     ) {
         setUserRatingUseCase(movieId, rating)
-        Timber.d("User rating set to %.1f for movie %d", rating, movieId)
+        Timber.d("영화 %d 사용자 평점 %.1f로 저장됨", movieId, rating)
     }
 
     // 사용자 영화 평점을 Room DB에서 삭제
@@ -38,6 +38,6 @@ class UserRatingDelegate(
         onError = { snackbarChannel.send(it) }
     ) {
         deleteUserRatingUseCase(movieId)
-        Timber.d("User rating deleted for movie %d", movieId)
+        Timber.d("영화 %d 사용자 평점 삭제됨", movieId)
     }
 }

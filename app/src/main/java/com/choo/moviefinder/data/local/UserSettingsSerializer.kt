@@ -18,7 +18,7 @@ object UserSettingsSerializer : Serializer<UserSettings> {
                 input.readBytes().decodeToString()
             )
         } catch (e: Exception) {
-            Timber.w(e, "Failed to read UserSettings, returning default")
+            Timber.w(e, "UserSettings 읽기 실패, 기본값 반환")
             defaultValue
         }
     }

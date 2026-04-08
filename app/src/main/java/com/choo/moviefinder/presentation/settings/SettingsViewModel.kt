@@ -74,7 +74,7 @@ class SettingsViewModel @Inject constructor(
     // 테마 모드를 DataStore에 저장 (에러 시 Snackbar 피드백)
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launchWithErrorHandler(
         onError = {
-            Timber.e("Failed to set theme mode to %s", mode)
+            Timber.e("테마 모드를 %s로 설정 실패", mode)
             _snackbarEvent.send(it)
         }
     ) {
@@ -84,7 +84,7 @@ class SettingsViewModel @Inject constructor(
     // 이번 달 시청 목표 편수 저장 (에러 시 Snackbar 피드백)
     fun setMonthlyWatchGoal(goal: Int) = viewModelScope.launchWithErrorHandler(
         onError = {
-            Timber.e("Failed to set monthly watch goal to %d", goal)
+            Timber.e("월간 시청 목표를 %d로 설정 실패", goal)
             _snackbarEvent.send(it)
         }
     ) {
@@ -94,7 +94,7 @@ class SettingsViewModel @Inject constructor(
     // 사용자 데이터를 JSON 문자열로 내보낸다 (성공 시 JSON 이벤트, 에러 시 Snackbar)
     fun exportData() = viewModelScope.launchWithErrorHandler(
         onError = {
-            Timber.e("Failed to export user data")
+            Timber.e("사용자 데이터 내보내기 실패")
             _snackbarEvent.send(it)
         }
     ) {
@@ -114,7 +114,7 @@ class SettingsViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Timber.e(e, "Failed to import user data")
+                Timber.e(e, "사용자 데이터 가져오기 실패")
                 _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
             } finally {
                 _isImporting.value = false
@@ -125,7 +125,7 @@ class SettingsViewModel @Inject constructor(
     // 시청 기록 전체 삭제 (성공 시 이벤트, 에러 시 Snackbar)
     fun clearWatchHistory() = viewModelScope.launchWithErrorHandler(
         onError = {
-            Timber.e("Failed to clear watch history")
+            Timber.e("시청 기록 삭제 실패")
             _snackbarEvent.send(it)
         }
     ) {

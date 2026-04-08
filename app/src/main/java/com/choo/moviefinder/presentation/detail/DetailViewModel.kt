@@ -197,13 +197,13 @@ class DetailViewModel @Inject constructor(
     // 부분 실패 허용 로드 (실패 시 빈 리스트 반환)
     private suspend fun <T> loadOptional(tag: String, block: suspend () -> List<T>): List<T> =
         suspendRunCatching { block() }
-            .onFailure { Timber.w(it, "Failed to load %s for movie %d", tag, movieId) }
+            .onFailure { Timber.w(it, "영화 %d의 %s 로드 실패", movieId, tag) }
             .getOrElse { emptyList() }
 
     // 부분 실패 허용 로드 (실패 시 null 반환)
     private suspend fun <T> loadOptionalNullable(tag: String, block: suspend () -> T?): T? =
         suspendRunCatching { block() }
-            .onFailure { Timber.w(it, "Failed to load %s for movie %d", tag, movieId) }
+            .onFailure { Timber.w(it, "영화 %d의 %s 로드 실패", movieId, tag) }
             .getOrNull()
 
     // 영화 상세 화면 진입 시 장르 정보와 함께 시청 기록을 Room DB에 저장하고 목표 달성을 확인한다
@@ -211,9 +211,9 @@ class DetailViewModel @Inject constructor(
         val movie = detail.toMovie()
         val genres = detail.genres.joinToString(",") { it.name }
         suspendRunCatching { saveWatchHistoryUseCase(movie, genres) }
-            .onFailure { Timber.w(it, "Failed to save watch history for movie %d", movieId) }
+            .onFailure { Timber.w(it, "영화 %d 시청 기록 저장 실패", movieId) }
         suspendRunCatching { watchGoalNotificationHelper.checkAndNotifyGoalAchieved() }
-            .onFailure { Timber.w(it, "Failed to check watch goal for movie %d", movieId) }
+            .onFailure { Timber.w(it, "영화 %d 시청 목표 확인 실패", movieId) }
     }
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
