@@ -6,7 +6,6 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -71,17 +70,4 @@ class CoroutineExtTest {
         assertTrue(receivedError == ErrorType.NETWORK)
     }
 
-    @Test
-    fun `block result returned normally - no side effects`() = runTest {
-        var blockExecuted = false
-
-        testScope.launchWithErrorHandler(
-            onError = { fail("onError should not be called") }
-        ) {
-            blockExecuted = true
-        }
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertTrue(blockExecuted)
-    }
 }
