@@ -45,16 +45,17 @@ class SettingsFragment : Fragment() {
     ) { uri ->
         if (uri == null) return@registerForActivityResult
         lifecycleScope.launch {
+            val b = _binding ?: return@launch
             try {
                 viewModel.pendingExportJson?.let { json ->
                     requireContext().contentResolver.openOutputStream(uri)?.use { stream ->
                         stream.write(json.toByteArray())
                     }
                     viewModel.pendingExportJson = null
-                    Snackbar.make(binding.root, R.string.export_success, Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(b.root, R.string.export_success, Snackbar.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Snackbar.make(binding.root, R.string.export_error, Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(b.root, R.string.export_error, Snackbar.LENGTH_SHORT).show()
             }
         }
     }
@@ -65,13 +66,14 @@ class SettingsFragment : Fragment() {
     ) { uri ->
         if (uri == null) return@registerForActivityResult
         lifecycleScope.launch {
+            val b = _binding ?: return@launch
             try {
                 val json = requireContext().contentResolver.openInputStream(uri)?.use { stream ->
                     stream.readBytes().toString(Charsets.UTF_8)
                 } ?: return@launch
                 showImportConfirmDialog(json)
             } catch (e: Exception) {
-                Snackbar.make(binding.root, R.string.import_error, Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(b.root, R.string.import_error, Snackbar.LENGTH_SHORT).show()
             }
         }
     }

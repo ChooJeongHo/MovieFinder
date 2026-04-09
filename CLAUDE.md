@@ -90,7 +90,7 @@ app/src/main/java/com/choo/moviefinder/
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 ├── data/                  # 데이터 레이어
 │   ├── local/
-│   │   ├── MovieDatabase.kt       # Room DB (version 11)
+│   │   ├── MovieDatabase.kt       # Room DB (version 14)
 │   │   ├── dao/                   # DAO 8개 (FavoriteMovieDao, WatchlistDao: abstract class)
 │   │   └── entity/                # Room Entity 8개
 │   ├── paging/
@@ -290,7 +290,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - 딥링크: `moviefinder://movie/{id}`, `moviefinder://person/{id}`, `moviefinder://stats`
 
 ### Room DB
-- 버전: 11, 이름: `movie_finder_db`, 스키마: `app/schemas/`
+- 버전: 14, 이름: `movie_finder_db`, 스키마: `app/schemas/`
 - Entity 8개: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity, MemoEntity
 - `FavoriteMovieDao`, `WatchlistDao`: `abstract class` — `@Transaction` toggleFavorite/toggleWatchlist
 - Destructive migration fallback 적용 (개발 환경)

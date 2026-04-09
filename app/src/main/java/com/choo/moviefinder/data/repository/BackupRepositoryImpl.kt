@@ -4,15 +4,18 @@ import androidx.room.withTransaction
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.MemoDao
+import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.UserRatingDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.MemoEntity
+import com.choo.moviefinder.data.local.entity.MovieTagEntity
 import com.choo.moviefinder.data.local.entity.UserRatingEntity
 import com.choo.moviefinder.data.local.entity.WatchlistEntity
 import com.choo.moviefinder.domain.model.BackupMemo
 import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.BackupRating
+import com.choo.moviefinder.domain.model.BackupTag
 import com.choo.moviefinder.domain.model.UserDataBackup
 import com.choo.moviefinder.domain.repository.BackupRepository
 import javax.inject.Inject
@@ -22,10 +25,11 @@ class BackupRepositoryImpl @Inject constructor(
     private val favoriteMovieDao: FavoriteMovieDao,
     private val watchlistDao: WatchlistDao,
     private val userRatingDao: UserRatingDao,
-    private val memoDao: MemoDao
+    private val memoDao: MemoDao,
+    private val movieTagDao: MovieTagDao
 ) : BackupRepository {
 
-    // 즐겨찾기, 워치리스트, 평점, 메모를 백업 모델로 내보낸다
+    // 즐겨찾기, 워치리스트, 평점, 메모, 태그를 백업 모델로 내보낸다
     override suspend fun exportUserData(): UserDataBackup {
         val favorites = favoriteMovieDao.getAllFavoritesOnce().map { entity ->
             BackupMovie(
@@ -36,7 +40,8 @@ class BackupRepositoryImpl @Inject constructor(
                 overview = entity.overview,
                 releaseDate = entity.releaseDate,
                 backdropPath = entity.backdropPath,
-                voteCount = entity.voteCount
+                voteCount = entity.voteCount,
+                addedAt = entity.addedAt
             )
         }
         val watchlist = watchlistDao.getAllWatchlistOnce().map { entity ->
@@ -48,20 +53,34 @@ class BackupRepositoryImpl @Inject constructor(
                 overview = entity.overview,
                 releaseDate = entity.releaseDate,
                 backdropPath = entity.backdropPath,
-                voteCount = entity.voteCount
+                voteCount = entity.voteCount,
+                addedAt = entity.addedAt
             )
         }
         val ratings = userRatingDao.getAllRatings().map { entity ->
             BackupRating(movieId = entity.movieId, rating = entity.rating)
         }
         val memos = memoDao.getAllMemos().map { entity ->
-            BackupMemo(movieId = entity.movieId, content = entity.content)
+            BackupMemo(
+                movieId = entity.movieId,
+                content = entity.content,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt
+            )
+        }
+        val tags = movieTagDao.getAllTagsOnce().map { entity ->
+            BackupTag(
+                movieId = entity.movieId,
+                tagName = entity.tagName,
+                addedAt = entity.addedAt
+            )
         }
         return UserDataBackup(
             favorites = favorites,
             watchlist = watchlist,
             ratings = ratings,
-            memos = memos
+            memos = memos,
+            tags = tags
         )
     }
 
@@ -77,7 +96,8 @@ class BackupRepositoryImpl @Inject constructor(
                     overview = movie.overview,
                     releaseDate = movie.releaseDate,
                     voteAverage = movie.voteAverage,
-                    voteCount = movie.voteCount
+                    voteCount = movie.voteCount,
+                    addedAt = if (movie.addedAt != 0L) movie.addedAt else System.currentTimeMillis()
                 )
             }
             if (favoriteEntities.isNotEmpty()) {
@@ -93,7 +113,8 @@ class BackupRepositoryImpl @Inject constructor(
                     overview = movie.overview,
                     releaseDate = movie.releaseDate,
                     voteAverage = movie.voteAverage,
-                    voteCount = movie.voteCount
+                    voteCount = movie.voteCount,
+                    addedAt = if (movie.addedAt != 0L) movie.addedAt else System.currentTimeMillis()
                 )
             }
             if (watchlistEntities.isNotEmpty()) {
@@ -108,10 +129,27 @@ class BackupRepositoryImpl @Inject constructor(
             }
 
             val memoEntities = backup.memos.map { memo ->
-                MemoEntity(movieId = memo.movieId, content = memo.content)
+                val now = System.currentTimeMillis()
+                MemoEntity(
+                    movieId = memo.movieId,
+                    content = memo.content,
+                    createdAt = if (memo.createdAt != 0L) memo.createdAt else now,
+                    updatedAt = if (memo.updatedAt != 0L) memo.updatedAt else now
+                )
             }
             if (memoEntities.isNotEmpty()) {
                 memoDao.insertAll(memoEntities)
+            }
+
+            val tagEntities = backup.tags.map { tag ->
+                MovieTagEntity(
+                    movieId = tag.movieId,
+                    tagName = tag.tagName,
+                    addedAt = if (tag.addedAt != 0L) tag.addedAt else System.currentTimeMillis()
+                )
+            }
+            if (tagEntities.isNotEmpty()) {
+                tagEntities.forEach { movieTagDao.insertTag(it) }
             }
         }
     }

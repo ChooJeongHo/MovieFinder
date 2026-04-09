@@ -27,6 +27,10 @@ interface MovieTagDao {
     @Query("DELETE FROM movie_tags WHERE movieId = :movieId AND tagName = :tagName")
     suspend fun deleteTag(movieId: Int, tagName: String)
 
+    // 모든 태그 목록 일회성 조회 (백업용)
+    @Query("SELECT * FROM movie_tags ORDER BY addedAt ASC")
+    suspend fun getAllTagsOnce(): List<MovieTagEntity>
+
     // 특정 영화의 모든 태그 삭제
     @Query("DELETE FROM movie_tags WHERE movieId = :movieId")
     suspend fun deleteAllTagsForMovie(movieId: Int)
