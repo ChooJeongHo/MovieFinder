@@ -87,70 +87,65 @@ class BackupRepositoryImpl @Inject constructor(
     // 백업 데이터를 기존 데이터와 병합한다 (중복 시 덮어쓰기, 원자적 트랜잭션)
     override suspend fun importUserData(backup: UserDataBackup) {
         database.withTransaction {
-            val favoriteEntities = backup.favorites.map { movie ->
-                FavoriteMovieEntity(
-                    id = movie.id,
-                    title = movie.title,
-                    posterPath = movie.posterPath,
-                    backdropPath = movie.backdropPath,
-                    overview = movie.overview,
-                    releaseDate = movie.releaseDate,
-                    voteAverage = movie.voteAverage,
-                    voteCount = movie.voteCount,
-                    addedAt = if (movie.addedAt != 0L) movie.addedAt else System.currentTimeMillis()
-                )
-            }
-            if (favoriteEntities.isNotEmpty()) {
-                favoriteMovieDao.insertAll(favoriteEntities)
-            }
+            restoreFavorites(backup.favorites)
+            restoreWatchlist(backup.watchlist)
+            restoreRatings(backup.ratings)
+            restoreMemos(backup.memos)
+            restoreTags(backup.tags)
+        }
+    }
 
-            val watchlistEntities = backup.watchlist.map { movie ->
-                WatchlistEntity(
-                    id = movie.id,
-                    title = movie.title,
-                    posterPath = movie.posterPath,
-                    backdropPath = movie.backdropPath,
-                    overview = movie.overview,
-                    releaseDate = movie.releaseDate,
-                    voteAverage = movie.voteAverage,
-                    voteCount = movie.voteCount,
-                    addedAt = if (movie.addedAt != 0L) movie.addedAt else System.currentTimeMillis()
-                )
-            }
-            if (watchlistEntities.isNotEmpty()) {
-                watchlistDao.insertAll(watchlistEntities)
-            }
+    private suspend fun restoreFavorites(favorites: List<BackupMovie>) {
+        val entities = favorites.map { movie ->
+            FavoriteMovieEntity(
+                id = movie.id, title = movie.title, posterPath = movie.posterPath,
+                backdropPath = movie.backdropPath, overview = movie.overview,
+                releaseDate = movie.releaseDate, voteAverage = movie.voteAverage,
+                voteCount = movie.voteCount,
+                addedAt = if (movie.addedAt != 0L) movie.addedAt else System.currentTimeMillis()
+            )
+        }
+        if (entities.isNotEmpty()) favoriteMovieDao.insertAll(entities)
+    }
 
-            val ratingEntities = backup.ratings.map { rating ->
-                UserRatingEntity(movieId = rating.movieId, rating = rating.rating)
-            }
-            if (ratingEntities.isNotEmpty()) {
-                userRatingDao.insertAll(ratingEntities)
-            }
+    private suspend fun restoreWatchlist(watchlist: List<BackupMovie>) {
+        val entities = watchlist.map { movie ->
+            WatchlistEntity(
+                id = movie.id, title = movie.title, posterPath = movie.posterPath,
+                backdropPath = movie.backdropPath, overview = movie.overview,
+                releaseDate = movie.releaseDate, voteAverage = movie.voteAverage,
+                voteCount = movie.voteCount,
+                addedAt = if (movie.addedAt != 0L) movie.addedAt else System.currentTimeMillis()
+            )
+        }
+        if (entities.isNotEmpty()) watchlistDao.insertAll(entities)
+    }
 
-            val memoEntities = backup.memos.map { memo ->
-                val now = System.currentTimeMillis()
-                MemoEntity(
-                    movieId = memo.movieId,
-                    content = memo.content,
-                    createdAt = if (memo.createdAt != 0L) memo.createdAt else now,
-                    updatedAt = if (memo.updatedAt != 0L) memo.updatedAt else now
-                )
-            }
-            if (memoEntities.isNotEmpty()) {
-                memoDao.insertAll(memoEntities)
-            }
+    private suspend fun restoreRatings(ratings: List<BackupRating>) {
+        val entities = ratings.map { UserRatingEntity(movieId = it.movieId, rating = it.rating) }
+        if (entities.isNotEmpty()) userRatingDao.insertAll(entities)
+    }
 
-            val tagEntities = backup.tags.map { tag ->
+    private suspend fun restoreMemos(memos: List<BackupMemo>) {
+        val now = System.currentTimeMillis()
+        val entities = memos.map { memo ->
+            MemoEntity(
+                movieId = memo.movieId, content = memo.content,
+                createdAt = if (memo.createdAt != 0L) memo.createdAt else now,
+                updatedAt = if (memo.updatedAt != 0L) memo.updatedAt else now
+            )
+        }
+        if (entities.isNotEmpty()) memoDao.insertAll(entities)
+    }
+
+    private suspend fun restoreTags(tags: List<BackupTag>) {
+        tags.forEach { tag ->
+            movieTagDao.insertTag(
                 MovieTagEntity(
-                    movieId = tag.movieId,
-                    tagName = tag.tagName,
+                    movieId = tag.movieId, tagName = tag.tagName,
                     addedAt = if (tag.addedAt != 0L) tag.addedAt else System.currentTimeMillis()
                 )
-            }
-            if (tagEntities.isNotEmpty()) {
-                tagEntities.forEach { movieTagDao.insertTag(it) }
-            }
+            )
         }
     }
 }
