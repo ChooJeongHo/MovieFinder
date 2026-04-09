@@ -29,21 +29,21 @@ class MemoDelegate(
 
     // 영화에 새 메모를 저장
     fun saveMemo(content: String) = viewModelScope.launchWithErrorHandler(
-        onError = { snackbarChannel.send(it) }
+        onError = { snackbarChannel.trySend(it) }
     ) {
         saveMemoUseCase(movieId, content)
     }
 
     // 기존 메모 내용을 수정
     fun updateMemo(memoId: Long, content: String) = viewModelScope.launchWithErrorHandler(
-        onError = { snackbarChannel.send(it) }
+        onError = { snackbarChannel.trySend(it) }
     ) {
         updateMemoUseCase(memoId, content)
     }
 
     // 메모를 삭제
     fun deleteMemo(memoId: Long) = viewModelScope.launchWithErrorHandler(
-        onError = { snackbarChannel.send(it) }
+        onError = { snackbarChannel.trySend(it) }
     ) {
         deleteMemoUseCase(memoId)
     }

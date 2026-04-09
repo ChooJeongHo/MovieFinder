@@ -27,7 +27,7 @@ class UserRatingDelegate(
 
     // 사용자 영화 평점을 Room DB에 저장
     fun setUserRating(rating: Float) = viewModelScope.launchWithErrorHandler(
-        onError = { snackbarChannel.send(it) }
+        onError = { snackbarChannel.trySend(it) }
     ) {
         setUserRatingUseCase(movieId, rating)
         Timber.d("영화 %d 사용자 평점 %.1f로 저장됨", movieId, rating)
@@ -35,7 +35,7 @@ class UserRatingDelegate(
 
     // 사용자 영화 평점을 Room DB에서 삭제
     fun deleteUserRating() = viewModelScope.launchWithErrorHandler(
-        onError = { snackbarChannel.send(it) }
+        onError = { snackbarChannel.trySend(it) }
     ) {
         deleteUserRatingUseCase(movieId)
         Timber.d("영화 %d 사용자 평점 삭제됨", movieId)
