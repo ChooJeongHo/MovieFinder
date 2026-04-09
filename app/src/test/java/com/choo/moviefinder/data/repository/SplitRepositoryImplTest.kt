@@ -404,6 +404,7 @@ class SplitRepositoryImplTest {
         coEvery { watchlistDao.getAllWatchlistOnce() } returns watchlistEntities
         coEvery { userRatingDao.getAllRatings() } returns ratingEntities
         coEvery { memoDao.getAllMemos() } returns memoEntities
+        coEvery { movieTagDao.getAllTagsOnce() } returns emptyList()
 
         val result = backupRepo.exportUserData()
 
