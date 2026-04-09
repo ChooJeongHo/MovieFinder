@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
 package com.choo.moviefinder.presentation.adapter
 
 import android.view.LayoutInflater
@@ -7,7 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.databinding.ItemMemoBinding
 import com.choo.moviefinder.domain.model.Memo
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
