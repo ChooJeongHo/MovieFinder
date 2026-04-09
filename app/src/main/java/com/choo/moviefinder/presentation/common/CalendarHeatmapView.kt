@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
 package com.choo.moviefinder.presentation.common
 
 import android.content.Context
@@ -10,7 +12,7 @@ import android.view.View
 import com.choo.moviefinder.domain.model.DailyWatchCount
 import java.text.DateFormatSymbols
 import java.util.Locale
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone

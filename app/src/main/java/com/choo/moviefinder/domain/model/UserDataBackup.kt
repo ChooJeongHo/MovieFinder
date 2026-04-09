@@ -1,6 +1,8 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
 package com.choo.moviefinder.domain.model
 
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.serialization.Serializable
 
 @Serializable
