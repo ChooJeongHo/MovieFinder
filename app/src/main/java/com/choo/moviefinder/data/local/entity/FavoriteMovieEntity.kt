@@ -3,6 +3,7 @@ package com.choo.moviefinder.data.local.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.Movie
 
 @Entity(
@@ -31,6 +32,12 @@ fun FavoriteMovieEntity.toDomain() = Movie(
     releaseDate = releaseDate,
     voteAverage = voteAverage,
     voteCount = voteCount
+)
+
+fun FavoriteMovieEntity.toBackupMovie() = BackupMovie(
+    id = id, title = title, posterPath = posterPath, backdropPath = backdropPath,
+    overview = overview, releaseDate = releaseDate, voteAverage = voteAverage,
+    voteCount = voteCount, addedAt = addedAt
 )
 
 // 도메인 Movie를 즐겨찾기 Entity로 변환

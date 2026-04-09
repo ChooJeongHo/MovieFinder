@@ -66,22 +66,11 @@ class SearchViewModel @Inject constructor(
     )
     val selectedGenres: StateFlow<Set<Int>> = _selectedGenres.asStateFlow()
 
-    private val _sortBy = MutableStateFlow(
-        savedStateHandle.get<String>(KEY_SORT)?.let { name ->
-            runCatching { SortOption.valueOf(name) }.getOrDefault(SortOption.POPULARITY_DESC)
-        } ?: SortOption.POPULARITY_DESC
-    )
+    private val _sortBy = MutableStateFlow(savedStateHandle.getEnum(KEY_SORT, SortOption.POPULARITY_DESC))
     val sortBy: StateFlow<SortOption> = _sortBy.asStateFlow()
 
-    private val _viewMode = MutableStateFlow(
-        savedStateHandle.get<String>(KEY_VIEW_MODE)?.let { name ->
-            runCatching {
-                ViewMode.valueOf(name)
-            }.getOrDefault(ViewMode.GRID)
-        } ?: ViewMode.GRID
-    )
-    val viewMode: StateFlow<ViewMode> =
-        _viewMode.asStateFlow()
+    private val _viewMode = MutableStateFlow(savedStateHandle.getEnum(KEY_VIEW_MODE, ViewMode.GRID))
+    val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
 
     private val _genres = MutableStateFlow<List<Genre>>(emptyList())
     val genres: StateFlow<List<Genre>> = _genres.asStateFlow()
@@ -220,11 +209,7 @@ class SearchViewModel @Inject constructor(
 
     // 그리드/리스트 보기 모드 전환 및 SavedStateHandle 저장
     fun toggleViewMode() {
-        val newMode = if (_viewMode.value == ViewMode.GRID) {
-            ViewMode.LIST
-        } else {
-            ViewMode.GRID
-        }
+        val newMode = if (_viewMode.value == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID
         _viewMode.value = newMode
         savedStateHandle[KEY_VIEW_MODE] = newMode.name
     }
@@ -253,11 +238,7 @@ class SearchViewModel @Inject constructor(
 
     // 영화/배우 검색 모드 전환
     fun toggleSearchMode() {
-        _searchMode.value = if (_searchMode.value == SearchMode.MOVIE) {
-            SearchMode.PERSON
-        } else {
-            SearchMode.MOVIE
-        }
+        _searchMode.value = if (_searchMode.value == SearchMode.MOVIE) SearchMode.PERSON else SearchMode.MOVIE
         _personSearchQuery.value = ""
         _personResults.value = emptyList()
     }
@@ -283,6 +264,9 @@ class SearchViewModel @Inject constructor(
         private const val PERSON_SEARCH_DEBOUNCE_MS = 300L
     }
 }
+
+private inline fun <reified T : Enum<T>> SavedStateHandle.getEnum(key: String, default: T): T =
+    get<String>(key)?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: default
 
 enum class SearchMode {
     MOVIE,
