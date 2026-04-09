@@ -12,6 +12,7 @@ import com.choo.moviefinder.data.local.entity.MemoEntity
 import com.choo.moviefinder.data.local.entity.MovieTagEntity
 import com.choo.moviefinder.data.local.entity.UserRatingEntity
 import com.choo.moviefinder.data.local.entity.WatchlistEntity
+import com.choo.moviefinder.data.local.entity.toBackupMovie
 import com.choo.moviefinder.domain.model.BackupMemo
 import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.BackupRating
@@ -31,32 +32,8 @@ class BackupRepositoryImpl @Inject constructor(
 
     // 즐겨찾기, 워치리스트, 평점, 메모, 태그를 백업 모델로 내보낸다
     override suspend fun exportUserData(): UserDataBackup {
-        val favorites = favoriteMovieDao.getAllFavoritesOnce().map { entity ->
-            BackupMovie(
-                id = entity.id,
-                title = entity.title,
-                posterPath = entity.posterPath,
-                voteAverage = entity.voteAverage,
-                overview = entity.overview,
-                releaseDate = entity.releaseDate,
-                backdropPath = entity.backdropPath,
-                voteCount = entity.voteCount,
-                addedAt = entity.addedAt
-            )
-        }
-        val watchlist = watchlistDao.getAllWatchlistOnce().map { entity ->
-            BackupMovie(
-                id = entity.id,
-                title = entity.title,
-                posterPath = entity.posterPath,
-                voteAverage = entity.voteAverage,
-                overview = entity.overview,
-                releaseDate = entity.releaseDate,
-                backdropPath = entity.backdropPath,
-                voteCount = entity.voteCount,
-                addedAt = entity.addedAt
-            )
-        }
+        val favorites = favoriteMovieDao.getAllFavoritesOnce().map { it.toBackupMovie() }
+        val watchlist = watchlistDao.getAllWatchlistOnce().map { it.toBackupMovie() }
         val ratings = userRatingDao.getAllRatings().map { entity ->
             BackupRating(movieId = entity.movieId, rating = entity.rating)
         }
