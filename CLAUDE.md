@@ -193,7 +193,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (351개)
+### 유닛 테스트 (394개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -229,6 +229,12 @@ TMDB_API_KEY=여기에_API_키_입력
 | `DiscoverPagingSourceTest` | 5 | Discover 페이징 |
 | `RateLimiterTest` | 5 | 2초 쿨다운, 동시 호출 차단 |
 | `ExportImportUseCaseTest` | 4 | 내보내기/가져오기 검증 |
+| `PersonRepositoryImplTest` | 12 | getPersonDetail, getPersonMovieCredits, searchPerson + 유효성 검사 |
+| `NetworkMonitorTest` | 8 | 초기 상태, 콜백, SecurityException 처리 |
+| `DateUtilsTest` | 7 | currentMonthStartMillis, currentYearMonth (고정 Clock) |
+| `ImageUrlProviderTest` | 8 | posterUrl, backdropUrl, profileUrl URL 생성 |
+| `CoroutineExtTest` | 5 | launchWithErrorHandler 성공/에러/CancellationException |
+| `ReleaseNotificationWorkerTest` | 3 | 유효하지 않은 입력 실패 경로 |
 
 ### Espresso UI 테스트 (23개)
 ```bash
