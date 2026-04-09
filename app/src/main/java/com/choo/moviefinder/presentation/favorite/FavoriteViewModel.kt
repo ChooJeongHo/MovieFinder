@@ -78,7 +78,7 @@ class FavoriteViewModel @Inject constructor(
     fun toggleFavorite(movie: Movie) = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("영화 %d 즐겨찾기 토글 실패", movie.id)
-            _snackbarEvent.send(it)
+            _snackbarEvent.trySend(it)
         }
     ) {
         toggleFavoriteUseCase(movie)
@@ -98,7 +98,7 @@ class FavoriteViewModel @Inject constructor(
     fun toggleWatchlist(movie: Movie) = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("영화 %d 워치리스트 토글 실패", movie.id)
-            _snackbarEvent.send(it)
+            _snackbarEvent.trySend(it)
         }
     ) {
         toggleWatchlistUseCase(movie)
@@ -112,7 +112,7 @@ class FavoriteViewModel @Inject constructor(
     fun addTagToMovie(movieId: Int, tagName: String) = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("영화 %d에 태그 '%s' 추가 실패", movieId, tagName)
-            _snackbarEvent.send(it)
+            _snackbarEvent.trySend(it)
         }
     ) {
         addTagToMovieUseCase(movieId, tagName)
@@ -126,7 +126,7 @@ class FavoriteViewModel @Inject constructor(
     fun removeTagFromMovie(movieId: Int, tagName: String) = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("영화 %d에서 태그 '%s' 제거 실패", movieId, tagName)
-            _snackbarEvent.send(it)
+            _snackbarEvent.trySend(it)
         }
     ) {
         removeTagFromMovieUseCase(movieId, tagName)

@@ -218,7 +218,7 @@ class DetailViewModel @Inject constructor(
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleFavorite() = viewModelScope.launchWithErrorHandler(
-        onError = { _snackbarEvent.send(it) }
+        onError = { _snackbarEvent.trySend(it) }
     ) {
         toggleMutex.withLock {
             val state = _uiState.value
@@ -230,7 +230,7 @@ class DetailViewModel @Inject constructor(
 
     // 워치리스트 토글 및 개봉일 알림 예약/취소
     fun toggleWatchlist() = viewModelScope.launchWithErrorHandler(
-        onError = { _snackbarEvent.send(it) }
+        onError = { _snackbarEvent.trySend(it) }
     ) {
         toggleMutex.withLock {
             val state = _uiState.value

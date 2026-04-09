@@ -75,7 +75,7 @@ class SettingsViewModel @Inject constructor(
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("테마 모드를 %s로 설정 실패", mode)
-            _snackbarEvent.send(it)
+            _snackbarEvent.trySend(it)
         }
     ) {
         setThemeModeUseCase(mode)
@@ -85,7 +85,7 @@ class SettingsViewModel @Inject constructor(
     fun setMonthlyWatchGoal(goal: Int) = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("월간 시청 목표를 %d로 설정 실패", goal)
-            _snackbarEvent.send(it)
+            _snackbarEvent.trySend(it)
         }
     ) {
         setMonthlyWatchGoalUseCase(goal)
@@ -95,12 +95,12 @@ class SettingsViewModel @Inject constructor(
     fun exportData() = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("사용자 데이터 내보내기 실패")
-            _snackbarEvent.send(it)
+            _snackbarEvent.trySend(it)
         }
     ) {
         val backup = exportUserDataUseCase()
         val jsonString = json.encodeToString(backup)
-        _exportedJson.send(jsonString)
+        _exportedJson.trySend(jsonString)
     }
 
     // JSON 문자열에서 사용자 데이터를 가져온다 (성공 시 이벤트, 에러 시 Snackbar)
@@ -110,12 +110,12 @@ class SettingsViewModel @Inject constructor(
             try {
                 val backup = json.decodeFromString<UserDataBackup>(jsonString)
                 importUserDataUseCase(backup)
-                _importSuccess.send(Unit)
+                _importSuccess.trySend(Unit)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "사용자 데이터 가져오기 실패")
-                _snackbarEvent.send(ErrorMessageProvider.getErrorType(e))
+                _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(e))
             } finally {
                 _isImporting.value = false
             }
@@ -126,10 +126,10 @@ class SettingsViewModel @Inject constructor(
     fun clearWatchHistory() = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("시청 기록 삭제 실패")
-            _snackbarEvent.send(it)
+            _snackbarEvent.trySend(it)
         }
     ) {
         clearWatchHistoryUseCase()
-        _watchHistoryCleared.send(Unit)
+        _watchHistoryCleared.trySend(Unit)
     }
 }
