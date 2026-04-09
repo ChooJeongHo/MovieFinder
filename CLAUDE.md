@@ -79,8 +79,6 @@ app/src/main/java/com/choo/moviefinder/
 │       ├── ErrorMessageProvider.kt # 예외 → ErrorType 매핑 + 사용자 메시지 변환
 │       ├── NetworkMonitor.kt      # 실시간 네트워크 상태 모니터링 (StateFlow)
 │       ├── CoroutineExt.kt        # launchWithErrorHandler 공통 에러 처리 헬퍼
-│       ├── CircuitBreaker.kt      # API 서킷 브레이커 (3회 실패 → 30초 차단 → 자동 복구)
-│       ├── CircuitBreakerInterceptor.kt # OkHttp 서킷 브레이커 인터셉터
 │       ├── ExponentialBackoff.kt  # 재시도 간격 점진 증가 (1s→2s→4s, 최대 3회)
 │       ├── RateLimiter.kt         # 재시도 버튼 2초 쿨다운
 │       ├── DebugHealthCheck.kt    # 앱 시작 시 API/이미지/DB 헬스체크 (디버그 전용)
@@ -195,7 +193,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (359개)
+### 유닛 테스트 (351개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -216,7 +214,6 @@ TMDB_API_KEY=여기에_API_키_입력
 | `FavoriteWatchlistUseCasesTest` | 12 | 즐겨찾기/워치리스트 UseCase 위임 검증 |
 | `GetWatchStatsUseCaseTest` | 10 | combine 로직, 장르 빈도, 월별/일별 카운트, 평점 분포 |
 | `ErrorMessageProviderTest` | 10 | 예외 타입별 ErrorType 매핑 |
-| `CircuitBreakerTest` | 10 | 서킷 브레이커 상태 전환 (CLOSED→OPEN→HALF_OPEN→CLOSED) |
 | `PreferencesRepositoryImplTest` | 9 | 테마, 시청 목표, 알림 월 |
 | `DelegateTest` | 8 | MemoDelegate + UserRatingDelegate 로직 |
 | `StatsViewModelTest` | 7 | Loading/Success/Error, 목표 달성률 |
@@ -226,7 +223,7 @@ TMDB_API_KEY=여기에_API_키_입력
 | `WatchGoalNotificationHelperTest` | 7 | 달성/미달/중복 알림 방지 |
 | `ReleaseNotificationSchedulerTest` | 7 | WorkManager 스케줄/취소, 과거날짜/API 레벨 가드 |
 | `PersonDetailViewModelTest` | 6 | 배우 상세 상태, 병렬 호출 |
-| `HomeViewModelTest` | 6 | UseCase 호출, 시청기록 |
+| `HomeViewModelTest` | 8 | UseCase 호출, 시청기록 |
 | `ExponentialBackoffTest` | 6 | 첫 성공, 재시도 후 성공, 전체 실패, CancellationException 처리 |
 | `TrendingPagingSourceTest` | 5 | 트렌딩 페이징 |
 | `DiscoverPagingSourceTest` | 5 | Discover 페이징 |
@@ -269,7 +266,9 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 | `cert-pin-check.yml` | 매주 월요일 cron | 인증서 핀 검증, 불일치 시 Issue 생성 |
 | `pr-coverage.yml` | PR → main | JaCoCo 커버리지 PR 코멘트 자동 게시 |
 
-- Pre-commit Hook: Detekt + 컴파일 체크 (`.githooks/pre-commit`, `git config core.hooksPath .githooks`)
+- Pre-commit Hook: Detekt + 컴파일 체크 (`.githooks/pre-commit`)
+- Pre-push Hook: 유닛 테스트 전체 실행 (`.githooks/pre-push`)
+- Hooks 활성화: `git config core.hooksPath .githooks`
 - GitHub Secrets: `TMDB_API_KEY` 필요
 - Dependabot: 라이브러리 자동 버전 업데이트
 
@@ -331,7 +330,6 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - 위젯 OkHttp 싱글턴에도 CertificatePinner 적용 (Hilt 미사용)
 
 ### 네트워크 복원력
-- **CircuitBreaker**: 3회 실패 → OPEN (30초) → HALF_OPEN → CLOSED, `@Synchronized` 원자적 전환
 - **ExponentialBackoff**: `withExponentialBackoff()` (1s→2s→4s, CancellationException 안전)
 - **RateLimiter**: 재시도 버튼 2초 쿨다운 (`AtomicLong.compareAndSet`)
 
