@@ -7,6 +7,7 @@ import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.UserRatingDao
 import com.choo.moviefinder.data.local.dao.WatchHistoryDao
+import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.MemoEntity
@@ -48,6 +49,7 @@ class SplitRepositoryImplTest {
     private lateinit var watchlistDao: WatchlistDao
     private lateinit var userRatingDao: UserRatingDao
     private lateinit var memoDao: MemoDao
+    private lateinit var movieTagDao: MovieTagDao
     private lateinit var apiService: MovieApiService
     private lateinit var database: MovieDatabase
 
@@ -95,6 +97,7 @@ class SplitRepositoryImplTest {
         watchlistDao = mockk(relaxUnitFun = true)
         userRatingDao = mockk(relaxUnitFun = true)
         memoDao = mockk(relaxUnitFun = true)
+        movieTagDao = mockk(relaxUnitFun = true)
         apiService = mockk()
         database = mockk()
         coEvery { database.withTransaction<Unit>(any()) } coAnswers {
@@ -109,7 +112,7 @@ class SplitRepositoryImplTest {
         userRatingRepo = UserRatingRepositoryImpl(userRatingDao)
         memoRepo = MemoRepositoryImpl(memoDao)
         personRepo = PersonRepositoryImpl(apiService)
-        backupRepo = BackupRepositoryImpl(database, favoriteMovieDao, watchlistDao, userRatingDao, memoDao)
+        backupRepo = BackupRepositoryImpl(database, favoriteMovieDao, watchlistDao, userRatingDao, memoDao, movieTagDao)
     }
 
     // --- FavoriteRepository ---
