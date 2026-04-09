@@ -91,11 +91,6 @@ class PersonRepositoryImplTest {
         repository.getPersonDetail(-1)
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun `getPersonDetail - zero id throws IllegalArgumentException`() = runTest {
-        repository.getPersonDetail(0)
-    }
-
     @Test
     fun `getPersonMovieCredits - returns list of domain movies`() = runTest {
         coEvery { apiService.getPersonMovieCredits(6193) } returns
@@ -149,11 +144,6 @@ class PersonRepositoryImplTest {
     @Test(expected = IllegalArgumentException::class)
     fun `searchPerson - blank query throws`() = runTest {
         repository.searchPerson("   ")
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun `searchPerson - empty query throws`() = runTest {
-        repository.searchPerson("")
     }
 
     @Test

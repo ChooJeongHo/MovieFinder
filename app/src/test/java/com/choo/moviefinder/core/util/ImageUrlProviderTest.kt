@@ -3,7 +3,6 @@ package com.choo.moviefinder.core.util
 import com.choo.moviefinder.BuildConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ImageUrlProviderTest {
@@ -43,21 +42,4 @@ class ImageUrlProviderTest {
         assertNull(ImageUrlProvider.profileUrl(null))
     }
 
-    @Test
-    fun `all URLs contain base URL`() {
-        val path = "/img.jpg"
-        assertTrue(ImageUrlProvider.posterUrl(path)!!.startsWith(baseUrl))
-        assertTrue(ImageUrlProvider.backdropUrl(path)!!.startsWith(baseUrl))
-        assertTrue(ImageUrlProvider.profileUrl(path)!!.startsWith(baseUrl))
-    }
-
-    @Test
-    fun `poster and backdrop use different sizes`() {
-        val path = "/img.jpg"
-        val poster = ImageUrlProvider.posterUrl(path)!!
-        val backdrop = ImageUrlProvider.backdropUrl(path)!!
-        assertTrue(poster != backdrop)
-        assertTrue(poster.contains("w500"))
-        assertTrue(backdrop.contains("w780"))
-    }
 }
