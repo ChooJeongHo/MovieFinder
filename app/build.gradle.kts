@@ -77,7 +77,7 @@ baselineProfile {
 detekt {
     config.setFrom("$rootDir/detekt.yml")
     buildUponDefaultConfig = true
-    parallel = true
+    parallel = false
     source.setFrom(
         "src/main/java",
         "src/test/java"
