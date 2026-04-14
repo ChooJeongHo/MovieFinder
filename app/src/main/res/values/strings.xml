@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="ko">
     <string name="app_name">MovieFinder</string>
 
     <!-- 하단 내비게이션 -->

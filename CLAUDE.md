@@ -24,23 +24,24 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | Hilt | 2.59.2 | 의존성 주입 (DI) |
 | Room | 2.8.4 | 로컬 SQLite 데이터베이스 |
 | Room Paging | 2.8.4 | Room + Paging 3 통합 (RemoteMediator) |
-| Paging 3 | 3.4.0 | 무한 스크롤 페이징 |
+| Paging 3 | 3.4.2 | 무한 스크롤 페이징 |
 | Retrofit 3 | 3.0.0 | REST API 통신 |
-| OkHttp 5 | 5.0.0-alpha.14 | HTTP 클라이언트 + 로깅 + 응답 캐시 (kotlin.time.Duration API) |
-| kotlinx.serialization | 1.8.1 | JSON 직렬화/역직렬화 |
+| OkHttp 5 | 5.3.2 | HTTP 클라이언트 + 로깅 + 응답 캐시 (kotlin.time.Duration API) |
+| kotlinx.serialization | 1.10.0 | JSON 직렬화/역직렬화 |
 | Coil 3 | 3.4.0 | 이미지 로딩 (View 버전, 메모리+디스크 캐시) |
 | Facebook Shimmer | 0.5.0 | 로딩 Shimmer 애니메이션 |
 | Lifecycle | 2.10.0 | 생명주기 인식 컴포넌트 |
 | Splash Screen API | 1.2.0 | 스플래시 화면 |
 | SwipeRefreshLayout | 1.2.0 | 당겨서 새로고침 |
-| DataStore (Typed) | 1.2.0 | kotlinx.serialization JSON 기반 타입 안전 설정 저장 |
+| DataStore (Typed) | 1.2.1 | kotlinx.serialization JSON 기반 타입 안전 설정 저장 |
 | Lifecycle Process | 2.10.0 | ProcessLifecycleOwner (앱 수준 생명주기) |
 | ProfileInstaller | 1.4.1 | Baseline Profiles 설치 |
-| Benchmark Macro | 1.5.0-alpha02 | Baseline Profile 생성 |
+| Benchmark Macro | 1.5.0-alpha05 | Baseline Profile 생성 |
 | Timber | 5.0.1 | 구조화 로깅 |
 | App Startup | 1.2.0 | 초기화 최적화 (Timber 등) |
-| WorkManager | 2.10.1 | 개봉일 알림 스케줄링 |
-| kotlinx-datetime | 0.6.2 | 멀티플랫폼 날짜/시간 API |
+| WorkManager | 2.11.2 | 개봉일 알림 스케줄링 |
+| kotlinx-datetime | 0.7.1 | 멀티플랫폼 날짜/시간 API |
+| Window | 1.3.0 | 윈도우 레이아웃 API |
 
 ### 개발/디버그 도구
 | 도구 | 버전 | 용도 |
@@ -82,7 +83,7 @@ app/src/main/java/com/choo/moviefinder/
 │       ├── ExponentialBackoff.kt  # 재시도 간격 점진 증가 (1s→2s→4s, 최대 3회)
 │       ├── RateLimiter.kt         # 재시도 버튼 2초 쿨다운
 │       ├── DebugHealthCheck.kt    # 앱 시작 시 API/이미지/DB 헬스체크 (디버그 전용)
-│       ├── DebugEventListener.kt  # OkHttp SSL/연결 실패 로깅 (디버그 전용)
+│       ├── DebugEventListener.kt  # OkHttp SSL/연결 실패 로깅 (src/debug 소스셋, src/release는 no-op)
 │       ├── FileLoggingTree.kt     # Timber 파일 로깅 2MB 로테이션 (디버그 전용)
 │       └── AnrWatchdog.kt         # 메인 스레드 5초+ 블로킹 감지 (디버그 전용)
 ├── baselineprofile/       # Baseline Profile 생성 모듈
@@ -193,7 +194,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (389개)
+### 유닛 테스트 (390개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -217,7 +218,7 @@ TMDB_API_KEY=여기에_API_키_입력
 | `PreferencesRepositoryImplTest` | 9 | 테마, 시청 목표, 알림 월 |
 | `DelegateTest` | 8 | MemoDelegate + UserRatingDelegate 로직 |
 | `StatsViewModelTest` | 7 | Loading/Success/Error, 목표 달성률 |
-| `MovieRemoteMediatorTest` | 7 | REFRESH/APPEND/SKIP, 캐시 만료 |
+| `MovieRemoteMediatorTest` | 8 | REFRESH/APPEND/SKIP, 캐시 만료, 오프라인 REFRESH |
 | `MoviePagingSourceTest` | 7 | 페이지 로드, 에러, nextKey/prevKey |
 | `CachedMovieEntityMapperTest` | 7 | Entity ↔ 도메인 모델 변환 |
 | `WatchGoalNotificationHelperTest` | 7 | 달성/미달/중복 알림 방지 |
@@ -268,7 +269,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 
 | 워크플로우 | 트리거 | 내용 |
 |---|---|---|
-| `android-ci.yml` | push/PR → main | Detekt → Lint → Build → Test → JaCoCo (최소 50%) |
+| `android-ci.yml` | push/PR → main | Detekt → Lint → Debug Build → Release Build(R8 검증) → Test → JaCoCo (최소 50%); APK 업로드는 main push 전용 |
 | `cert-pin-check.yml` | 매주 월요일 cron | 인증서 핀 검증, 불일치 시 Issue 생성 |
 | `pr-coverage.yml` | PR → main | JaCoCo 커버리지 PR 코멘트 자동 게시 |
 
@@ -353,7 +354,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - **Widget**: OkHttp 싱글턴 + kotlinx.serialization 직접 호출, `response.use {}` 패턴
 - **WatchGoalNotificationHelper**: `Mutex.withLock()` 원자적 달성 체크, `lastGoalNotifiedMonth`로 월 1회 제한
 - **StrictMode**: `app/src/debug/AndroidManifest.xml`에만 등록 (릴리스 미포함)
-- **디버그 도구**: DebugHealthCheck/DebugEventListener/FileLoggingTree/AnrWatchdog — 모두 `BuildConfig.DEBUG` 가드
+- **디버그 도구**: DebugHealthCheck/FileLoggingTree/AnrWatchdog — `BuildConfig.DEBUG` 가드; `DebugEventListener` — `src/debug/` 소스셋 분리 (릴리스 바이너리에 로깅 코드 미포함, `src/release/`에 no-op 존재)
 - **R8 Full Mode**: `android.enableR8.fullMode=true` — serialization 클래스 ProGuard keep 필수
 - **Predictive Back**: `android:enableOnBackInvokedCallback="true"` (Android 14+)
 - **Edge-to-Edge**: `enableEdgeToEdge()` (Android 15 필수)

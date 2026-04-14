@@ -10,12 +10,17 @@ import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
 import com.choo.moviefinder.data.local.entity.CachedMovieEntity
 import com.choo.moviefinder.data.local.entity.RemoteKeyEntity
+import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.MovieDto
 import com.choo.moviefinder.data.remote.dto.MovieListResponse
 import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -28,6 +33,7 @@ class MovieRemoteMediatorTest {
     private lateinit var database: MovieDatabase
     private lateinit var cachedMovieDao: CachedMovieDao
     private lateinit var remoteKeyDao: RemoteKeyDao
+    private lateinit var networkMonitor: NetworkMonitor
 
     private val testMovieDto = MovieDto(
         id = 1,
@@ -46,10 +52,13 @@ class MovieRemoteMediatorTest {
         database = mockk(relaxed = true)
         cachedMovieDao = mockk(relaxed = true)
         remoteKeyDao = mockk(relaxed = true)
+        networkMonitor = mockk {
+            every { isConnected } returns MutableStateFlow(true)
+        }
     }
 
     private fun createMediator(category: String = MovieRemoteMediator.CATEGORY_NOW_PLAYING) =
-        MovieRemoteMediator(apiService, database, cachedMovieDao, remoteKeyDao, category)
+        MovieRemoteMediator(apiService, database, cachedMovieDao, remoteKeyDao, category, networkMonitor)
 
     private fun createEmptyPagingState() = PagingState<Int, CachedMovieEntity>(
         pages = emptyList(),
@@ -149,5 +158,22 @@ class MovieRemoteMediatorTest {
 
         assertTrue(result is RemoteMediator.MediatorResult.Error)
         assertTrue((result as RemoteMediator.MediatorResult.Error).throwable is IOException)
+    }
+
+    @Test
+    fun `load REFRESH when offline returns success without calling API`() = runTest {
+        val offlineMonitor = mockk<NetworkMonitor> {
+            every { isConnected } returns MutableStateFlow(false)
+        }
+        val mediator = MovieRemoteMediator(
+            apiService, database, cachedMovieDao, remoteKeyDao,
+            MovieRemoteMediator.CATEGORY_NOW_PLAYING, offlineMonitor
+        )
+
+        val result = mediator.load(LoadType.REFRESH, createEmptyPagingState())
+
+        assertTrue(result is RemoteMediator.MediatorResult.Success)
+        assertFalse((result as RemoteMediator.MediatorResult.Success).endOfPaginationReached)
+        coVerify(exactly = 0) { apiService.getNowPlayingMovies(any(), any()) }
     }
 }

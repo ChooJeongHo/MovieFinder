@@ -52,6 +52,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // CI 환경에서는 디버그 서명으로 R8/ProGuard 검증 빌드 수행
+            if (System.getenv("CI") != null) {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 

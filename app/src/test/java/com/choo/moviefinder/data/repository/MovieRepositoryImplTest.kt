@@ -1,5 +1,6 @@
 package com.choo.moviefinder.data.repository
 
+import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
@@ -20,8 +21,10 @@ import com.choo.moviefinder.data.remote.dto.ReviewResponse
 import com.choo.moviefinder.data.remote.dto.VideoDto
 import com.choo.moviefinder.data.remote.dto.VideoResponse
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -36,6 +39,7 @@ class MovieRepositoryImplTest {
     private lateinit var database: MovieDatabase
     private lateinit var cachedMovieDao: CachedMovieDao
     private lateinit var remoteKeyDao: RemoteKeyDao
+    private lateinit var networkMonitor: NetworkMonitor
 
     private lateinit var repository: MovieRepositoryImpl
 
@@ -77,12 +81,16 @@ class MovieRepositoryImplTest {
         database = mockk()
         cachedMovieDao = mockk()
         remoteKeyDao = mockk()
+        networkMonitor = mockk {
+            every { isConnected } returns MutableStateFlow(true)
+        }
 
         repository = MovieRepositoryImpl(
             apiService = apiService,
             database = database,
             cachedMovieDao = cachedMovieDao,
-            remoteKeyDao = remoteKeyDao
+            remoteKeyDao = remoteKeyDao,
+            networkMonitor = networkMonitor
         )
     }
 

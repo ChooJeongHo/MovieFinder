@@ -5,6 +5,7 @@ import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
+import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
@@ -21,7 +22,8 @@ class MovieRemoteMediator(
     private val database: MovieDatabase,
     private val cachedMovieDao: CachedMovieDao,
     private val remoteKeyDao: RemoteKeyDao,
-    private val category: String
+    private val category: String,
+    private val networkMonitor: NetworkMonitor
 ) : RemoteMediator<Int, CachedMovieEntity>() {
 
     // 캐시 만료 여부를 확인하여 초기 새로고침 필요 여부 결정
@@ -42,7 +44,13 @@ class MovieRemoteMediator(
         state: PagingState<Int, CachedMovieEntity>
     ): MediatorResult {
         val page = when (loadType) {
-            LoadType.REFRESH -> 1
+            LoadType.REFRESH -> {
+                // 오프라인 상태면 Room 캐시를 즉시 표시하고 네트워크 호출 생략
+                if (!networkMonitor.isConnected.value) {
+                    return MediatorResult.Success(endOfPaginationReached = false)
+                }
+                1
+            }
             LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             LoadType.APPEND -> {
                 val remoteKey = remoteKeyDao.getRemoteKey(category)
