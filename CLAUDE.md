@@ -69,7 +69,7 @@ app/src/main/java/com/choo/moviefinder/
 ├── core/                  # 공유 유틸리티
 │   ├── startup/
 │   │   ├── TimberInitializer.kt   # App Startup Timber 초기화
-│   │   └── StrictModeInitializer.kt # App Startup StrictMode (디버그 전용)
+│   │   └── StrictModeInitializer.kt # App Startup StrictMode (src/debug 소스셋 — release 빌드에 클래스 미포함)
 │   ├── notification/
 │   │   ├── ReleaseNotificationScheduler.kt # 개봉일 알림 스케줄링 (WorkManager)
 │   │   ├── ReleaseNotificationWorker.kt    # 개봉일 알림 Worker
@@ -353,8 +353,8 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 ### 기타 주의사항
 - **Widget**: OkHttp 싱글턴 + kotlinx.serialization 직접 호출, `response.use {}` 패턴
 - **WatchGoalNotificationHelper**: `Mutex.withLock()` 원자적 달성 체크, `lastGoalNotifiedMonth`로 월 1회 제한
-- **StrictMode**: `app/src/debug/AndroidManifest.xml`에만 등록 (릴리스 미포함)
-- **디버그 도구**: DebugHealthCheck/FileLoggingTree/AnrWatchdog — `BuildConfig.DEBUG` 가드; `DebugEventListener` — `src/debug/` 소스셋 분리 (릴리스 바이너리에 로깅 코드 미포함, `src/release/`에 no-op 존재)
+- **StrictMode**: `src/debug/java/` 소스셋 분리 — release 빌드에 클래스 자체 미포함, debug manifest에 meta-data 등록
+- **디버그 도구**: DebugHealthCheck/FileLoggingTree/AnrWatchdog — `BuildConfig.DEBUG` 가드; `DebugEventListener` — `src/debug/` 소스셋 분리 (릴리스 바이너리에 로깅 코드 미포함, `src/release/`에 no-op 존재); `StrictModeInitializer` — `src/debug/` 소스셋 분리 (release 빌드에 클래스 자체 미포함, lintVitalRelease 통과)
 - **R8 Full Mode**: `android.enableR8.fullMode=true` — serialization 클래스 ProGuard keep 필수
 - **Predictive Back**: `android:enableOnBackInvokedCallback="true"` (Android 14+)
 - **Edge-to-Edge**: `enableEdgeToEdge()` (Android 15 필수)
