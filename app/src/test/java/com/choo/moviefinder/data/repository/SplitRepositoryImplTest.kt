@@ -23,6 +23,7 @@ import com.choo.moviefinder.data.util.Constants
 import com.choo.moviefinder.domain.model.BackupMemo
 import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.BackupRating
+import com.choo.moviefinder.domain.model.MemoConstants
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.UserDataBackup
 import androidx.room.withTransaction
@@ -416,6 +417,63 @@ class SplitRepositoryImplTest {
         assertEquals("Watch 1", result.watchlist[0].title)
         assertEquals(4.5f, result.ratings[0].rating)
         assertEquals("Great film", result.memos[0].content)
+    }
+
+    // --- MemoRepository ---
+
+    @Test
+    fun `getMemos returns mapped domain memos`() = runTest {
+        val entities = listOf(
+            MemoEntity(movieId = 1, content = "첫 번째 메모"),
+            MemoEntity(movieId = 1, content = "두 번째 메모")
+        )
+        every { memoDao.getMemosByMovieId(1) } returns flowOf(entities)
+
+        memoRepo.getMemos(1).test {
+            val memos = awaitItem()
+            assertEquals(2, memos.size)
+            assertEquals("첫 번째 메모", memos[0].content)
+            assertEquals("두 번째 메모", memos[1].content)
+            assertEquals(1, memos[0].movieId)
+            awaitComplete()
+        }
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `getMemos throws on invalid movieId`() = runTest {
+        memoRepo.getMemos(0)
+    }
+
+    @Test
+    fun `saveMemo delegates to dao insert`() = runTest {
+        memoRepo.saveMemo(1, "좋은 영화")
+
+        coVerify { memoDao.insert(match { it.movieId == 1 && it.content == "좋은 영화" }) }
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `saveMemo throws on blank content`() = runTest {
+        memoRepo.saveMemo(1, "   ")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `saveMemo throws on content exceeding max length`() = runTest {
+        val tooLong = "a".repeat(MemoConstants.MAX_LENGTH + 1)
+        memoRepo.saveMemo(1, tooLong)
+    }
+
+    @Test
+    fun `updateMemo delegates to dao updateMemo`() = runTest {
+        memoRepo.updateMemo(42L, "수정된 메모")
+
+        coVerify { memoDao.updateMemo(memoId = 42L, content = "수정된 메모", updatedAt = any()) }
+    }
+
+    @Test
+    fun `deleteMemo delegates to dao deleteMemo`() = runTest {
+        memoRepo.deleteMemo(99L)
+
+        coVerify { memoDao.deleteMemo(99L) }
     }
 
     @Test

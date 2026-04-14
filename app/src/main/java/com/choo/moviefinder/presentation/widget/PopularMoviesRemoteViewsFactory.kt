@@ -39,8 +39,7 @@ class PopularMoviesRemoteViewsFactory(
     // TMDB API에서 인기 영화 Top 10을 동기 호출로 가져옴
     override fun onDataSetChanged() {
         try {
-            val url = "https://api.themoviedb.org/3/movie/popular" +
-                "?api_key=${BuildConfig.TMDB_API_KEY}&language=ko-KR&page=1"
+            val url = "https://api.themoviedb.org/3/movie/popular?language=ko-KR&page=1"
             val request = Request.Builder().url(url).build()
             client.newCall(request).execute().use { response ->
                 val body = response.body?.string()
@@ -110,6 +109,14 @@ class PopularMoviesRemoteViewsFactory(
 
         private val client: OkHttpClient by lazy {
             OkHttpClient.Builder()
+                // API 키를 Interceptor로 주입 — URL 문자열에 직접 포함 시 예외 로그에 노출될 수 있음
+                .addInterceptor { chain ->
+                    val original = chain.request()
+                    val url = original.url.newBuilder()
+                        .addQueryParameter("api_key", BuildConfig.TMDB_API_KEY)
+                        .build()
+                    chain.proceed(original.newBuilder().url(url).build())
+                }
                 .apply {
                     // 디버그 빌드(에뮬레이터)에서는 인증서 피닝 비활성화
                     if (!BuildConfig.DEBUG) {
