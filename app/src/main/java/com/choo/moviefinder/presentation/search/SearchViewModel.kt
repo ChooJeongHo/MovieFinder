@@ -75,7 +75,7 @@ class SearchViewModel @Inject constructor(
     private val _genres = MutableStateFlow<List<Genre>>(emptyList())
     val genres: StateFlow<List<Genre>> = _genres.asStateFlow()
 
-    private var genreLoadFailed = false
+    private val _genreLoadFailed = MutableStateFlow(false)
 
     private val _searchMode = MutableStateFlow(SearchMode.MOVIE)
     val searchMode: StateFlow<SearchMode> = _searchMode.asStateFlow()
@@ -103,11 +103,10 @@ class SearchViewModel @Inject constructor(
     val searchResults: Flow<PagingData<Movie>> = merge(
         combine(_searchQuery, _selectedYear, _selectedGenres, _sortBy) { query, year, genres, sort ->
             SearchParams(query, year, genres, sort)
-        }.debounce(300),
+        }.debounce(300).distinctUntilChanged(),
         _immediateSearch
     )
         .filter { it.query.isNotBlank() || it.genres.isNotEmpty() }
-        .distinctUntilChanged()
         .flatMapLatest { params ->
             if (params.query.isNotBlank()) {
                 searchMoviesUseCase(params.query, params.year)
@@ -156,11 +155,11 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _genres.value = getGenreListUseCase()
-                genreLoadFailed = false
+                _genreLoadFailed.value = false
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                genreLoadFailed = true
+                _genreLoadFailed.value = true
                 Timber.w(e, "장르 목록 로드 실패")
             }
         }
@@ -168,7 +167,7 @@ class SearchViewModel @Inject constructor(
 
     // 장르 로드 실패 시 재시도
     fun retryLoadGenres() {
-        if (genreLoadFailed) loadGenres()
+        if (_genreLoadFailed.value) loadGenres()
     }
 
     // 검색어 변경 시 StateFlow 갱신 및 SavedStateHandle 저장

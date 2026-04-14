@@ -73,6 +73,7 @@ class MovieRepositoryImpl @Inject constructor(
 
     // 검색어와 연도 필터로 영화를 네트워크 페이징 검색
     override fun searchMovies(query: String, year: Int?): Flow<PagingData<Movie>> {
+        require(query.isNotBlank()) { "Search query must not be blank" }
         return Pager(
             config = Constants.DEFAULT_PAGING_CONFIG,
             pagingSourceFactory = {
@@ -119,14 +120,12 @@ class MovieRepositoryImpl @Inject constructor(
     // YouTube 예고편 키 조회 (공식 Trailer 우선, YouTube 영상 폴백)
     override suspend fun getMovieTrailerKey(movieId: Int): String? {
         require(movieId > 0) { "Movie ID must be positive" }
-        val response = apiService.getMovieVideos(movieId)
-        return response.results
-            .filter { it.site == "YouTube" && it.type == "Trailer" }
+        val youtubeVideos = apiService.getMovieVideos(movieId).results.filter { it.site == "YouTube" }
+        return youtubeVideos
+            .filter { it.type == "Trailer" }
             .sortedByDescending { it.official }
             .firstOrNull()?.key
-            ?: response.results
-                .filter { it.site == "YouTube" }
-                .firstOrNull()?.key
+            ?: youtubeVideos.firstOrNull()?.key
     }
 
     // 영화 리뷰 목록을 API에서 조회

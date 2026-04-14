@@ -11,6 +11,10 @@ suspend fun <T> withExponentialBackoff(
     factor: Double = 2.0,
     block: suspend () -> T
 ): T {
+    require(maxRetries > 0) { "maxRetries must be positive, was $maxRetries" }
+    require(initialDelayMs >= 0) { "initialDelayMs must be non-negative, was $initialDelayMs" }
+    require(factor >= 1.0) { "factor must be >= 1.0, was $factor" }
+
     var currentDelay = initialDelayMs
     var lastException: Exception? = null
 

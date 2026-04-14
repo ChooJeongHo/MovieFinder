@@ -9,6 +9,7 @@ import com.choo.moviefinder.core.notification.WatchGoalNotificationHelper
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.launchWithErrorHandler
+import com.choo.moviefinder.core.util.suspendRunCatching
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
 import com.choo.moviefinder.domain.usecase.GetMemosUseCase
@@ -31,9 +32,11 @@ import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,7 +86,7 @@ class DetailViewModel @Inject constructor(
     private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
-    private val loadingMutex = Mutex()
+    private var loadingJob: Job? = null
     private val toggleMutex = Mutex()
 
     val isFavorite = isFavoriteUseCase(movieId)
@@ -119,8 +122,8 @@ class DetailViewModel @Inject constructor(
 
     // 핵심 데이터(영화 상세 + 등급) 먼저 표시 후 나머지 API를 점진적으로 업데이트
     fun loadMovieDetail() {
-        viewModelScope.launch {
-            if (!loadingMutex.tryLock()) return@launch
+        if (loadingJob?.isActive == true) return
+        loadingJob = viewModelScope.launch {
             _uiState.value = DetailUiState.Loading
             try {
                 // 1단계: 핵심 데이터 (영화 상세 + 등급) 병렬 로드
@@ -170,8 +173,6 @@ class DetailViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _uiState.value = DetailUiState.Error(ErrorMessageProvider.getErrorType(e))
-            } finally {
-                loadingMutex.unlock()
             }
         }
     }
@@ -180,17 +181,6 @@ class DetailViewModel @Inject constructor(
     private fun updateSuccess(transform: (DetailUiState.Success) -> DetailUiState.Success) {
         _uiState.update { current ->
             if (current is DetailUiState.Success) transform(current) else current
-        }
-    }
-
-    // CancellationException을 재전파하는 runCatching 대체 헬퍼
-    private inline fun <T> suspendRunCatching(block: () -> T): Result<T> {
-        return try {
-            Result.success(block())
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
@@ -235,7 +225,7 @@ class DetailViewModel @Inject constructor(
         toggleMutex.withLock {
             val state = _uiState.value
             if (state is DetailUiState.Success) {
-                val wasInWatchlist = isInWatchlist.value
+                val wasInWatchlist = isInWatchlistUseCase(movieId).first()
                 val movie = state.movieDetail.toMovie()
                 toggleWatchlistUseCase(movie)
                 if (!wasInWatchlist) {
