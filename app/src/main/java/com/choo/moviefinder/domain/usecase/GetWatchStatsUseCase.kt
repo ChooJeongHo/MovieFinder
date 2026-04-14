@@ -27,7 +27,7 @@ class GetWatchStatsUseCase @Inject constructor(
     // flow { } 빌더로 감싸서 재수집 시마다 monthStartMillis를 새로 계산한다 (월 경계 넘김 대응)
     operator fun invoke(): Flow<WatchStats> = flow {
         val monthStartMillis = currentMonthStartMillis()
-        val threeMonthsAgoMillis = System.currentTimeMillis() - THREE_MONTHS_MILLIS
+        val threeMonthsAgoMillis = kotlin.time.Clock.System.now().toEpochMilliseconds() - THREE_MONTHS_MILLIS
 
         val genreCountsFlow = watchHistoryRepository.getGenreCounts()
             .distinctUntilChanged()

@@ -1,9 +1,12 @@
 package com.choo.moviefinder.data.paging
 
+import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
+import androidx.paging.PagingState
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.MovieDto
 import com.choo.moviefinder.data.remote.dto.MovieListResponse
+import com.choo.moviefinder.domain.model.Movie
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -121,5 +124,46 @@ class DiscoverPagingSourceTest {
         val page = result as PagingSource.LoadResult.Page
         assertEquals(1, page.prevKey)
         assertEquals(3, page.nextKey)
+    }
+
+    // ── getRefreshKey ───────────────────────────────────────────
+
+    private val testMovie = Movie(1, "Movie", null, null, "", "2024-01-01", 7.0, 100)
+
+    private fun pagingState(
+        pages: List<PagingSource.LoadResult.Page<Int, Movie>>,
+        anchorPosition: Int?
+    ) = PagingState(
+        pages = pages,
+        anchorPosition = anchorPosition,
+        config = PagingConfig(pageSize = 20),
+        leadingPlaceholderCount = 0
+    )
+
+    @Test
+    fun `getRefreshKey returns null when anchorPosition is null`() {
+        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null)
+        val state = pagingState(emptyList(), anchorPosition = null)
+        assertNull(source.getRefreshKey(state))
+    }
+
+    @Test
+    fun `getRefreshKey returns prevKey plus 1 when anchor page has prevKey`() {
+        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null)
+        val page = PagingSource.LoadResult.Page<Int, Movie>(
+            data = listOf(testMovie), prevKey = 1, nextKey = 3
+        )
+        val state = pagingState(listOf(page), anchorPosition = 0)
+        assertEquals(2, source.getRefreshKey(state))
+    }
+
+    @Test
+    fun `getRefreshKey falls back to nextKey minus 1 when prevKey is null`() {
+        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null)
+        val page = PagingSource.LoadResult.Page<Int, Movie>(
+            data = listOf(testMovie), prevKey = null, nextKey = 2
+        )
+        val state = pagingState(listOf(page), anchorPosition = 0)
+        assertEquals(1, source.getRefreshKey(state))
     }
 }

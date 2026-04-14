@@ -115,4 +115,21 @@ class ExponentialBackoffTest {
         assertEquals("last chance", result)
         assertEquals(3, callCount)
     }
+
+    // ── require 입력 검증 ─────────────────────────────────────
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `maxRetries zero throws IllegalArgumentException`() = runTest {
+        withExponentialBackoff(maxRetries = 0) { "unused" }
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `negative initialDelayMs throws IllegalArgumentException`() = runTest {
+        withExponentialBackoff(initialDelayMs = -1L) { "unused" }
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `factor less than 1 throws IllegalArgumentException`() = runTest {
+        withExponentialBackoff(factor = 0.5) { "unused" }
+    }
 }

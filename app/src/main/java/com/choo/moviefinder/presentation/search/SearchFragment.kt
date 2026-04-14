@@ -344,7 +344,8 @@ class SearchFragment : Fragment() {
         binding.rvSearchResults.layoutManager = if (mode == MoviePagingAdapter.ViewMode.LIST) {
             LinearLayoutManager(requireContext())
         } else {
-            createMovieGridLayoutManager(requireContext()) {
+            val spanCount = requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount()
+            createMovieGridLayoutManager(requireContext(), spanCount) {
                 searchAdapter.itemCount
             }
         }

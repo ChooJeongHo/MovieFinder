@@ -44,7 +44,7 @@ class SettingsFragment : Fragment() {
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri == null) return@registerForActivityResult
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             val b = _binding ?: return@launch
             try {
                 viewModel.pendingExportJson?.let { json ->
@@ -65,7 +65,7 @@ class SettingsFragment : Fragment() {
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) return@registerForActivityResult
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             val b = _binding ?: return@launch
             try {
                 val json = requireContext().contentResolver.openInputStream(uri)?.use { stream ->
@@ -94,8 +94,7 @@ class SettingsFragment : Fragment() {
         setupClickListeners()
         setupAppInfo()
         updateLanguageDisplay()
-        observeSettings()
-        observeEvents()
+        observeViewModelFlows()
     }
 
     // 테마, 언어, 통계, 시청 목표, 캐시 삭제, 시청기록 삭제, 내보내기, 가져오기, 로그 공유 항목 클릭 리스너 등록
@@ -149,26 +148,54 @@ class SettingsFragment : Fragment() {
         binding.tvAppVersion.text = getString(R.string.settings_version, BuildConfig.VERSION_NAME)
     }
 
-    // 테마 모드와 시청 목표 Flow를 수집하여 표시 텍스트 갱신
-    private fun observeSettings() {
+    // 모든 ViewModel Flow를 단일 repeatOnLifecycle 블록에서 병렬 수집
+    private fun observeViewModelFlows() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.currentThemeMode.collect { mode ->
-                    binding.tvThemeValue.text = when (mode) {
-                        ThemeMode.LIGHT -> getString(R.string.theme_light)
-                        ThemeMode.DARK -> getString(R.string.theme_dark)
-                        ThemeMode.SYSTEM -> getString(R.string.theme_system)
+                launch {
+                    viewModel.currentThemeMode.collect { mode ->
+                        binding.tvThemeValue.text = when (mode) {
+                            ThemeMode.LIGHT -> getString(R.string.theme_light)
+                            ThemeMode.DARK -> getString(R.string.theme_dark)
+                            ThemeMode.SYSTEM -> getString(R.string.theme_system)
+                        }
                     }
                 }
-            }
-        }
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.monthlyWatchGoal.collect { goal ->
-                    binding.tvWatchGoalValue.text = if (goal == 0) {
-                        getString(R.string.settings_watch_goal_not_set)
-                    } else {
-                        getString(R.string.stats_count_format, goal)
+                launch {
+                    viewModel.monthlyWatchGoal.collect { goal ->
+                        binding.tvWatchGoalValue.text = if (goal == 0) {
+                            getString(R.string.settings_watch_goal_not_set)
+                        } else {
+                            getString(R.string.stats_count_format, goal)
+                        }
+                    }
+                }
+                launch {
+                    viewModel.watchHistoryCleared.collect {
+                        Snackbar.make(binding.root, R.string.watch_history_cleared, Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                launch {
+                    viewModel.snackbarEvent.collect { errorType ->
+                        val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
+                        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                launch {
+                    viewModel.exportedJson.collect { json ->
+                        viewModel.pendingExportJson = json
+                        createDocumentLauncher.launch("moviefinder_backup.json")
+                    }
+                }
+                launch {
+                    viewModel.importSuccess.collect {
+                        Snackbar.make(binding.root, R.string.import_success, Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                launch {
+                    viewModel.isImporting.collect { importing ->
+                        binding.itemImportData.isEnabled = !importing
+                        binding.itemImportData.alpha = if (importing) 0.5f else 1.0f
                     }
                 }
             }
@@ -292,48 +319,6 @@ class SettingsFragment : Fragment() {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
-    }
-
-    // 시청 기록 삭제 성공/에러/내보내기/가져오기 이벤트를 수집하여 Snackbar 표시
-    private fun observeEvents() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.watchHistoryCleared.collect {
-                    Snackbar.make(binding.root, R.string.watch_history_cleared, Snackbar.LENGTH_SHORT).show()
-                }
-            }
-        }
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.snackbarEvent.collect { errorType ->
-                    val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
-                    Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
-                }
-            }
-        }
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.exportedJson.collect { json ->
-                    viewModel.pendingExportJson = json
-                    createDocumentLauncher.launch("moviefinder_backup.json")
-                }
-            }
-        }
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.importSuccess.collect {
-                    Snackbar.make(binding.root, R.string.import_success, Snackbar.LENGTH_SHORT).show()
-                }
-            }
-        }
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.isImporting.collect { importing ->
-                    binding.itemImportData.isEnabled = !importing
-                    binding.itemImportData.alpha = if (importing) 0.5f else 1.0f
-                }
-            }
-        }
     }
 
     // 가져오기 확인 다이얼로그 표시

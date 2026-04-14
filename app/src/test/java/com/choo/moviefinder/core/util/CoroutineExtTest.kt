@@ -5,6 +5,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -68,6 +69,39 @@ class CoroutineExtTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(receivedError == ErrorType.NETWORK)
+    }
+
+    // ── suspendRunCatching ────────────────────────────────────
+
+    @Test
+    fun `suspendRunCatching success - returns Result success`() {
+        val result = suspendRunCatching { 42 }
+
+        assertTrue(result.isSuccess)
+        assertEquals(42, result.getOrNull())
+    }
+
+    @Test
+    fun `suspendRunCatching exception - returns Result failure`() {
+        val exception = IllegalStateException("boom")
+
+        val result = suspendRunCatching { throw exception }
+
+        assertTrue(result.isFailure)
+        assertEquals(exception, result.exceptionOrNull())
+    }
+
+    @Test
+    fun `suspendRunCatching CancellationException - rethrows instead of wrapping`() {
+        var rethrown = false
+
+        try {
+            suspendRunCatching { throw CancellationException("cancelled") }
+        } catch (e: CancellationException) {
+            rethrown = true
+        }
+
+        assertTrue(rethrown)
     }
 
 }

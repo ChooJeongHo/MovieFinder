@@ -427,9 +427,10 @@ class StatsFragment : Fragment() {
         return bitmap
     }
 
-    // 바인딩 null 처리로 메모리 누수 방지
+    // 바인딩 및 통계 참조 null 처리로 메모리 누수 방지
     override fun onDestroyView() {
         super.onDestroyView()
+        currentStats = null
         _binding = null
     }
 }

@@ -23,6 +23,10 @@ interface MovieTagDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTag(tag: MovieTagEntity)
 
+    // 태그 일괄 삽입 (백업 복원용)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAll(tags: List<MovieTagEntity>)
+
     // 특정 태그 삭제
     @Query("DELETE FROM movie_tags WHERE movieId = :movieId AND tagName = :tagName")
     suspend fun deleteTag(movieId: Int, tagName: String)

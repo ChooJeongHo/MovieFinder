@@ -139,15 +139,18 @@ class DetailViewModelTest {
 
     private fun createViewModel(movieId: Int = 1): DetailViewModel {
         val savedStateHandle = SavedStateHandle(mapOf("movieId" to movieId))
+        val fetch = DetailFetchUseCases(
+            getMovieDetail = getMovieDetailUseCase,
+            getMovieCredits = getMovieCreditsUseCase,
+            getSimilarMovies = getSimilarMoviesUseCase,
+            getMovieTrailer = getMovieTrailerUseCase,
+            getMovieCertification = getMovieCertificationUseCase,
+            getMovieReviews = getMovieReviewsUseCase,
+            getMovieRecommendations = getMovieRecommendationsUseCase
+        )
         return DetailViewModel(
             savedStateHandle = savedStateHandle,
-            getMovieDetailUseCase = getMovieDetailUseCase,
-            getMovieCreditsUseCase = getMovieCreditsUseCase,
-            getSimilarMoviesUseCase = getSimilarMoviesUseCase,
-            getMovieTrailerUseCase = getMovieTrailerUseCase,
-            getMovieCertificationUseCase = getMovieCertificationUseCase,
-            getMovieReviewsUseCase = getMovieReviewsUseCase,
-            getMovieRecommendationsUseCase = getMovieRecommendationsUseCase,
+            fetch = fetch,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
             isFavoriteUseCase = isFavoriteUseCase,
             toggleWatchlistUseCase = toggleWatchlistUseCase,

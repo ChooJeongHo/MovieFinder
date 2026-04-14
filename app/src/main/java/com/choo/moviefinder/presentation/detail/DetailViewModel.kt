@@ -12,24 +12,17 @@ import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.core.util.suspendRunCatching
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
-import com.choo.moviefinder.domain.usecase.GetMemosUseCase
-import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.DeleteUserRatingUseCase
-import com.choo.moviefinder.domain.usecase.GetMovieRecommendationsUseCase
-import com.choo.moviefinder.domain.usecase.SaveMemoUseCase
-import com.choo.moviefinder.domain.usecase.UpdateMemoUseCase
-import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
-import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
-import com.choo.moviefinder.domain.usecase.GetMovieReviewsUseCase
-import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
-import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetMemosUseCase
 import com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
 import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.IsInWatchlistUseCase
+import com.choo.moviefinder.domain.usecase.SaveMemoUseCase
 import com.choo.moviefinder.domain.usecase.SaveWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.SetUserRatingUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
+import com.choo.moviefinder.domain.usecase.UpdateMemoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -53,13 +46,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val getMovieDetailUseCase: GetMovieDetailUseCase,
-    private val getMovieCreditsUseCase: GetMovieCreditsUseCase,
-    private val getSimilarMoviesUseCase: GetSimilarMoviesUseCase,
-    private val getMovieTrailerUseCase: GetMovieTrailerUseCase,
-    private val getMovieCertificationUseCase: GetMovieCertificationUseCase,
-    private val getMovieReviewsUseCase: GetMovieReviewsUseCase,
-    private val getMovieRecommendationsUseCase: GetMovieRecommendationsUseCase,
+    private val fetch: DetailFetchUseCases,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val isFavoriteUseCase: IsFavoriteUseCase,
     private val toggleWatchlistUseCase: ToggleWatchlistUseCase,
@@ -130,9 +117,9 @@ class DetailViewModel @Inject constructor(
                 val detail: MovieDetail
                 val certification: String?
                 coroutineScope {
-                    val detailDeferred = async { getMovieDetailUseCase(movieId) }
+                    val detailDeferred = async { fetch.getMovieDetail(movieId) }
                     val certDeferred = async {
-                        loadOptionalNullable("cert") { getMovieCertificationUseCase(movieId) }
+                        loadOptionalNullable("cert") { fetch.getMovieCertification(movieId) }
                     }
                     detail = detailDeferred.await()
                     certification = certDeferred.await()
@@ -147,23 +134,23 @@ class DetailViewModel @Inject constructor(
                 // 2단계: 보조 데이터 병렬 로드, 각각 완료 시 점진적 업데이트
                 coroutineScope {
                     launch {
-                        val credits = loadOptional("credits") { getMovieCreditsUseCase(movieId) }
+                        val credits = loadOptional("credits") { fetch.getMovieCredits(movieId) }
                         updateSuccess { it.copy(credits = credits) }
                     }
                     launch {
-                        val similar = loadOptional("similar") { getSimilarMoviesUseCase(movieId) }
+                        val similar = loadOptional("similar") { fetch.getSimilarMovies(movieId) }
                         updateSuccess { it.copy(similarMovies = similar) }
                     }
                     launch {
-                        val reviews = loadOptional("reviews") { getMovieReviewsUseCase(movieId) }
+                        val reviews = loadOptional("reviews") { fetch.getMovieReviews(movieId) }
                         updateSuccess { it.copy(reviews = reviews) }
                     }
                     launch {
-                        val trailer = loadOptionalNullable("trailer") { getMovieTrailerUseCase(movieId) }
+                        val trailer = loadOptionalNullable("trailer") { fetch.getMovieTrailer(movieId) }
                         updateSuccess { it.copy(trailerKey = trailer) }
                     }
                     launch {
-                        val recs = loadOptional("recommendations") { getMovieRecommendationsUseCase(movieId) }
+                        val recs = loadOptional("recommendations") { fetch.getMovieRecommendations(movieId) }
                         updateSuccess { it.copy(recommendations = recs) }
                     }
                 }

@@ -75,7 +75,9 @@ class CalendarHeatmapView @JvmOverloads constructor(
     fun setData(items: List<DailyWatchCount>) {
         cells.clear()
         monthLabels.clear()
-        cachedShortWeekdays = DateFormatSymbols(Locale.getDefault()).shortWeekdays
+        val dfs = DateFormatSymbols(Locale.getDefault())
+        cachedShortWeekdays = dfs.shortWeekdays
+        val cachedShortMonths = dfs.shortMonths
         dowLabels = listOf(1 to cachedShortWeekdays[2], 3 to cachedShortWeekdays[4], 5 to cachedShortWeekdays[6])
 
         val tz = TimeZone.currentSystemDefault()
@@ -93,7 +95,7 @@ class CalendarHeatmapView @JvmOverloads constructor(
         var lastMonth = -1
         while (current <= today) {
             if (current.monthNumber != lastMonth && current >= startDate) {
-                monthLabels.add(col to DateFormatSymbols(Locale.getDefault()).shortMonths[current.monthNumber - 1])
+                monthLabels.add(col to cachedShortMonths[current.monthNumber - 1])
                 lastMonth = current.monthNumber
             }
             val count = countMap[current.toString()]?.count ?: 0
