@@ -43,7 +43,7 @@ class HomeFragment : Fragment() {
 
     private lateinit var movieAdapter: MoviePagingAdapter
     private lateinit var watchHistoryAdapter: HorizontalMovieAdapter
-    private var currentTab = 0
+    private var currentTab = HomeTab.NOW_PLAYING
     private var collectJob: Job? = null
 
     // 홈 화면 레이아웃을 인플레이트하고 바인딩 초기화
@@ -59,7 +59,7 @@ class HomeFragment : Fragment() {
     // 뷰 생성 후 RecyclerView, 탭, SwipeRefresh 등 UI 컴포넌트 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        savedInstanceState?.let { currentTab = it.getInt(KEY_CURRENT_TAB, 0) }
+        savedInstanceState?.let { currentTab = HomeTab.entries[it.getInt(KEY_CURRENT_TAB, 0)] }
         setupRecyclerView()
         setupWatchHistory()
         setupSwipeRefresh()
@@ -73,7 +73,7 @@ class HomeFragment : Fragment() {
     // 현재 선택된 탭 인덱스를 저장하여 화면 회전 시 복원
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(KEY_CURRENT_TAB, currentTab)
+        outState.putInt(KEY_CURRENT_TAB, currentTab.ordinal)
     }
 
     // 영화 목록 RecyclerView에 PagingAdapter와 GridLayoutManager 설정
@@ -162,14 +162,14 @@ class HomeFragment : Fragment() {
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_popular))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_trending))
 
-        if (currentTab != 0) {
-            binding.tabLayout.getTabAt(currentTab)?.select()
+        if (currentTab != HomeTab.NOW_PLAYING) {
+            binding.tabLayout.getTabAt(currentTab.ordinal)?.select()
         }
 
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
-                currentTab = tab.position
-                viewModel.onTabSelected(HomeTab.entries[tab.position])
+                currentTab = HomeTab.entries[tab.position]
+                viewModel.onTabSelected(currentTab)
                 collectMovies()
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
@@ -220,9 +220,9 @@ class HomeFragment : Fragment() {
         collectJob = viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 val flow = when (currentTab) {
-                    0 -> viewModel.nowPlayingMovies
-                    1 -> viewModel.popularMovies
-                    else -> viewModel.trendingMovies
+                    HomeTab.NOW_PLAYING -> viewModel.nowPlayingMovies
+                    HomeTab.POPULAR -> viewModel.popularMovies
+                    HomeTab.TRENDING -> viewModel.trendingMovies
                 }
                 flow.collectLatest { pagingData ->
                     movieAdapter.submitData(pagingData)

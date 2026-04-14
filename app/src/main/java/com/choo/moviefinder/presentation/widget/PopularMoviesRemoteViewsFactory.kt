@@ -15,13 +15,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import timber.log.Timber
 import java.util.Locale
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 class PopularMoviesRemoteViewsFactory(
     private val context: Context
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private val movies = mutableListOf<WidgetMovie>()
+    private var loadFailed = false
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -47,10 +48,16 @@ class PopularMoviesRemoteViewsFactory(
                     val movieResponse = json.decodeFromString<WidgetMovieListResponse>(body)
                     movies.clear()
                     movies.addAll(movieResponse.results.take(MAX_MOVIES))
+                    loadFailed = false
+                } else {
+                    movies.clear()
+                    loadFailed = true
                 }
             }
         } catch (e: Exception) {
             Timber.w(e, "위젯: 인기 영화 가져오기 실패")
+            movies.clear()
+            loadFailed = true
         }
     }
 
@@ -59,11 +66,18 @@ class PopularMoviesRemoteViewsFactory(
         movies.clear()
     }
 
-    // 위젯에 표시할 영화 개수 반환
-    override fun getCount(): Int = movies.size
+    // 위젯에 표시할 영화 개수 반환 (에러 시 에러 행 1개 표시)
+    override fun getCount(): Int = if (loadFailed) 1 else movies.size
 
     // 지정 위치의 영화 RemoteViews 생성 (제목, 평점, 딥링크 클릭)
     override fun getViewAt(position: Int): RemoteViews {
+        if (loadFailed) {
+            return RemoteViews(context.packageName, R.layout.widget_movie_item).apply {
+                setTextViewText(R.id.movie_title, context.getString(R.string.widget_empty))
+                setTextViewText(R.id.movie_rating, "")
+            }
+        }
+
         val views = RemoteViews(context.packageName, R.layout.widget_movie_item)
 
         if (position < movies.size) {
@@ -131,8 +145,8 @@ class PopularMoviesRemoteViewsFactory(
                         )
                     }
                 }
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(15, TimeUnit.SECONDS)
+                .connectTimeout(15.seconds)
+                .readTimeout(15.seconds)
                 .build()
         }
     }

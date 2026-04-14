@@ -22,11 +22,13 @@ import kotlin.coroutines.resumeWithException
 class PosterTagSuggester @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) {
-    private val labeler = ImageLabeling.getClient(
-        ImageLabelerOptions.Builder()
-            .setConfidenceThreshold(CONFIDENCE_THRESHOLD)
-            .build()
-    )
+    private val labeler by lazy {
+        ImageLabeling.getClient(
+            ImageLabelerOptions.Builder()
+                .setConfidenceThreshold(CONFIDENCE_THRESHOLD)
+                .build()
+        )
+    }
 
     // ML Kit이 반환하는 포스터 관련 무의미한 일반 레이블 제외
     private val blocklist = setOf(
@@ -59,11 +61,11 @@ class PosterTagSuggester @Inject constructor(
             val result = SingletonImageLoader.get(context).execute(request)
             val drawable = (result as? SuccessResult)?.image?.asDrawable(context.resources)
             val bitmap = (drawable as? BitmapDrawable)?.bitmap
-            // Hardware bitmap은 ML Kit에서 사용 불가 → ARGB_8888 소프트웨어 비트맵으로 복사
+            // Hardware bitmap은 ML Kit에서 사용 불가 → ARGB_8888 소프트웨어 비트맵으로 복사 후 원본 해제
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
                 bitmap?.config == Bitmap.Config.HARDWARE
             ) {
-                bitmap.copy(Bitmap.Config.ARGB_8888, false)
+                bitmap.copy(Bitmap.Config.ARGB_8888, false).also { bitmap.recycle() }
             } else {
                 bitmap
             }

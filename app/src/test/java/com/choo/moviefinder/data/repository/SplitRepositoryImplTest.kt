@@ -249,10 +249,10 @@ class SplitRepositoryImplTest {
     }
 
     @Test
-    fun `clearWatchHistory delegates to dao clearAll`() = runTest {
+    fun `clearWatchHistory delegates to clearAllWithGenres atomically`() = runTest {
         watchHistoryRepo.clearWatchHistory()
 
-        coVerify { watchHistoryDao.clearAll() }
+        coVerify { watchHistoryDao.clearAllWithGenres() }
     }
 
     // --- WatchlistRepository ---

@@ -30,21 +30,18 @@ class WatchHistoryRepositoryImpl @Inject constructor(
         watchHistoryDao.insert(movie.toWatchHistoryEntity())
     }
 
-    // 영화를 장르 정보와 함께 시청 기록에 저장하고 정규화 테이블에도 삽입
+    // 영화를 장르 정보와 함께 시청 기록에 저장 — insert + insertGenres를 단일 트랜잭션으로 처리
     override suspend fun saveWatchHistoryWithGenres(movie: Movie, genres: String) {
-        watchHistoryDao.insert(movie.toWatchHistoryEntity(genres))
         val genreEntities = genres.split(",")
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .map { WatchHistoryGenreEntity(watchHistoryId = movie.id, genreName = it) }
-        if (genreEntities.isNotEmpty()) {
-            watchHistoryDao.insertGenres(genreEntities)
-        }
+        watchHistoryDao.insertWithGenres(movie.toWatchHistoryEntity(genres), genreEntities)
     }
 
-    // 모든 시청 기록 삭제
+    // 모든 시청 기록과 장르 기록을 단일 트랜잭션으로 원자적 삭제 (고아 데이터 방지)
     override suspend fun clearWatchHistory() {
-        watchHistoryDao.clearAll()
+        watchHistoryDao.clearAllWithGenres()
     }
 
     // 총 시청 편수를 실시간 Flow로 조회

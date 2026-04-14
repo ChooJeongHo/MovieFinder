@@ -161,8 +161,8 @@ class DetailFragment : Fragment() {
             adapter = castAdapter
         }
 
-        // 비슷한 영화 클릭 시 같은 DetailFragment를 새 인스턴스로 재생성 (self-navigation)
-        similarMovieAdapter = HorizontalMovieAdapter { movieId ->
+        // self-navigation 공통 핸들러 (비슷한 영화 / 추천 영화 공유)
+        val onDetailSelfNavigate: (Int) -> Unit = { movieId ->
             if (findNavController().currentDestination?.id == R.id.detailFragment) {
                 findNavController().navigate(
                     R.id.action_detailFragment_self,
@@ -170,21 +170,15 @@ class DetailFragment : Fragment() {
                 )
             }
         }
+
+        similarMovieAdapter = HorizontalMovieAdapter(onMovieClick = onDetailSelfNavigate)
         binding.rvSimilar.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             setHasFixedSize(true)
             adapter = similarMovieAdapter
         }
 
-        // 추천 영화 클릭 시 같은 DetailFragment를 새 인스턴스로 재생성 (self-navigation)
-        recommendationAdapter = HorizontalMovieAdapter { movieId ->
-            if (findNavController().currentDestination?.id == R.id.detailFragment) {
-                findNavController().navigate(
-                    R.id.action_detailFragment_self,
-                    DetailFragmentArgs(movieId).toBundle()
-                )
-            }
-        }
+        recommendationAdapter = HorizontalMovieAdapter(onMovieClick = onDetailSelfNavigate)
         binding.rvRecommendations.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             setHasFixedSize(true)

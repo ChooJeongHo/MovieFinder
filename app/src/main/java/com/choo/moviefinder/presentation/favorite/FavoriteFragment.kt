@@ -18,6 +18,8 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.computeWindowWidthSizeClass
+import com.choo.moviefinder.core.util.toMovieGridSpanCount
 import com.choo.moviefinder.databinding.FragmentFavoriteBinding
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieTag
@@ -65,9 +67,7 @@ class FavoriteFragment : Fragment() {
         setupTabs()
         updateSortLabel(viewModel.sortOrder.value)
         collectCurrentTab()
-        observeSnackbar()
-        observeTagNames()
-        observeSelectedTag()
+        observeViewModelFlows()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -90,11 +90,7 @@ class FavoriteFragment : Fragment() {
 
     private fun showSortDialog() {
         val sortOptions = FavoriteSortOrder.entries.toTypedArray()
-        val sortLabels = arrayOf(
-            getString(R.string.sort_added_date),
-            getString(R.string.sort_by_title),
-            getString(R.string.sort_by_rating)
-        )
+        val sortLabels = sortOptions.map { getString(it.labelRes()) }.toTypedArray()
         val currentIndex = sortOptions.indexOf(viewModel.sortOrder.value)
 
         activeDialog?.dismiss()
@@ -126,7 +122,10 @@ class FavoriteFragment : Fragment() {
         )
 
         binding.rvFavorites.apply {
-            layoutManager = GridLayoutManager(requireContext(), 2)
+            layoutManager = GridLayoutManager(
+                requireContext(),
+                requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount()
+            )
             setHasFixedSize(true)
             adapter = movieAdapter
         }
@@ -182,24 +181,26 @@ class FavoriteFragment : Fragment() {
         })
     }
 
-    // 태그 이름 목록 변경 시 칩 그룹 갱신
-    private fun observeTagNames() {
+    // 태그/선택태그/스낵바 Flow를 단일 repeatOnLifecycle 블록에서 병렬 수집
+    private fun observeViewModelFlows() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.allTagNames.collect { tagNames ->
-                    updateTagChips(tagNames)
-                    updateTagFilterVisibility()
+                launch {
+                    viewModel.allTagNames.collect { tagNames ->
+                        updateTagChips(tagNames)
+                        updateTagFilterVisibility()
+                    }
                 }
-            }
-        }
-    }
-
-    // 선택된 태그 변경 시 칩 선택 상태 동기화
-    private fun observeSelectedTag() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.selectedTag.collect { selectedTag ->
-                    syncChipSelection(selectedTag)
+                launch {
+                    viewModel.selectedTag.collect { selectedTag ->
+                        syncChipSelection(selectedTag)
+                    }
+                }
+                launch {
+                    viewModel.snackbarEvent.collect { errorType ->
+                        val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
+                        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -260,17 +261,6 @@ class FavoriteFragment : Fragment() {
                     movieAdapter.submitList(movies)
                     binding.rvFavorites.isVisible = movies.isNotEmpty()
                     binding.emptyView.layoutEmpty.isVisible = movies.isEmpty()
-                }
-            }
-        }
-    }
-
-    private fun observeSnackbar() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.snackbarEvent.collect { errorType ->
-                    val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
-                    Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
                 }
             }
         }
@@ -344,23 +334,22 @@ class FavoriteFragment : Fragment() {
                 if (dialog.isShowing) renderExistingTags(tags)
             }
         }
-        dialog.setOnDismissListener { tagJob.cancel() }
 
-        // ML Kit 포스터 분석 → 추천 태그 로드
-        viewLifecycleOwner.lifecycleScope.launch {
+        // ML Kit 포스터 분석 → 추천 태그 로드 (Job 추적하여 다이얼로그 닫힐 때 취소)
+        val mlKitJob = viewLifecycleOwner.lifecycleScope.launch {
             pbSuggestions.isVisible = true
             val suggestions = viewModel.suggestTagsForPoster(movie.posterPath)
             if (dialog.isShowing) renderSuggestedTags(suggestions)
         }
+
+        dialog.setOnDismissListener {
+            tagJob.cancel()
+            mlKitJob.cancel()
+        }
     }
 
     private fun updateSortLabel(sort: FavoriteSortOrder) {
-        val subtitle = when (sort) {
-            FavoriteSortOrder.ADDED_DATE -> null
-            FavoriteSortOrder.TITLE -> getString(R.string.sort_by_title)
-            FavoriteSortOrder.RATING -> getString(R.string.sort_by_rating)
-        }
-        binding.toolbar.subtitle = subtitle
+        binding.toolbar.subtitle = sort.subtitleRes()?.let { getString(it) }
     }
 
     private fun updateEmptyState() {
@@ -391,4 +380,17 @@ class FavoriteFragment : Fragment() {
         private const val TAB_FAVORITES = 0
         private const val TAB_WATCHLIST = 1
     }
+}
+
+// FavoriteSortOrder → string resource 매핑 (도메인 레이어 순수성 유지)
+private fun FavoriteSortOrder.labelRes(): Int = when (this) {
+    FavoriteSortOrder.ADDED_DATE -> R.string.sort_added_date
+    FavoriteSortOrder.TITLE -> R.string.sort_by_title
+    FavoriteSortOrder.RATING -> R.string.sort_by_rating
+}
+
+private fun FavoriteSortOrder.subtitleRes(): Int? = when (this) {
+    FavoriteSortOrder.ADDED_DATE -> null
+    FavoriteSortOrder.TITLE -> R.string.sort_by_title
+    FavoriteSortOrder.RATING -> R.string.sort_by_rating
 }

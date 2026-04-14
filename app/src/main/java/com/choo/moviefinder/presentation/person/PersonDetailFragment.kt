@@ -99,14 +99,16 @@ class PersonDetailFragment : Fragment() {
 
     // 로딩 상태 표시
     private fun showLoading() {
-        binding.progressBar.isVisible = true
+        binding.shimmerView.shimmerLayout.startShimmer()
+        binding.shimmerView.shimmerLayout.isVisible = true
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = false
     }
 
     // 성공 상태: 인물 정보 바인딩
     private fun showContent(state: PersonDetailUiState.Success) {
-        binding.progressBar.isVisible = false
+        binding.shimmerView.shimmerLayout.stopShimmer()
+        binding.shimmerView.shimmerLayout.isVisible = false
         binding.contentLayout.isVisible = true
         binding.errorView.layoutError.isVisible = false
 
@@ -161,7 +163,8 @@ class PersonDetailFragment : Fragment() {
 
     // 에러 상태 표시
     private fun showError(state: PersonDetailUiState.Error) {
-        binding.progressBar.isVisible = false
+        binding.shimmerView.shimmerLayout.stopShimmer()
+        binding.shimmerView.shimmerLayout.isVisible = false
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = true
         binding.errorView.btnRetry.isEnabled = true
@@ -179,6 +182,7 @@ class PersonDetailFragment : Fragment() {
     // 어댑터 해제 및 바인딩 null 처리
     override fun onDestroyView() {
         super.onDestroyView()
+        binding.shimmerView.shimmerLayout.stopShimmer()
         binding.rvFilmography.adapter = null
         _binding = null
     }

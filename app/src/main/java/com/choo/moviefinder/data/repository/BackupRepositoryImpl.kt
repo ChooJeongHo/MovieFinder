@@ -116,13 +116,12 @@ class BackupRepositoryImpl @Inject constructor(
     }
 
     private suspend fun restoreTags(tags: List<BackupTag>) {
-        tags.forEach { tag ->
-            movieTagDao.insertTag(
-                MovieTagEntity(
-                    movieId = tag.movieId, tagName = tag.tagName,
-                    addedAt = if (tag.addedAt != 0L) tag.addedAt else System.currentTimeMillis()
-                )
+        val entities = tags.map { tag ->
+            MovieTagEntity(
+                movieId = tag.movieId, tagName = tag.tagName,
+                addedAt = if (tag.addedAt != 0L) tag.addedAt else System.currentTimeMillis()
             )
         }
+        if (entities.isNotEmpty()) movieTagDao.insertAll(entities)
     }
 }

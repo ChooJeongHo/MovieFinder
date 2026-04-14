@@ -194,7 +194,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (397개)
+### 유닛 테스트 (430개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -225,16 +225,18 @@ TMDB_API_KEY=여기에_API_키_입력
 | `ReleaseNotificationSchedulerTest` | 7 | WorkManager 스케줄/취소, 과거날짜/API 레벨 가드 |
 | `PersonDetailViewModelTest` | 6 | 배우 상세 상태, 병렬 호출 |
 | `HomeViewModelTest` | 8 | UseCase 호출, 시청기록 |
-| `ExponentialBackoffTest` | 6 | 첫 성공, 재시도 후 성공, 전체 실패, CancellationException 처리 |
-| `TrendingPagingSourceTest` | 5 | 트렌딩 페이징 |
-| `DiscoverPagingSourceTest` | 5 | Discover 페이징 |
+| `ExponentialBackoffTest` | 9 | 첫 성공, 재시도 후 성공, 전체 실패, CancellationException 처리, require 가드 (maxRetries/initialDelayMs/factor 유효성) |
+| `TrendingPagingSourceTest` | 8 | 트렌딩 페이징, getRefreshKey |
+| `DiscoverPagingSourceTest` | 8 | Discover 페이징, getRefreshKey |
+| `BackupRepositoryImplTest` | 9 | exportUserData 매핑, importUserData insertAll 호출·타임스탬프 |
+| `WatchHistoryRepositoryImplTest` | 7 | saveWatchHistoryWithGenres @Transaction 원자적 저장 에지 케이스, clearWatchHistory @Transaction 원자적 삭제 |
 | `RateLimiterTest` | 5 | 2초 쿨다운, 동시 호출 차단 |
 | `ExportImportUseCaseTest` | 4 | 내보내기/가져오기 검증 |
 | `PersonRepositoryImplTest` | 10 | getPersonDetail, getPersonMovieCredits, searchPerson + 유효성 검사 |
 | `NetworkMonitorTest` | 8 | 초기 상태, 콜백, SecurityException 처리 |
 | `DateUtilsTest` | 7 | currentMonthStartMillis, currentYearMonth (고정 Clock) |
 | `ImageUrlProviderTest` | 6 | posterUrl, backdropUrl, profileUrl URL 생성 |
-| `CoroutineExtTest` | 4 | launchWithErrorHandler 성공/에러/CancellationException |
+| `CoroutineExtTest` | 7 | launchWithErrorHandler 성공/에러/CancellationException, suspendRunCatching 성공/에러/CancellationException 재전파 |
 | `ReleaseNotificationWorkerTest` | 3 | 유효하지 않은 입력 실패 경로 |
 
 ### Espresso UI 테스트 (23개)
@@ -298,7 +300,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 ### Room DB
 - 버전: 14, 이름: `movie_finder_db`, 스키마: `app/schemas/`
 - Entity 8개: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity, MemoEntity
-- `FavoriteMovieDao`, `WatchlistDao`: `abstract class` — `@Transaction` toggleFavorite/toggleWatchlist
+- `FavoriteMovieDao`, `WatchlistDao`, `WatchHistoryDao`: `abstract class` — `@Transaction` wrapper 메서드 (toggleFavorite/toggleWatchlist, insertWithGenres/clearAllWithGenres)
 - Destructive migration fallback 적용 (개발 환경)
 - Room의 `withTransaction`은 MockK로 모킹 어려움 → `@Transaction` on abstract DAO 사용
 
@@ -351,6 +353,10 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `Channel.CONFLATED` + `receiveAsFlow()`: Snackbar 일회성 이벤트 (모든 ViewModel 통일)
 
 ### 기타 주의사항
+- **POST_NOTIFICATIONS 권한**: Android 13+ (TIRAMISU) 런타임 권한 필요 — `MainActivity.onCreate()`에서 `ActivityCompat.requestPermissions()` 호출 (시스템이 자동 팝업 불가)
+- **PersonDetailFragment 로딩**: `layout_shimmer_person_detail.xml` Shimmer 레이아웃 `<include>` — ViewBinding에서 `binding.shimmerView.shimmerLayout`으로 접근 (중첩 바인딩 생성)
+- **Widget 에러 상태**: `loadFailed` 플래그로 제어 — 에러 시 `getCount()=1`, `getViewAt()`에서 `R.string.widget_empty` 오류 행 반환
+- **FavoriteSortOrder 문자열 매핑**: 도메인 모델 순수성 유지 — `FavoriteFragment.kt` 파일 레벨 private 확장함수 `labelRes()` / `subtitleRes()`로 `@StringRes` 변환 (Domain 레이어에 Android 의존성 미추가)
 - **Widget**: OkHttp 싱글턴 + kotlinx.serialization 직접 호출, `response.use {}` 패턴
 - **WatchGoalNotificationHelper**: `Mutex.withLock()` 원자적 달성 체크, `lastGoalNotifiedMonth`로 월 1회 제한
 - **StrictMode**: `src/debug/java/` 소스셋 분리 — release 빌드에 클래스 자체 미포함, debug manifest에 meta-data 등록

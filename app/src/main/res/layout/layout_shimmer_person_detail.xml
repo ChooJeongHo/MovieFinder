@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.facebook.shimmer.ShimmerFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/shimmer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:importantForAccessibility="noHideDescendants"
+    app:shimmer_auto_start="true"
+    app:shimmer_duration="1200">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_md">
+
+        <!-- 이름 placeholder -->
+        <View
+            android:layout_width="200dp"
+            android:layout_height="24dp"
+            android:background="@drawable/bg_poster_placeholder" />
+
+        <!-- 활동분야 placeholder -->
+        <View
+            android:layout_width="140dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:background="@drawable/bg_poster_placeholder" />
+
+        <!-- 생년월일 placeholder -->
+        <View
+            android:layout_width="160dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:background="@drawable/bg_poster_placeholder" />
+
+        <!-- 출생지 placeholder -->
+        <View
+            android:layout_width="180dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:background="@drawable/bg_poster_placeholder" />
+
+        <!-- 소개 레이블 placeholder -->
+        <View
+            android:layout_width="80dp"
+            android:layout_height="18dp"
+            android:layout_marginTop="@dimen/spacing_lg"
+            android:background="@drawable/bg_poster_placeholder" />
+
+        <!-- 소개 텍스트 placeholder (4줄) -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="14dp"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:background="@drawable/bg_poster_placeholder" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="14dp"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:background="@drawable/bg_poster_placeholder" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="14dp"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:background="@drawable/bg_poster_placeholder" />
+
+        <View
+            android:layout_width="220dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:background="@drawable/bg_poster_placeholder" />
+
+        <!-- 출연작 레이블 placeholder -->
+        <View
+            android:layout_width="80dp"
+            android:layout_height="18dp"
+            android:layout_marginTop="@dimen/spacing_lg"
+            android:background="@drawable/bg_poster_placeholder" />
+
+        <!-- 출연작 가로 스크롤 placeholder (3개) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="100dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="@dimen/spacing_sm"
+                android:background="@drawable/bg_poster_placeholder" />
+
+            <View
+                android:layout_width="100dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="@dimen/spacing_sm"
+                android:background="@drawable/bg_poster_placeholder" />
+
+            <View
+                android:layout_width="100dp"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_poster_placeholder" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.facebook.shimmer.ShimmerFrameLayout>
