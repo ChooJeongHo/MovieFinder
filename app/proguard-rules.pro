@@ -104,12 +104,19 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
-# Widget serialization classes
--keep,includedescriptorclasses class com.choo.moviefinder.presentation.widget.**$$serializer { *; }
--keepclassmembers class com.choo.moviefinder.presentation.widget.** {
+# Widget serialization classes (WidgetMovieListResponse, WidgetMovie only)
+-keep,includedescriptorclasses class com.choo.moviefinder.presentation.widget.WidgetMovieListResponse$$serializer { *; }
+-keep,includedescriptorclasses class com.choo.moviefinder.presentation.widget.WidgetMovie$$serializer { *; }
+-keepclassmembers class com.choo.moviefinder.presentation.widget.WidgetMovieListResponse {
     *** Companion;
 }
--keepclasseswithmembers class com.choo.moviefinder.presentation.widget.** {
+-keepclassmembers class com.choo.moviefinder.presentation.widget.WidgetMovie {
+    *** Companion;
+}
+-keepclasseswithmembers class com.choo.moviefinder.presentation.widget.WidgetMovieListResponse {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclasseswithmembers class com.choo.moviefinder.presentation.widget.WidgetMovie {
     kotlinx.serialization.KSerializer serializer(...);
 }
 

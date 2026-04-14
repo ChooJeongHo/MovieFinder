@@ -88,7 +88,7 @@ app/src/main/java/com/choo/moviefinder/
 
 ## Testing
 
-유닛 테스트 **390개** + Espresso UI 테스트 **23개**
+유닛 테스트 **397개** + Espresso UI 테스트 **23개**
 
 ```bash
 # 유닛 테스트

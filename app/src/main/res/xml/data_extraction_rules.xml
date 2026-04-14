@@ -4,6 +4,7 @@
         <exclude domain="database" path="movie_finder_db"/>
         <exclude domain="database" path="movie_finder_db-shm"/>
         <exclude domain="database" path="movie_finder_db-wal"/>
+        <exclude domain="file" path="datastore"/>
     </cloud-backup>
     <device-transfer>
         <include domain="database" path="movie_finder_db"/>

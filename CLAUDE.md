@@ -194,7 +194,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (390개)
+### 유닛 테스트 (397개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -202,7 +202,6 @@ TMDB_API_KEY=여기에_API_키_입력
 | 테스트 클래스 | 수 | 대상 |
 |---|---|---|
 | `SearchViewModelTest` | 27 | 검색, 필터, SavedStateHandle 복원, 뷰모드 토글, Discover 모드 |
-| `SplitRepositoryImplTest` | 25 | 분리된 Repository 구현체 (Favorite, Watchlist, SearchHistory 등) |
 | `DetailViewModelTest` | 24 | 초기 상태, 에러, 부분 실패, FAB 토글, Snackbar, 재시도, 중복 방지 |
 | `MovieUseCasesTest` | 23 | 영화 관련 UseCase 위임 검증 |
 | `PreferencesTagUseCasesTest` | 21 | 테마/시청목표 UseCase + 태그 UseCase 위임 검증 |
@@ -218,6 +217,7 @@ TMDB_API_KEY=여기에_API_키_입력
 | `PreferencesRepositoryImplTest` | 9 | 테마, 시청 목표, 알림 월 |
 | `DelegateTest` | 8 | MemoDelegate + UserRatingDelegate 로직 |
 | `StatsViewModelTest` | 7 | Loading/Success/Error, 목표 달성률 |
+| `SplitRepositoryImplTest` | 32 | 분리된 Repository 구현체 (Favorite, Watchlist, SearchHistory 등, MemoRepository 포함) |
 | `MovieRemoteMediatorTest` | 8 | REFRESH/APPEND/SKIP, 캐시 만료, 오프라인 REFRESH |
 | `MoviePagingSourceTest` | 7 | 페이지 로드, 에러, nextKey/prevKey |
 | `CachedMovieEntityMapperTest` | 7 | Entity ↔ 도메인 모델 변환 |
