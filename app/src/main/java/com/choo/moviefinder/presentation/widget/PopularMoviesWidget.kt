@@ -62,7 +62,7 @@ class PopularMoviesWidget : AppWidgetProvider() {
             }
             val refreshPendingIntent = PendingIntent.getBroadcast(
                 context,
-                0,
+                appWidgetId,
                 refreshIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -75,7 +75,7 @@ class PopularMoviesWidget : AppWidgetProvider() {
             }
             val itemClickPendingIntent = PendingIntent.getActivity(
                 context,
-                0,
+                appWidgetId,
                 itemClickIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
             )

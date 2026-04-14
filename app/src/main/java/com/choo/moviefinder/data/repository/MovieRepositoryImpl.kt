@@ -4,6 +4,7 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingData
 import androidx.paging.map
+import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
@@ -29,7 +30,8 @@ class MovieRepositoryImpl @Inject constructor(
     private val apiService: MovieApiService,
     private val database: MovieDatabase,
     private val cachedMovieDao: CachedMovieDao,
-    private val remoteKeyDao: RemoteKeyDao
+    private val remoteKeyDao: RemoteKeyDao,
+    private val networkMonitor: NetworkMonitor
 ) : MovieRepository {
 
     // RemoteMediator 기반 오프라인 캐시 페이징 조회 (카테고리별 공통 헬퍼)
@@ -42,7 +44,8 @@ class MovieRepositoryImpl @Inject constructor(
                 database = database,
                 cachedMovieDao = cachedMovieDao,
                 remoteKeyDao = remoteKeyDao,
-                category = category
+                category = category,
+                networkMonitor = networkMonitor
             ),
             pagingSourceFactory = {
                 cachedMovieDao.getMoviesByCategory(category)

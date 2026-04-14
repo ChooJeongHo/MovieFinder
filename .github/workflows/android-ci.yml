@@ -39,6 +39,9 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
+      - name: Verify Release Build (R8/ProGuard check)
+        run: ./gradlew assembleRelease
+
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest
 
@@ -75,8 +78,9 @@ jobs:
           path: app/build/reports/jacoco/jacocoTestReport/
 
       - name: Upload Debug APK
-        if: success()
+        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-artifact@v7
         with:
           name: debug-apk
           path: app/build/outputs/apk/debug/*.apk
+          retention-days: 7
