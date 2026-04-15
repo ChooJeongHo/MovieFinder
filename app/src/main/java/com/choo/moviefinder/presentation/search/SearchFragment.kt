@@ -113,6 +113,7 @@ class SearchFragment : Fragment() {
                         viewModel.onSearch(query)
                     }
                 }
+                hideKeyboard()
                 true
             } else {
                 false
@@ -328,6 +329,12 @@ class SearchFragment : Fragment() {
             val isEmpty = searchAdapter.itemCount == 0
             binding.noResultsSection.isVisible = isEmpty
             binding.rvSearchResults.isVisible = !isEmpty
+        }
+        if (refreshState is LoadState.Error) {
+            val errorType = ErrorMessageProvider.getErrorType(refreshState.error)
+            showSearchSnackbar(errorType)
+            binding.noResultsSection.isVisible = true
+            binding.rvSearchResults.isVisible = false
         }
     }
 
