@@ -54,6 +54,9 @@ class CastAdapter(
                 size(ViewSizeResolver(binding.ivProfile))
             }
 
+            binding.root.contentDescription = binding.root.context.getString(
+                com.choo.moviefinder.R.string.cd_cast_item, cast.name, cast.character
+            )
             binding.root.setOnClickListener {
                 onCastClick(cast.id)
             }

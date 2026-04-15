@@ -115,7 +115,6 @@ class BarChartView @JvmOverloads constructor(
             canvas.drawRoundRect(barRect, barCornerRadius, barCornerRadius, barPaint)
             canvas.drawRoundRect(barRect, barCornerRadius, barCornerRadius, barStrokePaint)
 
-            textPaint.color = textColor
             canvas.drawText(
                 bar.valueText,
                 (barLeft + barRight) / 2f,
@@ -123,7 +122,6 @@ class BarChartView @JvmOverloads constructor(
                 textPaint
             )
 
-            labelPaint.color = textColor
             canvas.drawText(
                 bar.label,
                 (barLeft + barRight) / 2f,

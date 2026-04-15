@@ -163,11 +163,12 @@
 
                 <ImageButton
                     android:id="@+id/btn_clear_rating"
-                    android:layout_width="@dimen/icon_size_small"
-                    android:layout_height="@dimen/icon_size_small"
-                    android:layout_marginStart="@dimen/spacing_sm"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="@dimen/spacing_xxs"
                     android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/clear_rating"
+                    android:padding="12dp"
                     android:src="@drawable/ic_close"
                     android:visibility="gone"
                     app:tint="@color/icon_default" />
