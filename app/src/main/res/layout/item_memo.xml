@@ -40,20 +40,22 @@
 
             <ImageButton
                 android:id="@+id/btn_edit_memo"
-                android:layout_width="@dimen/icon_size_small"
-                android:layout_height="@dimen/icon_size_small"
-                android:layout_marginEnd="@dimen/spacing_sm"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="@dimen/spacing_xxs"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/memo_edit"
+                android:padding="12dp"
                 android:src="@drawable/ic_edit"
                 app:tint="@color/icon_default" />
 
             <ImageButton
                 android:id="@+id/btn_delete_memo"
-                android:layout_width="@dimen/icon_size_small"
-                android:layout_height="@dimen/icon_size_small"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/memo_delete"
+                android:padding="12dp"
                 android:src="@drawable/ic_close"
                 app:tint="@color/icon_default" />
 

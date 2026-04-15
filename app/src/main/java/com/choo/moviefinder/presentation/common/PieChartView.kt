@@ -100,7 +100,6 @@ class PieChartView @JvmOverloads constructor(
             dotPaint.color = slice.color
             canvas.drawCircle(legendX, legendY - dotRadius, dotRadius, dotPaint)
 
-            textPaint.color = textColor
             canvas.drawText(slice.legendText, legendX + dotRadius * 3, legendY, textPaint)
             legendY += lineHeight
         }

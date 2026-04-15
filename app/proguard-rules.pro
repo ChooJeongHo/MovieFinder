@@ -54,6 +54,13 @@
 -keepclassmembers class com.choo.moviefinder.domain.model.BackupMemo {
     *** Companion;
 }
+-keep,includedescriptorclasses class com.choo.moviefinder.domain.model.BackupTag$$serializer { *; }
+-keepclassmembers class com.choo.moviefinder.domain.model.BackupTag {
+    *** Companion;
+}
+-keepclasseswithmembers class com.choo.moviefinder.domain.model.BackupTag {
+    kotlinx.serialization.KSerializer serializer(...);
+}
 -keepclasseswithmembers class com.choo.moviefinder.domain.model.UserDataBackup {
     kotlinx.serialization.KSerializer serializer(...);
 }
