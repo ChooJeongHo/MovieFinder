@@ -29,10 +29,11 @@
 
     <ImageView
         android:id="@+id/iv_delete"
-        android:layout_width="@dimen/icon_size_small"
-        android:layout_height="@dimen/icon_size_small"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/cd_delete_search"
+        android:padding="12dp"
         android:src="@drawable/ic_close"
         app:tint="?attr/colorOnSurface"
         android:alpha="0.5" />

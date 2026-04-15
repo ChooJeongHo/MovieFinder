@@ -38,7 +38,7 @@
                 <ImageView
                     android:layout_width="@dimen/icon_size_small"
                     android:layout_height="@dimen/icon_size_small"
-                    android:contentDescription="@string/settings_theme"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_theme" />
 
                 <LinearLayout
@@ -86,7 +86,7 @@
                 <ImageView
                     android:layout_width="@dimen/icon_size_small"
                     android:layout_height="@dimen/icon_size_small"
-                    android:contentDescription="@string/settings_language"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_language" />
 
                 <LinearLayout
@@ -134,7 +134,7 @@
                 <ImageView
                     android:layout_width="@dimen/icon_size_small"
                     android:layout_height="@dimen/icon_size_small"
-                    android:contentDescription="@string/settings_stats"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_stats" />
 
                 <LinearLayout
@@ -182,7 +182,7 @@
                 <ImageView
                     android:layout_width="@dimen/icon_size_small"
                     android:layout_height="@dimen/icon_size_small"
-                    android:contentDescription="@string/settings_watch_goal"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_stats" />
 
                 <LinearLayout
@@ -230,7 +230,7 @@
                 <ImageView
                     android:layout_width="@dimen/icon_size_small"
                     android:layout_height="@dimen/icon_size_small"
-                    android:contentDescription="@string/settings_clear_cache"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_delete" />
 
                 <LinearLayout
@@ -278,7 +278,7 @@
                 <ImageView
                     android:layout_width="@dimen/icon_size_small"
                     android:layout_height="@dimen/icon_size_small"
-                    android:contentDescription="@string/settings_clear_watch_history"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_history" />
 
                 <LinearLayout
@@ -326,7 +326,7 @@
                 <ImageView
                     android:layout_width="@dimen/icon_size_small"
                     android:layout_height="@dimen/icon_size_small"
-                    android:contentDescription="@string/settings_export_data"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_info" />
 
                 <LinearLayout
@@ -374,7 +374,7 @@
                 <ImageView
                     android:layout_width="@dimen/icon_size_small"
                     android:layout_height="@dimen/icon_size_small"
-                    android:contentDescription="@string/settings_import_data"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_info" />
 
                 <LinearLayout
@@ -423,7 +423,7 @@
                 <ImageView
                     android:layout_width="@dimen/icon_size_small"
                     android:layout_height="@dimen/icon_size_small"
-                    android:contentDescription="@string/share_debug_logs"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_info" />
 
                 <LinearLayout
@@ -469,7 +469,7 @@
                 <ImageView
                     android:layout_width="@dimen/icon_size_small"
                     android:layout_height="@dimen/icon_size_small"
-                    android:contentDescription="@string/settings_app_info"
+                    android:importantForAccessibility="no"
                     android:src="@drawable/ic_info" />
 
                 <LinearLayout
