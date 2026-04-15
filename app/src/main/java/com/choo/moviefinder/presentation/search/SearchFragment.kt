@@ -454,12 +454,7 @@ class SearchFragment : Fragment() {
     // 정렬 옵션 단일 선택 다이얼로그 표시
     private fun showSortDialog() {
         val sortOptions = SortOption.entries.toTypedArray()
-        val sortLabels = arrayOf(
-            getString(R.string.sort_popularity),
-            getString(R.string.sort_vote_average),
-            getString(R.string.sort_release_date),
-            getString(R.string.sort_revenue)
-        )
+        val sortLabels = sortOptions.map { getString(it.labelRes()) }.toTypedArray()
         val currentIndex = sortOptions.indexOf(viewModel.sortBy.value)
 
         activeDialog?.dismiss()
@@ -646,4 +641,11 @@ class SearchFragment : Fragment() {
         binding.rvPersonResults.adapter = null
         _binding = null
     }
+}
+
+private fun SortOption.labelRes(): Int = when (this) {
+    SortOption.POPULARITY_DESC -> R.string.sort_popularity
+    SortOption.VOTE_AVERAGE_DESC -> R.string.sort_vote_average
+    SortOption.RELEASE_DATE_DESC -> R.string.sort_release_date
+    SortOption.REVENUE_DESC -> R.string.sort_revenue
 }
