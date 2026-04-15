@@ -6,24 +6,39 @@ import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.domain.usecase.GetWatchStatsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
 class StatsViewModel @Inject constructor(
-    getWatchStatsUseCase: GetWatchStatsUseCase
+    private val getWatchStatsUseCase: GetWatchStatsUseCase
 ) : ViewModel() {
 
-    // 시청 통계 데이터를 stateIn으로 수집하여 UI 상태를 자동 갱신한다
-    val uiState: StateFlow<StatsUiState> = getWatchStatsUseCase()
-        .map<_, StatsUiState> { StatsUiState.Success(it) }
-        .catch { e ->
-            if (e is CancellationException) throw e
-            emit(StatsUiState.Error(ErrorMessageProvider.getErrorType(e)))
+    private val _uiState = MutableStateFlow<StatsUiState>(StatsUiState.Loading)
+    val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
+
+    init {
+        load()
+    }
+
+    fun retry() = load()
+
+    private fun load() {
+        viewModelScope.launch {
+            _uiState.value = StatsUiState.Loading
+            getWatchStatsUseCase()
+                .map<_, StatsUiState> { StatsUiState.Success(it) }
+                .catch { e ->
+                    if (e is CancellationException) throw e
+                    emit(StatsUiState.Error(ErrorMessageProvider.getErrorType(e)))
+                }
+                .collect { _uiState.value = it }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StatsUiState.Loading)
+    }
 }

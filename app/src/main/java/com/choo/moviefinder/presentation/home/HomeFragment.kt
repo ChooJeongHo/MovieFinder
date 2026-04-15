@@ -173,7 +173,9 @@ class HomeFragment : Fragment() {
                 collectMovies()
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {
+                binding.rvMovies.scrollToPosition(0)
+            }
         })
     }
 

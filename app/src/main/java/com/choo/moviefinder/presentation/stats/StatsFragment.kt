@@ -239,7 +239,8 @@ class StatsFragment : Fragment() {
 
         binding.errorView.tvErrorMessage.text =
             ErrorMessageProvider.getMessage(requireContext(), errorType)
-        binding.errorView.btnRetry.isVisible = false
+        binding.errorView.btnRetry.isVisible = true
+        binding.errorView.btnRetry.setOnClickListener { viewModel.retry() }
     }
 
     // 테마 색상을 메인 스레드에서 미리 해석한 데이터 클래스
