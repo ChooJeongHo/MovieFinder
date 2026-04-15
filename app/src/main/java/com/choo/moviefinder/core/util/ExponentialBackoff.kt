@@ -26,7 +26,7 @@ suspend fun <T> withExponentialBackoff(
         } catch (e: Exception) {
             lastException = e
             if (attempt < maxRetries - 1) {
-                Timber.d("지수 백오프: ${currentDelay}ms 후 재시도 ${attempt + 1}/$maxRetries — ${e.message}")
+                Timber.d("지수 백오프: %dms 후 재시도 %d/%d — %s", currentDelay, attempt + 1, maxRetries, e.message)
                 delay(currentDelay)
                 currentDelay = (currentDelay * factor).toLong().coerceAtMost(maxDelayMs)
             }

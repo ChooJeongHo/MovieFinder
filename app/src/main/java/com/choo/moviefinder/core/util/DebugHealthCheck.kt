@@ -20,7 +20,7 @@ class DebugHealthCheck(private val context: Context) {
             val results = mutableListOf<String>()
 
             val apiOk = checkUrl(
-                "https://api.themoviedb.org/3/configuration?api_key=${BuildConfig.TMDB_API_KEY}",
+                "https://api.themoviedb.org/3/configuration",
                 "API"
             )
             results.add(if (apiOk) "API OK" else "API FAIL")
@@ -60,11 +60,21 @@ class DebugHealthCheck(private val context: Context) {
             val client = OkHttpClient.Builder()
                 .connectTimeout(5, TimeUnit.SECONDS)
                 .readTimeout(5, TimeUnit.SECONDS)
+                .addInterceptor { chain ->
+                    val request = chain.request().newBuilder()
+                        .url(
+                            chain.request().url.newBuilder()
+                                .addQueryParameter("api_key", BuildConfig.TMDB_API_KEY)
+                                .build()
+                        )
+                        .build()
+                    chain.proceed(request)
+                }
                 .build()
             val request = Request.Builder().url(url).head().build()
             client.newCall(request).execute().use { it.isSuccessful }
         } catch (e: Exception) {
-            Timber.w(e, "헬스체크 실패: $tag")
+            Timber.w(e, "헬스체크 실패: %s", tag)
             false
         }
     }

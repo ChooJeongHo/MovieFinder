@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
         // 상세 화면에서 하단 내비게이션 숨김
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.detailFragment -> binding.bottomNav.visibility = View.GONE
+                R.id.detailFragment, R.id.personDetailFragment -> binding.bottomNav.visibility = View.GONE
                 else -> binding.bottomNav.visibility = View.VISIBLE
             }
         }

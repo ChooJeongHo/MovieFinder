@@ -370,6 +370,7 @@ class FavoriteFragment : Fragment() {
         activeDialog = null
         swipeHelper?.attachToRecyclerView(null)
         swipeHelper = null
+        collectJob?.cancel()
         collectJob = null
         binding.rvFavorites.adapter = null
         _binding = null

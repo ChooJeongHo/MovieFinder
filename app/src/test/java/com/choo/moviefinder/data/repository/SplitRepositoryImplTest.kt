@@ -21,6 +21,7 @@ import com.choo.moviefinder.data.remote.dto.PersonCreditsResponse
 import com.choo.moviefinder.data.remote.dto.PersonDetailDto
 import com.choo.moviefinder.data.util.Constants
 import com.choo.moviefinder.domain.model.BackupMemo
+import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.BackupRating
 import com.choo.moviefinder.domain.model.MemoConstants
@@ -168,6 +169,39 @@ class SplitRepositoryImplTest {
 
         favoriteRepo.getFavoriteMovies().test {
             assertTrue(awaitItem().isEmpty())
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `getFavoriteMoviesSorted ADDED_DATE delegates to getAllFavorites`() = runTest {
+        every { favoriteMovieDao.getAllFavorites() } returns flowOf(testFavoriteEntities)
+
+        favoriteRepo.getFavoriteMoviesSorted(FavoriteSortOrder.ADDED_DATE).test {
+            val movies = awaitItem()
+            assertEquals(2, movies.size)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `getFavoriteMoviesSorted TITLE delegates to getAllFavoritesSortedByTitle`() = runTest {
+        every { favoriteMovieDao.getAllFavoritesSortedByTitle() } returns flowOf(testFavoriteEntities)
+
+        favoriteRepo.getFavoriteMoviesSorted(FavoriteSortOrder.TITLE).test {
+            val movies = awaitItem()
+            assertEquals(2, movies.size)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `getFavoriteMoviesSorted RATING delegates to getAllFavoritesSortedByRating`() = runTest {
+        every { favoriteMovieDao.getAllFavoritesSortedByRating() } returns flowOf(testFavoriteEntities)
+
+        favoriteRepo.getFavoriteMoviesSorted(FavoriteSortOrder.RATING).test {
+            val movies = awaitItem()
+            assertEquals(2, movies.size)
             awaitComplete()
         }
     }
