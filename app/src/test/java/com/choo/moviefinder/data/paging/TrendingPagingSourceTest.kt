@@ -91,7 +91,12 @@ class TrendingPagingSourceTest {
 
     @Test
     fun `last page has null nextKey`() = runTest {
-        coEvery { apiService.getTrendingMovies(3) } returns createResponse(resultCount = 5)
+        // totalPages = 3이고 현재 page = 3 → page >= totalPages → nextKey null
+        val lastPageResponse = MovieListResponse(
+            page = 3, results = List(10) { testMovieDto.copy(id = it + 1) },
+            totalPages = 3, totalResults = 50
+        )
+        coEvery { apiService.getTrendingMovies(3) } returns lastPageResponse
 
         val pagingSource = TrendingPagingSource(apiService)
         val result = pagingSource.load(

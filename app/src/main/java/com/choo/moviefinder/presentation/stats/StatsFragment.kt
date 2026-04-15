@@ -321,6 +321,7 @@ class StatsFragment : Fragment() {
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
+                if (!isAdded) return@launch
                 startActivity(Intent.createChooser(intent, shareTitle))
             } finally {
                 bitmap.recycle()

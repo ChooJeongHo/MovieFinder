@@ -15,6 +15,7 @@ import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.data.local.entity.toCachedEntity
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CancellationException
 
 @OptIn(ExperimentalPagingApi::class)
 class MovieRemoteMediator(
@@ -87,6 +88,8 @@ class MovieRemoteMediator(
             }
 
             MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             MediatorResult.Error(e)
         }
