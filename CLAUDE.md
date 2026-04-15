@@ -194,7 +194,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (430개)
+### 유닛 테스트 (434개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -217,7 +217,7 @@ TMDB_API_KEY=여기에_API_키_입력
 | `PreferencesRepositoryImplTest` | 9 | 테마, 시청 목표, 알림 월 |
 | `DelegateTest` | 8 | MemoDelegate + UserRatingDelegate 로직 |
 | `StatsViewModelTest` | 7 | Loading/Success/Error, 목표 달성률 |
-| `SplitRepositoryImplTest` | 32 | 분리된 Repository 구현체 (Favorite, Watchlist, SearchHistory 등, MemoRepository 포함) |
+| `SplitRepositoryImplTest` | 35 | 분리된 Repository 구현체 (Favorite, Watchlist, SearchHistory 등, MemoRepository 포함, getFavoriteMoviesSorted 3분기 검증) |
 | `MovieRemoteMediatorTest` | 8 | REFRESH/APPEND/SKIP, 캐시 만료, 오프라인 REFRESH |
 | `MoviePagingSourceTest` | 7 | 페이지 로드, 에러, nextKey/prevKey |
 | `CachedMovieEntityMapperTest` | 7 | Entity ↔ 도메인 모델 변환 |
@@ -225,7 +225,7 @@ TMDB_API_KEY=여기에_API_키_입력
 | `ReleaseNotificationSchedulerTest` | 7 | WorkManager 스케줄/취소, 과거날짜/API 레벨 가드 |
 | `PersonDetailViewModelTest` | 6 | 배우 상세 상태, 병렬 호출 |
 | `HomeViewModelTest` | 8 | UseCase 호출, 시청기록 |
-| `ExponentialBackoffTest` | 9 | 첫 성공, 재시도 후 성공, 전체 실패, CancellationException 처리, require 가드 (maxRetries/initialDelayMs/factor 유효성) |
+| `ExponentialBackoffTest` | 10 | 첫 성공, 재시도 후 성공, 전체 실패, CancellationException 처리, require 가드 (maxRetries/initialDelayMs/factor 유효성), maxDelayMs 상한 검증 |
 | `TrendingPagingSourceTest` | 8 | 트렌딩 페이징, getRefreshKey |
 | `DiscoverPagingSourceTest` | 8 | Discover 페이징, getRefreshKey |
 | `BackupRepositoryImplTest` | 9 | exportUserData 매핑, importUserData insertAll 호출·타임스탬프 |

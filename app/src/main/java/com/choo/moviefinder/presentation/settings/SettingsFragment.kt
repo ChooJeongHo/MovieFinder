@@ -68,8 +68,14 @@ class SettingsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             val b = _binding ?: return@launch
             try {
+                val maxImportBytes = 10L * 1024 * 1024 // 10MB
                 val json = requireContext().contentResolver.openInputStream(uri)?.use { stream ->
-                    stream.readBytes().toString(Charsets.UTF_8)
+                    val bytes = stream.readBytes()
+                    if (bytes.size > maxImportBytes) {
+                        Snackbar.make(b.root, R.string.import_error, Snackbar.LENGTH_SHORT).show()
+                        return@launch
+                    }
+                    bytes.toString(Charsets.UTF_8)
                 } ?: return@launch
                 showImportConfirmDialog(json)
             } catch (e: Exception) {

@@ -63,6 +63,7 @@ class SettingsViewModel @Inject constructor(
     val importSuccess = _importSuccess.receiveAsFlow()
 
     // 파일 저장 런처가 실행되기 전까지 JSON을 임시 보관 (TransactionTooLargeException 방지로 SavedStateHandle 미사용)
+    @Volatile
     var pendingExportJson: String? = null
 
     // 테마 모드를 DataStore에 저장 (에러 시 Snackbar 피드백)

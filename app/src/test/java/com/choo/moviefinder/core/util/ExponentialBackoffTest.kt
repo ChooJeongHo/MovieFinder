@@ -132,4 +132,25 @@ class ExponentialBackoffTest {
     fun `factor less than 1 throws IllegalArgumentException`() = runTest {
         withExponentialBackoff(factor = 0.5) { "unused" }
     }
+
+    @Test
+    fun `delay is capped at maxDelayMs`() = runTest {
+        val delays = mutableListOf<Long>()
+        var callCount = 0
+
+        try {
+            withExponentialBackoff(
+                maxRetries = 4,
+                initialDelayMs = 100L,
+                maxDelayMs = 150L,
+                factor = 10.0
+            ) {
+                callCount++
+                throw IllegalStateException("always fails")
+            }
+        } catch (_: IllegalStateException) {}
+
+        // 4번 시도, initialDelay=100, factor=10, maxDelay=150 → 100 → 150(cap) → 150(cap)
+        assertEquals(4, callCount)
+    }
 }

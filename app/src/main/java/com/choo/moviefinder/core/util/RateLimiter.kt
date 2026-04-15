@@ -7,11 +7,10 @@ class RateLimiter(private val minIntervalMs: Long = 2_000L) {
 
     fun tryAcquire(): Boolean {
         val now = System.currentTimeMillis()
-        val last = lastActionTime.get()
-        return if (now - last >= minIntervalMs) {
-            lastActionTime.compareAndSet(last, now)
-        } else {
-            false
+        while (true) {
+            val last = lastActionTime.get()
+            if (now - last < minIntervalMs) return false
+            if (lastActionTime.compareAndSet(last, now)) return true
         }
     }
 }
