@@ -4,6 +4,7 @@ import androidx.paging.PagingConfig
 
 object Constants {
     const val PAGE_SIZE = 20
+    const val PREFETCH_DISTANCE = 5
 
     // API 언어 설정
     const val LANGUAGE_KO = "ko-KR"
@@ -16,8 +17,8 @@ object Constants {
 
     val DEFAULT_PAGING_CONFIG = PagingConfig(
         pageSize = PAGE_SIZE,
-        prefetchDistance = PAGE_SIZE,
-        initialLoadSize = PAGE_SIZE * 3,
+        prefetchDistance = PREFETCH_DISTANCE,
+        initialLoadSize = PAGE_SIZE,
         enablePlaceholders = false
     )
 }

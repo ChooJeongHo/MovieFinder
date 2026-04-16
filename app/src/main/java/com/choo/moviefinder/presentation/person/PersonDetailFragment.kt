@@ -78,7 +78,6 @@ class PersonDetailFragment : Fragment() {
         }
         binding.rvFilmography.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            setHasFixedSize(true)
             adapter = filmographyAdapter
         }
     }
@@ -134,7 +133,6 @@ class PersonDetailFragment : Fragment() {
             crossfade(true)
             placeholder(R.drawable.bg_poster_placeholder)
             error(R.drawable.bg_poster_placeholder)
-            size(coil3.size.ViewSizeResolver(binding.ivProfile))
         }
 
         if (person.knownForDepartment.isNotBlank()) {
