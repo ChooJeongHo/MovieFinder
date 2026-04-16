@@ -60,6 +60,7 @@ class PersonSearchAdapter(
                     crossfade(true)
                     placeholder(R.drawable.bg_circle)
                     error(R.drawable.bg_circle)
+                    size(coil3.size.ViewSizeResolver(binding.ivProfile))
                 }
             } else {
                 binding.ivProfile.setImageResource(R.drawable.bg_circle)

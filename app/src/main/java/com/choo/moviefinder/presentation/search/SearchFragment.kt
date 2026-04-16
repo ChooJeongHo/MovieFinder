@@ -166,6 +166,7 @@ class SearchFragment : Fragment() {
 
         binding.rvRecentSearches.apply {
             layoutManager = LinearLayoutManager(requireContext())
+            setHasFixedSize(true)
             adapter = recentSearchAdapter
         }
 
