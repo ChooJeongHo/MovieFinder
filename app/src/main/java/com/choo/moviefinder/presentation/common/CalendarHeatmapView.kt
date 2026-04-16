@@ -31,9 +31,12 @@ class CalendarHeatmapView @JvmOverloads constructor(
     private val cells = mutableListOf<Cell>()
     private val monthLabels = mutableListOf<Pair<Int, String>>() // column index to label
 
-    // onDraw 할당 방지: setData()에서 미리 계산
+    // onDraw 할당 방지: setData()와 onSizeChanged()에서 미리 계산
     private var cachedShortWeekdays: Array<String> = emptyArray()
     private var dowLabels: List<Pair<Int, String>> = emptyList()
+    private var cachedCellSize = 0f
+    private var cachedGap = 0f
+    private var cachedDayLabelWidth = 0f
 
     private val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val level1Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -113,25 +116,28 @@ class CalendarHeatmapView @JvmOverloads constructor(
             com.choo.moviefinder.R.string.stats_calendar_cd,
             watchedDays
         )
+        updateGeometryCache()
         invalidate()
     }
 
-    // 뷰 크기 변경 시 텍스트 크기를 재계산한다
+    // 뷰 크기 변경 시 셀 크기와 레이블 너비를 재계산한다
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        val cellSize = computeCellSize(w, h)
-        labelPaint.textSize = cellSize * 0.9f
-        dayLabelPaint.textSize = cellSize * 0.75f
+        updateGeometryCache(w, h)
     }
 
-    private fun computeCellSize(w: Int, h: Int): Float {
-        val availW = (w - paddingLeft - paddingRight).toFloat()
-        val availH = (h - paddingTop - paddingBottom).toFloat()
-        // 7 rows + 1 row header, plus gaps
-        val cellFromH = availH / (DAYS_IN_WEEK + 1.5f)
-        val maxCols = (MONTHS_TO_SHOW * 4.5f).toInt().coerceAtLeast(1)
-        val cellFromW = availW / (maxCols + 2f)
-        return minOf(cellFromH, cellFromW)
+    private fun updateGeometryCache(viewW: Int = width, viewH: Int = height) {
+        if (viewW == 0 || viewH == 0) return
+        val w = (viewW - paddingLeft - paddingRight).toFloat()
+        val h = (viewH - paddingTop - paddingBottom).toFloat()
+        cachedCellSize = minOf(
+            h / (DAYS_IN_WEEK + 1.5f),
+            w / ((cells.size / DAYS_IN_WEEK + 1).coerceAtLeast(1).toFloat() + 2f)
+        )
+        cachedGap = cachedCellSize * 0.2f
+        labelPaint.textSize = cachedCellSize * 0.9f
+        dayLabelPaint.textSize = cachedCellSize * 0.75f
+        cachedDayLabelWidth = dayLabelPaint.measureText("Sun") + cachedGap * 2
     }
 
     // 히트맵 그리드와 레이블을 그린다
@@ -139,14 +145,9 @@ class CalendarHeatmapView @JvmOverloads constructor(
         super.onDraw(canvas)
         if (cells.isEmpty()) return
 
-        val w = (width - paddingLeft - paddingRight).toFloat()
-        val h = (height - paddingTop - paddingBottom).toFloat()
-        val cellSize = minOf(
-            h / (DAYS_IN_WEEK + 1.5f),
-            w / ((cells.size / DAYS_IN_WEEK + 1).coerceAtLeast(1).toFloat() + 2f)
-        )
-        val gap = cellSize * 0.2f
-        val dayLabelWidth = dayLabelPaint.measureText("Sun") + gap * 2
+        val cellSize = cachedCellSize
+        val gap = cachedGap
+        val dayLabelWidth = cachedDayLabelWidth
 
         val gridLeft = paddingLeft + dayLabelWidth
         val gridTop = paddingTop + cellSize * 1.5f // space for month labels
