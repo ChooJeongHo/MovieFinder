@@ -6,6 +6,7 @@ import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.domain.usecase.GetWatchStatsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +24,8 @@ class StatsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<StatsUiState>(StatsUiState.Loading)
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
 
+    private var loadJob: Job? = null
+
     init {
         load()
     }
@@ -30,7 +33,8 @@ class StatsViewModel @Inject constructor(
     fun retry() = load()
 
     private fun load() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _uiState.value = StatsUiState.Loading
             getWatchStatsUseCase()
                 .map<_, StatsUiState> { StatsUiState.Success(it) }
