@@ -206,6 +206,7 @@ class DetailFragment : Fragment() {
         )
         binding.rvMemos.apply {
             layoutManager = LinearLayoutManager(requireContext())
+            setHasFixedSize(true)
             adapter = memoAdapter
         }
     }
@@ -354,6 +355,7 @@ class DetailFragment : Fragment() {
             crossfade(true)
             placeholder(R.drawable.bg_poster_placeholder)
             error(R.drawable.bg_poster_placeholder)
+            size(coil3.size.ViewSizeResolver(binding.ivBackdrop))
             listener(
                 onSuccess = { _, _ -> startPostponedEnterTransition() },
                 onError = { _, _ -> startPostponedEnterTransition() }
