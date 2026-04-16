@@ -177,7 +177,9 @@ class FavoriteFragment : Fragment() {
                 collectCurrentTab()
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {
+                binding.rvFavorites.scrollToPosition(0)
+            }
         })
     }
 

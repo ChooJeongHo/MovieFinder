@@ -1,7 +1,9 @@
 package com.choo.moviefinder.presentation.detail
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
+import android.view.inputmethod.InputMethodManager
 import android.os.Bundle
 import android.transition.ChangeBounds
 import android.transition.ChangeImageTransform
@@ -509,6 +511,9 @@ class DetailFragment : Fragment() {
             if (content.isNotBlank()) {
                 viewModel.saveMemo(content)
                 binding.etMemo.text?.clear()
+                binding.etMemo.clearFocus()
+                val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(binding.etMemo.windowToken, 0)
             }
         }
     }
