@@ -26,9 +26,6 @@ interface WatchHistoryRepository {
     // 특정 시점 이후 시청 편수를 Flow로 반환한다
     fun getWatchedCountSince(since: Long): Flow<Int>
 
-    // 모든 시청 기록의 장르 문자열 목록을 Flow로 반환한다
-    fun getAllWatchedGenres(): Flow<List<String>>
-
     // 정규화 테이블에서 장르별 시청 편수를 집계하여 반환한다
     fun getGenreCounts(): Flow<List<GenreCount>>
 

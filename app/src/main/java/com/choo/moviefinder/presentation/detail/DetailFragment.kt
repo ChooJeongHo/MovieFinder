@@ -160,6 +160,7 @@ class DetailFragment : Fragment() {
         binding.rvCast.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             setHasFixedSize(true)
+            itemAnimator = null
             adapter = castAdapter
         }
 
@@ -177,6 +178,7 @@ class DetailFragment : Fragment() {
         binding.rvSimilar.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             setHasFixedSize(true)
+            itemAnimator = null
             adapter = similarMovieAdapter
         }
 
@@ -184,12 +186,14 @@ class DetailFragment : Fragment() {
         binding.rvRecommendations.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             setHasFixedSize(true)
+            itemAnimator = null
             adapter = recommendationAdapter
         }
 
         reviewAdapter = ReviewAdapter()
         binding.rvReviews.apply {
             layoutManager = LinearLayoutManager(requireContext())
+            itemAnimator = null
             adapter = reviewAdapter
         }
 
@@ -206,6 +210,7 @@ class DetailFragment : Fragment() {
         )
         binding.rvMemos.apply {
             layoutManager = LinearLayoutManager(requireContext())
+            itemAnimator = null
             adapter = memoAdapter
         }
     }

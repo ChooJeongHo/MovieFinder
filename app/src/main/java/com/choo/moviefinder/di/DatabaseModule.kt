@@ -80,6 +80,16 @@ object DatabaseModule {
         }
     }
 
+    // composite 인덱스 추가 마이그레이션 (v14 → v15)
+    val MIGRATION_14_15 = object : Migration(14, 15) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_cached_movies_category_page_cachedAt` " +
+                    "ON `cached_movies` (`category`, `page`, `cachedAt`)"
+            )
+        }
+    }
+
     // Room 데이터베이스 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
@@ -89,7 +99,7 @@ object DatabaseModule {
             MovieDatabase::class.java,
             "movie_finder_db"
         )
-            .addMigrations(MIGRATION_12_13, MIGRATION_13_14)
+            .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }

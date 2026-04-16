@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -56,15 +58,16 @@ class FavoriteViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // 선택된 태그·정렬 순서에 따라 DB ORDER BY로 정렬된 즐겨찾기 목록
-    val favoriteMovies: StateFlow<List<Movie>> = _sortOrder.flatMapLatest { sort ->
-        _selectedTag.flatMapLatest { tag ->
+    val favoriteMovies: StateFlow<List<Movie>> = combine(_sortOrder, _selectedTag) { sort, tag -> sort to tag }
+        .distinctUntilChanged()
+        .flatMapLatest { (sort, tag) ->
             if (tag == null) {
                 getFavoriteMoviesUseCase(sort)
             } else {
                 getFavoritesByTagUseCase(tag, sort)
             }
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // 정렬 순서에 따라 DB ORDER BY로 정렬된 워치리스트 목록
     val watchlistMovies: StateFlow<List<Movie>> = _sortOrder.flatMapLatest { sort ->

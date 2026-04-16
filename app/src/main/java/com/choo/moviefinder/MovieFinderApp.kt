@@ -28,6 +28,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -96,7 +97,7 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
         applyNightMode(themeMode)
 
         ProcessLifecycleOwner.get().lifecycleScope.launch {
-            repository.getThemeMode().collect { mode ->
+            repository.getThemeMode().drop(1).collect { mode ->
                 applyNightMode(mode)
             }
         }

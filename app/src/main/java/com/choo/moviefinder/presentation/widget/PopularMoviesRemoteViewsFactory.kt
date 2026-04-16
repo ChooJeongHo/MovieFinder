@@ -10,10 +10,12 @@ import com.choo.moviefinder.R
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import okhttp3.Cache
 import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import timber.log.Timber
+import java.io.File
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 
@@ -30,7 +32,7 @@ class PopularMoviesRemoteViewsFactory(
         isLenient = true
     }
 
-    private val client get() = Companion.client
+    private val client get() = Companion.getClient(context.applicationContext)
 
     // 초기 생성 시 호출 (데이터는 onDataSetChanged에서 로드)
     override fun onCreate() {
@@ -121,34 +123,39 @@ class PopularMoviesRemoteViewsFactory(
     companion object {
         private const val MAX_MOVIES = 10
 
-        private val client: OkHttpClient by lazy {
-            OkHttpClient.Builder()
-                // API 키를 Interceptor로 주입 — URL 문자열에 직접 포함 시 예외 로그에 노출될 수 있음
-                .addInterceptor { chain ->
-                    val original = chain.request()
-                    val url = original.url.newBuilder()
-                        .addQueryParameter("api_key", BuildConfig.TMDB_API_KEY)
-                        .build()
-                    chain.proceed(original.newBuilder().url(url).build())
-                }
-                .apply {
-                    // 디버그 빌드(에뮬레이터)에서는 인증서 피닝 비활성화
-                    if (!BuildConfig.DEBUG) {
-                        certificatePinner(
-                            CertificatePinner.Builder()
-                                .add(
-                                    "api.themoviedb.org",
-                                    "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
-                                    "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
-                                )
-                                .build()
-                        )
+        @Volatile private var instance: OkHttpClient? = null
+
+        fun getClient(context: Context): OkHttpClient =
+            instance ?: synchronized(this) {
+                instance ?: OkHttpClient.Builder()
+                    // API 키를 Interceptor로 주입 — URL 문자열에 직접 포함 시 예외 로그에 노출될 수 있음
+                    .addInterceptor { chain ->
+                        val original = chain.request()
+                        val url = original.url.newBuilder()
+                            .addQueryParameter("api_key", BuildConfig.TMDB_API_KEY)
+                            .build()
+                        chain.proceed(original.newBuilder().url(url).build())
                     }
-                }
-                .connectTimeout(15.seconds)
-                .readTimeout(15.seconds)
-                .build()
-        }
+                    .cache(Cache(File(context.cacheDir, "widget_http_cache"), 5L * 1024 * 1024))
+                    .apply {
+                        // 디버그 빌드(에뮬레이터)에서는 인증서 피닝 비활성화
+                        if (!BuildConfig.DEBUG) {
+                            certificatePinner(
+                                CertificatePinner.Builder()
+                                    .add(
+                                        "api.themoviedb.org",
+                                        "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
+                                        "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
+                                    )
+                                    .build()
+                            )
+                        }
+                    }
+                    .connectTimeout(15.seconds)
+                    .readTimeout(15.seconds)
+                    .build()
+                    .also { instance = it }
+            }
     }
 }
 

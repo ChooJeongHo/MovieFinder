@@ -35,7 +35,7 @@ import com.choo.moviefinder.data.local.entity.WatchlistEntity
         MemoEntity::class,
         MovieTagEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 abstract class MovieDatabase : RoomDatabase() {

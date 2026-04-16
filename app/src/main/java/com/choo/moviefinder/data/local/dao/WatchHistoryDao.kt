@@ -40,10 +40,6 @@ abstract class WatchHistoryDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun insertGenres(genres: List<WatchHistoryGenreEntity>)
 
-    // 모든 시청 기록의 장르 문자열 조회 (하위 호환용)
-    @Query("SELECT genres FROM watch_history WHERE genres != ''")
-    abstract fun getAllGenres(): Flow<List<String>>
-
     // 정규화 테이블에서 장르별 시청 편수를 집계하여 조회한다
     @Query(
         "SELECT genre_name AS genre, COUNT(*) AS count " +

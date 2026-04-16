@@ -27,7 +27,9 @@ import com.choo.moviefinder.domain.model.ThemeMode
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 @Suppress("TooManyFunctions")
@@ -48,8 +50,10 @@ class SettingsFragment : Fragment() {
             val b = _binding ?: return@launch
             try {
                 viewModel.pendingExportJson?.let { json ->
-                    requireContext().contentResolver.openOutputStream(uri)?.use { stream ->
-                        stream.write(json.toByteArray())
+                    withContext(Dispatchers.IO) {
+                        requireContext().contentResolver.openOutputStream(uri)?.use { stream ->
+                            stream.write(json.toByteArray())
+                        }
                     }
                     viewModel.pendingExportJson = null
                     Snackbar.make(b.root, R.string.export_success, Snackbar.LENGTH_SHORT).show()
@@ -69,14 +73,19 @@ class SettingsFragment : Fragment() {
             val b = _binding ?: return@launch
             try {
                 val maxImportBytes = 10L * 1024 * 1024 // 10MB
-                val json = requireContext().contentResolver.openInputStream(uri)?.use { stream ->
-                    val bytes = stream.readBytes()
-                    if (bytes.size > maxImportBytes) {
-                        Snackbar.make(b.root, R.string.import_error, Snackbar.LENGTH_SHORT).show()
-                        return@launch
+                val json = withContext(Dispatchers.IO) {
+                    requireContext().contentResolver.openInputStream(uri)?.use { stream ->
+                        val bytes = stream.readBytes()
+                        if (bytes.size > maxImportBytes) {
+                            null
+                        } else {
+                            bytes.toString(Charsets.UTF_8)
+                        }
                     }
-                    bytes.toString(Charsets.UTF_8)
-                } ?: return@launch
+                } ?: run {
+                    Snackbar.make(b.root, R.string.import_error, Snackbar.LENGTH_SHORT).show()
+                    return@launch
+                }
                 showImportConfirmDialog(json)
             } catch (e: Exception) {
                 Snackbar.make(b.root, R.string.import_error, Snackbar.LENGTH_SHORT).show()

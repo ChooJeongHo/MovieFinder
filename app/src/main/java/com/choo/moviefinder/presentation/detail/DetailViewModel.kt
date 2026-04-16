@@ -29,7 +29,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -212,7 +211,7 @@ class DetailViewModel @Inject constructor(
         toggleMutex.withLock {
             val state = _uiState.value
             if (state is DetailUiState.Success) {
-                val wasInWatchlist = isInWatchlistUseCase(movieId).first()
+                val wasInWatchlist = isInWatchlist.value
                 val movie = state.movieDetail.toMovie()
                 toggleWatchlistUseCase(movie)
                 if (!wasInWatchlist) {

@@ -1,0 +1,17 @@
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"commit-commands:commit-push-pr"}
+{"t":0,"agent":"a74f899","agent_type":"security-reviewer","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"ab5ab30","agent_type":"explore","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a74f899","agent_type":"security-reviewer","event":"agent_stop","success":true,"duration_ms":60802}
+{"t":0,"agent":"ab5ab30","agent_type":"explore","event":"agent_stop","success":true,"duration_ms":102153}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"android-code-review"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"android-qa"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"kotlin-concurrency-expert"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"gradle-build-performance"}
+{"t":0,"agent":"a43933b","agent_type":"code-reviewer","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a7c425c","agent_type":"architect","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a7c425c","agent_type":"architect","event":"agent_stop","success":true,"duration_ms":46679}
+{"t":0,"agent":"a43933b","agent_type":"code-reviewer","event":"agent_stop","success":true,"duration_ms":83140}
+{"t":0,"agent":"ae6093c","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"android-qa"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"proguard-validator"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"dependency-audit"}

@@ -7,7 +7,7 @@ import com.choo.moviefinder.domain.model.Movie
 @Entity(
     tableName = "cached_movies",
     primaryKeys = ["id", "category"],
-    indices = [Index(value = ["category"])]
+    indices = [Index(value = ["category"]), Index(value = ["category", "page", "cachedAt"])]
 )
 data class CachedMovieEntity(
     val id: Int,
