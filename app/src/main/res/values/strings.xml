@@ -77,6 +77,7 @@
     <string name="cd_certification">등급 %s</string>
     <string name="cd_review_collapsed">탭하여 펼치기</string>
     <string name="cd_review_expanded">탭하여 접기</string>
+    <string name="cd_widget_refresh">위젯 새로고침</string>
 
     <!-- 테마 설정 -->
     <string name="theme_settings">테마 설정</string>

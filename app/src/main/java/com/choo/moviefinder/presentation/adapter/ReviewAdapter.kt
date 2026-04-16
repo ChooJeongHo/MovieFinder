@@ -59,6 +59,7 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
             updateStateDescription(isExpanded)
 
             binding.tvDate.text = review.createdAt.take(10)
+            binding.root.contentDescription = review.author
 
             binding.root.setOnClickListener {
                 val nowExpanded = review.id in expandedIds
