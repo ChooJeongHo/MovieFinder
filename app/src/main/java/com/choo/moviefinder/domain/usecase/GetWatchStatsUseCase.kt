@@ -12,6 +12,7 @@ import com.choo.moviefinder.domain.repository.WatchHistoryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
@@ -60,7 +61,7 @@ class GetWatchStatsUseCase @Inject constructor(
                 dailyWatchCounts = dailyCounts
             )
         }
-        emitAll(combinedFlow)
+        emitAll(combinedFlow.debounce(100L))
     }.flowOn(Dispatchers.Default)
 
     // 5개 기본 통계 Flow를 묶기 위한 내부 데이터 홀더

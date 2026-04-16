@@ -30,6 +30,7 @@ class CalendarHeatmapView @JvmOverloads constructor(
 
     private val cells = mutableListOf<Cell>()
     private val monthLabels = mutableListOf<Pair<Int, String>>() // column index to label
+    private val dfs = DateFormatSymbols(Locale.getDefault())
 
     // onDraw 할당 방지: setData()와 onSizeChanged()에서 미리 계산
     private var cachedShortWeekdays: Array<String> = emptyArray()
@@ -78,7 +79,6 @@ class CalendarHeatmapView @JvmOverloads constructor(
     fun setData(items: List<DailyWatchCount>) {
         cells.clear()
         monthLabels.clear()
-        val dfs = DateFormatSymbols(Locale.getDefault())
         cachedShortWeekdays = dfs.shortWeekdays
         val cachedShortMonths = dfs.shortMonths
         dowLabels = listOf(1 to cachedShortWeekdays[2], 3 to cachedShortWeekdays[4], 5 to cachedShortWeekdays[6])

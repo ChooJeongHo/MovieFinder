@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -121,30 +122,46 @@ class SearchViewModel @Inject constructor(
         collectPersonSearchQuery()
     }
 
-    // 배우 검색 쿼리를 300ms debounce 후 API 호출
+    // 배우 검색 쿼리를 300ms debounce 후 API 호출 (flatMapLatest로 새 쿼리가 인플라이트 호출을 취소)
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private fun collectPersonSearchQuery() {
         viewModelScope.launch {
             _personSearchQuery
                 .debounce(PERSON_SEARCH_DEBOUNCE_MS)
                 .distinctUntilChanged()
-                .collect { query ->
-                    val trimmed = query.trim()
-                    if (trimmed.isBlank()) {
-                        _personResults.value = emptyList()
-                        return@collect
+                .flatMapLatest { query ->
+                    flow {
+                        val trimmed = query.trim()
+                        if (trimmed.isBlank()) {
+                            emit(Result.success<List<PersonSearchItem>>(emptyList()))
+                            return@flow
+                        }
+                        emit(Result.success(null)) // loading sentinel
+                        try {
+                            emit(Result.success(searchPersonUseCase(trimmed)))
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Timber.w(e, "배우 검색 실패, 검색어: $trimmed")
+                            emit(Result.failure(e))
+                        }
                     }
-                    _isPersonSearchLoading.value = true
-                    try {
-                        _personResults.value = searchPersonUseCase(trimmed)
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Timber.w(e, "배우 검색 실패, 검색어: $trimmed")
-                        _personResults.value = emptyList()
-                        _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(e))
-                    } finally {
-                        _isPersonSearchLoading.value = false
+                }
+                .collect { result ->
+                    when {
+                        result.isFailure -> {
+                            _personResults.value = emptyList()
+                            _isPersonSearchLoading.value = false
+                            _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(result.exceptionOrNull()!!))
+                        }
+                        result.getOrNull() == null -> {
+                            // loading sentinel
+                            _isPersonSearchLoading.value = true
+                        }
+                        else -> {
+                            _personResults.value = result.getOrNull()!!
+                            _isPersonSearchLoading.value = false
+                        }
                     }
                 }
         }

@@ -102,9 +102,9 @@ class SplitRepositoryImplTest {
         movieTagDao = mockk(relaxUnitFun = true)
         apiService = mockk()
         database = mockk()
-        coEvery { database.withTransaction<Unit>(any()) } coAnswers {
+        coEvery { database.withTransaction<Any?>(any()) } coAnswers {
             @Suppress("UNCHECKED_CAST")
-            (invocation.args[1] as suspend () -> Unit).invoke()
+            (invocation.args[1] as suspend () -> Any?).invoke()
         }
 
         favoriteRepo = FavoriteRepositoryImpl(favoriteMovieDao)

@@ -242,6 +242,7 @@ class SearchFragment : Fragment() {
         binding.rvPersonResults.isVisible = false
         binding.rvSearchResults.isVisible = false
         binding.noResultsSection.isVisible = false
+        binding.shimmerView.shimmerLayout.stopShimmer()
         binding.shimmerView.shimmerLayout.isVisible = false
         if (isPersonMode) {
             binding.recentSearchesSection.isVisible = false
@@ -600,6 +601,7 @@ class SearchFragment : Fragment() {
         updateDiscoverModeChip()
         if (query.isBlank() && viewModel.selectedGenres.value.isEmpty()) {
             binding.rvSearchResults.isVisible = false
+            binding.shimmerView.shimmerLayout.stopShimmer()
             binding.shimmerView.shimmerLayout.isVisible = false
             binding.noResultsSection.isVisible = false
 

@@ -54,11 +54,6 @@ class WatchHistoryRepositoryImpl @Inject constructor(
         return watchHistoryDao.getCountSince(since)
     }
 
-    // 모든 시청 기록의 장르 문자열 목록을 실시간 Flow로 조회
-    override fun getAllWatchedGenres(): Flow<List<String>> {
-        return watchHistoryDao.getAllGenres()
-    }
-
     // 정규화 테이블에서 장르별 시청 편수를 도메인 모델로 변환하여 조회
     override fun getGenreCounts(): Flow<List<GenreCount>> {
         return watchHistoryDao.getGenreCounts().map { results ->

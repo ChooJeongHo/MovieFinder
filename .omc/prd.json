@@ -1,0 +1,88 @@
+{
+  "title": "Watch Goal Feature",
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Data Layer: UserSettings + PreferencesRepository for monthly watch goal",
+      "priority": 1,
+      "passes": true,
+      "acceptanceCriteria": [
+        "UserSettings has monthlyWatchGoal: Int field with default 0 (no goal set)",
+        "PreferencesRepository has getMonthlyWatchGoal(): Flow<Int> and setMonthlyWatchGoal(goal: Int) suspend methods",
+        "PreferencesRepositoryImpl implements both methods using typed DataStore<UserSettings>",
+        "Project compiles without errors after changes"
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "Domain Layer: UseCases for watch goal (Get/Set) + WatchStats model update",
+      "priority": 2,
+      "passes": true,
+      "acceptanceCriteria": [
+        "GetMonthlyWatchGoalUseCase returns Flow<Int> from PreferencesRepository",
+        "SetMonthlyWatchGoalUseCase calls PreferencesRepository.setMonthlyWatchGoal()",
+        "WatchStats model has monthlyWatchGoal: Int field",
+        "GetWatchStatsUseCase combines the watch goal flow (6 flows total) into WatchStats",
+        "Project compiles without errors after changes"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Settings UI: Monthly watch goal setting with NumberPicker dialog",
+      "priority": 3,
+      "passes": true,
+      "acceptanceCriteria": [
+        "SettingsFragment has a new 'monthly watch goal' item between stats and clear cache items",
+        "Clicking the item shows MaterialAlertDialog with NumberPicker (0-100, 0=no goal)",
+        "Current goal value is displayed as subtitle text (e.g., '10편' or '설정 안 됨')",
+        "SettingsViewModel has setMonthlyWatchGoal() and monthlyWatchGoal StateFlow",
+        "fragment_settings.xml has the new item layout with ic_stats icon",
+        "Korean and English strings added for all new UI text",
+        "Project compiles without errors"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Stats UI: Goal progress display with progress bar and percentage",
+      "priority": 4,
+      "passes": true,
+      "acceptanceCriteria": [
+        "StatsFragment shows a goal progress card when monthlyWatchGoal > 0",
+        "Card contains a MaterialProgressIndicator (linear) showing monthlyWatched / monthlyWatchGoal percentage",
+        "Card shows text like '3 / 10편' format",
+        "Card is hidden when monthlyWatchGoal is 0 (no goal set)",
+        "Goal achieved state shows celebratory text ('목표 달성!')",
+        "fragment_stats.xml has the new card between monthly watched and average rating cards",
+        "Korean and English strings added",
+        "Project compiles without errors"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Goal Achievement Notification",
+      "priority": 5,
+      "passes": true,
+      "acceptanceCriteria": [
+        "WatchGoalNotificationHelper checks if goal is achieved when watch history is saved",
+        "Notification uses a separate channel 'watch_goal_channel'",
+        "Notification channel created in MovieFinderApp.onCreate()",
+        "Notification only fires once per month (tracked via UserSettings.lastGoalNotifiedMonth)",
+        "Notification has congratulatory title/text and deep links to stats screen",
+        "Korean and English strings for notification text",
+        "Project compiles without errors"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Unit Tests for watch goal feature",
+      "priority": 6,
+      "passes": true,
+      "acceptanceCriteria": [
+        "SettingsViewModelTest: tests for setMonthlyWatchGoal and monthlyWatchGoal flow (4 new tests)",
+        "PreferencesRepositoryImplTest: tests for getMonthlyWatchGoal, setMonthlyWatchGoal, lastGoalNotifiedMonth (5 new tests)",
+        "All 154 tests pass (was 145, added 9 new)",
+        "./gradlew testDebugUnitTest succeeds"
+      ]
+    }
+  ]
+}

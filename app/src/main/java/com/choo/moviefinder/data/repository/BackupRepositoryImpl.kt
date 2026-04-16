@@ -31,7 +31,7 @@ class BackupRepositoryImpl @Inject constructor(
 ) : BackupRepository {
 
     // 즐겨찾기, 워치리스트, 평점, 메모, 태그를 백업 모델로 내보낸다
-    override suspend fun exportUserData(): UserDataBackup {
+    override suspend fun exportUserData(): UserDataBackup = database.withTransaction {
         val favorites = favoriteMovieDao.getAllFavoritesOnce().map { it.toBackupMovie() }
         val watchlist = watchlistDao.getAllWatchlistOnce().map { it.toBackupMovie() }
         val ratings = userRatingDao.getAllRatings().map { entity ->
@@ -52,7 +52,7 @@ class BackupRepositoryImpl @Inject constructor(
                 addedAt = entity.addedAt
             )
         }
-        return UserDataBackup(
+        UserDataBackup(
             favorites = favorites,
             watchlist = watchlist,
             ratings = ratings,
