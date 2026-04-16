@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"git add -A && git commit -m \\\"$(cat <<'EOF'\\nPerf: apply ultra-think performance analysis fixes\\n\\nCoroutines/Flow:\\n- SearchViewModel: person search collect → flatMapLatest (cancels in-fl...",
-  "error": "Exit code 1\nRunning pre-commit checks...\nRunning Detekt...\n/Users/serveace/AndroidStudioProjects/MovieFinder/app/src/main/java/com/choo/moviefinder/presentation/favorite/FavoriteViewModel.kt:64:30: Missing { ... } [MultiLineIfElse]\n/Users/serveace/AndroidStudioProjects/MovieFinder/app/src/main/java/com/choo/moviefinder/presentation/favorite/FavoriteViewModel.kt:65:18: Missing { ... } [MultiLineIfElse]\n/Users/serveace/AndroidStudioProjects/MovieFinder/app/src/main/java/com/choo/moviefinder/presen...",
-  "timestamp": "2026-04-16T22:54:50.264Z",
-  "retry_count": 1
-}
