@@ -94,13 +94,13 @@ class BaselineProfileGenerator {
         device.executeShellCommand(
             "am start -a android.intent.action.VIEW -d moviefinder://movie/550 $PACKAGE"
         )
-        device.wait(Until.hasObject(By.pkg(PACKAGE)), 3000)
-        device.waitForIdle(2000)
+        device.wait(Until.hasObject(By.pkg(PACKAGE)), 5000)
+        device.waitForIdle(3000)
 
-        val scrollable = device.findObject(By.scrollable(true))
-        scrollable?.fling(Direction.DOWN)
+        // Re-find scrollable each time to avoid StaleObjectException
+        device.findObject(By.scrollable(true))?.fling(Direction.DOWN)
         device.waitForIdle(1000)
-        scrollable?.fling(Direction.DOWN)
+        device.findObject(By.scrollable(true))?.fling(Direction.DOWN)
         device.waitForIdle(1000)
     }
 }
