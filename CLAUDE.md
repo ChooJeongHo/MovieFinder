@@ -194,7 +194,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (434개)
+### 유닛 테스트 (428개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
