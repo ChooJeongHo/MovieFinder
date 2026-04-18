@@ -192,6 +192,8 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
 }
 
 dependencies {
+    baselineProfile(project(":baselineprofile"))
+
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
