@@ -57,6 +57,13 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
             val isExpanded = review.id in expandedIds
             binding.tvContent.maxLines = if (isExpanded) Integer.MAX_VALUE else 4
             updateStateDescription(isExpanded)
+            val actionLabel = binding.root.context.getString(
+                if (isExpanded) R.string.cd_review_collapse else R.string.cd_review_expand
+            )
+            ViewCompat.addAccessibilityAction(binding.root, actionLabel) { _, _ ->
+                binding.root.performClick()
+                true
+            }
 
             binding.tvDate.text = review.createdAt.take(10)
             binding.root.contentDescription = review.author

@@ -19,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import androidx.recyclerview.widget.RecyclerView
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.databinding.ActivityMainBinding
 import com.choo.moviefinder.presentation.detail.DetailFragmentArgs
@@ -50,6 +51,15 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
 
         binding.bottomNav.setupWithNavController(navController)
+
+        binding.bottomNav.setOnItemReselectedListener {
+            val host = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+            val currentFragment = host?.childFragmentManager?.primaryNavigationFragment
+            currentFragment?.view?.let { view ->
+                view.findViewById<RecyclerView>(R.id.rv_movies)?.scrollToPosition(0)
+                    ?: view.findViewById<RecyclerView>(R.id.rv_favorites)?.scrollToPosition(0)
+            }
+        }
 
         // 하단 내비게이션 시스템 바 인셋 처리
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNav) { view, insets ->

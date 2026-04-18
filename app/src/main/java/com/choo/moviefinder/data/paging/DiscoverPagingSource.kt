@@ -5,6 +5,7 @@ import androidx.paging.PagingState
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.domain.model.Movie
+import kotlinx.coroutines.CancellationException
 
 class DiscoverPagingSource(
     private val apiService: MovieApiService,
@@ -37,6 +38,7 @@ class DiscoverPagingSource(
                 nextKey = if (page >= response.totalPages) null else page + 1
             )
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             LoadResult.Error(e)
         }
     }

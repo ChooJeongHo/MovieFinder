@@ -8,8 +8,9 @@ import androidx.recyclerview.widget.RecyclerView
 import coil3.dispose
 import coil3.load
 import coil3.request.crossfade
-import coil3.request.placeholder
 import coil3.request.error
+import coil3.request.placeholder
+import coil3.size.ViewSizeResolver
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.databinding.ItemPersonSearchBinding
@@ -60,6 +61,7 @@ class PersonSearchAdapter(
                     crossfade(true)
                     placeholder(R.drawable.bg_circle)
                     error(R.drawable.bg_circle)
+                    size(ViewSizeResolver(binding.ivProfile))
                 }
             } else {
                 binding.ivProfile.setImageResource(R.drawable.bg_circle)
