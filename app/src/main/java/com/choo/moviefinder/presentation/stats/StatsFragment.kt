@@ -102,7 +102,9 @@ class StatsFragment : Fragment() {
 
     // 로딩 상태 표시
     private fun showLoading() {
-        binding.progressBar.isVisible = true
+        binding.progressBar.isVisible = false
+        binding.shimmerStats.shimmerLayout.isVisible = true
+        binding.shimmerStats.shimmerLayout.startShimmer()
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = false
     }
@@ -111,6 +113,8 @@ class StatsFragment : Fragment() {
     private fun showContent(stats: WatchStats) {
         currentStats = stats
         binding.progressBar.isVisible = false
+        binding.shimmerStats.shimmerLayout.stopShimmer()
+        binding.shimmerStats.shimmerLayout.isVisible = false
         binding.contentLayout.isVisible = true
         binding.errorView.layoutError.isVisible = false
 
@@ -234,6 +238,8 @@ class StatsFragment : Fragment() {
     // 에러 상태 표시 (에러 메시지)
     private fun showError(errorType: com.choo.moviefinder.core.util.ErrorType) {
         binding.progressBar.isVisible = false
+        binding.shimmerStats.shimmerLayout.stopShimmer()
+        binding.shimmerStats.shimmerLayout.isVisible = false
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = true
 

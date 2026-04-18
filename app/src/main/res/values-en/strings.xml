@@ -55,6 +55,7 @@
     <string name="retry">Retry</string>
 
     <!-- Accessibility Descriptions -->
+    <string name="cd_navigate_back">Navigate back</string>
     <string name="cd_movie_poster">Movie poster</string>
     <string name="cd_movie_backdrop">Movie backdrop image</string>
     <string name="cd_cast_profile">Cast profile photo</string>
@@ -71,6 +72,9 @@
     <string name="cd_certification">Rated %s</string>
     <string name="cd_review_collapsed">Tap to expand</string>
     <string name="cd_review_expanded">Tap to collapse</string>
+    <string name="cd_review_expand">Expand review</string>
+    <string name="cd_review_collapse">Collapse review</string>
+    <string name="cd_recent_search_item">Search again for %s</string>
 
     <!-- Theme Settings -->
     <string name="theme_settings">Theme Settings</string>

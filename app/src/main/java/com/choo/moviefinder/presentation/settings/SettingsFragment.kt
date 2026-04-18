@@ -27,6 +27,7 @@ import com.choo.moviefinder.domain.model.ThemeMode
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,6 +60,7 @@ class SettingsFragment : Fragment() {
                     Snackbar.make(b.root, R.string.export_success, Snackbar.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Snackbar.make(b.root, R.string.export_error, Snackbar.LENGTH_SHORT).show()
             }
         }
@@ -88,6 +90,7 @@ class SettingsFragment : Fragment() {
                 }
                 showImportConfirmDialog(json)
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Snackbar.make(b.root, R.string.import_error, Snackbar.LENGTH_SHORT).show()
             }
         }

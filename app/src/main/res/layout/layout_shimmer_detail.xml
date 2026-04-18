@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.facebook.shimmer.ShimmerFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/shimmer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:importantForAccessibility="noHideDescendants"
+    app:shimmer_auto_start="false"
+    app:shimmer_duration="1200">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Backdrop placeholder -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:background="#E0E0E0" />
+
+        <!-- Poster row: poster + title/tagline/rating lines -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <View
+                android:layout_width="100dp"
+                android:layout_height="140dp"
+                android:background="#E0E0E0" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- Title line -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp"
+                    android:layout_marginTop="8dp"
+                    android:background="#E0E0E0" />
+
+                <!-- Tagline line -->
+                <View
+                    android:layout_width="160dp"
+                    android:layout_height="16dp"
+                    android:layout_marginTop="10dp"
+                    android:background="#E0E0E0" />
+
+                <!-- Rating line -->
+                <View
+                    android:layout_width="80dp"
+                    android:layout_height="16dp"
+                    android:layout_marginTop="10dp"
+                    android:background="#E0E0E0" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Genre chip row 1 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="8dp">
+
+            <View
+                android:layout_width="72dp"
+                android:layout_height="28dp"
+                android:background="#E0E0E0" />
+
+            <View
+                android:layout_width="88dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="8dp"
+                android:background="#E0E0E0" />
+
+            <View
+                android:layout_width="64dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="8dp"
+                android:background="#E0E0E0" />
+
+        </LinearLayout>
+
+        <!-- Overview lines -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:background="#E0E0E0" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:background="#E0E0E0" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:background="#E0E0E0" />
+
+        <View
+            android:layout_width="200dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:background="#E0E0E0" />
+
+        <!-- Cast section header -->
+        <View
+            android:layout_width="120dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="20dp"
+            android:background="#E0E0E0" />
+
+        <!-- Cast horizontal cards -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="16dp">
+
+            <View
+                android:layout_width="72dp"
+                android:layout_height="100dp"
+                android:layout_marginEnd="8dp"
+                android:background="#E0E0E0" />
+
+            <View
+                android:layout_width="72dp"
+                android:layout_height="100dp"
+                android:layout_marginEnd="8dp"
+                android:background="#E0E0E0" />
+
+            <View
+                android:layout_width="72dp"
+                android:layout_height="100dp"
+                android:layout_marginEnd="8dp"
+                android:background="#E0E0E0" />
+
+            <View
+                android:layout_width="72dp"
+                android:layout_height="100dp"
+                android:background="#E0E0E0" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.facebook.shimmer.ShimmerFrameLayout>

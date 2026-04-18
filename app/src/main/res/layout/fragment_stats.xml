@@ -11,6 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/ic_arrow_back"
+        app:navigationContentDescription="@string/cd_navigate_back"
         app:title="@string/stats_title" />
 
     <ProgressBar
@@ -20,6 +21,13 @@
         android:layout_gravity="center"
         android:layout_marginTop="@dimen/spacing_xl"
         android:contentDescription="@string/cd_loading"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/shimmerStats"
+        layout="@layout/layout_shimmer_stats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:visibility="gone" />
 
     <include

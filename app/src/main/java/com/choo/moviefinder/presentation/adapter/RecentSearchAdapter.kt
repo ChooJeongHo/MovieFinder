@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.choo.moviefinder.R
 import com.choo.moviefinder.databinding.ItemRecentSearchBinding
 
 class RecentSearchAdapter(
@@ -32,6 +33,7 @@ class RecentSearchAdapter(
         // 검색어 텍스트 및 클릭/삭제 리스너 바인딩
         fun bind(query: String) {
             binding.tvQuery.text = query
+            binding.root.contentDescription = binding.root.context.getString(R.string.cd_recent_search_item, query)
 
             binding.root.setOnClickListener {
                 onItemClick(query)

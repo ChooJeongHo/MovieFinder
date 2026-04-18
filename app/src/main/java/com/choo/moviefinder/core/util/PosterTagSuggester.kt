@@ -11,6 +11,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import timber.log.Timber
 import javax.inject.Inject
@@ -47,6 +48,7 @@ class PosterTagSuggester @Inject constructor(
                 .take(MAX_SUGGESTIONS)
                 .map { it.text }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Timber.w(e, "포스터 태그 추천 실패: %s", posterPath)
             emptyList()
         }
@@ -85,4 +87,5 @@ private suspend fun <T> com.google.android.gms.tasks.Task<T>.await(): T =
     suspendCancellableCoroutine { cont ->
         addOnSuccessListener { cont.resume(it) }
         addOnFailureListener { cont.resumeWithException(it) }
+        cont.invokeOnCancellation { /* ML Kit Task cannot be cancelled externally */ }
     }

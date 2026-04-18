@@ -302,9 +302,11 @@ class DetailFragment : Fragment() {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
 
-    // 로딩 상태 표시 (ProgressBar 표시, 콘텐츠/FAB 숨김)
+    // 로딩 상태 표시 (Shimmer 표시, 콘텐츠/FAB 숨김)
     private fun showLoading() {
-        binding.progressBar.isVisible = true
+        binding.progressBar.isVisible = false
+        binding.shimmerDetail.shimmerLayout.isVisible = true
+        binding.shimmerDetail.shimmerLayout.startShimmer()
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = false
         binding.fabFavorite.isVisible = false
@@ -314,6 +316,8 @@ class DetailFragment : Fragment() {
     // 성공 상태 표시 (영화 상세, 출연진, 비슷한 영화, 리뷰, 등급 바인딩)
     private fun showContent(state: DetailUiState.Success) {
         binding.progressBar.isVisible = false
+        binding.shimmerDetail.shimmerLayout.stopShimmer()
+        binding.shimmerDetail.shimmerLayout.isVisible = false
         binding.contentLayout.isVisible = true
         binding.errorView.layoutError.isVisible = false
         binding.fabFavorite.isVisible = true
@@ -492,6 +496,8 @@ class DetailFragment : Fragment() {
     private fun showError(errorType: ErrorType) {
         startPostponedEnterTransition()
         binding.progressBar.isVisible = false
+        binding.shimmerDetail.shimmerLayout.stopShimmer()
+        binding.shimmerDetail.shimmerLayout.isVisible = false
         binding.contentLayout.isVisible = false
         binding.errorView.layoutError.isVisible = true
         binding.fabFavorite.isVisible = false
@@ -544,6 +550,10 @@ class DetailFragment : Fragment() {
                 }
             }
             .setNegativeButton(R.string.cancel, null)
+            .setOnDismissListener {
+                val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                requireActivity().currentFocus?.let { imm.hideSoftInputFromWindow(it.windowToken, 0) }
+            }
             .show()
     }
 
