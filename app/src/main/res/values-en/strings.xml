@@ -61,7 +61,6 @@
     <string name="cd_cast_profile">Cast profile photo</string>
     <string name="cd_person_profile">%s profile photo</string>
     <string name="cd_filmography">%s filmography</string>
-    <string name="cd_back">Go back</string>
     <string name="cd_clear_search">Clear search text</string>
     <string name="cd_delete_search">Delete search term</string>
     <string name="cd_favorite">Favorite</string>
@@ -75,6 +74,8 @@
     <string name="cd_review_expand">Expand review</string>
     <string name="cd_review_collapse">Collapse review</string>
     <string name="cd_recent_search_item">Search again for %s</string>
+    <string name="cd_cast_item">%1$s, as %2$s</string>
+    <string name="cd_widget_refresh">Refresh widget</string>
 
     <!-- Theme Settings -->
     <string name="theme_settings">Theme Settings</string>

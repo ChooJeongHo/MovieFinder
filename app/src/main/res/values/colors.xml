@@ -3,13 +3,6 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- TMDB 브랜드 색상 -->
-    <color name="movie_primary">#FF032541</color>
-    <color name="movie_primary_variant">#FF01B4E4</color>
-    <color name="movie_accent">#FF90CEA1</color>
-    <color name="movie_surface">#FF1A1A2E</color>
-    <color name="movie_background">#FF0F0F23</color>
-
     <!-- 라이트 테마 -->
     <color name="colorPrimary">#FF032541</color>
     <color name="colorPrimaryVariant">#FF021B2F</color>
@@ -41,16 +34,6 @@
     <color name="rating_red">#FFDB2360</color>
     <color name="rating_track">#33FFFFFF</color>
     <color name="rating_background">#FF081C22</color>
-
-    <!-- 로딩 Shimmer -->
-    <color name="shimmer_base_light">#FFE0E0E0</color>
-    <color name="shimmer_highlight_light">#FFF5F5F5</color>
-    <color name="shimmer_base_dark">#FF2A2A3E</color>
-    <color name="shimmer_highlight_dark">#FF3A3A4E</color>
-
-    <!-- 칩 -->
-    <color name="chip_background_light">#FFF0F0F0</color>
-    <color name="chip_background_dark">#FF2A2A3E</color>
 
     <!-- 플레이스홀더 -->
     <color name="placeholder_light">#FFE0E0E0</color>

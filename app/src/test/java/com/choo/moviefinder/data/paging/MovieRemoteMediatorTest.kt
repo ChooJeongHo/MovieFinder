@@ -14,10 +14,12 @@ import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.MovieDto
 import com.choo.moviefinder.data.remote.dto.MovieListResponse
+import androidx.room.withTransaction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertFalse
@@ -175,5 +177,42 @@ class MovieRemoteMediatorTest {
         assertTrue(result is RemoteMediator.MediatorResult.Success)
         assertFalse((result as RemoteMediator.MediatorResult.Success).endOfPaginationReached)
         coVerify(exactly = 0) { apiService.getNowPlayingMovies(any(), any()) }
+    }
+
+    @Test
+    fun `load REFRESH popular category calls getPopularMovies API`() = runTest {
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        coEvery { apiService.getPopularMovies(1, any()) } returns createResponse(1, 3)
+        coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            @Suppress("UNCHECKED_CAST")
+            (secondArg<suspend () -> Any?>()).invoke()
+        }
+
+        val mediator = createMediator(MovieRemoteMediator.CATEGORY_POPULAR)
+        mediator.load(LoadType.REFRESH, createEmptyPagingState())
+
+        coVerify(exactly = 1) { apiService.getPopularMovies(1, any()) }
+    }
+
+    @Test
+    fun `load REFRESH nowPlaying with empty API response sets endOfPaginationReached true`() = runTest {
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        val emptyResponse = MovieListResponse(
+            page = 1,
+            results = emptyList(),
+            totalPages = 1,
+            totalResults = 0
+        )
+        coEvery { apiService.getNowPlayingMovies(1, any()) } returns emptyResponse
+        coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            @Suppress("UNCHECKED_CAST")
+            (secondArg<suspend () -> Any?>()).invoke()
+        }
+
+        val mediator = createMediator(MovieRemoteMediator.CATEGORY_NOW_PLAYING)
+        val result = mediator.load(LoadType.REFRESH, createEmptyPagingState())
+
+        assertTrue(result is RemoteMediator.MediatorResult.Success)
+        assertTrue((result as RemoteMediator.MediatorResult.Success).endOfPaginationReached)
     }
 }

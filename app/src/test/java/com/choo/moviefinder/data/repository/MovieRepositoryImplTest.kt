@@ -20,13 +20,18 @@ import com.choo.moviefinder.data.remote.dto.ReviewDto
 import com.choo.moviefinder.data.remote.dto.ReviewResponse
 import com.choo.moviefinder.data.remote.dto.VideoDto
 import com.choo.moviefinder.data.remote.dto.VideoResponse
+import androidx.paging.PagingData
+import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.presentation.search.SortOption
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -359,5 +364,54 @@ class MovieRepositoryImplTest {
     @Test(expected = IllegalArgumentException::class)
     fun `getMovieRecommendations throws on invalid movieId`() = runTest {
         repository.getMovieRecommendations(0)
+    }
+
+    // --- paging methods ---
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `searchMovies with blank query throws IllegalArgumentException`() = runTest {
+        repository.searchMovies("")
+    }
+
+    @Test
+    fun `searchMovies with valid query returns non-null PagingData flow`() {
+        val flow: Flow<PagingData<Movie>> = repository.searchMovies("action")
+
+        assertNotNull(flow)
+    }
+
+    @Test
+    fun `discoverMovies with empty genres returns non-null PagingData flow`() {
+        val flow: Flow<PagingData<Movie>> = repository.discoverMovies(
+            genres = emptySet(),
+            sortBy = SortOption.POPULARITY_DESC.apiValue
+        )
+
+        assertNotNull(flow)
+    }
+
+    @Test
+    fun `getTrendingMovies returns non-null PagingData flow`() {
+        val flow: Flow<PagingData<Movie>> = repository.getTrendingMovies()
+
+        assertNotNull(flow)
+    }
+
+    @Test
+    fun `getNowPlayingMovies returns non-null PagingData flow`() {
+        every { cachedMovieDao.getMoviesByCategory(any()) } returns mockk()
+
+        val flow: Flow<PagingData<Movie>> = repository.getNowPlayingMovies()
+
+        assertNotNull(flow)
+    }
+
+    @Test
+    fun `getPopularMovies returns non-null PagingData flow`() {
+        every { cachedMovieDao.getMoviesByCategory(any()) } returns mockk()
+
+        val flow: Flow<PagingData<Movie>> = repository.getPopularMovies()
+
+        assertNotNull(flow)
     }
 }

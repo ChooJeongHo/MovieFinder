@@ -487,18 +487,14 @@ class SearchFragment : Fragment() {
         }
     }
 
-    // 장르 칩 텍스트 갱신 (3개 이상 시 개수 표시, 미로드 시 개수만 표시)
+    // 장르 칩 텍스트 갱신 (1-2개: 이름 표시, 3개 이상 또는 미로드 시 개수 표시)
     private fun updateGenreChip(selectedGenreIds: Set<Int>) {
         if (selectedGenreIds.isNotEmpty()) {
-            val allGenres = viewModel.genres.value
-            val selectedNames = allGenres.filter { it.id in selectedGenreIds }
-            val chipText = if (selectedNames.isEmpty()) {
-                // 장르 목록 미로드 시 개수만 표시
-                getString(R.string.genre_count, selectedGenreIds.size)
-            } else if (selectedNames.size >= 3) {
-                getString(R.string.genre_count, selectedNames.size)
-            } else {
+            val selectedNames = viewModel.genres.value.filter { it.id in selectedGenreIds }
+            val chipText = if (selectedNames.size in 1..2) {
                 selectedNames.joinToString(", ") { it.name }
+            } else {
+                getString(R.string.genre_count, selectedGenreIds.size)
             }
             binding.chipGenre.text = chipText
             binding.chipGenre.isCloseIconVisible = true
@@ -510,18 +506,12 @@ class SearchFragment : Fragment() {
 
     // 정렬 칩 텍스트 및 닫기 아이콘 표시 갱신
     private fun updateSortChip(sort: SortOption) {
-        if (sort != SortOption.POPULARITY_DESC) {
-            val label = when (sort) {
-                SortOption.VOTE_AVERAGE_DESC -> getString(R.string.sort_vote_average)
-                SortOption.RELEASE_DATE_DESC -> getString(R.string.sort_release_date)
-                SortOption.REVENUE_DESC -> getString(R.string.sort_revenue)
-                SortOption.POPULARITY_DESC -> getString(R.string.sort_popularity)
-            }
-            binding.chipSort.text = label
-            binding.chipSort.isCloseIconVisible = true
-        } else {
+        if (sort == SortOption.POPULARITY_DESC) {
             binding.chipSort.text = getString(R.string.filter_sort)
             binding.chipSort.isCloseIconVisible = false
+        } else {
+            binding.chipSort.text = getString(sort.labelRes())
+            binding.chipSort.isCloseIconVisible = true
         }
     }
 

@@ -141,11 +141,14 @@ androidx-work-runtime = { group = "androidx.work", name = "work-runtime-ktx", ve
 # Window
 androidx-window = { group = "androidx.window", name = "window", version.ref = "window" }
 
+# ML Kit (unbundled via Play Services)
+mlkit-image-labeling = { module = "com.google.android.gms:play-services-mlkit-image-labeling", version = "16.0.8" }
+
 [bundles]
 lifecycle = ["androidx-lifecycle-runtime-ktx", "androidx-lifecycle-viewmodel-ktx", "androidx-lifecycle-process"]
 room = ["androidx-room-runtime", "androidx-room-ktx", "androidx-room-paging"]
 navigation = ["androidx-navigation-fragment-ktx", "androidx-navigation-ui-ktx"]
-retrofit = ["retrofit", "retrofit-converter-kotlinx-serialization", "okhttp", "okhttp-logging-interceptor"]
+retrofit = ["retrofit", "retrofit-converter-kotlinx-serialization", "okhttp"]
 coil = ["coil", "coil-network-okhttp"]
 
 [plugins]

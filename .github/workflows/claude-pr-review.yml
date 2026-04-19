@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -131,7 +131,7 @@ jobs:
           EOF
 
       - name: Run Claude Code Review
-        if: steps.changed.outputs.skip == 'false'
+        if: steps.changed.outputs.skip == 'false' && env.ANTHROPIC_API_KEY != ''
         id: review
         run: |
           CHANGED_FILES=$(cat changed_files.txt | tr '\n' ', ' | sed 's/,$//')
@@ -169,7 +169,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Post review comment
-        if: steps.changed.outputs.skip == 'false'
+        if: steps.changed.outputs.skip == 'false' && steps.review.conclusion == 'success'
         run: |
           COMMENT_BODY=$(cat review_result.md)
           HEADER="🤖 **Claude AI Code Review**"
