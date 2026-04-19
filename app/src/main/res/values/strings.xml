@@ -67,7 +67,6 @@
     <string name="cd_cast_item">%1$s, %2$s 역할</string>
     <string name="cd_person_profile">%s 프로필 사진</string>
     <string name="cd_filmography">%s 출연작 목록</string>
-    <string name="cd_back">뒤로 가기</string>
     <string name="cd_clear_search">검색어 지우기</string>
     <string name="cd_delete_search">검색어 삭제</string>
     <string name="cd_favorite">즐겨찾기</string>

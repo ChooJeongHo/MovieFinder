@@ -35,6 +35,12 @@ android {
         buildConfigField("String", "TMDB_API_KEY", "\"${localProperties.getProperty("TMDB_API_KEY", "")}\"")
         buildConfigField("String", "TMDB_BASE_URL", "\"https://api.themoviedb.org/3/\"")
         buildConfigField("String", "TMDB_IMAGE_BASE_URL", "\"https://image.tmdb.org/t/p/\"")
+
+        resourceConfigurations += setOf("ko", "en")
+
+        vectorDrawables {
+            useSupportLibrary = true
+        }
     }
 
     testOptions {
@@ -233,6 +239,7 @@ dependencies {
 
     // Retrofit + OkHttp
     implementation(libs.bundles.retrofit)
+    debugImplementation(libs.okhttp.logging.interceptor)
 
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)
@@ -268,8 +275,8 @@ dependencies {
     // Timber
     implementation(libs.timber)
 
-    // ML Kit Image Labeling (포스터 태그 자동 추천)
-    implementation("com.google.mlkit:image-labeling:17.0.9")
+    // ML Kit Image Labeling unbundled (포스터 태그 자동 추천 — 모델은 Play Services에서 다운로드)
+    implementation(libs.mlkit.image.labeling)
 
     // LeakCanary (debug only)
     debugImplementation(libs.leakcanary)

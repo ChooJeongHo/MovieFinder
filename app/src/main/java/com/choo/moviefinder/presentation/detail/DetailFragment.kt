@@ -328,28 +328,22 @@ class DetailFragment : Fragment() {
         bindTrailer(state.trailerKey)
 
         // Cast (null = 로딩 중 → 숨김, 빈 리스트 = 데이터 없음 → 숨김, 데이터 있음 → 표시)
-        val credits = state.credits
-        castAdapter.submitList(credits.orEmpty())
-        binding.tvCastLabel.isVisible = credits != null && credits.isNotEmpty()
-        binding.rvCast.isVisible = credits != null && credits.isNotEmpty()
+        castAdapter.submitList(state.credits.orEmpty())
+        bindOptionalSection(!state.credits.isNullOrEmpty(), binding.tvCastLabel, binding.rvCast)
 
         // 비슷한 영화
-        val similarMovies = state.similarMovies
-        similarMovieAdapter.submitList(similarMovies.orEmpty())
-        binding.tvSimilarLabel.isVisible = similarMovies != null && similarMovies.isNotEmpty()
-        binding.rvSimilar.isVisible = similarMovies != null && similarMovies.isNotEmpty()
+        similarMovieAdapter.submitList(state.similarMovies.orEmpty())
+        bindOptionalSection(!state.similarMovies.isNullOrEmpty(), binding.tvSimilarLabel, binding.rvSimilar)
 
         // 추천 영화
-        val recommendations = state.recommendations
-        recommendationAdapter.submitList(recommendations.orEmpty())
-        binding.tvRecommendationsLabel.isVisible = recommendations != null && recommendations.isNotEmpty()
-        binding.rvRecommendations.isVisible = recommendations != null && recommendations.isNotEmpty()
+        recommendationAdapter.submitList(state.recommendations.orEmpty())
+        bindOptionalSection(
+            !state.recommendations.isNullOrEmpty(), binding.tvRecommendationsLabel, binding.rvRecommendations
+        )
 
         // 리뷰
-        val reviews = state.reviews
-        reviewAdapter.submitList(reviews.orEmpty())
-        binding.tvReviewsLabel.isVisible = reviews != null && reviews.isNotEmpty()
-        binding.rvReviews.isVisible = reviews != null && reviews.isNotEmpty()
+        reviewAdapter.submitList(state.reviews.orEmpty())
+        bindOptionalSection(!state.reviews.isNullOrEmpty(), binding.tvReviewsLabel, binding.rvReviews)
 
         // 등급 배지
         bindCertification(state.certification)
@@ -453,6 +447,12 @@ class DetailFragment : Fragment() {
     private fun bindOptionalField(textView: TextView, show: Boolean, text: String) {
         textView.isVisible = show
         if (show) textView.text = text
+    }
+
+    // 선택적 섹션(라벨 + RecyclerView) 표시/숨김 헬퍼
+    private fun bindOptionalSection(hasItems: Boolean, label: View, recyclerView: View) {
+        label.isVisible = hasItems
+        recyclerView.isVisible = hasItems
     }
 
     // 콘텐츠 등급 배지 칩 표시 (KR/US 등급)

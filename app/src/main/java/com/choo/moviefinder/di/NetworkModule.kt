@@ -68,7 +68,7 @@ object NetworkModule {
                         HttpLoggingInterceptor { message ->
                             timber.log.Timber.tag("OkHttp").d(message)
                         }.apply {
-                            level = HttpLoggingInterceptor.Level.BODY
+                            level = HttpLoggingInterceptor.Level.HEADERS
                         }
                     )
                     eventListener(DebugEventListener())

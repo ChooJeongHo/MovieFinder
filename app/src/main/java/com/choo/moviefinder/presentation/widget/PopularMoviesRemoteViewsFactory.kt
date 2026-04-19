@@ -45,6 +45,10 @@ class PopularMoviesRemoteViewsFactory(
             val url = "https://api.themoviedb.org/3/movie/popular?language=ko-KR&page=1"
             val request = Request.Builder().url(url).build()
             client.newCall(request).execute().use { response ->
+                if (response.code == 429) {
+                    // Rate limited — keep existing data, don't set loadFailed
+                    return
+                }
                 val body = response.body?.string()
                 if (response.isSuccessful && body != null) {
                     val movieResponse = json.decodeFromString<WidgetMovieListResponse>(body)
@@ -124,6 +128,10 @@ class PopularMoviesRemoteViewsFactory(
         private const val MAX_MOVIES = 10
 
         @Volatile private var instance: OkHttpClient? = null
+
+        fun releaseClient() {
+            instance = null
+        }
 
         fun getClient(context: Context): OkHttpClient =
             instance ?: synchronized(this) {

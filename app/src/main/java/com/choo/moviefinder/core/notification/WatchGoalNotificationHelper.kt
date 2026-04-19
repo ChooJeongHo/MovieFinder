@@ -47,8 +47,8 @@ class WatchGoalNotificationHelper @Inject constructor(
         val lastNotified = preferencesRepository.getLastGoalNotifiedMonth().first()
         if (lastNotified == yearMonth) return
 
-        preferencesRepository.setLastGoalNotifiedMonth(yearMonth)
         showGoalAchievedNotification()
+        preferencesRepository.setLastGoalNotifiedMonth(yearMonth)
     }
 
     // 목표 달성 축하 알림을 표시한다 (테스트에서 오버라이드 가능)

@@ -136,15 +136,11 @@
 
 # Hilt
 -dontwarn dagger.hilt.**
--keep class dagger.hilt.** { *; }
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
 -keep class * extends androidx.lifecycle.ViewModel { *; }
 -keepclassmembers class * {
     @dagger.hilt.android.lifecycle.HiltViewModel *;
 }
-
-# Paging
--keep class androidx.paging.** { *; }
 
 # WorkManager (notification worker)
 -keep class * extends androidx.work.Worker

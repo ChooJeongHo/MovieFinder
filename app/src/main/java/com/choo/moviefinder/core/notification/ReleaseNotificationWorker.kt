@@ -60,9 +60,12 @@ class ReleaseNotificationWorker(
             .setContentIntent(pendingIntent)
             .build()
 
-        NotificationManagerCompat.from(applicationContext).notify(movieId, notification)
-
-        return Result.success()
+        return try {
+            NotificationManagerCompat.from(applicationContext).notify(movieId, notification)
+            Result.success()
+        } catch (e: Exception) {
+            if (runAttemptCount < 2) Result.retry() else Result.failure()
+        }
     }
 
     companion object {
