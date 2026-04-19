@@ -194,7 +194,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (446개)
+### 유닛 테스트 (453개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -213,7 +213,7 @@ TMDB_API_KEY=여기에_API_키_입력
 | `TagRepositoryImplTest` | 13 | 태그 Repository 구현체 |
 | `FavoriteWatchlistUseCasesTest` | 12 | 즐겨찾기/워치리스트 UseCase 위임 검증 |
 | `GetWatchStatsUseCaseTest` | 10 | combine 로직, 장르 빈도, 월별/일별 카운트, 평점 분포 |
-| `ErrorMessageProviderTest` | 20 | 예외 타입별 ErrorType 매핑 + getMessage() Context 위임 검증 |
+| `ErrorMessageProviderTest` | 27 | 예외 타입별 ErrorType 매핑 + getMessage() Context 위임 검증 |
 | `PreferencesRepositoryImplTest` | 9 | 테마, 시청 목표, 알림 월 |
 | `DelegateTest` | 8 | MemoDelegate + UserRatingDelegate 로직 |
 | `StatsViewModelTest` | 7 | Loading/Success/Error, 목표 달성률 |
