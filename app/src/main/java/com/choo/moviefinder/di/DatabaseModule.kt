@@ -90,6 +90,32 @@ object DatabaseModule {
         }
     }
 
+    // favorite_movies/watchlist_movies title+voteAverage 인덱스, user_ratings rating 인덱스 추가 (v15 → v16)
+    val MIGRATION_15_16 = object : Migration(15, 16) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_favorite_movies_title` " +
+                    "ON `favorite_movies`(`title`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_favorite_movies_voteAverage` " +
+                    "ON `favorite_movies`(`voteAverage`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_watchlist_movies_title` " +
+                    "ON `watchlist_movies`(`title`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_watchlist_movies_voteAverage` " +
+                    "ON `watchlist_movies`(`voteAverage`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_user_ratings_rating` " +
+                    "ON `user_ratings`(`rating`)"
+            )
+        }
+    }
+
     // Room 데이터베이스 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
@@ -99,7 +125,7 @@ object DatabaseModule {
             MovieDatabase::class.java,
             "movie_finder_db"
         )
-            .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+            .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }

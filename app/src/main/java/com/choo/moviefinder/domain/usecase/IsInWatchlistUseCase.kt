@@ -1,8 +1,10 @@
 package com.choo.moviefinder.domain.usecase
 
 import com.choo.moviefinder.domain.repository.WatchlistRepository
+import dagger.Reusable
 import javax.inject.Inject
 
+@Reusable
 class IsInWatchlistUseCase @Inject constructor(
     private val repository: WatchlistRepository
 ) {

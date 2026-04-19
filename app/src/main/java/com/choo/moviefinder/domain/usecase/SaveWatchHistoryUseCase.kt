@@ -2,8 +2,10 @@ package com.choo.moviefinder.domain.usecase
 
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.repository.WatchHistoryRepository
+import dagger.Reusable
 import javax.inject.Inject
 
+@Reusable
 class SaveWatchHistoryUseCase @Inject constructor(
     private val repository: WatchHistoryRepository
 ) {

@@ -55,7 +55,7 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
 
             binding.tvContent.text = review.content
             val isExpanded = review.id in expandedIds
-            binding.tvContent.maxLines = if (isExpanded) Integer.MAX_VALUE else 4
+            binding.tvContent.maxLines = if (isExpanded) Int.MAX_VALUE else COLLAPSED_MAX_LINES
             updateStateDescription(isExpanded)
             val actionLabel = binding.root.context.getString(
                 if (isExpanded) R.string.cd_review_collapse else R.string.cd_review_expand
@@ -71,13 +71,14 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
             binding.root.setOnClickListener {
                 val nowExpanded = review.id in expandedIds
                 if (nowExpanded) expandedIds.remove(review.id) else expandedIds.add(review.id)
-                binding.tvContent.maxLines = if (!nowExpanded) Integer.MAX_VALUE else 4
+                binding.tvContent.maxLines = if (!nowExpanded) Int.MAX_VALUE else COLLAPSED_MAX_LINES
                 updateStateDescription(!nowExpanded)
             }
         }
     }
 
     companion object {
+        private const val COLLAPSED_MAX_LINES = 4
         private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Review>() {
             override fun areItemsTheSame(oldItem: Review, newItem: Review): Boolean =
                 oldItem.id == newItem.id

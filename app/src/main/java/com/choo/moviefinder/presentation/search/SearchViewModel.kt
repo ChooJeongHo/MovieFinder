@@ -7,6 +7,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.PersonSearchItem
@@ -27,7 +28,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -93,7 +93,7 @@ class SearchViewModel @Inject constructor(
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
     val recentSearches = getRecentSearchesUseCase()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     // 키보드 검색/최근 검색어 클릭 시 debounce 없이 즉시 검색
     private val _immediateSearch = MutableSharedFlow<SearchParams>(extraBufferCapacity = 1)
@@ -104,7 +104,7 @@ class SearchViewModel @Inject constructor(
     val searchResults: Flow<PagingData<Movie>> = merge(
         combine(_searchQuery, _selectedYear, _selectedGenres, _sortBy) { query, year, genres, sort ->
             SearchParams(query, year, genres, sort)
-        }.debounce(300).distinctUntilChanged(),
+        }.debounce(MOVIE_SEARCH_DEBOUNCE_MS).distinctUntilChanged(),
         _immediateSearch
     )
         .filter { it.query.isNotBlank() || it.genres.isNotEmpty() }
@@ -277,6 +277,7 @@ class SearchViewModel @Inject constructor(
         private const val KEY_GENRES = "selected_genres"
         private const val KEY_SORT = "selected_sort"
         private const val KEY_VIEW_MODE = "view_mode"
+        private const val MOVIE_SEARCH_DEBOUNCE_MS = 300L
         private const val PERSON_SEARCH_DEBOUNCE_MS = 300L
     }
 }

@@ -9,6 +9,7 @@ import com.choo.moviefinder.domain.model.WatchStats
 import com.choo.moviefinder.domain.repository.PreferencesRepository
 import com.choo.moviefinder.domain.repository.UserRatingRepository
 import com.choo.moviefinder.domain.repository.WatchHistoryRepository
+import dagger.Reusable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
 
+@Reusable
 class GetWatchStatsUseCase @Inject constructor(
     private val watchHistoryRepository: WatchHistoryRepository,
     private val userRatingRepository: UserRatingRepository,

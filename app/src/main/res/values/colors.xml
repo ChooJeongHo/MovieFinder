@@ -32,6 +32,7 @@
     <color name="rating_green">#FF21D07A</color>
     <color name="rating_yellow">#FFD2D531</color>
     <color name="rating_red">#FFDB2360</color>
+    <color name="rating_star_color">#FF0D47A1</color>
     <color name="rating_track">#33FFFFFF</color>
     <color name="rating_background">#FF081C22</color>
 

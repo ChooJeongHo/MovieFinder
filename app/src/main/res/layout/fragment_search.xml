@@ -19,6 +19,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/spacing_md"
         android:layout_marginBottom="@dimen/spacing_sm"
+        android:hint="@string/search_hint"
         app:endIconMode="clear_text"
         app:startIconDrawable="@drawable/ic_search">
 
@@ -26,7 +27,6 @@
             android:id="@+id/et_search"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/search_hint"
             android:imeOptions="actionSearch"
             android:inputType="text"
             android:maxLines="1" />
@@ -175,6 +175,14 @@
         <include
             android:id="@+id/shimmer_view"
             layout="@layout/layout_shimmer_grid"
+            android:visibility="gone" />
+
+        <!-- 에러 상태 - 재시도 버튼 포함 -->
+        <include
+            android:id="@+id/error_view"
+            layout="@layout/layout_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:visibility="gone" />
 
         <!-- 빈 상태 - 초기 화면 -->

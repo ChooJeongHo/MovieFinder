@@ -1,6 +1,7 @@
 package com.choo.moviefinder.presentation.detail
 
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.domain.model.Memo
 import com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
@@ -9,7 +10,6 @@ import com.choo.moviefinder.domain.usecase.SaveMemoUseCase
 import com.choo.moviefinder.domain.usecase.UpdateMemoUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 
@@ -25,7 +25,7 @@ class MemoDelegate(
 ) {
 
     val memos: StateFlow<List<Memo>> = getMemosUseCase(movieId)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     // 영화에 새 메모를 저장
     fun saveMemo(content: String) = viewModelScope.launchWithErrorHandler(

@@ -102,7 +102,6 @@ class StatsFragment : Fragment() {
 
     // 로딩 상태 표시
     private fun showLoading() {
-        binding.progressBar.isVisible = false
         binding.shimmerStats.shimmerLayout.isVisible = true
         binding.shimmerStats.shimmerLayout.startShimmer()
         binding.contentLayout.isVisible = false
@@ -112,7 +111,6 @@ class StatsFragment : Fragment() {
     // 성공 상태 표시 (통계 데이터 바인딩)
     private fun showContent(stats: WatchStats) {
         currentStats = stats
-        binding.progressBar.isVisible = false
         binding.shimmerStats.shimmerLayout.stopShimmer()
         binding.shimmerStats.shimmerLayout.isVisible = false
         binding.contentLayout.isVisible = true
@@ -123,11 +121,9 @@ class StatsFragment : Fragment() {
 
         bindGoalProgress(stats)
 
-        if (stats.averageRating != null) {
-            binding.tvAverageRating.text = getString(R.string.stats_rating_format, stats.averageRating)
-        } else {
-            binding.tvAverageRating.text = getString(R.string.stats_no_rating)
-        }
+        binding.tvAverageRating.text = stats.averageRating
+            ?.let { getString(R.string.stats_rating_format, it) }
+            ?: getString(R.string.stats_no_rating)
 
         bindTopGenres(stats)
         bindGenrePieChart(stats)
@@ -237,7 +233,6 @@ class StatsFragment : Fragment() {
 
     // 에러 상태 표시 (에러 메시지)
     private fun showError(errorType: com.choo.moviefinder.core.util.ErrorType) {
-        binding.progressBar.isVisible = false
         binding.shimmerStats.shimmerLayout.stopShimmer()
         binding.shimmerStats.shimmerLayout.isVisible = false
         binding.contentLayout.isVisible = false

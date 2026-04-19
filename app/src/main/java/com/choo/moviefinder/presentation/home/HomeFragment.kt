@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
 
-    private val retryRateLimiter = RateLimiter(2_000L)
+    private val retryRateLimiter = RateLimiter()
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
@@ -59,7 +59,7 @@ class HomeFragment : Fragment() {
     // 뷰 생성 후 RecyclerView, 탭, SwipeRefresh 등 UI 컴포넌트 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        savedInstanceState?.let { currentTab = HomeTab.entries[it.getInt(KEY_CURRENT_TAB, 0)] }
+        currentTab = HomeTab.entries[savedInstanceState?.getInt(KEY_CURRENT_TAB, 0) ?: 0]
         setupRecyclerView()
         setupWatchHistory()
         setupSwipeRefresh()
@@ -179,7 +179,7 @@ class HomeFragment : Fragment() {
         })
     }
 
-    // Paging LoadState를 수집하여 Shimmer, 에러 뷰, SwipeRefresh 상태 전환
+    // Paging LoadState를 수집하여 Shimmer, 에러 뷰, 빈 상태, SwipeRefresh 상태 전환
     private fun observeLoadStates() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -190,16 +190,25 @@ class HomeFragment : Fragment() {
                     val isLoading = refreshState is LoadState.Loading
                     val isError = refreshState is LoadState.Error
                     val isInitialLoad = isLoading && !hasItems
+                    val isEmpty = refreshState is LoadState.NotLoading &&
+                        loadStates.append.endOfPaginationReached && !hasItems
 
                     binding.shimmerView.shimmerLayout.isVisible = isInitialLoad
-                    binding.rvMovies.isVisible = !isError || hasItems
+                    binding.rvMovies.isVisible = hasItems && !isError
                     binding.swipeRefresh.isRefreshing = isLoading && hasItems
                     binding.errorView.layoutError.isVisible = isError && !hasItems
+                    binding.emptyView.layoutEmpty.isVisible = isEmpty
 
                     if (isInitialLoad) {
                         binding.shimmerView.shimmerLayout.startShimmer()
                     } else {
                         binding.shimmerView.shimmerLayout.stopShimmer()
+                    }
+
+                    if (isEmpty) {
+                        binding.emptyView.tvEmptyTitle.setText(R.string.home_empty_title)
+                        binding.emptyView.tvEmptyMessage.setText(R.string.home_empty_message)
+                        binding.emptyView.ivEmptyIcon.setImageResource(R.drawable.ic_movie)
                     }
 
                     if (refreshState is LoadState.Error) {

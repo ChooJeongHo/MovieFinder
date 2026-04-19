@@ -72,6 +72,7 @@ class PosterTagSuggester @Inject constructor(
                 bitmap
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Timber.w(e, "포스터 비트맵 로드 실패: %s", url)
             null
         }

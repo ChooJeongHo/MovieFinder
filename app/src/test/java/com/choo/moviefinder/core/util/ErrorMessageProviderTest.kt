@@ -200,4 +200,65 @@ class ErrorMessageProviderTest {
         assertEquals("server error", result)
         verify { context.getString(R.string.error_server) }
     }
+
+    @Test
+    fun `getErrorType returns UNAUTHORIZED for HttpException 401`() {
+        val response = Response.error<Any>(401, byteArrayOf().toResponseBody())
+        val result = ErrorMessageProvider.getErrorType(HttpException(response))
+        assertEquals(ErrorType.UNAUTHORIZED, result)
+    }
+
+    @Test
+    fun `getErrorType returns UNAUTHORIZED for HttpException 403`() {
+        val response = Response.error<Any>(403, byteArrayOf().toResponseBody())
+        val result = ErrorMessageProvider.getErrorType(HttpException(response))
+        assertEquals(ErrorType.UNAUTHORIZED, result)
+    }
+
+    @Test
+    fun `getErrorType returns NOT_FOUND for HttpException 404`() {
+        val response = Response.error<Any>(404, byteArrayOf().toResponseBody())
+        val result = ErrorMessageProvider.getErrorType(HttpException(response))
+        assertEquals(ErrorType.NOT_FOUND, result)
+    }
+
+    @Test
+    fun `getErrorType returns RATE_LIMITED for HttpException 429`() {
+        val response = Response.error<Any>(429, byteArrayOf().toResponseBody())
+        val result = ErrorMessageProvider.getErrorType(HttpException(response))
+        assertEquals(ErrorType.RATE_LIMITED, result)
+    }
+
+    @Test
+    fun `getMessage with UNAUTHORIZED error type requests error_unauthorized string`() {
+        val context = mockk<Context>()
+        every { context.getString(R.string.error_unauthorized) } returns "unauthorized"
+
+        val result = ErrorMessageProvider.getMessage(context, ErrorType.UNAUTHORIZED)
+
+        assertEquals("unauthorized", result)
+        verify { context.getString(R.string.error_unauthorized) }
+    }
+
+    @Test
+    fun `getMessage with NOT_FOUND error type requests error_not_found string`() {
+        val context = mockk<Context>()
+        every { context.getString(R.string.error_not_found) } returns "not found"
+
+        val result = ErrorMessageProvider.getMessage(context, ErrorType.NOT_FOUND)
+
+        assertEquals("not found", result)
+        verify { context.getString(R.string.error_not_found) }
+    }
+
+    @Test
+    fun `getMessage with RATE_LIMITED error type requests error_rate_limited string`() {
+        val context = mockk<Context>()
+        every { context.getString(R.string.error_rate_limited) } returns "rate limited"
+
+        val result = ErrorMessageProvider.getMessage(context, ErrorType.RATE_LIMITED)
+
+        assertEquals("rate limited", result)
+        verify { context.getString(R.string.error_rate_limited) }
+    }
 }

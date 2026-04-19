@@ -7,8 +7,10 @@ import com.choo.moviefinder.domain.usecase.GetMovieRecommendationsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieReviewsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
 import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
+import dagger.Reusable
 import javax.inject.Inject
 
+@Reusable
 class DetailFetchUseCases @Inject constructor(
     val getMovieDetail: GetMovieDetailUseCase,
     val getMovieCredits: GetMovieCreditsUseCase,

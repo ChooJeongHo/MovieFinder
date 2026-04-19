@@ -39,7 +39,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/spacing_sm"
-                android:textColor="@color/rating_yellow"
+                android:textColor="@color/rating_star_color"
                 android:textSize="12sp"
                 android:visibility="gone"
                 tools:text="★ 8.0"

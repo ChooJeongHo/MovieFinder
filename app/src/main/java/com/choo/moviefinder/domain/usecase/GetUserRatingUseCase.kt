@@ -1,9 +1,11 @@
 package com.choo.moviefinder.domain.usecase
 
 import com.choo.moviefinder.domain.repository.UserRatingRepository
+import dagger.Reusable
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
+@Reusable
 class GetUserRatingUseCase @Inject constructor(
     private val repository: UserRatingRepository
 ) {

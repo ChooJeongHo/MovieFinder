@@ -3,6 +3,7 @@ package com.choo.moviefinder.presentation.favorite
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.core.util.PosterTagSuggester
 import com.choo.moviefinder.domain.model.Movie
@@ -21,7 +22,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -55,7 +55,7 @@ class FavoriteViewModel @Inject constructor(
 
     // 모든 고유 태그 이름 목록 (필터 칩 표시용)
     val allTagNames: StateFlow<List<String>> = getAllTagNamesUseCase()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     // 선택된 태그·정렬 순서에 따라 DB ORDER BY로 정렬된 즐겨찾기 목록
     val favoriteMovies: StateFlow<List<Movie>> = combine(_sortOrder, _selectedTag) { sort, tag -> sort to tag }
@@ -67,12 +67,12 @@ class FavoriteViewModel @Inject constructor(
                 getFavoritesByTagUseCase(tag, sort)
             }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     // 정렬 순서에 따라 DB ORDER BY로 정렬된 워치리스트 목록
     val watchlistMovies: StateFlow<List<Movie>> = _sortOrder.flatMapLatest { sort ->
         getWatchlistUseCase(sort)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()

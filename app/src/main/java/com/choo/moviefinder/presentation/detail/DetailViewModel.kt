@@ -8,6 +8,7 @@ import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
 import com.choo.moviefinder.core.notification.WatchGoalNotificationHelper
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.core.util.suspendRunCatching
 import com.choo.moviefinder.domain.model.MovieDetail
@@ -32,7 +33,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -76,10 +76,10 @@ class DetailViewModel @Inject constructor(
     private val toggleMutex = Mutex()
 
     val isFavorite = isFavoriteUseCase(movieId)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, WhileSubscribed5s, false)
 
     val isInWatchlist = isInWatchlistUseCase(movieId)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, WhileSubscribed5s, false)
 
     private val memoDelegate = MemoDelegate(
         getMemosUseCase = getMemosUseCase,

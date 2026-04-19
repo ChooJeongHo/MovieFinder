@@ -51,6 +51,9 @@
     <string name="error_ssl">Secure connection failed. Please check your network environment</string>
     <string name="error_parse">Unable to process the server response. Please update the app</string>
     <string name="error_unknown">An unknown error occurred</string>
+    <string name="error_unauthorized">Invalid API key</string>
+    <string name="error_not_found">Content not found</string>
+    <string name="error_rate_limited">Too many requests. Please try again later</string>
     <string name="error_no_browser">No app found to play the trailer</string>
     <string name="retry">Retry</string>
 

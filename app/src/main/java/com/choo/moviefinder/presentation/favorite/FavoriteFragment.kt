@@ -60,7 +60,7 @@ class FavoriteFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        savedInstanceState?.let { currentTab = it.getInt(KEY_CURRENT_TAB, TAB_FAVORITES) }
+        currentTab = savedInstanceState?.getInt(KEY_CURRENT_TAB, TAB_FAVORITES) ?: TAB_FAVORITES
         setupToolbar()
         setupRecyclerView()
         setupSwipeToDelete()
