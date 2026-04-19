@@ -39,6 +39,7 @@
     <!-- 플레이스홀더 -->
     <color name="placeholder_light">#FFE0E0E0</color>
     <color name="placeholder_dark">#FF2A2A3E</color>
+    <color name="shimmer_placeholder">#FFE0E0E0</color>
 
     <!-- 구분선 -->
     <color name="divider_light">#1F000000</color>

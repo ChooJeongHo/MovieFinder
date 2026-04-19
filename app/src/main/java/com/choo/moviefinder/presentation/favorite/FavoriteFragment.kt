@@ -253,10 +253,13 @@ class FavoriteFragment : Fragment() {
         collectJob?.cancel()
         movieAdapter.submitList(emptyList())
         binding.rvFavorites.scrollToPosition(0)
-        // Hide both views to neutral state; first Room emission will set correct visibility
+        updateEmptyState()
+        // Show shimmer while waiting for first Room emission
+        binding.shimmerView.shimmerLayout.startShimmer()
+        binding.shimmerView.shimmerLayout.isVisible = true
         binding.rvFavorites.isVisible = false
         binding.emptyView.layoutEmpty.isVisible = false
-        updateEmptyState()
+        binding.errorView.layoutError.isVisible = false
         collectJob = viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 val flow = if (currentTab == TAB_FAVORITES) {
@@ -264,13 +267,26 @@ class FavoriteFragment : Fragment() {
                 } else {
                     viewModel.watchlistMovies
                 }
-                flow.collect { movies ->
-                    movieAdapter.submitList(movies)
-                    binding.rvFavorites.isVisible = movies.isNotEmpty()
-                    binding.emptyView.layoutEmpty.isVisible = movies.isEmpty()
+                try {
+                    flow.collect { movies ->
+                        // Hide shimmer on first emission
+                        binding.shimmerView.shimmerLayout.stopShimmer()
+                        binding.shimmerView.shimmerLayout.isVisible = false
+                        binding.errorView.layoutError.isVisible = false
+                        movieAdapter.submitList(movies)
+                        binding.rvFavorites.isVisible = movies.isNotEmpty()
+                        binding.emptyView.layoutEmpty.isVisible = movies.isEmpty()
+                    }
+                } catch (e: Exception) {
+                    binding.shimmerView.shimmerLayout.stopShimmer()
+                    binding.shimmerView.shimmerLayout.isVisible = false
+                    binding.rvFavorites.isVisible = false
+                    binding.emptyView.layoutEmpty.isVisible = false
+                    binding.errorView.layoutError.isVisible = true
                 }
             }
         }
+        binding.errorView.btnRetry.setOnClickListener { collectCurrentTab() }
     }
 
     // 태그 관리 다이얼로그: 기존 태그 삭제 + ML Kit 추천 태그 + 새 태그 추가

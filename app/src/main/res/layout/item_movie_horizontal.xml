@@ -20,6 +20,7 @@
             android:layout_width="0dp"
             android:layout_height="@dimen/movie_card_horizontal_height"
             android:contentDescription="@string/cd_movie_poster"
+            android:importantForAccessibility="no"
             android:scaleType="centerCrop"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

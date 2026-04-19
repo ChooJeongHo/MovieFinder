@@ -10,7 +10,9 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        app:title="@string/nav_settings" />
+        app:title="@string/nav_settings"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:navigationContentDescription="@string/cd_navigate_back" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
