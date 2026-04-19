@@ -334,7 +334,6 @@ class SearchFragment : Fragment() {
         }
         if (refreshState is LoadState.Error) {
             val errorType = ErrorMessageProvider.getErrorType(refreshState.error)
-            showSearchSnackbar(errorType)
             binding.noResultsSection.isVisible = false
             binding.rvSearchResults.isVisible = false
             binding.errorView.layoutError.isVisible = true

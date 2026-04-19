@@ -76,6 +76,8 @@
     <string name="cd_review_expanded">Tap to collapse</string>
     <string name="cd_review_expand">Expand review</string>
     <string name="cd_review_collapse">Collapse review</string>
+    <string name="cd_review_item">Review by %1$s%2$s. Tap to expand</string>
+    <string name="cd_review_rating">, rating %.1f</string>
     <string name="cd_recent_search_item">Search again for %s</string>
     <string name="cd_cast_item">%1$s, as %2$s</string>
     <string name="cd_widget_refresh">Refresh widget</string>

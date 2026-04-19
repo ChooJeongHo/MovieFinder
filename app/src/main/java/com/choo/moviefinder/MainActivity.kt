@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity() {
             currentFragment?.view?.let { view ->
                 view.findViewById<RecyclerView>(R.id.rv_movies)?.scrollToPosition(0)
                     ?: view.findViewById<RecyclerView>(R.id.rv_favorites)?.scrollToPosition(0)
+                    ?: view.findViewById<RecyclerView>(R.id.rv_search_results)?.scrollToPosition(0)
             }
         }
 
