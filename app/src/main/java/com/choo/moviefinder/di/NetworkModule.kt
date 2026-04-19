@@ -4,6 +4,7 @@ import android.content.Context
 import com.choo.moviefinder.BuildConfig
 import com.choo.moviefinder.core.util.DebugEventListener
 import com.choo.moviefinder.core.util.NetworkMonitor
+import com.choo.moviefinder.core.util.addDebugLogging
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import dagger.Module
 import dagger.Provides
@@ -15,7 +16,6 @@ import okhttp3.Cache
 import okhttp3.CertificatePinner
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -62,18 +62,8 @@ object NetworkModule {
                     )
                 }
             }
-            .apply {
-                if (BuildConfig.DEBUG) {
-                    addInterceptor(
-                        HttpLoggingInterceptor { message ->
-                            timber.log.Timber.tag("OkHttp").d(message)
-                        }.apply {
-                            level = HttpLoggingInterceptor.Level.HEADERS
-                        }
-                    )
-                    eventListener(DebugEventListener())
-                }
-            }
+            .addDebugLogging()
+            .eventListener(DebugEventListener())
             .addInterceptor { chain ->
                 val original = chain.request()
                 val url = original.url.newBuilder()
