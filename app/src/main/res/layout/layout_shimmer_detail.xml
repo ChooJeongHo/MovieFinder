@@ -17,7 +17,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="250dp"
-            android:background="#E0E0E0" />
+            android:background="@color/shimmer_placeholder" />
 
         <!-- Poster row: poster + title/tagline/rating lines -->
         <LinearLayout
@@ -29,7 +29,7 @@
             <View
                 android:layout_width="100dp"
                 android:layout_height="140dp"
-                android:background="#E0E0E0" />
+                android:background="@color/shimmer_placeholder" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -43,21 +43,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="20dp"
                     android:layout_marginTop="8dp"
-                    android:background="#E0E0E0" />
+                    android:background="@color/shimmer_placeholder" />
 
                 <!-- Tagline line -->
                 <View
                     android:layout_width="160dp"
                     android:layout_height="16dp"
                     android:layout_marginTop="10dp"
-                    android:background="#E0E0E0" />
+                    android:background="@color/shimmer_placeholder" />
 
                 <!-- Rating line -->
                 <View
                     android:layout_width="80dp"
                     android:layout_height="16dp"
                     android:layout_marginTop="10dp"
-                    android:background="#E0E0E0" />
+                    android:background="@color/shimmer_placeholder" />
 
             </LinearLayout>
 
@@ -75,19 +75,19 @@
             <View
                 android:layout_width="72dp"
                 android:layout_height="28dp"
-                android:background="#E0E0E0" />
+                android:background="@color/shimmer_placeholder" />
 
             <View
                 android:layout_width="88dp"
                 android:layout_height="28dp"
                 android:layout_marginStart="8dp"
-                android:background="#E0E0E0" />
+                android:background="@color/shimmer_placeholder" />
 
             <View
                 android:layout_width="64dp"
                 android:layout_height="28dp"
                 android:layout_marginStart="8dp"
-                android:background="#E0E0E0" />
+                android:background="@color/shimmer_placeholder" />
 
         </LinearLayout>
 
@@ -98,7 +98,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginTop="12dp"
-            android:background="#E0E0E0" />
+            android:background="@color/shimmer_placeholder" />
 
         <View
             android:layout_width="match_parent"
@@ -106,7 +106,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginTop="8dp"
-            android:background="#E0E0E0" />
+            android:background="@color/shimmer_placeholder" />
 
         <View
             android:layout_width="match_parent"
@@ -114,7 +114,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginTop="8dp"
-            android:background="#E0E0E0" />
+            android:background="@color/shimmer_placeholder" />
 
         <View
             android:layout_width="200dp"
@@ -122,7 +122,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginTop="8dp"
-            android:background="#E0E0E0" />
+            android:background="@color/shimmer_placeholder" />
 
         <!-- Cast section header -->
         <View
@@ -131,7 +131,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginTop="20dp"
-            android:background="#E0E0E0" />
+            android:background="@color/shimmer_placeholder" />
 
         <!-- Cast horizontal cards -->
         <LinearLayout
@@ -147,24 +147,24 @@
                 android:layout_width="72dp"
                 android:layout_height="100dp"
                 android:layout_marginEnd="8dp"
-                android:background="#E0E0E0" />
+                android:background="@color/shimmer_placeholder" />
 
             <View
                 android:layout_width="72dp"
                 android:layout_height="100dp"
                 android:layout_marginEnd="8dp"
-                android:background="#E0E0E0" />
+                android:background="@color/shimmer_placeholder" />
 
             <View
                 android:layout_width="72dp"
                 android:layout_height="100dp"
                 android:layout_marginEnd="8dp"
-                android:background="#E0E0E0" />
+                android:background="@color/shimmer_placeholder" />
 
             <View
                 android:layout_width="72dp"
                 android:layout_height="100dp"
-                android:background="#E0E0E0" />
+                android:background="@color/shimmer_placeholder" />
 
         </LinearLayout>
 

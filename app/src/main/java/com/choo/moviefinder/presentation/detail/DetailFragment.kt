@@ -537,7 +537,7 @@ class DetailFragment : Fragment() {
             maxLines = 5
             filters = arrayOf(InputFilter.LengthFilter(MemoConstants.MAX_LENGTH))
         }
-        memoEditDialog = MaterialAlertDialogBuilder(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.memo_edit_dialog_title)
             .setView(editText)
             .setPositiveButton(R.string.confirm) { _, _ ->
@@ -547,11 +547,19 @@ class DetailFragment : Fragment() {
                 }
             }
             .setNegativeButton(R.string.cancel, null)
-            .setOnDismissListener {
+            .create()
+        dialog.show()
+        // capture token while edit text is shown
+        val dialogEditText = dialog.findViewById<android.widget.EditText>(android.R.id.edit)
+            ?: editText
+        dialog.setOnDismissListener {
+            val token = dialogEditText.windowToken ?: requireActivity().currentFocus?.windowToken
+            if (token != null) {
                 val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                requireActivity().currentFocus?.let { imm.hideSoftInputFromWindow(it.windowToken, 0) }
+                imm.hideSoftInputFromWindow(token, 0)
             }
-            .show()
+        }
+        memoEditDialog = dialog
     }
 
     // 어댑터 해제 및 바인딩 null 처리로 메모리 누수 방지

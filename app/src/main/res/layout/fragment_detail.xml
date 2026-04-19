@@ -103,7 +103,8 @@
                 <com.choo.moviefinder.presentation.common.CircularRatingView
                     android:id="@+id/rating_view"
                     android:layout_width="@dimen/rating_view_size_large"
-                    android:layout_height="@dimen/rating_view_size_large" />
+                    android:layout_height="@dimen/rating_view_size_large"
+                    android:importantForAccessibility="no" />
 
                 <TextView
                     android:id="@+id/tv_release_date"

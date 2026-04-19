@@ -5,4 +5,7 @@
 
     <!-- 배경 이미지 오버레이 (다크 모드 - 약간 밝게) -->
     <color name="backdrop_overlay">#80000000</color>
+
+    <!-- Shimmer 플레이스홀더 (다크 모드) -->
+    <color name="shimmer_placeholder">#FF3C3C3C</color>
 </resources>

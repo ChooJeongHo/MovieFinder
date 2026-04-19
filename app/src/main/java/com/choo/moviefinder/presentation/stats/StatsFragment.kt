@@ -26,6 +26,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.RateLimiter
 import com.choo.moviefinder.databinding.FragmentStatsBinding
 import com.choo.moviefinder.domain.model.WatchStats
 import dagger.hilt.android.AndroidEntryPoint
@@ -43,6 +44,7 @@ class StatsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: StatsViewModel by viewModels()
+    private val rateLimiter = RateLimiter()
 
     private var currentStats: WatchStats? = null
 
@@ -241,7 +243,10 @@ class StatsFragment : Fragment() {
         binding.errorView.tvErrorMessage.text =
             ErrorMessageProvider.getMessage(requireContext(), errorType)
         binding.errorView.btnRetry.isVisible = true
-        binding.errorView.btnRetry.setOnClickListener { viewModel.retry() }
+        binding.errorView.btnRetry.setOnClickListener {
+            if (!rateLimiter.tryAcquire()) return@setOnClickListener
+            viewModel.retry()
+        }
     }
 
     // 테마 색상을 메인 스레드에서 미리 해석한 데이터 클래스
