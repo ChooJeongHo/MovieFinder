@@ -60,7 +60,7 @@ jobs:
 
       - name: Create issue on mismatch
         if: steps.check-api.outputs.api_status == 'mismatch' || steps.check-image.outputs.image_status == 'mismatch' || steps.check-widget.outputs.widget_status == 'mismatch'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const apiStatus = '${{ steps.check-api.outputs.api_status }}';
