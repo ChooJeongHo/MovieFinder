@@ -194,7 +194,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (428개)
+### 유닛 테스트 (446개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -206,19 +206,19 @@ TMDB_API_KEY=여기에_API_키_입력
 | `MovieUseCasesTest` | 23 | 영화 관련 UseCase 위임 검증 |
 | `PreferencesTagUseCasesTest` | 21 | 테마/시청목표 UseCase + 태그 UseCase 위임 검증 |
 | `MemoRatingPersonUseCasesTest` | 20 | 메모/평점/배우 UseCase 위임 검증 |
-| `MovieRepositoryImplTest` | 19 | 영화 API 호출 (상세, 출연진, 비슷한 영화, 예고편, 리뷰 등) |
+| `MovieRepositoryImplTest` | 25 | 영화 API 호출 (상세, 출연진, 비슷한 영화, 예고편, 리뷰 등) + 페이징 메서드 스모크 테스트 |
 | `SettingsViewModelTest` | 18 | 테마, 시청기록 삭제, 시청 목표 |
 | `FavoriteViewModelTest` | 16 | 즐겨찾기/워치리스트 목록·토글·정렬, 태그 추가/삭제 |
 | `SearchWatchHistoryUseCasesTest` | 15 | 검색기록/시청기록 UseCase 위임 검증 |
 | `TagRepositoryImplTest` | 13 | 태그 Repository 구현체 |
 | `FavoriteWatchlistUseCasesTest` | 12 | 즐겨찾기/워치리스트 UseCase 위임 검증 |
 | `GetWatchStatsUseCaseTest` | 10 | combine 로직, 장르 빈도, 월별/일별 카운트, 평점 분포 |
-| `ErrorMessageProviderTest` | 10 | 예외 타입별 ErrorType 매핑 |
+| `ErrorMessageProviderTest` | 20 | 예외 타입별 ErrorType 매핑 + getMessage() Context 위임 검증 |
 | `PreferencesRepositoryImplTest` | 9 | 테마, 시청 목표, 알림 월 |
 | `DelegateTest` | 8 | MemoDelegate + UserRatingDelegate 로직 |
 | `StatsViewModelTest` | 7 | Loading/Success/Error, 목표 달성률 |
 | `SplitRepositoryImplTest` | 35 | 분리된 Repository 구현체 (Favorite, Watchlist, SearchHistory 등, MemoRepository 포함, getFavoriteMoviesSorted 3분기 검증) |
-| `MovieRemoteMediatorTest` | 8 | REFRESH/APPEND/SKIP, 캐시 만료, 오프라인 REFRESH |
+| `MovieRemoteMediatorTest` | 10 | REFRESH/APPEND/SKIP, 캐시 만료, 오프라인 REFRESH, POPULAR 카테고리, 빈 응답 |
 | `MoviePagingSourceTest` | 7 | 페이지 로드, 에러, nextKey/prevKey |
 | `CachedMovieEntityMapperTest` | 7 | Entity ↔ 도메인 모델 변환 |
 | `WatchGoalNotificationHelperTest` | 7 | 달성/미달/중복 알림 방지 |
