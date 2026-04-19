@@ -5,7 +5,10 @@
     android:layout_width="@dimen/cast_item_width"
     android:layout_height="wrap_content"
     android:layout_marginEnd="@dimen/spacing_sm"
+    android:clickable="true"
+    android:focusable="true"
     android:gravity="center_horizontal"
+    android:minHeight="48dp"
     android:orientation="vertical">
 
     <com.google.android.material.imageview.ShapeableImageView
@@ -14,6 +17,7 @@
         android:layout_height="@dimen/cast_image_size"
         android:background="@drawable/bg_circle"
         android:contentDescription="@string/cd_cast_profile"
+        android:importantForAccessibility="no"
         android:scaleType="centerCrop"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.MovieFinder.Circle"
         tools:background="#CCCCCC" />

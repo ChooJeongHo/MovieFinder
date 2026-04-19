@@ -71,7 +71,11 @@ class PersonSearchAdapter(
                 onPersonClick(item.id)
             }
 
-            binding.root.contentDescription = item.name
+            binding.root.contentDescription = if (item.knownForDepartment.isNotBlank()) {
+                "${item.name}, ${item.knownForDepartment}"
+            } else {
+                item.name
+            }
         }
     }
 

@@ -1,10 +1,12 @@
 package com.choo.moviefinder.presentation.favorite
 
 import android.app.Dialog
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -251,6 +253,9 @@ class FavoriteFragment : Fragment() {
         collectJob?.cancel()
         movieAdapter.submitList(emptyList())
         binding.rvFavorites.scrollToPosition(0)
+        // Hide both views to neutral state; first Room emission will set correct visibility
+        binding.rvFavorites.isVisible = false
+        binding.emptyView.layoutEmpty.isVisible = false
         updateEmptyState()
         collectJob = viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -325,6 +330,8 @@ class FavoriteFragment : Fragment() {
                 if (newTag.isNotBlank()) {
                     viewModel.addTagToMovie(movie.id, newTag)
                 }
+                val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(requireActivity().currentFocus?.windowToken, 0)
             }
             .setNegativeButton(R.string.action_close, null)
             .show()

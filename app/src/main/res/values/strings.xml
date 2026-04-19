@@ -84,6 +84,8 @@
     <string name="cd_review_expanded">탭하여 접기</string>
     <string name="cd_review_expand">리뷰 펼치기</string>
     <string name="cd_review_collapse">리뷰 접기</string>
+    <string name="cd_review_item">%1$s 리뷰%2$s. 탭하여 펼치기</string>
+    <string name="cd_review_rating">, 평점 %.1f</string>
     <string name="cd_recent_search_item">%s 재검색</string>
     <string name="cd_widget_refresh">위젯 새로고침</string>
 

@@ -19,6 +19,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:contentDescription="@string/cd_movie_poster"
+            android:importantForAccessibility="no"
             android:scaleType="centerCrop"
             app:layout_constraintDimensionRatio="2:3"
             app:layout_constraintEnd_toEndOf="parent"
@@ -32,6 +33,7 @@
             android:layout_height="@dimen/rating_view_size"
             android:layout_marginStart="@dimen/spacing_sm"
             android:layout_marginTop="@dimen/rating_view_overlap_margin"
+            android:importantForAccessibility="no"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/iv_poster" />
 
@@ -43,6 +45,7 @@
             android:layout_marginTop="@dimen/spacing_xs"
             android:layout_marginEnd="@dimen/spacing_sm"
             android:ellipsize="end"
+            android:importantForAccessibility="no"
             android:maxLines="2"
             android:textAppearance="?attr/textAppearanceBody2"
             android:textStyle="bold"
@@ -59,6 +62,7 @@
             android:layout_marginTop="@dimen/spacing_xs"
             android:layout_marginEnd="@dimen/spacing_sm"
             android:layout_marginBottom="@dimen/spacing_sm"
+            android:importantForAccessibility="no"
             android:textAppearance="?attr/textAppearanceCaption"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
