@@ -1,13 +1,13 @@
 package com.choo.moviefinder.presentation.detail
 
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.domain.usecase.DeleteUserRatingUseCase
 import com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
 import com.choo.moviefinder.domain.usecase.SetUserRatingUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
@@ -23,7 +23,7 @@ class UserRatingDelegate(
 ) {
 
     val userRating: StateFlow<Float?> = getUserRatingUseCase(movieId)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, WhileSubscribed5s, null)
 
     // 사용자 영화 평점을 Room DB에 저장
     fun setUserRating(rating: Float) = viewModelScope.launchWithErrorHandler(

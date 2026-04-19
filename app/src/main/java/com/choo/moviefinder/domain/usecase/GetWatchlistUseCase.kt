@@ -2,8 +2,10 @@ package com.choo.moviefinder.domain.usecase
 
 import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.repository.WatchlistRepository
+import dagger.Reusable
 import javax.inject.Inject
 
+@Reusable
 class GetWatchlistUseCase @Inject constructor(
     private val repository: WatchlistRepository
 ) {

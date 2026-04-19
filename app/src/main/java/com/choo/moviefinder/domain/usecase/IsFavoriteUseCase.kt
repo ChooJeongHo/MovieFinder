@@ -1,8 +1,10 @@
 package com.choo.moviefinder.domain.usecase
 
 import com.choo.moviefinder.domain.repository.FavoriteRepository
+import dagger.Reusable
 import javax.inject.Inject
 
+@Reusable
 class IsFavoriteUseCase @Inject constructor(
     private val repository: FavoriteRepository
 ) {

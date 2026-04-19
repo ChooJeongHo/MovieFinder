@@ -320,6 +320,7 @@ class SearchFragment : Fragment() {
         binding.rvSearchResults.isVisible = refreshState is LoadState.NotLoading
         binding.recentSearchesSection.isVisible = false
         binding.emptyInitial.layoutEmpty.isVisible = false
+        binding.errorView.layoutError.isVisible = false
         if (refreshState is LoadState.Loading) {
             binding.shimmerView.shimmerLayout.startShimmer()
             binding.noResultsSection.isVisible = false
@@ -334,8 +335,14 @@ class SearchFragment : Fragment() {
         if (refreshState is LoadState.Error) {
             val errorType = ErrorMessageProvider.getErrorType(refreshState.error)
             showSearchSnackbar(errorType)
-            binding.noResultsSection.isVisible = true
+            binding.noResultsSection.isVisible = false
             binding.rvSearchResults.isVisible = false
+            binding.errorView.layoutError.isVisible = true
+            binding.errorView.tvErrorMessage.text =
+                ErrorMessageProvider.getMessage(requireContext(), errorType)
+            binding.errorView.btnRetry.setOnClickListener {
+                searchAdapter.retry()
+            }
         }
     }
 

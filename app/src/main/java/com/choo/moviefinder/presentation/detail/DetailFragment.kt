@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit
 @AndroidEntryPoint
 class DetailFragment : Fragment() {
 
-    private val retryRateLimiter = RateLimiter(2_000L)
+    private val retryRateLimiter = RateLimiter()
 
     private var _binding: FragmentDetailBinding? = null
     private val binding get() = _binding!!
@@ -304,7 +304,6 @@ class DetailFragment : Fragment() {
 
     // 로딩 상태 표시 (Shimmer 표시, 콘텐츠/FAB 숨김)
     private fun showLoading() {
-        binding.progressBar.isVisible = false
         binding.shimmerDetail.shimmerLayout.isVisible = true
         binding.shimmerDetail.shimmerLayout.startShimmer()
         binding.contentLayout.isVisible = false
@@ -315,7 +314,6 @@ class DetailFragment : Fragment() {
 
     // 성공 상태 표시 (영화 상세, 출연진, 비슷한 영화, 리뷰, 등급 바인딩)
     private fun showContent(state: DetailUiState.Success) {
-        binding.progressBar.isVisible = false
         binding.shimmerDetail.shimmerLayout.stopShimmer()
         binding.shimmerDetail.shimmerLayout.isVisible = false
         binding.contentLayout.isVisible = true
@@ -495,7 +493,6 @@ class DetailFragment : Fragment() {
     // 에러 상태 표시 (에러 메시지 및 재시도 버튼)
     private fun showError(errorType: ErrorType) {
         startPostponedEnterTransition()
-        binding.progressBar.isVisible = false
         binding.shimmerDetail.shimmerLayout.stopShimmer()
         binding.shimmerDetail.shimmerLayout.isVisible = false
         binding.contentLayout.isVisible = false

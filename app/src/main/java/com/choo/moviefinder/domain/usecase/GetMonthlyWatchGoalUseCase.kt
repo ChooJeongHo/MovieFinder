@@ -1,9 +1,11 @@
 package com.choo.moviefinder.domain.usecase
 
 import com.choo.moviefinder.domain.repository.PreferencesRepository
+import dagger.Reusable
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
+@Reusable
 class GetMonthlyWatchGoalUseCase @Inject constructor(
     private val repository: PreferencesRepository
 ) {

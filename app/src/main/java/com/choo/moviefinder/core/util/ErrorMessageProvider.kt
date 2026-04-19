@@ -14,7 +14,10 @@ enum class ErrorType {
     SERVER,
     SSL,
     PARSE,
-    UNKNOWN
+    UNKNOWN,
+    UNAUTHORIZED,
+    NOT_FOUND,
+    RATE_LIMITED
 }
 
 object ErrorMessageProvider {
@@ -29,7 +32,13 @@ object ErrorMessageProvider {
 
             is SSLException -> ErrorType.SSL
 
-            is HttpException -> ErrorType.SERVER
+            is HttpException -> when (throwable.code()) {
+                401, 403 -> ErrorType.UNAUTHORIZED
+                404 -> ErrorType.NOT_FOUND
+                429 -> ErrorType.RATE_LIMITED
+                in 500..599 -> ErrorType.SERVER
+                else -> ErrorType.SERVER
+            }
 
             is kotlinx.serialization.SerializationException -> ErrorType.PARSE
 
@@ -48,6 +57,9 @@ object ErrorMessageProvider {
             ErrorType.SSL -> context.getString(R.string.error_ssl)
             ErrorType.PARSE -> context.getString(R.string.error_parse)
             ErrorType.UNKNOWN -> context.getString(R.string.error_unknown)
+            ErrorType.UNAUTHORIZED -> context.getString(R.string.error_unauthorized)
+            ErrorType.NOT_FOUND -> context.getString(R.string.error_not_found)
+            ErrorType.RATE_LIMITED -> context.getString(R.string.error_rate_limited)
         }
     }
 

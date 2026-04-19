@@ -2,7 +2,11 @@ package com.choo.moviefinder.core.util
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
+
+// 공유 WhileSubscribed 인스턴스 — 5초 타임아웃 (magic number 제거)
+val WhileSubscribed5s = SharingStarted.WhileSubscribed(5_000)
 
 // 코루틴 실행 후 예외 발생 시 ErrorType으로 변환하여 에러 핸들러를 호출한다
 fun CoroutineScope.launchWithErrorHandler(

@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class PersonDetailFragment : Fragment() {
 
-    private val retryRateLimiter = RateLimiter(2_000L)
+    private val retryRateLimiter = RateLimiter()
 
     private var _binding: FragmentPersonDetailBinding? = null
     private val binding get() = _binding!!

@@ -2,8 +2,10 @@ package com.choo.moviefinder.domain.usecase
 
 import com.choo.moviefinder.domain.model.UserDataBackup
 import com.choo.moviefinder.domain.repository.BackupRepository
+import dagger.Reusable
 import javax.inject.Inject
 
+@Reusable
 class ImportUserDataUseCase @Inject constructor(
     private val repository: BackupRepository
 ) {

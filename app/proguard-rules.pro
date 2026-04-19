@@ -148,6 +148,11 @@
     public <init>(android.content.Context, androidx.work.WorkerParameters);
 }
 
+# ML Kit Image Labeling (Play Services unbundled)
+-dontwarn com.google.mlkit.**
+-keep class com.google.mlkit.** { *; }
+-dontwarn com.google.android.gms.internal.mlkit_vision_label_play_services.**
+
 # Keep line numbers for debugging
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile

@@ -8,7 +8,7 @@ import com.choo.moviefinder.domain.model.Movie
 
 @Entity(
     tableName = "favorite_movies",
-    indices = [Index(value = ["addedAt"])]
+    indices = [Index(value = ["addedAt"]), Index(value = ["title"]), Index(value = ["voteAverage"])]
 )
 data class FavoriteMovieEntity(
     @PrimaryKey val id: Int,

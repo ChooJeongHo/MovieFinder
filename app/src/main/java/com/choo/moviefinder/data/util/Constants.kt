@@ -18,7 +18,7 @@ object Constants {
     val DEFAULT_PAGING_CONFIG = PagingConfig(
         pageSize = PAGE_SIZE,
         prefetchDistance = PREFETCH_DISTANCE,
-        initialLoadSize = PAGE_SIZE,
+        initialLoadSize = PAGE_SIZE * 3,
         enablePlaceholders = false
     )
 }
