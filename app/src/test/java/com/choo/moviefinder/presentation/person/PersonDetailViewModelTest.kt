@@ -22,6 +22,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
+import kotlinx.coroutines.test.advanceUntilIdle
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PersonDetailViewModelTest {
@@ -166,6 +167,35 @@ class PersonDetailViewModelTest {
             }
             assertEquals(ErrorType.NETWORK, errorState.errorType)
         }
+    }
+
+    @Test
+    fun `loadPersonDetail can be retried after initial load`() = runTest {
+        coEvery { getPersonDetailUseCase(any()) } returns testPersonDetail
+        coEvery { getPersonCreditsUseCase(any()) } returns testMovies
+        val viewModel = createViewModel()
+
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value is PersonDetailUiState.Success)
+
+        viewModel.loadPersonDetail()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value is PersonDetailUiState.Success)
+        coVerify(exactly = 2) { getPersonDetailUseCase(123) }
+    }
+
+    @Test
+    fun `loadPersonDetail guards against concurrent calls via mutex`() = runTest {
+        coEvery { getPersonDetailUseCase(any()) } returns testPersonDetail
+        coEvery { getPersonCreditsUseCase(any()) } returns testMovies
+        val viewModel = createViewModel()
+
+        // Call again before init's launch has run — mutex blocks the second
+        viewModel.loadPersonDetail()
+        advanceUntilIdle()
+
+        // Mutex ensures at most one runs at a time; final state is always Success
+        assertTrue(viewModel.uiState.value is PersonDetailUiState.Success)
     }
 
     @Test

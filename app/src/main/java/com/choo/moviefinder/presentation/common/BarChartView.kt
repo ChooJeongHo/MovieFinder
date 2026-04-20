@@ -33,6 +33,7 @@ class BarChartView @JvmOverloads constructor(
     }
     private val barRect = RectF()
     private val barCornerRadius = 8f
+    private var cachedMaxValue: Int = 1
 
     private var barColor: Int
     private var textColor: Int
@@ -68,6 +69,7 @@ class BarChartView @JvmOverloads constructor(
             val label = context.getString(R.string.chart_month_format, month)
             bars.add(Bar(label = label, value = count, valueText = count.toString()))
         }
+        cachedMaxValue = bars.maxOfOrNull { it.value }?.coerceAtLeast(1) ?: 1
         contentDescription = bars.joinToString(", ") {
             context.getString(R.string.chart_count_format, it.label, it.value)
         }
@@ -93,7 +95,7 @@ class BarChartView @JvmOverloads constructor(
         val top = paddingTop.toFloat() + textPaint.textSize * 1.5f
         val bottom = (height - paddingBottom).toFloat() - labelPaint.textSize * 2f
         val chartHeight = bottom - top
-        val maxValue = bars.maxOf { it.value }.coerceAtLeast(1)
+        val maxValue = cachedMaxValue
 
         val totalWidth = right - left
         val gap = totalWidth * 0.08f / count.coerceAtLeast(1)

@@ -6,6 +6,7 @@ import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
 import com.choo.moviefinder.core.util.NetworkMonitor
+import com.choo.moviefinder.core.util.withExponentialBackoff
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
@@ -60,10 +61,12 @@ class MovieRemoteMediator(
         }
 
         return try {
-            val response = when (category) {
-                CATEGORY_NOW_PLAYING -> apiService.getNowPlayingMovies(page)
-                CATEGORY_POPULAR -> apiService.getPopularMovies(page)
-                else -> throw IllegalArgumentException("Unknown category: $category")
+            val response = withExponentialBackoff {
+                when (category) {
+                    CATEGORY_NOW_PLAYING -> apiService.getNowPlayingMovies(page)
+                    CATEGORY_POPULAR -> apiService.getPopularMovies(page)
+                    else -> throw IllegalArgumentException("Unknown category: $category")
+                }
             }
 
             val movies = response.results.map { dto ->

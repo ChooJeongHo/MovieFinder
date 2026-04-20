@@ -71,6 +71,12 @@ object NetworkModule {
                     .build()
                 chain.proceed(original.newBuilder().url(url).build())
             }
+            .addNetworkInterceptor { chain ->
+                val response = chain.proceed(chain.request())
+                response.newBuilder()
+                    .header("Cache-Control", "public, max-age=300")
+                    .build()
+            }
             .connectTimeout(30.seconds)
             .readTimeout(30.seconds)
             .writeTimeout(30.seconds)

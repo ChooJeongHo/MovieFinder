@@ -167,6 +167,23 @@ class StatsViewModelTest {
     }
 
     @Test
+    fun `retry resets to Loading then emits Success`() = runTest {
+        every { getWatchStatsUseCase() } returns flowOf(testStats)
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            val first = awaitItem()
+            if (first is StatsUiState.Loading) awaitItem() // drain initial Success
+
+            viewModel.retry()
+            assertEquals(StatsUiState.Loading, awaitItem())
+            val retryResult = awaitItem()
+            assertTrue(retryResult is StatsUiState.Success)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `Success state contains correct watch goal`() = runTest {
         val statsWithGoal = testStats.copy(monthlyWatchGoal = 20)
         every { getWatchStatsUseCase() } returns flowOf(statsWithGoal)

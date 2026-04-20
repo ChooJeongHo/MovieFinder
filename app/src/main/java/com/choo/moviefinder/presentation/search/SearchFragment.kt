@@ -285,13 +285,14 @@ class SearchFragment : Fragment() {
 
     private fun handlePersonLoading(isLoading: Boolean) {
         if (viewModel.searchMode.value != SearchMode.PERSON) return
-        binding.shimmerView.shimmerLayout.isVisible = isLoading
         if (isLoading) {
             binding.shimmerView.shimmerLayout.startShimmer()
+            binding.shimmerView.shimmerLayout.isVisible = true
             binding.rvPersonResults.isVisible = false
             binding.noResultsSection.isVisible = false
         } else {
             binding.shimmerView.shimmerLayout.stopShimmer()
+            binding.shimmerView.shimmerLayout.isVisible = false
         }
     }
 
@@ -316,16 +317,17 @@ class SearchFragment : Fragment() {
         val hasGenreFilter = viewModel.selectedGenres.value.isNotEmpty()
         if (query.isBlank() && !hasGenreFilter) return
         val refreshState = loadStates.refresh
-        binding.shimmerView.shimmerLayout.isVisible = refreshState is LoadState.Loading
         binding.rvSearchResults.isVisible = refreshState is LoadState.NotLoading
         binding.recentSearchesSection.isVisible = false
         binding.emptyInitial.layoutEmpty.isVisible = false
         binding.errorView.layoutError.isVisible = false
         if (refreshState is LoadState.Loading) {
             binding.shimmerView.shimmerLayout.startShimmer()
+            binding.shimmerView.shimmerLayout.isVisible = true
             binding.noResultsSection.isVisible = false
         } else {
             binding.shimmerView.shimmerLayout.stopShimmer()
+            binding.shimmerView.shimmerLayout.isVisible = false
         }
         if (refreshState is LoadState.NotLoading) {
             val isEmpty = searchAdapter.itemCount == 0

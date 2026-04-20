@@ -48,10 +48,9 @@ abstract class WatchHistoryDao {
     )
     abstract fun getGenreCounts(): Flow<List<GenreCountResult>>
 
-    // 월별 시청 편수를 최근 6개월 기준으로 조회
+    // 월별 시청 편수를 최근 6개월 기준으로 조회 (yearMonth 인덱스 활용)
     @Query(
-        "SELECT strftime('%Y-%m', watchedAt / 1000, 'unixepoch', 'localtime') AS yearMonth, " +
-            "COUNT(*) AS count FROM watch_history " +
+        "SELECT yearMonth, COUNT(*) AS count FROM watch_history " +
             "GROUP BY yearMonth ORDER BY yearMonth DESC LIMIT 6"
     )
     abstract fun getMonthlyWatchCounts(): Flow<List<MonthlyCount>>
