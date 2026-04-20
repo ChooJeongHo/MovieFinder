@@ -254,7 +254,8 @@
                         android:id="@+id/pieChartView"
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/chart_height"
-                        android:layout_marginTop="@dimen/spacing_sm" />
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:importantForAccessibility="yes" />
 
                     <TextView
                         android:id="@+id/tvPieChartEmpty"
@@ -295,7 +296,8 @@
                         android:id="@+id/barChartView"
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/chart_height"
-                        android:layout_marginTop="@dimen/spacing_sm" />
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:importantForAccessibility="yes" />
 
                     <TextView
                         android:id="@+id/tvBarChartEmpty"
@@ -336,7 +338,8 @@
                         android:id="@+id/histogramView"
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/histogram_height"
-                        android:layout_marginTop="@dimen/spacing_sm" />
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:importantForAccessibility="yes" />
 
                     <TextView
                         android:id="@+id/tvHistogramEmpty"
@@ -376,7 +379,8 @@
                         android:id="@+id/calendarHeatmapView"
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/heatmap_height"
-                        android:layout_marginTop="@dimen/spacing_sm" />
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:importantForAccessibility="yes" />
 
                     <TextView
                         android:id="@+id/tvCalendarEmpty"

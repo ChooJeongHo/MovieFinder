@@ -116,6 +116,23 @@ object DatabaseModule {
         }
     }
 
+    // watch_history yearMonth 컬럼 추가 및 인덱스 생성 마이그레이션 (v16 → v17)
+    val MIGRATION_16_17 = object : Migration(16, 17) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE watch_history ADD COLUMN yearMonth TEXT NOT NULL DEFAULT ''"
+            )
+            db.execSQL(
+                "UPDATE watch_history SET yearMonth = " +
+                    "strftime('%Y-%m', watchedAt / 1000, 'unixepoch', 'localtime')"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_watch_history_yearMonth` " +
+                    "ON `watch_history` (`yearMonth`)"
+            )
+        }
+    }
+
     // Room 데이터베이스 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
@@ -125,7 +142,9 @@ object DatabaseModule {
             MovieDatabase::class.java,
             "movie_finder_db"
         )
-            .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
+            .addMigrations(
+                MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17
+            )
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }

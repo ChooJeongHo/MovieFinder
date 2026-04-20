@@ -4,10 +4,16 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.choo.moviefinder.domain.model.Movie
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Entity(
     tableName = "watch_history",
-    indices = [Index(value = ["watchedAt"])]
+    indices = [
+        Index(value = ["watchedAt"]),
+        Index(value = ["yearMonth"])
+    ]
 )
 data class WatchHistoryEntity(
     @PrimaryKey val id: Int,
@@ -19,6 +25,7 @@ data class WatchHistoryEntity(
     val voteAverage: Double,
     val voteCount: Int,
     val watchedAt: Long = System.currentTimeMillis(),
+    val yearMonth: String = "",
     val genres: String = ""
 )
 
@@ -35,14 +42,19 @@ fun WatchHistoryEntity.toDomain() = Movie(
 )
 
 // 도메인 Movie를 시청 기록 Entity로 변환
-fun Movie.toWatchHistoryEntity(genres: String = "") = WatchHistoryEntity(
-    id = id,
-    title = title,
-    posterPath = posterPath,
-    backdropPath = backdropPath,
-    overview = overview,
-    releaseDate = releaseDate,
-    voteAverage = voteAverage,
-    voteCount = voteCount,
-    genres = genres
-)
+fun Movie.toWatchHistoryEntity(genres: String = ""): WatchHistoryEntity {
+    val now = System.currentTimeMillis()
+    return WatchHistoryEntity(
+        id = id,
+        title = title,
+        posterPath = posterPath,
+        backdropPath = backdropPath,
+        overview = overview,
+        releaseDate = releaseDate,
+        voteAverage = voteAverage,
+        voteCount = voteCount,
+        watchedAt = now,
+        yearMonth = SimpleDateFormat("yyyy-MM", Locale.US).format(Date(now)),
+        genres = genres
+    )
+}

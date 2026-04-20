@@ -33,6 +33,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -278,6 +279,7 @@ class FavoriteFragment : Fragment() {
                         binding.emptyView.layoutEmpty.isVisible = movies.isEmpty()
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     binding.shimmerView.shimmerLayout.stopShimmer()
                     binding.shimmerView.shimmerLayout.isVisible = false
                     binding.rvFavorites.isVisible = false

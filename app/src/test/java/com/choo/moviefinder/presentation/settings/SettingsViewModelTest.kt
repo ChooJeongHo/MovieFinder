@@ -306,4 +306,28 @@ class SettingsViewModelTest {
             assert(errorType == com.choo.moviefinder.core.util.ErrorType.PARSE)
         }
     }
+
+    @Test
+    fun `isImporting is false after successful import`() = runTest {
+        coEvery { importUserDataUseCase(any()) } returns Unit
+        val viewModel = createViewModel()
+        val validJson = """{"version":1,"exportedAt":0,"favorites":[],"watchlist":[],"ratings":[],"memos":[]}"""
+
+        viewModel.importData(validJson)
+        advanceUntilIdle()
+
+        assertEquals(false, viewModel.isImporting.value)
+    }
+
+    @Test
+    fun `isImporting is false after failed import`() = runTest {
+        coEvery { importUserDataUseCase(any()) } throws RuntimeException("import error")
+        val viewModel = createViewModel()
+        val validJson = """{"version":1,"exportedAt":0,"favorites":[],"watchlist":[],"ratings":[],"memos":[]}"""
+
+        viewModel.importData(validJson)
+        advanceUntilIdle()
+
+        assertEquals(false, viewModel.isImporting.value)
+    }
 }

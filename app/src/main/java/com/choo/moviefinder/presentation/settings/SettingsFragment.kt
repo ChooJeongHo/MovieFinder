@@ -316,15 +316,16 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    // Coil 메모리 및 디스크 이미지 캐시 삭제
+    // Coil 메모리 및 디스크 이미지 캐시 삭제 (디스크 I/O는 IO 스레드에서 수행)
     private fun clearCache() {
         val imageLoader = requireContext().imageLoader
-        try {
-            imageLoader.memoryCache?.clear()
-        } finally {
-            imageLoader.diskCache?.clear()
+        imageLoader.memoryCache?.clear()
+        viewLifecycleOwner.lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                imageLoader.diskCache?.clear()
+            }
+            Snackbar.make(binding.root, R.string.cache_cleared, Snackbar.LENGTH_SHORT).show()
         }
-        Snackbar.make(binding.root, R.string.cache_cleared, Snackbar.LENGTH_SHORT).show()
     }
 
     // 시청 기록 삭제 확인 다이얼로그 표시
