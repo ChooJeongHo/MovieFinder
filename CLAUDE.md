@@ -89,7 +89,7 @@ app/src/main/java/com/choo/moviefinder/
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 ├── data/                  # 데이터 레이어
 │   ├── local/
-│   │   ├── MovieDatabase.kt       # Room DB (version 14)
+│   │   ├── MovieDatabase.kt       # Room DB (version 17)
 │   │   ├── dao/                   # DAO 8개 (FavoriteMovieDao, WatchlistDao: abstract class)
 │   │   └── entity/                # Room Entity 8개
 │   ├── paging/
@@ -194,7 +194,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (453개)
+### 유닛 테스트 (465개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -298,7 +298,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - 딥링크: `moviefinder://movie/{id}`, `moviefinder://person/{id}`, `moviefinder://stats`
 
 ### Room DB
-- 버전: 14, 이름: `movie_finder_db`, 스키마: `app/schemas/`
+- 버전: 17, 이름: `movie_finder_db`, 스키마: `app/schemas/`
 - Entity 8개: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity, MemoEntity
 - `FavoriteMovieDao`, `WatchlistDao`, `WatchHistoryDao`: `abstract class` — `@Transaction` wrapper 메서드 (toggleFavorite/toggleWatchlist, insertWithGenres/clearAllWithGenres)
 - Destructive migration fallback 적용 (개발 환경)
