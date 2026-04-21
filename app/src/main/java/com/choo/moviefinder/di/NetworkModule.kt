@@ -37,7 +37,7 @@ object NetworkModule {
     fun provideJson(): Json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
-        isLenient = true
+        // isLenient 제거: TMDB 스펙 명확, 파싱 오류를 즉시 노출시켜야 함
     }
 
     // API 통신용 OkHttpClient를 인증서 피닝과 API 키 인터셉터를 포함하여 제공한다
@@ -61,9 +61,18 @@ object NetworkModule {
                             .build()
                     )
                 }
+                if (BuildConfig.DEBUG) eventListener(DebugEventListener())
             }
             .addDebugLogging()
-            .eventListener(DebugEventListener())
+            // User-Agent: TMDB 측 로그 식별 및 API 정책 준수
+            .addInterceptor { chain ->
+                chain.proceed(
+                    chain.request().newBuilder()
+                        .header("User-Agent", "MovieFinder/${BuildConfig.VERSION_NAME} (Android)")
+                        .build()
+                )
+            }
+            // API 키 주입
             .addInterceptor { chain ->
                 val original = chain.request()
                 val url = original.url.newBuilder()
@@ -71,15 +80,30 @@ object NetworkModule {
                     .build()
                 chain.proceed(original.newBuilder().url(url).build())
             }
+            // 429 Rate-Limit: Retry-After 헤더를 존중하여 1회 재시도 (최대 5초 대기)
+            .addInterceptor { chain ->
+                val response = chain.proceed(chain.request())
+                if (response.code == 429) {
+                    val retryAfterMs = (response.header("Retry-After")?.toLongOrNull() ?: 1L)
+                        .coerceAtMost(5L) * 1000L
+                    response.close()
+                    Thread.sleep(retryAfterMs)
+                    chain.proceed(chain.request())
+                } else {
+                    response
+                }
+            }
+            // 엔드포인트별 캐시 TTL 오버라이드 (서버 Cache-Control 무시하는 경우 대비)
             .addNetworkInterceptor { chain ->
                 val response = chain.proceed(chain.request())
-                response.newBuilder()
-                    .header("Cache-Control", "public, max-age=300")
-                    .build()
+                val path = chain.request().url.encodedPath
+                val cc = cacheTtlHeader(path)
+                response.newBuilder().header("Cache-Control", cc).build()
             }
-            .connectTimeout(30.seconds)
-            .readTimeout(30.seconds)
-            .writeTimeout(30.seconds)
+            // 타임아웃 15초: ExponentialBackoff 재시도(최대 3회)와 조합하면 충분
+            .connectTimeout(15.seconds)
+            .readTimeout(15.seconds)
+            .writeTimeout(15.seconds)
             .build()
     }
 
@@ -108,7 +132,6 @@ object NetworkModule {
     fun provideImageOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
             .apply {
-                // 디버그 빌드(에뮬레이터)에서는 인증서 피닝 비활성화
                 if (!BuildConfig.DEBUG) {
                     certificatePinner(
                         CertificatePinner.Builder()
@@ -120,13 +143,11 @@ object NetworkModule {
                             .build()
                     )
                 }
-                if (BuildConfig.DEBUG) {
-                    eventListener(DebugEventListener())
-                }
+                if (BuildConfig.DEBUG) eventListener(DebugEventListener())
             }
-            .connectTimeout(30.seconds)
-            .readTimeout(30.seconds)
-            .writeTimeout(30.seconds)
+            .connectTimeout(15.seconds)
+            .readTimeout(15.seconds)
+            .writeTimeout(15.seconds)
             .build()
     }
 
@@ -135,6 +156,17 @@ object NetworkModule {
     @Singleton
     fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor {
         return NetworkMonitor(context)
+    }
+
+    // 엔드포인트 경로에 따른 Cache-Control 헤더 값 반환
+    private fun cacheTtlHeader(path: String): String {
+        val ttl = when {
+            path.contains("/genre/movie/list") -> 86400 // 장르 목록: 1일
+            path.contains("/trending") -> 60 // 트렌딩: 1분
+            path.contains("/search") -> 0 // 검색: 캐시 안 함
+            else -> 300 // 그 외: 5분
+        }
+        return if (ttl > 0) "public, max-age=$ttl" else "no-store"
     }
 
     private const val HTTP_CACHE_SIZE = 10L * 1024 * 1024 // 10MB
