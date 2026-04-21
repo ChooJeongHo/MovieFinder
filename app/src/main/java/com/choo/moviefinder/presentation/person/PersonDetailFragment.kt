@@ -78,6 +78,7 @@ class PersonDetailFragment : Fragment() {
         }
         binding.rvFilmography.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            setHasFixedSize(true)
             adapter = filmographyAdapter
         }
     }

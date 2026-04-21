@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.widget.NestedScrollView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -115,8 +116,12 @@ class MainActivity : AppCompatActivity() {
         val fragment = host?.childFragmentManager?.primaryNavigationFragment
         fragment?.view?.let { view ->
             val rvIds = listOf(R.id.rv_movies, R.id.rv_favorites, R.id.rv_search_results)
-            rvIds.firstNotNullOfOrNull { view.findViewById<RecyclerView>(it) }
-                ?.scrollToPosition(0)
+            val rv = rvIds.firstNotNullOfOrNull { view.findViewById<RecyclerView>(it) }
+            if (rv != null) {
+                rv.scrollToPosition(0)
+            } else {
+                view.findViewById<NestedScrollView>(R.id.contentLayout)?.scrollTo(0, 0)
+            }
             view.findViewById<FloatingActionButton>(R.id.fab_scroll_top)?.hide()
         }
     }

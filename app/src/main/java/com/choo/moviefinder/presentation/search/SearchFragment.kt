@@ -158,6 +158,7 @@ class SearchFragment : Fragment() {
                 binding.etSearch.setSelection(query.length)
                 viewModel.onSearchQueryChange(query)
                 viewModel.onSearch(query)
+                hideKeyboard()
             },
             onDeleteClick = { query ->
                 viewModel.onDeleteRecentSearch(query)
@@ -567,6 +568,7 @@ class SearchFragment : Fragment() {
                 binding.etSearch.setSelection(term.length)
                 viewModel.onSearchQueryChange(term)
                 viewModel.onSearch(term)
+                hideKeyboard()
             }
             binding.chipGroupSuggestions.addView(chip)
         }

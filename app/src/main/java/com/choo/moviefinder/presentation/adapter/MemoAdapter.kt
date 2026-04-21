@@ -36,6 +36,7 @@ class MemoAdapter(
             binding.tvMemoDate.text = formatDate(memo.updatedAt)
             binding.btnEditMemo.setOnClickListener { onEditClick(memo) }
             binding.btnDeleteMemo.setOnClickListener { onDeleteClick(memo) }
+            binding.root.contentDescription = memo.content
         }
 
         private fun formatDate(timestamp: Long): String {
