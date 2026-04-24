@@ -8,6 +8,7 @@ import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
+import com.choo.moviefinder.data.local.dao.ScheduledReminderDao
 import com.choo.moviefinder.data.local.dao.UserRatingDao
 import com.choo.moviefinder.data.local.dao.WatchHistoryDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
@@ -17,6 +18,7 @@ import com.choo.moviefinder.data.local.entity.MemoEntity
 import com.choo.moviefinder.data.local.entity.MovieTagEntity
 import com.choo.moviefinder.data.local.entity.RecentSearchEntity
 import com.choo.moviefinder.data.local.entity.RemoteKeyEntity
+import com.choo.moviefinder.data.local.entity.ScheduledReminderEntity
 import com.choo.moviefinder.data.local.entity.UserRatingEntity
 import com.choo.moviefinder.data.local.entity.WatchHistoryEntity
 import com.choo.moviefinder.data.local.entity.WatchHistoryGenreEntity
@@ -33,9 +35,10 @@ import com.choo.moviefinder.data.local.entity.WatchlistEntity
         WatchlistEntity::class,
         UserRatingEntity::class,
         MemoEntity::class,
-        MovieTagEntity::class
+        MovieTagEntity::class,
+        ScheduledReminderEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = true
 )
 abstract class MovieDatabase : RoomDatabase() {
@@ -65,4 +68,7 @@ abstract class MovieDatabase : RoomDatabase() {
 
     // 영화 태그 DAO 제공
     abstract fun movieTagDao(): MovieTagDao
+
+    // 예약된 알림 DAO 제공
+    abstract fun scheduledReminderDao(): ScheduledReminderDao
 }

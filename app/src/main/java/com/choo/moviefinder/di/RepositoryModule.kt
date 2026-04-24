@@ -6,6 +6,7 @@ import com.choo.moviefinder.data.repository.FavoriteRepositoryImpl
 import com.choo.moviefinder.data.repository.MemoRepositoryImpl
 import com.choo.moviefinder.data.repository.MovieRepositoryImpl
 import com.choo.moviefinder.data.repository.PersonRepositoryImpl
+import com.choo.moviefinder.data.repository.ReminderRepositoryImpl
 import com.choo.moviefinder.data.repository.SearchHistoryRepositoryImpl
 import com.choo.moviefinder.data.repository.TagRepositoryImpl
 import com.choo.moviefinder.data.repository.UserRatingRepositoryImpl
@@ -17,6 +18,7 @@ import com.choo.moviefinder.domain.repository.MemoRepository
 import com.choo.moviefinder.domain.repository.MovieRepository
 import com.choo.moviefinder.domain.repository.PersonRepository
 import com.choo.moviefinder.domain.repository.PreferencesRepository
+import com.choo.moviefinder.domain.repository.ReminderRepository
 import com.choo.moviefinder.domain.repository.SearchHistoryRepository
 import com.choo.moviefinder.domain.repository.TagRepository
 import com.choo.moviefinder.domain.repository.UserRatingRepository
@@ -86,4 +88,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTagRepository(impl: TagRepositoryImpl): TagRepository
+
+    // ReminderRepositoryImpl을 ReminderRepository 인터페이스에 바인딩한다
+    @Binds
+    @Singleton
+    abstract fun bindReminderRepository(impl: ReminderRepositoryImpl): ReminderRepository
 }

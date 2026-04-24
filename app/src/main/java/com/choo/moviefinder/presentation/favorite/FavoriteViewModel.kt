@@ -24,6 +24,7 @@ import com.choo.moviefinder.domain.usecase.GetWatchlistUseCase
 import com.choo.moviefinder.domain.usecase.RemoveTagFromMovieUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
+import com.choo.moviefinder.domain.repository.UserRatingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,6 +36,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -56,6 +58,7 @@ class FavoriteViewModel @Inject constructor(
     private val addTagToMovieUseCase: AddTagToMovieUseCase,
     private val removeTagFromMovieUseCase: RemoveTagFromMovieUseCase,
     private val posterTagSuggester: PosterTagSuggester,
+    private val userRatingRepository: UserRatingRepository,
     private val watchlistDao: WatchlistDao,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -65,24 +68,60 @@ class FavoriteViewModel @Inject constructor(
     private val _sortOrder = MutableStateFlow(FavoriteSortOrder.ADDED_DATE)
     val sortOrder: StateFlow<FavoriteSortOrder> = _sortOrder.asStateFlow()
 
-    private val _selectedTag = MutableStateFlow<String?>(null)
-    val selectedTag: StateFlow<String?> = _selectedTag.asStateFlow()
+    // 다중 태그 필터: 선택된 태그 집합 (empty = 전체 표시)
+    private val _tagFilters = MutableStateFlow<Set<String>>(emptySet())
+    val tagFilters: StateFlow<Set<String>> = _tagFilters.asStateFlow()
+
+    // 평점 필터: 최소 평점 (0f = 필터 없음)
+    private val _minRating = MutableStateFlow(0f)
+    val minRating: StateFlow<Float> = _minRating.asStateFlow()
 
     // 모든 고유 태그 이름 목록 (필터 칩 표시용)
     val allTagNames: StateFlow<List<String>> = getAllTagNamesUseCase()
         .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
-    // 선택된 태그·정렬 순서에 따라 DB ORDER BY로 정렬된 즐겨찾기 목록
-    val favoriteMovies: StateFlow<List<Movie>> = combine(_sortOrder, _selectedTag) { sort, tag -> sort to tag }
-        .distinctUntilChanged()
-        .flatMapLatest { (sort, tag) ->
-            if (tag == null) {
-                getFavoriteMoviesUseCase(sort)
-            } else {
-                getFavoritesByTagUseCase(tag, sort)
+    // 모든 사용자 평점 맵 (movieId → rating)
+    private val userRatings: StateFlow<Map<Int, Float>> = userRatingRepository.getAllUserRatings()
+        .stateIn(viewModelScope, WhileSubscribed5s, emptyMap())
+
+    // 선택된 태그·정렬 순서에 따라 DB ORDER BY로 정렬된 즐겨찾기 기본 목록
+    private val baseFavoriteMovies: StateFlow<List<Movie>> =
+        combine(_sortOrder, _tagFilters) { sort, tags -> sort to tags }
+            .distinctUntilChanged()
+            .flatMapLatest { (sort, tags) ->
+                when {
+                    tags.isEmpty() -> getFavoriteMoviesUseCase(sort)
+                    tags.size == 1 -> getFavoritesByTagUseCase(tags.first(), sort)
+                    else -> {
+                        // 다중 태그: 각 태그 Flow를 combine하여 OR 합집합 처리
+                        val flows = tags.map { tag -> getFavoritesByTagUseCase(tag, sort) }
+                        combine(flows) { arrays ->
+                            val seen = mutableSetOf<Int>()
+                            val result = mutableListOf<Movie>()
+                            arrays.forEach { list ->
+                                list.forEach { movie ->
+                                    if (seen.add(movie.id)) result.add(movie)
+                                }
+                            }
+                            result
+                        }
+                    }
+                }
             }
-        }
-        .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
+            .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
+
+    // 평점 필터를 적용한 최종 즐겨찾기 목록
+    val favoriteMovies: StateFlow<List<Movie>> =
+        combine(baseFavoriteMovies, userRatings, _minRating) { movies, ratings, minRating ->
+            if (minRating <= 0f) {
+                movies
+            } else {
+                movies.filter { movie ->
+                    val userRating = ratings[movie.id] ?: 0f
+                    userRating >= minRating
+                }
+            }
+        }.stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     // 정렬 순서에 따라 DB ORDER BY로 정렬된 워치리스트 목록
     val watchlistMovies: StateFlow<List<Movie>> = _sortOrder.flatMapLatest { sort ->
@@ -113,9 +152,29 @@ class FavoriteViewModel @Inject constructor(
         _sortOrder.value = sort
     }
 
-    // 태그 필터 선택 (null = 전체 표시)
+    // 태그 필터 토글: 이미 선택된 태그면 제거, 아니면 추가 (null = 전체 초기화)
+    fun toggleTagFilter(tag: String?) {
+        if (tag == null) {
+            _tagFilters.value = emptySet()
+        } else {
+            val current = _tagFilters.value
+            _tagFilters.value = if (tag in current) current - tag else current + tag
+        }
+    }
+
+    // 하위 호환: 단일 태그 선택 (워치리스트 탭 전환 시 초기화에 사용)
     fun onTagSelected(tag: String?) {
-        _selectedTag.value = tag
+        _tagFilters.value = if (tag == null) emptySet() else setOf(tag)
+    }
+
+    // selectedTag: 단일 태그 선택 상태 노출 (하위 호환용 — null = 전체)
+    val selectedTag: StateFlow<String?> = _tagFilters
+        .map { tags -> tags.singleOrNull() }
+        .stateIn(viewModelScope, WhileSubscribed5s, null)
+
+    // 평점 필터 설정 (0f = 필터 없음)
+    fun setMinRating(rating: Float) {
+        _minRating.value = rating
     }
 
     // 워치리스트 상태 토글 (에러 시 Snackbar 이벤트 전송)

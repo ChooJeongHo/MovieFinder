@@ -83,6 +83,15 @@
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <activity
+            android:name=".presentation.widget.FavoriteMoviesWidgetConfigureActivity"
+            android:exported="true"
+            android:theme="@style/Theme.MovieFinder">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"

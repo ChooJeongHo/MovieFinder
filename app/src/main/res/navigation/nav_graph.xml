@@ -66,7 +66,20 @@
             app:exitAnim="@anim/fade_out"
             app:popEnterAnim="@anim/fade_in"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_settings_to_reminder_history"
+            app:destination="@id/reminderHistoryFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/fade_out"
+            app:popEnterAnim="@anim/fade_in"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
+
+    <fragment
+        android:id="@+id/reminderHistoryFragment"
+        android:name="com.choo.moviefinder.presentation.reminder.ReminderHistoryFragment"
+        android:label="@string/reminder_history_title"
+        tools:layout="@layout/fragment_reminder_history" />
 
     <fragment
         android:id="@+id/statsFragment"

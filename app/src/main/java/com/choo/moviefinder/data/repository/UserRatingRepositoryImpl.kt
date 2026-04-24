@@ -40,4 +40,11 @@ class UserRatingRepositoryImpl @Inject constructor(
             counts.map { RatingBucket(rating = it.rating, count = it.count) }
         }
     }
+
+    // 모든 사용자 평점을 movieId → rating 맵으로 변환하여 실시간 Flow로 조회
+    override fun getAllUserRatings(): Flow<Map<Int, Float>> {
+        return userRatingDao.getAllRatingsFlow().map { entities ->
+            entities.associate { it.movieId to it.rating }
+        }
+    }
 }

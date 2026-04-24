@@ -125,6 +125,7 @@ class SettingsFragment : Fragment() {
         binding.itemWatchGoal.setOnClickListener { showWatchGoalDialog() }
         binding.itemClearCache.setOnClickListener { showClearCacheDialog() }
         binding.itemClearWatchHistory.setOnClickListener { showClearWatchHistoryDialog() }
+        binding.itemReminderHistory.setOnClickListener { navigateToReminderHistory() }
         binding.itemExportData.setOnClickListener { viewModel.exportData() }
         binding.itemImportData.setOnClickListener {
             openDocumentLauncher.launch(arrayOf("application/json"))
@@ -163,6 +164,13 @@ class SettingsFragment : Fragment() {
     private fun navigateToStats() {
         if (findNavController().currentDestination?.id == R.id.settingsFragment) {
             findNavController().navigate(R.id.action_settings_to_stats)
+        }
+    }
+
+    // 알림 기록 화면으로 이동
+    private fun navigateToReminderHistory() {
+        if (findNavController().currentDestination?.id == R.id.settingsFragment) {
+            findNavController().navigate(R.id.action_settings_to_reminder_history)
         }
     }
 

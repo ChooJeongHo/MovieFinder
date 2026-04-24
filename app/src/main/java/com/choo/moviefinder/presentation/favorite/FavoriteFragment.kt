@@ -42,6 +42,14 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
+// Rating filter options: threshold value (0f = no filter) paired with string resource
+private val RATING_FILTER_OPTIONS = listOf(
+    0f to R.string.filter_rating_all,
+    3.0f to R.string.filter_rating_3,
+    4.0f to R.string.filter_rating_4,
+    5.0f to R.string.filter_rating_5
+)
+
 @Suppress("TooManyFunctions")
 @AndroidEntryPoint
 class FavoriteFragment : Fragment() {
@@ -73,6 +81,7 @@ class FavoriteFragment : Fragment() {
         setupRecyclerView()
         setupSwipeToDelete()
         setupTabs()
+        setupRatingFilterChips()
         updateSortLabel(viewModel.sortOrder.value)
         collectCurrentTab()
         observeViewModelFlows()
@@ -183,13 +192,15 @@ class FavoriteFragment : Fragment() {
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 currentTab = tab.position
-                // 워치리스트 탭 전환 시 태그 필터 초기화 및 알림 목록 로드
+                // 워치리스트 탭 전환 시 태그/평점 필터 초기화 및 알림 목록 로드
                 if (currentTab == TAB_WATCHLIST) {
                     viewModel.onTagSelected(null)
+                    viewModel.setMinRating(0f)
                     viewModel.loadScheduledReminders()
                 }
                 updateReminderChipVisibility()
                 updateTagFilterVisibility()
+                updateRatingFilterVisibility()
                 collectCurrentTab()
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
@@ -197,6 +208,22 @@ class FavoriteFragment : Fragment() {
                 binding.rvFavorites.scrollToPosition(0)
             }
         })
+    }
+
+    // 평점 필터 칩 생성 (단일 선택, 기본 "전체" 선택)
+    private fun setupRatingFilterChips() {
+        val chipGroup = binding.chipGroupRating
+        RATING_FILTER_OPTIONS.forEach { (threshold, labelRes) ->
+            val chip = Chip(requireContext()).apply {
+                text = getString(labelRes)
+                isCheckable = true
+                isChecked = threshold == 0f
+                setOnClickListener {
+                    viewModel.setMinRating(threshold)
+                }
+            }
+            chipGroup.addView(chip)
+        }
     }
 
     // 태그/선택태그/스낵바 Flow를 단일 repeatOnLifecycle 블록에서 병렬 수집
@@ -210,8 +237,14 @@ class FavoriteFragment : Fragment() {
                     }
                 }
                 launch {
-                    viewModel.selectedTag.collect { selectedTag ->
-                        syncChipSelection(selectedTag)
+                    viewModel.tagFilters.collect { selectedTags ->
+                        syncTagChipSelection(selectedTags)
+                    }
+                }
+                launch {
+                    viewModel.minRating.collect { minRating ->
+                        syncRatingChipSelection(minRating)
+                        updateRatingFilterVisibility()
                     }
                 }
                 launch {
@@ -234,7 +267,7 @@ class FavoriteFragment : Fragment() {
         }
     }
 
-    // "전체" + 태그 칩 동적 생성
+    // "전체" + 태그 칩 동적 생성 (다중 선택 지원)
     private fun updateTagChips(tagNames: List<String>) {
         val chipGroup = binding.chipGroupTags
         chipGroup.removeAllViews()
@@ -242,8 +275,8 @@ class FavoriteFragment : Fragment() {
         val allChip = Chip(requireContext()).apply {
             text = getString(R.string.tag_filter_all)
             isCheckable = true
-            isChecked = viewModel.selectedTag.value == null
-            setOnClickListener { viewModel.onTagSelected(null) }
+            isChecked = viewModel.tagFilters.value.isEmpty()
+            setOnClickListener { viewModel.toggleTagFilter(null) }
         }
         chipGroup.addView(allChip)
 
@@ -251,26 +284,40 @@ class FavoriteFragment : Fragment() {
             val chip = Chip(requireContext()).apply {
                 text = tagName
                 isCheckable = true
-                isChecked = viewModel.selectedTag.value == tagName
-                setOnClickListener { viewModel.onTagSelected(tagName) }
+                isChecked = tagName in viewModel.tagFilters.value
+                setOnClickListener { viewModel.toggleTagFilter(tagName) }
             }
             chipGroup.addView(chip)
         }
     }
 
-    // selectedTag에 따라 칩 선택 상태 동기화
-    private fun syncChipSelection(selectedTag: String?) {
+    // tagFilters Set에 따라 태그 칩 선택 상태 동기화
+    private fun syncTagChipSelection(selectedTags: Set<String>) {
         val chipGroup = binding.chipGroupTags
         for (i in 0 until chipGroup.childCount) {
             val chip = chipGroup.getChildAt(i) as? Chip ?: continue
-            chip.isChecked = if (i == 0) selectedTag == null else chip.text == selectedTag
+            chip.isChecked = if (i == 0) selectedTags.isEmpty() else chip.text in selectedTags
         }
     }
 
-    // 즐겨찾기 탭이고 태그가 존재할 때만 필터 표시
+    // 평점 필터 칩 선택 상태 동기화
+    private fun syncRatingChipSelection(minRating: Float) {
+        val chipGroup = binding.chipGroupRating
+        RATING_FILTER_OPTIONS.forEachIndexed { index, (threshold, _) ->
+            val chip = chipGroup.getChildAt(index) as? Chip ?: return@forEachIndexed
+            chip.isChecked = threshold == minRating
+        }
+    }
+
+    // 즐겨찾기 탭이고 태그가 존재할 때만 태그 필터 표시
     private fun updateTagFilterVisibility() {
         binding.tagFilterScroll.isVisible =
             currentTab == TAB_FAVORITES && viewModel.allTagNames.value.isNotEmpty()
+    }
+
+    // 즐겨찾기 탭에서만 평점 필터 표시
+    private fun updateRatingFilterVisibility() {
+        binding.ratingFilterScroll.isVisible = currentTab == TAB_FAVORITES
     }
 
     // 알림 칩 텍스트와 가시성 갱신

@@ -98,6 +98,9 @@
     <string name="reminder_count">%d Reminders</string>
     <string name="reminder_history_title">Scheduled Reminders</string>
     <string name="reminder_none">No scheduled reminders.</string>
+    <string name="reminder_cancel_confirm_title">Cancel Reminder</string>
+    <string name="reminder_cancel_confirm_message">Cancel release reminder for "%s"?</string>
+    <string name="reminder_cancelled">Reminder cancelled.</string>
 
     <!-- Rating -->
     <string name="rating_format">%.1f</string>
@@ -340,6 +343,11 @@
     <string name="tag_suggested">AI Suggested Tags</string>
     <string name="tag_no_suggestions">No suggestions found</string>
 
+    <!-- Widget Configure -->
+    <string name="widget_configure_title">Choose what to display in the widget</string>
+    <string name="widget_configure_option_favorites">Favorites</string>
+    <string name="widget_configure_option_watchlist">Watchlist</string>
+
     <!-- TMDB Account -->
     <string name="tmdb_account_section">TMDB Account</string>
     <string name="tmdb_connected">TMDB account connected.</string>
@@ -354,4 +362,10 @@
     <string name="tmdb_rating_dialog_title">TMDB Rating (0.5 ~ 5.0)</string>
     <string name="tmdb_rating_success">Rating submitted to TMDB.</string>
     <string name="tmdb_rating_failed">Failed to submit rating.</string>
+
+    <!-- Favorites rating filter -->
+    <string name="filter_rating_all">All</string>
+    <string name="filter_rating_3">3.0★+</string>
+    <string name="filter_rating_4">4.0★+</string>
+    <string name="filter_rating_5">5.0★</string>
 </resources>

@@ -34,6 +34,10 @@ interface UserRatingDao {
     @Query("SELECT * FROM user_ratings")
     suspend fun getAllRatings(): List<UserRatingEntity>
 
+    // 모든 사용자 평점을 실시간 Flow로 조회 (즐겨찾기 평점 필터용)
+    @Query("SELECT * FROM user_ratings")
+    fun getAllRatingsFlow(): Flow<List<UserRatingEntity>>
+
     // 여러 평점을 한 번에 삽입 (복원용)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(ratings: List<UserRatingEntity>)

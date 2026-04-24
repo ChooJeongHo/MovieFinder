@@ -43,6 +43,15 @@ class FavoriteMoviesWidget : AppWidgetProvider() {
     companion object {
         const val ACTION_REFRESH = "com.choo.moviefinder.widget.FAVORITE_ACTION_REFRESH"
 
+        // 외부(ConfigureActivity)에서 단일 위젯 업데이트를 트리거할 수 있도록 공개
+        fun triggerUpdate(
+            context: Context,
+            appWidgetManager: AppWidgetManager,
+            appWidgetId: Int
+        ) {
+            updateAppWidget(context, appWidgetManager, appWidgetId)
+        }
+
         // 위젯 RemoteViews 구성 (ListView 어댑터, 새로고침 버튼, 아이템 클릭 PendingIntent)
         private fun updateAppWidget(
             context: Context,

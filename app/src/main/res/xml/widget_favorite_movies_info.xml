@@ -8,4 +8,5 @@
     android:updatePeriodMillis="3600000"
     android:widgetCategory="home_screen"
     android:description="@string/widget_favorite_description"
-    android:label="@string/widget_favorite_label" />
+    android:label="@string/widget_favorite_label"
+    android:configure="com.choo.moviefinder.presentation.widget.FavoriteMoviesWidgetConfigureActivity" />

@@ -11,6 +11,7 @@ import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
+import com.choo.moviefinder.data.local.dao.ScheduledReminderDao
 import com.choo.moviefinder.data.local.dao.UserRatingDao
 import com.choo.moviefinder.data.local.dao.WatchHistoryDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
@@ -142,6 +143,20 @@ object DatabaseModule {
         }
     }
 
+    // scheduled_reminders 테이블 추가 마이그레이션 (v18 → v19)
+    val MIGRATION_18_19 = object : Migration(18, 19) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `scheduled_reminders` " +
+                    "(`movieId` INTEGER NOT NULL, " +
+                    "`movieTitle` TEXT NOT NULL, " +
+                    "`releaseDate` TEXT NOT NULL, " +
+                    "`scheduledAt` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`movieId`))"
+            )
+        }
+    }
+
     // Room 데이터베이스 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
@@ -153,7 +168,7 @@ object DatabaseModule {
         )
             .addMigrations(
                 MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
-                MIGRATION_16_17, MIGRATION_17_18
+                MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19
             )
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
@@ -220,5 +235,12 @@ object DatabaseModule {
     @Singleton
     fun provideMovieTagDao(database: MovieDatabase): MovieTagDao {
         return database.movieTagDao()
+    }
+
+    // 예약된 알림 DAO를 제공한다
+    @Provides
+    @Singleton
+    fun provideScheduledReminderDao(database: MovieDatabase): ScheduledReminderDao {
+        return database.scheduledReminderDao()
     }
 }

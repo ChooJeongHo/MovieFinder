@@ -19,4 +19,7 @@ interface UserRatingRepository {
 
     // 평점별 개수 분포를 Flow로 반환한다
     fun getRatingDistribution(): Flow<List<RatingBucket>>
+
+    // 모든 사용자 평점을 실시간 Flow로 반환한다 (즐겨찾기 평점 필터용)
+    fun getAllUserRatings(): Flow<Map<Int, Float>>
 }

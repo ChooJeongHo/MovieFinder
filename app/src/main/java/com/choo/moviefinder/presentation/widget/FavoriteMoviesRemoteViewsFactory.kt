@@ -1,5 +1,6 @@
 package com.choo.moviefinder.presentation.widget
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -9,15 +10,20 @@ import androidx.room.Room
 import com.choo.moviefinder.R
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
+import com.choo.moviefinder.data.local.entity.WatchlistEntity
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.util.Locale
 
 class FavoriteMoviesRemoteViewsFactory(
-    private val context: Context
+    private val context: Context,
+    private val appWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
 ) : RemoteViewsService.RemoteViewsFactory {
 
-    private val movies = mutableListOf<FavoriteMovieEntity>()
+    // 현재 표시 중인 영화 목록 (즐겨찾기 또는 워치리스트)
+    private data class MovieItem(val id: Int, val title: String, val voteAverage: Double)
+
+    private val movies = mutableListOf<MovieItem>()
     private var loadFailed = false
 
     private val database get() = Companion.getDatabase(context.applicationContext)
@@ -27,17 +33,30 @@ class FavoriteMoviesRemoteViewsFactory(
         // Initial data will be loaded in onDataSetChanged
     }
 
-    // Room DB에서 즐겨찾기 영화 목록을 동기 호출로 가져옴
+    // SharedPreferences에서 위젯 타입을 읽어 즐겨찾기 또는 워치리스트를 동기 호출로 가져옴
     override fun onDataSetChanged() {
+        val widgetType = FavoriteMoviesWidgetConfigureActivity.loadWidgetType(context, appWidgetId)
         try {
-            val favorites = runBlocking {
-                database.favoriteMovieDao().getAllFavoritesOnce()
+            val isWatchlist =
+                widgetType == FavoriteMoviesWidgetConfigureActivity.WIDGET_TYPE_WATCHLIST
+            val items: List<MovieItem> = if (isWatchlist) {
+                runBlocking {
+                    database.watchlistDao().getAllWatchlistOnce()
+                }.map { entity: WatchlistEntity ->
+                    MovieItem(entity.id, entity.title, entity.voteAverage)
+                }
+            } else {
+                runBlocking {
+                    database.favoriteMovieDao().getAllFavoritesOnce()
+                }.map { entity: FavoriteMovieEntity ->
+                    MovieItem(entity.id, entity.title, entity.voteAverage)
+                }
             }
             movies.clear()
-            movies.addAll(favorites)
+            movies.addAll(items)
             loadFailed = false
         } catch (e: Exception) {
-            Timber.w(e, "위젯: 즐겨찾기 영화 가져오기 실패")
+            Timber.w(e, "위젯: 영화 목록 가져오기 실패 (type=$widgetType)")
             movies.clear()
             loadFailed = true
         }
@@ -55,7 +74,7 @@ class FavoriteMoviesRemoteViewsFactory(
     override fun getViewAt(position: Int): RemoteViews {
         if (loadFailed) {
             return RemoteViews(context.packageName, R.layout.widget_movie_item).apply {
-                setTextViewText(R.id.movie_title, context.getString(R.string.widget_favorite_empty))
+                setTextViewText(R.id.movie_title, context.getString(R.string.widget_empty))
                 setTextViewText(R.id.movie_rating, "")
             }
         }

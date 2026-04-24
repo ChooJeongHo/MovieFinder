@@ -106,6 +106,9 @@
     <string name="reminder_count">알림 %d개</string>
     <string name="reminder_history_title">예약된 알림</string>
     <string name="reminder_none">예약된 알림이 없습니다.</string>
+    <string name="reminder_cancel_confirm_title">알림 취소</string>
+    <string name="reminder_cancel_confirm_message">"%s" 개봉 알림을 취소할까요?</string>
+    <string name="reminder_cancelled">알림이 취소되었습니다.</string>
 
     <!-- 평점 -->
     <string name="rating_format">%.1f</string>
@@ -359,6 +362,11 @@
     <string name="tmdb_rating_success">TMDB에 평점이 제출되었습니다.</string>
     <string name="tmdb_rating_failed">평점 제출에 실패했습니다.</string>
 
+    <!-- 위젯 설정 -->
+    <string name="widget_configure_title">위젯에 표시할 목록을 선택하세요</string>
+    <string name="widget_configure_option_favorites">즐겨찾기 (Favorites)</string>
+    <string name="widget_configure_option_watchlist">워치리스트 (Watchlist)</string>
+
     <!-- 온보딩 -->
     <string name="onboarding_skip">건너뛰기</string>
     <string name="onboarding_next">다음</string>
@@ -369,4 +377,10 @@
     <string name="onboarding_page2_desc">보고 싶은 영화를 워치리스트에, 마음에 든 영화는 즐겨찾기에 추가하세요</string>
     <string name="onboarding_page3_title">시청 통계로 취향 분석</string>
     <string name="onboarding_page3_desc">월별 시청 현황과 장르 분포를 한눈에 확인하고 나만의 취향을 발견하세요</string>
+
+    <!-- 즐겨찾기 평점 필터 -->
+    <string name="filter_rating_all">전체</string>
+    <string name="filter_rating_3">3.0★ 이상</string>
+    <string name="filter_rating_4">4.0★ 이상</string>
+    <string name="filter_rating_5">5.0★</string>
 </resources>
