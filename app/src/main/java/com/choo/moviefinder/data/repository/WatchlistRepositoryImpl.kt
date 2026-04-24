@@ -40,4 +40,9 @@ class WatchlistRepositoryImpl @Inject constructor(
     override fun isInWatchlist(movieId: Int): Flow<Boolean> {
         return watchlistDao.isInWatchlist(movieId)
     }
+
+    // 제목으로 워치리스트 영화를 검색 (오프라인 검색용)
+    override suspend fun searchWatchlistMovies(query: String): List<Movie> {
+        return watchlistDao.searchWatchlist(query).map { it.toDomain() }
+    }
 }

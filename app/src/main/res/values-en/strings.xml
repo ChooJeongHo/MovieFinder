@@ -90,6 +90,14 @@
 
     <!-- Network -->
     <string name="offline_message">You are offline. Please check your network connection.</string>
+    <string name="offline_local_search_banner">You are offline. Searching locally.</string>
+    <string name="offline_local_search_snackbar">You are offline. Searching favorites and watchlist.</string>
+    <string name="offline_no_local_results">No results found in local storage.</string>
+
+    <!-- Reminder History -->
+    <string name="reminder_count">%d Reminders</string>
+    <string name="reminder_history_title">Scheduled Reminders</string>
+    <string name="reminder_none">No scheduled reminders.</string>
 
     <!-- Rating -->
     <string name="rating_format">%.1f</string>
@@ -162,6 +170,9 @@
 
     <!-- Widget -->
     <string name="widget_name">MovieFinder Popular Movies</string>
+    <string name="widget_favorite_label">Favorites Widget</string>
+    <string name="widget_favorite_description">Shows your favorite movies on the home screen</string>
+    <string name="widget_favorite_empty">No favorites yet</string>
     <string name="widget_empty">Unable to load movie list</string>
     <string name="widget_loading">Loading…</string>
     <string name="widget_goal_name">MovieFinder Watch Goal</string>
@@ -335,6 +346,8 @@
     <string name="tmdb_not_connected">No TMDB account connected.</string>
     <string name="tmdb_connect">Connect TMDB Account</string>
     <string name="tmdb_disconnect">Disconnect</string>
+    <string name="tmdb_sync">Import from TMDB</string>
+    <string name="tmdb_syncing">Syncing…</string>
     <string name="tmdb_auth_success">TMDB account connected successfully.</string>
     <string name="tmdb_auth_failed">TMDB authentication failed.</string>
     <string name="tmdb_submit_rating">Submit Rating to TMDB</string>

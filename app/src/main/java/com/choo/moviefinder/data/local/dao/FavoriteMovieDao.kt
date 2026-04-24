@@ -49,6 +49,10 @@ abstract class FavoriteMovieDao {
         }
     }
 
+    // 제목으로 즐겨찾기 영화를 검색 (오프라인 검색용)
+    @Query("SELECT * FROM favorite_movies WHERE title LIKE '%' || :query || '%' ORDER BY addedAt DESC")
+    abstract suspend fun searchFavorites(query: String): List<FavoriteMovieEntity>
+
     // 모든 즐겨찾기를 일회성으로 조회 (백업용)
     @Query("SELECT * FROM favorite_movies ORDER BY addedAt DESC")
     abstract suspend fun getAllFavoritesOnce(): List<FavoriteMovieEntity>

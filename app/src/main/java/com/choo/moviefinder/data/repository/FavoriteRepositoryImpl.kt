@@ -40,4 +40,9 @@ class FavoriteRepositoryImpl @Inject constructor(
     override fun isFavorite(movieId: Int): Flow<Boolean> {
         return favoriteMovieDao.isFavorite(movieId)
     }
+
+    // 제목으로 즐겨찾기 영화를 검색 (오프라인 검색용)
+    override suspend fun searchFavoriteMovies(query: String): List<Movie> {
+        return favoriteMovieDao.searchFavorites(query).map { it.toDomain() }
+    }
 }

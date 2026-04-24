@@ -22,6 +22,19 @@
         app:tabSelectedTextColor="?attr/colorPrimary"
         app:tabTextColor="?attr/colorOnSurface" />
 
+    <com.google.android.material.chip.Chip
+        android:id="@+id/chip_reminders"
+        style="@style/Widget.MaterialComponents.Chip.Action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_md"
+        android:layout_marginTop="@dimen/spacing_xs"
+        android:layout_marginBottom="@dimen/spacing_xs"
+        android:text="@string/reminder_history_title"
+        android:visibility="gone"
+        app:chipIcon="@drawable/ic_history"
+        app:chipIconTint="?attr/colorPrimary" />
+
     <HorizontalScrollView
         android:id="@+id/tag_filter_scroll"
         android:layout_width="match_parent"

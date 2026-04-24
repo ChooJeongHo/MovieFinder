@@ -17,6 +17,9 @@ interface PreferencesRepository {
     // TMDB 세션 ID를 일회성으로 조회한다
     suspend fun getTmdbSessionIdOnce(): String?
 
+    // TMDB 액세스 토큰과 계정 ID를 일회성으로 조회한다 (Pair<accessToken, accountId>)
+    suspend fun getTmdbAuthOnce(): Pair<String?, String?>
+
     // 현재 테마 모드 설정을 Flow로 반환한다
     fun getThemeMode(): Flow<ThemeMode>
 

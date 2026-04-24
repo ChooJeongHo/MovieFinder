@@ -2,6 +2,7 @@ package com.choo.moviefinder.presentation.settings
 
 import android.app.Dialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -28,6 +29,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -127,6 +129,9 @@ class SettingsFragment : Fragment() {
         binding.itemImportData.setOnClickListener {
             openDocumentLauncher.launch(arrayOf("application/json"))
         }
+        binding.btnTmdbConnect.setOnClickListener { viewModel.startTmdbAuth() }
+        binding.btnTmdbDisconnect.setOnClickListener { viewModel.disconnectTmdb() }
+        binding.btnTmdbSync.setOnClickListener { viewModel.syncTmdbAccount() }
         if (BuildConfig.DEBUG) {
             binding.itemShareLogs.isVisible = true
             binding.dividerShareLogs.isVisible = true
@@ -215,6 +220,45 @@ class SettingsFragment : Fragment() {
                         binding.itemImportData.isEnabled = !importing
                         binding.itemImportData.alpha = if (importing) 0.5f else 1.0f
                     }
+                }
+                observeTmdbFlows(this)
+            }
+        }
+    }
+
+    // TMDB 연결 상태, 인증 URL 열기, 동기화 결과/상태 Flow 수집
+    private fun observeTmdbFlows(scope: CoroutineScope) {
+        scope.launch {
+            viewModel.tmdbAccessToken.collect { token ->
+                val connected = token != null
+                binding.tvTmdbStatus.text = if (connected) {
+                    getString(R.string.tmdb_connected)
+                } else {
+                    getString(R.string.tmdb_not_connected)
+                }
+                binding.btnTmdbConnect.isVisible = !connected
+                binding.btnTmdbDisconnect.isVisible = connected
+                binding.btnTmdbSync.isVisible = connected
+            }
+        }
+        scope.launch {
+            viewModel.openTmdbAuth.collect { url ->
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                startActivity(intent)
+            }
+        }
+        scope.launch {
+            viewModel.syncResult.collect { message ->
+                Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
+            }
+        }
+        scope.launch {
+            viewModel.isSyncing.collect { syncing ->
+                binding.btnTmdbSync.isEnabled = !syncing
+                binding.btnTmdbSync.text = if (syncing) {
+                    getString(R.string.tmdb_syncing)
+                } else {
+                    getString(R.string.tmdb_sync)
                 }
             }
         }

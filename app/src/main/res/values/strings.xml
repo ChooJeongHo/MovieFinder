@@ -98,6 +98,14 @@
 
     <!-- 네트워크 -->
     <string name="offline_message">오프라인 상태입니다. 네트워크 연결을 확인해 주세요.</string>
+    <string name="offline_local_search_banner">오프라인 상태입니다. 로컬에서 검색합니다.</string>
+    <string name="offline_local_search_snackbar">오프라인 상태입니다. 즐겨찾기/워치리스트에서 검색합니다.</string>
+    <string name="offline_no_local_results">로컬 저장 목록에서 결과를 찾을 수 없습니다.</string>
+
+    <!-- 알림 기록 -->
+    <string name="reminder_count">알림 %d개</string>
+    <string name="reminder_history_title">예약된 알림</string>
+    <string name="reminder_none">예약된 알림이 없습니다.</string>
 
     <!-- 평점 -->
     <string name="rating_format">%.1f</string>
@@ -170,6 +178,9 @@
 
     <!-- 위젯 -->
     <string name="widget_name">MovieFinder 인기 영화</string>
+    <string name="widget_favorite_label">즐겨찾기 위젯</string>
+    <string name="widget_favorite_description">즐겨찾기 영화 목록을 홈 화면에 표시합니다</string>
+    <string name="widget_favorite_empty">즐겨찾기가 비어 있습니다</string>
     <string name="widget_empty">영화 목록을 불러올 수 없습니다</string>
     <string name="widget_loading">로딩 중…</string>
     <string name="widget_goal_name">MovieFinder 시청 목표</string>
@@ -339,6 +350,8 @@
     <string name="tmdb_not_connected">TMDB 계정이 연결되어 있지 않습니다.</string>
     <string name="tmdb_connect">TMDB 계정 연결</string>
     <string name="tmdb_disconnect">연결 해제</string>
+    <string name="tmdb_sync">TMDB에서 가져오기</string>
+    <string name="tmdb_syncing">동기화 중…</string>
     <string name="tmdb_auth_success">TMDB 계정이 연결되었습니다.</string>
     <string name="tmdb_auth_failed">TMDB 인증에 실패했습니다.</string>
     <string name="tmdb_submit_rating">TMDB에 평점 제출</string>

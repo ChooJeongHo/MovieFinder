@@ -18,6 +18,7 @@ import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
+import com.choo.moviefinder.domain.usecase.SearchLocalMoviesUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
 import com.choo.moviefinder.domain.usecase.SearchPersonUseCase
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode
@@ -45,6 +46,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
+@Suppress("TooManyFunctions")
 class SearchViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val searchMoviesUseCase: SearchMoviesUseCase,
@@ -55,6 +57,7 @@ class SearchViewModel @Inject constructor(
     private val deleteSearchQueryUseCase: DeleteSearchQueryUseCase,
     private val clearSearchHistoryUseCase: ClearSearchHistoryUseCase,
     private val searchPersonUseCase: SearchPersonUseCase,
+    private val searchLocalMoviesUseCase: SearchLocalMoviesUseCase,
     getWatchHistoryUseCase: GetWatchHistoryUseCase
 ) : ViewModel() {
 
@@ -93,6 +96,9 @@ class SearchViewModel @Inject constructor(
 
     private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
+
+    private val _offlineResults = MutableStateFlow<List<Movie>>(emptyList())
+    val offlineResults: StateFlow<List<Movie>> = _offlineResults.asStateFlow()
 
     val recentSearches = getRecentSearchesUseCase()
         .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
@@ -267,6 +273,29 @@ class SearchViewModel @Inject constructor(
     // 배우 검색 쿼리를 StateFlow에 전달 (300ms debounce 적용)
     fun onPersonSearch(query: String) {
         _personSearchQuery.value = query
+    }
+
+    // 오프라인 상태에서 즐겨찾기 + 워치리스트에서 로컬 검색 실행
+    fun searchOffline(query: String) {
+        if (query.isBlank()) {
+            _offlineResults.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            try {
+                _offlineResults.value = searchLocalMoviesUseCase(query)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "로컬 오프라인 검색 실패, 검색어: $query")
+                _offlineResults.value = emptyList()
+            }
+        }
+    }
+
+    // 오프라인 검색 결과 초기화
+    fun clearOfflineResults() {
+        _offlineResults.value = emptyList()
     }
 
     private data class SearchParams(

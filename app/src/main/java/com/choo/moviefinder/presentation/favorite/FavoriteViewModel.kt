@@ -12,6 +12,7 @@ import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.core.util.PosterTagSuggester
 import com.choo.moviefinder.data.local.dao.WatchlistDao
+import com.choo.moviefinder.data.local.entity.WatchlistEntity
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieTag
 import com.choo.moviefinder.domain.usecase.AddTagToMovieUseCase
@@ -94,6 +95,9 @@ class FavoriteViewModel @Inject constructor(
     private val _reminderSnackbar = Channel<String>(Channel.CONFLATED)
     val reminderSnackbar = _reminderSnackbar.receiveAsFlow()
 
+    private val _scheduledReminders = MutableStateFlow<List<WatchlistEntity>>(emptyList())
+    val scheduledReminders: StateFlow<List<WatchlistEntity>> = _scheduledReminders.asStateFlow()
+
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleFavorite(movie: Movie) = viewModelScope.launchWithErrorHandler(
         onError = {
@@ -173,6 +177,13 @@ class FavoriteViewModel @Inject constructor(
                 request
             )
             _reminderSnackbar.send(context.getString(com.choo.moviefinder.R.string.reminder_set_confirmation))
+        }
+    }
+
+    // 알림이 예약된 워치리스트 영화 목록을 로드한다
+    fun loadScheduledReminders() {
+        viewModelScope.launch {
+            _scheduledReminders.value = watchlistDao.getMoviesWithReminder()
         }
     }
 

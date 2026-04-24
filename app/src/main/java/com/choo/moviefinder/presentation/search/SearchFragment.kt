@@ -26,11 +26,14 @@ import com.choo.moviefinder.R
 import androidx.paging.CombinedLoadStates
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.NetworkMonitor
+import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.core.util.computeWindowWidthSizeClass
 import com.choo.moviefinder.core.util.toMovieGridSpanCount
 import com.choo.moviefinder.databinding.FragmentSearchBinding
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
+import com.choo.moviefinder.presentation.adapter.MovieAdapter
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
 import com.choo.moviefinder.presentation.adapter.PersonSearchAdapter
@@ -45,6 +48,7 @@ import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import javax.inject.Inject
 
 @Suppress("TooManyFunctions")
 @AndroidEntryPoint
@@ -55,10 +59,13 @@ class SearchFragment : Fragment() {
 
     private val viewModel: SearchViewModel by viewModels()
 
+    @Inject lateinit var networkMonitor: NetworkMonitor
+
     private lateinit var searchAdapter: MoviePagingAdapter
     private lateinit var recentSearchAdapter: RecentSearchAdapter
     private lateinit var personSearchAdapter: PersonSearchAdapter
     private lateinit var suggestionHistoryAdapter: HorizontalMovieAdapter
+    private lateinit var offlineResultsAdapter: MovieAdapter
     private var activeDialog: Dialog? = null
 
     private val yearFilterItems: Array<String> by lazy {
@@ -101,6 +108,9 @@ class SearchFragment : Fragment() {
                 viewModel.onPersonSearch(query)
             } else {
                 viewModel.onSearchQueryChange(query)
+                if (query.isBlank()) {
+                    viewModel.clearOfflineResults()
+                }
                 updateVisibility(query)
             }
         }
@@ -111,7 +121,15 @@ class SearchFragment : Fragment() {
                 if (query.isNotBlank()) {
                     if (viewModel.searchMode.value == SearchMode.PERSON) {
                         viewModel.onPersonSearch(query)
+                    } else if (!networkMonitor.isConnected.value) {
+                        viewModel.searchOffline(query)
+                        Snackbar.make(
+                            binding.root,
+                            R.string.offline_local_search_snackbar,
+                            Snackbar.LENGTH_SHORT
+                        ).show()
                     } else {
+                        viewModel.clearOfflineResults()
                         viewModel.onSearch(query)
                     }
                 }
@@ -197,6 +215,7 @@ class SearchFragment : Fragment() {
         }
 
         setupSuggestionHistoryRecyclerView()
+        setupOfflineResultsRecyclerView()
     }
 
     // 시청 기록 제안 RecyclerView 초기화 (가로 스크롤)
@@ -214,6 +233,24 @@ class SearchFragment : Fragment() {
         binding.rvSuggestionHistory.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = suggestionHistoryAdapter
+        }
+    }
+
+    // 오프라인 검색 결과 RecyclerView 초기화
+    private fun setupOfflineResultsRecyclerView() {
+        offlineResultsAdapter = MovieAdapter(
+            onMovieClick = { movieId, posterView ->
+                if (findNavController().currentDestination?.id == R.id.searchFragment) {
+                    val action = SearchFragmentDirections.actionSearchToDetail(movieId)
+                    val extras = FragmentNavigatorExtras(posterView to "poster_$movieId")
+                    findNavController().navigate(action, extras)
+                }
+            }
+        )
+        binding.rvOfflineResults.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            setHasFixedSize(false)
+            adapter = offlineResultsAdapter
         }
     }
 
@@ -248,6 +285,7 @@ class SearchFragment : Fragment() {
                 launch { viewModel.searchResults.collectLatest { searchAdapter.submitData(it) } }
                 launch { searchAdapter.loadStateFlow.collectLatest { handleLoadStates(it) } }
                 launch { viewModel.snackbarEvent.collect { showSearchSnackbar(it) } }
+                launch { viewModel.offlineResults.collect { handleOfflineResults(it) } }
             }
         }
     }
@@ -382,6 +420,24 @@ class SearchFragment : Fragment() {
             ErrorMessageProvider.getMessage(requireContext(), errorType),
             Snackbar.LENGTH_SHORT
         ).show()
+    }
+
+    private fun handleOfflineResults(results: List<Movie>) {
+        val isOffline = !networkMonitor.isConnected.value
+        val query = binding.etSearch.text?.toString()?.trim() ?: ""
+        if (isOffline && query.isNotBlank()) {
+            offlineResultsAdapter.submitList(results)
+            binding.offlineResultsSection.isVisible = true
+            binding.rvSearchResults.isVisible = false
+            binding.shimmerView.shimmerLayout.stopShimmer()
+            binding.shimmerView.shimmerLayout.isVisible = false
+            binding.noResultsSection.isVisible = false
+            binding.errorView.layoutError.isVisible = false
+            binding.emptyInitial.layoutEmpty.isVisible = false
+            binding.recentSearchesSection.isVisible = false
+        } else {
+            binding.offlineResultsSection.isVisible = false
+        }
     }
 
     // 보기 모드에 따라 GridLayoutManager 또는 LinearLayoutManager 적용
@@ -695,6 +751,7 @@ class SearchFragment : Fragment() {
         binding.rvRecentSearches.adapter = null
         binding.rvPersonResults.adapter = null
         binding.rvSuggestionHistory.adapter = null
+        binding.rvOfflineResults.adapter = null
         _binding = null
     }
 

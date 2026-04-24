@@ -17,4 +17,7 @@ interface FavoriteRepository {
 
     // 영화 ID로 즐겨찾기 여부를 Flow로 반환한다
     fun isFavorite(movieId: Int): Flow<Boolean>
+
+    // 제목으로 즐겨찾기 영화를 검색한다 (오프라인 검색용)
+    suspend fun searchFavoriteMovies(query: String): List<Movie>
 }

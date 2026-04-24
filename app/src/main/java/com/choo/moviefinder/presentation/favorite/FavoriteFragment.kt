@@ -28,10 +28,14 @@ import com.choo.moviefinder.domain.model.MovieTag
 import com.choo.moviefinder.presentation.adapter.MovieAdapter
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.choo.moviefinder.data.local.entity.WatchlistEntity
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
@@ -72,6 +76,9 @@ class FavoriteFragment : Fragment() {
         updateSortLabel(viewModel.sortOrder.value)
         collectCurrentTab()
         observeViewModelFlows()
+        if (currentTab == TAB_WATCHLIST) {
+            viewModel.loadScheduledReminders()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -176,8 +183,12 @@ class FavoriteFragment : Fragment() {
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 currentTab = tab.position
-                // 워치리스트 탭 전환 시 태그 필터 초기화
-                if (currentTab == TAB_WATCHLIST) viewModel.onTagSelected(null)
+                // 워치리스트 탭 전환 시 태그 필터 초기화 및 알림 목록 로드
+                if (currentTab == TAB_WATCHLIST) {
+                    viewModel.onTagSelected(null)
+                    viewModel.loadScheduledReminders()
+                }
+                updateReminderChipVisibility()
                 updateTagFilterVisibility()
                 collectCurrentTab()
             }
@@ -212,6 +223,11 @@ class FavoriteFragment : Fragment() {
                 launch {
                     viewModel.reminderSnackbar.collect { message ->
                         Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                launch {
+                    viewModel.scheduledReminders.collect { reminders ->
+                        updateReminderChip(reminders)
                     }
                 }
             }
@@ -255,6 +271,40 @@ class FavoriteFragment : Fragment() {
     private fun updateTagFilterVisibility() {
         binding.tagFilterScroll.isVisible =
             currentTab == TAB_FAVORITES && viewModel.allTagNames.value.isNotEmpty()
+    }
+
+    // 알림 칩 텍스트와 가시성 갱신
+    private fun updateReminderChip(reminders: List<WatchlistEntity>) {
+        updateReminderChipVisibility()
+        if (reminders.isNotEmpty()) {
+            binding.chipReminders.text = getString(R.string.reminder_count, reminders.size)
+            binding.chipReminders.setOnClickListener { showRemindersDialog(reminders) }
+        }
+    }
+
+    // 워치리스트 탭에서만 알림 칩 표시
+    private fun updateReminderChipVisibility() {
+        val reminders = viewModel.scheduledReminders.value
+        binding.chipReminders.isVisible = currentTab == TAB_WATCHLIST && reminders.isNotEmpty()
+    }
+
+    // 예약된 알림 목록 다이얼로그 표시
+    private fun showRemindersDialog(reminders: List<WatchlistEntity>) {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val message = if (reminders.isEmpty()) {
+            getString(R.string.reminder_none)
+        } else {
+            reminders.joinToString("\n") { entity ->
+                val dateStr = entity.reminderDate?.let { dateFormat.format(Date(it)) } ?: "-"
+                "• ${entity.title}  ($dateStr)"
+            }
+        }
+        activeDialog?.dismiss()
+        activeDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.reminder_history_title)
+            .setMessage(message)
+            .setPositiveButton(R.string.action_close, null)
+            .show()
     }
 
     private fun collectCurrentTab() {

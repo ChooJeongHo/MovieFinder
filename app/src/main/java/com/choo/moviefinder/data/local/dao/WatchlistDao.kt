@@ -49,6 +49,10 @@ abstract class WatchlistDao {
         }
     }
 
+    // 제목으로 워치리스트 영화를 검색 (오프라인 검색용)
+    @Query("SELECT * FROM watchlist_movies WHERE title LIKE '%' || :query || '%' ORDER BY addedAt DESC")
+    abstract suspend fun searchWatchlist(query: String): List<WatchlistEntity>
+
     // 모든 워치리스트를 일회성으로 조회 (백업용)
     @Query("SELECT * FROM watchlist_movies ORDER BY addedAt DESC")
     abstract suspend fun getAllWatchlistOnce(): List<WatchlistEntity>

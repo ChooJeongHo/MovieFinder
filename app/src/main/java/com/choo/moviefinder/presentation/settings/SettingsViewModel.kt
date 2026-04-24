@@ -18,6 +18,7 @@ import com.choo.moviefinder.domain.usecase.ImportUserDataUseCase
 import com.choo.moviefinder.domain.usecase.RevokeTmdbAuthUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
+import com.choo.moviefinder.domain.usecase.SyncTmdbAccountUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -45,6 +46,7 @@ class SettingsViewModel @Inject constructor(
     getTmdbAccessTokenUseCase: GetTmdbAccessTokenUseCase,
     private val getTmdbRequestTokenUseCase: GetTmdbRequestTokenUseCase,
     private val revokeTmdbAuthUseCase: RevokeTmdbAuthUseCase,
+    private val syncTmdbAccountUseCase: SyncTmdbAccountUseCase,
 ) : ViewModel() {
 
     val currentThemeMode: StateFlow<ThemeMode> = getThemeModeUseCase()
@@ -75,6 +77,12 @@ class SettingsViewModel @Inject constructor(
 
     private val _openTmdbAuth = Channel<String>(Channel.CONFLATED)
     val openTmdbAuth = _openTmdbAuth.receiveAsFlow()
+
+    private val _syncResult = Channel<String>(Channel.CONFLATED)
+    val syncResult = _syncResult.receiveAsFlow()
+
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing
 
     // 파일 저장 런처가 실행되기 전까지 JSON을 임시 보관 (TransactionTooLargeException 방지로 SavedStateHandle 미사용)
     @Volatile
@@ -170,6 +178,26 @@ class SettingsViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "TMDB 계정 연결 해제 실패")
+            }
+        }
+    }
+
+    // TMDB 즐겨찾기·워치리스트를 로컬 DB에 동기화한다
+    fun syncTmdbAccount() {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            try {
+                val result = syncTmdbAccountUseCase()
+                _syncResult.trySend(
+                    "즐겨찾기 ${result.favoritesAdded}개, 워치리스트 ${result.watchlistAdded}개 가져왔습니다."
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "TMDB 동기화 실패")
+                _syncResult.trySend("동기화 실패: ${e.message}")
+            } finally {
+                _isSyncing.value = false
             }
         }
     }

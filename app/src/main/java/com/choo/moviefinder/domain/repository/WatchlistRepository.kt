@@ -17,4 +17,7 @@ interface WatchlistRepository {
 
     // 영화 ID로 워치리스트 포함 여부를 Flow로 반환한다
     fun isInWatchlist(movieId: Int): Flow<Boolean>
+
+    // 제목으로 워치리스트 영화를 검색한다 (오프라인 검색용)
+    suspend fun searchWatchlistMovies(query: String): List<Movie>
 }

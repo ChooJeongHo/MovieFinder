@@ -85,4 +85,10 @@ class PreferencesRepositoryImpl @Inject constructor(
     // TMDB 세션 ID를 일회성으로 조회
     override suspend fun getTmdbSessionIdOnce(): String? =
         userSettingsStore.data.map { it.tmdbSessionId }.first()
+
+    // TMDB 액세스 토큰과 계정 ID를 일회성으로 조회
+    override suspend fun getTmdbAuthOnce(): Pair<String?, String?> {
+        val settings = userSettingsStore.data.first()
+        return Pair(settings.tmdbAccessToken, settings.tmdbAccountId)
+    }
 }
