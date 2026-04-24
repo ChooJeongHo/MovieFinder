@@ -272,6 +272,9 @@ dependencies {
     // Window
     implementation(libs.androidx.window)
 
+    // ViewPager2
+    implementation(libs.androidx.viewpager2)
+
     // Timber
     implementation(libs.timber)
 

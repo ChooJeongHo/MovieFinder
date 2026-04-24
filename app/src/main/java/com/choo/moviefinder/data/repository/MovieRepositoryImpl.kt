@@ -13,6 +13,7 @@ import com.choo.moviefinder.data.paging.DiscoverPagingSource
 import com.choo.moviefinder.data.paging.MoviePagingSource
 import com.choo.moviefinder.data.paging.MovieRemoteMediator
 import com.choo.moviefinder.data.paging.TrendingPagingSource
+import com.choo.moviefinder.data.paging.UpcomingPagingSource
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.data.util.Constants
@@ -67,6 +68,16 @@ class MovieRepositoryImpl @Inject constructor(
             config = Constants.DEFAULT_PAGING_CONFIG,
             pagingSourceFactory = {
                 TrendingPagingSource(apiService)
+            }
+        ).flow
+    }
+
+    // 개봉 예정 영화를 네트워크 페이징 조회
+    override fun getUpcomingMovies(): Flow<PagingData<Movie>> {
+        return Pager(
+            config = Constants.DEFAULT_PAGING_CONFIG,
+            pagingSourceFactory = {
+                UpcomingPagingSource(apiService)
             }
         ).flow
     }

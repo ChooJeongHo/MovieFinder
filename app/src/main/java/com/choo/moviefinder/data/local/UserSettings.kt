@@ -6,5 +6,6 @@ import kotlinx.serialization.Serializable
 data class UserSettings(
     val themeMode: String = "SYSTEM",
     val monthlyWatchGoal: Int = 0,
-    val lastGoalNotifiedMonth: String = ""
+    val lastGoalNotifiedMonth: String = "",
+    val onboardingCompleted: Boolean = false
 )

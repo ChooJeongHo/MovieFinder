@@ -19,6 +19,9 @@ interface MovieRepository {
     // 일별 트렌딩 영화 목록을 페이징 데이터로 반환한다
     fun getTrendingMovies(): Flow<PagingData<Movie>>
 
+    // 개봉 예정 영화 목록을 페이징 데이터로 반환한다
+    fun getUpcomingMovies(): Flow<PagingData<Movie>>
+
     // 검색어와 연도 필터로 영화를 검색하여 페이징 데이터로 반환한다
     fun searchMovies(query: String, year: Int? = null): Flow<PagingData<Movie>>
 

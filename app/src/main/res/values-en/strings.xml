@@ -164,6 +164,10 @@
     <string name="widget_name">MovieFinder Popular Movies</string>
     <string name="widget_empty">Unable to load movie list</string>
     <string name="widget_loading">Loading…</string>
+    <string name="widget_goal_name">MovieFinder Watch Goal</string>
+    <string name="widget_goal_title">Watch Goal</string>
+    <string name="widget_goal_this_month">This month</string>
+    <string name="widget_goal_progress">%1$d / %2$d</string>
 
     <!-- Scroll -->
     <string name="cd_scroll_to_top">Scroll to top</string>

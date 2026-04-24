@@ -96,6 +96,14 @@ interface MovieApiService {
         @Query("language") language: String = Constants.LANGUAGE_KO
     ): MovieListResponse
 
+    // 개봉 예정 영화 목록 조회
+    @GET("movie/upcoming")
+    suspend fun getUpcomingMovies(
+        @Query("page") page: Int,
+        @Query("language") language: String = Constants.LANGUAGE_KO,
+        @Query("region") region: String = "KR"
+    ): MovieListResponse
+
     // 장르/정렬/연도 기반 영화 탐색
     @GET("discover/movie")
     suspend fun discoverMovies(

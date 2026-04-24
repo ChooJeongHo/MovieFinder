@@ -92,7 +92,7 @@ class HomeFragment : Fragment() {
                 movieAdapter.itemCount
             }
             setHasFixedSize(true)
-            // 탭 전환 시 ViewHolder 재생성 비용 절감: 탭 수(3) × 화면에 보이는 최대 아이템 수 기준으로 풀 크기 확장
+            // 탭 전환 시 ViewHolder 재생성 비용 절감: 탭 수(4) × 화면에 보이는 최대 아이템 수 기준으로 풀 크기 확장
             recycledViewPool.setMaxRecycledViews(MoviePagingAdapter.VIEW_TYPE_GRID, POOL_SIZE_GRID)
             recycledViewPool.setMaxRecycledViews(MoviePagingAdapter.VIEW_TYPE_LIST, POOL_SIZE_LIST)
             adapter = movieAdapter.withLoadStateFooter(
@@ -156,11 +156,12 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // 현재 상영작/인기 영화/트렌딩 탭 생성 및 탭 전환 리스너 설정
+    // 현재 상영작/인기 영화/트렌딩/개봉 예정 탭 생성 및 탭 전환 리스너 설정
     private fun setupTabs() {
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_now_playing))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_popular))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_trending))
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_upcoming))
 
         if (currentTab != HomeTab.NOW_PLAYING) {
             binding.tabLayout.getTabAt(currentTab.ordinal)?.select()
@@ -234,6 +235,7 @@ class HomeFragment : Fragment() {
                     HomeTab.NOW_PLAYING -> viewModel.nowPlayingMovies
                     HomeTab.POPULAR -> viewModel.popularMovies
                     HomeTab.TRENDING -> viewModel.trendingMovies
+                    HomeTab.UPCOMING -> viewModel.upcomingMovies
                 }
                 flow.collectLatest { pagingData ->
                     movieAdapter.submitData(pagingData)

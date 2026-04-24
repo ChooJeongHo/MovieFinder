@@ -10,6 +10,7 @@
     <string name="tab_now_playing">현재 상영작</string>
     <string name="tab_popular">인기 영화</string>
     <string name="tab_trending">트렌딩</string>
+    <string name="tab_upcoming">개봉 예정</string>
 
     <!-- 검색 화면 -->
     <string name="search_hint">영화 검색</string>
@@ -171,6 +172,10 @@
     <string name="widget_name">MovieFinder 인기 영화</string>
     <string name="widget_empty">영화 목록을 불러올 수 없습니다</string>
     <string name="widget_loading">로딩 중…</string>
+    <string name="widget_goal_name">MovieFinder 시청 목표</string>
+    <string name="widget_goal_title">시청 목표</string>
+    <string name="widget_goal_this_month">이번 달 시청</string>
+    <string name="widget_goal_progress">%1$d / %2$d편</string>
 
     <!-- 스크롤 -->
     <string name="cd_scroll_to_top">맨 위로 스크롤</string>
@@ -315,4 +320,15 @@
     <string name="action_close">닫기</string>
     <string name="tag_suggested">AI 추천 태그</string>
     <string name="tag_no_suggestions">추천 태그를 찾을 수 없습니다</string>
+
+    <!-- 온보딩 -->
+    <string name="onboarding_skip">건너뛰기</string>
+    <string name="onboarding_next">다음</string>
+    <string name="onboarding_start">시작하기</string>
+    <string name="onboarding_page1_title">영화를 검색하고 발견하세요</string>
+    <string name="onboarding_page1_desc">원하는 영화를 제목으로 검색하거나 장르·정렬 기준으로 탐색하세요</string>
+    <string name="onboarding_page2_title">즐겨찾기와 워치리스트 관리</string>
+    <string name="onboarding_page2_desc">보고 싶은 영화를 워치리스트에, 마음에 든 영화는 즐겨찾기에 추가하세요</string>
+    <string name="onboarding_page3_title">시청 통계로 취향 분석</string>
+    <string name="onboarding_page3_desc">월별 시청 현황과 장르 분포를 한눈에 확인하고 나만의 취향을 발견하세요</string>
 </resources>
