@@ -1,11 +1,17 @@
 package com.choo.moviefinder.presentation.favorite
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.workDataOf
+import com.choo.moviefinder.core.notification.WatchlistReminderWorker
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.core.util.PosterTagSuggester
+import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieTag
 import com.choo.moviefinder.domain.usecase.AddTagToMovieUseCase
@@ -18,6 +24,7 @@ import com.choo.moviefinder.domain.usecase.RemoveTagFromMovieUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -29,7 +36,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
+import androidx.work.WorkManager
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -44,8 +54,12 @@ class FavoriteViewModel @Inject constructor(
     getAllTagNamesUseCase: GetAllTagNamesUseCase,
     private val addTagToMovieUseCase: AddTagToMovieUseCase,
     private val removeTagFromMovieUseCase: RemoveTagFromMovieUseCase,
-    private val posterTagSuggester: PosterTagSuggester
+    private val posterTagSuggester: PosterTagSuggester,
+    private val watchlistDao: WatchlistDao,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    private val workManager = WorkManager.getInstance(context)
 
     private val _sortOrder = MutableStateFlow(FavoriteSortOrder.ADDED_DATE)
     val sortOrder: StateFlow<FavoriteSortOrder> = _sortOrder.asStateFlow()
@@ -76,6 +90,9 @@ class FavoriteViewModel @Inject constructor(
 
     private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
+
+    private val _reminderSnackbar = Channel<String>(Channel.CONFLATED)
+    val reminderSnackbar = _reminderSnackbar.receiveAsFlow()
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleFavorite(movie: Movie) = viewModelScope.launchWithErrorHandler(
@@ -133,5 +150,37 @@ class FavoriteViewModel @Inject constructor(
         }
     ) {
         removeTagFromMovieUseCase(movieId, tagName)
+    }
+
+    // 워치리스트 영화에 알림 날짜를 설정하고 WorkManager 작업을 예약한다
+    fun setWatchlistReminder(movie: Movie, dateMillis: Long) {
+        viewModelScope.launch {
+            watchlistDao.setReminder(movie.id, dateMillis)
+            val delay = dateMillis - System.currentTimeMillis()
+            if (delay <= 0) return@launch
+            val inputData = workDataOf(
+                WatchlistReminderWorker.KEY_MOVIE_ID to movie.id,
+                WatchlistReminderWorker.KEY_MOVIE_TITLE to movie.title
+            )
+            val request = OneTimeWorkRequestBuilder<WatchlistReminderWorker>()
+                .setInputData(inputData)
+                .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                .addTag("watchlist_reminder")
+                .build()
+            workManager.enqueueUniqueWork(
+                "watchlist_reminder_${movie.id}",
+                ExistingWorkPolicy.REPLACE,
+                request
+            )
+            _reminderSnackbar.send(context.getString(com.choo.moviefinder.R.string.reminder_set_confirmation))
+        }
+    }
+
+    // 워치리스트 영화의 알림을 취소한다
+    fun clearWatchlistReminder(movieId: Int) {
+        viewModelScope.launch {
+            watchlistDao.clearReminder(movieId)
+            workManager.cancelUniqueWork("watchlist_reminder_$movieId")
+        }
     }
 }

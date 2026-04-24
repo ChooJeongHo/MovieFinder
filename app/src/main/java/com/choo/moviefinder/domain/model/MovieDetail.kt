@@ -16,7 +16,9 @@ data class MovieDetail(
     val revenue: Long = 0,
     val originalLanguage: String = "",
     val imdbId: String? = null,
-    val status: String = ""
+    val status: String = "",
+    val belongsToCollectionId: Int? = null,
+    val belongsToCollectionName: String? = null
 ) {
     // MovieDetail을 Movie 도메인 모델로 변환
     fun toMovie() = Movie(

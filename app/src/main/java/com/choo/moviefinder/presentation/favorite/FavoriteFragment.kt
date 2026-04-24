@@ -28,6 +28,7 @@ import com.choo.moviefinder.domain.model.MovieTag
 import com.choo.moviefinder.presentation.adapter.MovieAdapter
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
@@ -117,9 +118,10 @@ class FavoriteFragment : Fragment() {
                 }
             },
             onMovieLongClick = { movie ->
-                // 즐겨찾기 탭에서만 태그 관리 다이얼로그 표시
                 if (currentTab == TAB_FAVORITES) {
                     showTagManagementDialog(movie)
+                } else {
+                    showReminderDialog(movie)
                 }
             }
         )
@@ -204,6 +206,11 @@ class FavoriteFragment : Fragment() {
                 launch {
                     viewModel.snackbarEvent.collect { errorType ->
                         val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
+                        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                launch {
+                    viewModel.reminderSnackbar.collect { message ->
                         Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
                     }
                 }
@@ -373,6 +380,17 @@ class FavoriteFragment : Fragment() {
             tagJob.cancel()
             mlKitJob.cancel()
         }
+    }
+
+    private fun showReminderDialog(movie: Movie) {
+        val picker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText(getString(R.string.reminder_picker_title))
+            .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
+            .build()
+        picker.addOnPositiveButtonClickListener { dateMillis ->
+            viewModel.setWatchlistReminder(movie, dateMillis)
+        }
+        picker.show(childFragmentManager, "reminder_date_picker")
     }
 
     private fun updateSortLabel(sort: FavoriteSortOrder) {

@@ -16,6 +16,7 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import com.choo.moviefinder.BuildConfig
+import com.choo.moviefinder.core.notification.WatchlistReminderWorker
 import com.choo.moviefinder.core.util.AnrWatchdog
 import com.choo.moviefinder.core.util.DebugHealthCheck
 import com.choo.moviefinder.core.util.FileLoggingTree
@@ -77,9 +78,15 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
             ).apply {
                 description = getString(R.string.notification_goal_channel_description)
             }
+            val reminderChannel = NotificationChannel(
+                WatchlistReminderWorker.WATCHLIST_REMINDER_CHANNEL_ID,
+                getString(R.string.watchlist_reminder_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
             notificationManager.createNotificationChannel(goalChannel)
+            notificationManager.createNotificationChannel(reminderChannel)
         }
     }
 

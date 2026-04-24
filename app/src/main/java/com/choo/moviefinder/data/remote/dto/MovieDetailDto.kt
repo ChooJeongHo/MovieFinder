@@ -27,7 +27,8 @@ data class MovieDetailDto(
     @SerialName("popularity") val popularity: Double = 0.0,
     @SerialName("revenue") val revenue: Long = 0,
     @SerialName("status") val status: String = "",
-    @SerialName("video") val video: Boolean = false
+    @SerialName("video") val video: Boolean = false,
+    @SerialName("belongs_to_collection") val belongsToCollection: BelongsToCollectionDto? = null
 )
 
 @Serializable
@@ -53,5 +54,7 @@ fun MovieDetailDto.toDomain() = MovieDetail(
     revenue = revenue,
     originalLanguage = originalLanguage,
     imdbId = imdbId,
-    status = status
+    status = status,
+    belongsToCollectionId = belongsToCollection?.id,
+    belongsToCollectionName = belongsToCollection?.name
 )

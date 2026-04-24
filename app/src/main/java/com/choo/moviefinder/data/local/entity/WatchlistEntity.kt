@@ -19,7 +19,8 @@ data class WatchlistEntity(
     val releaseDate: String,
     val voteAverage: Double,
     val voteCount: Int,
-    val addedAt: Long = System.currentTimeMillis()
+    val addedAt: Long = System.currentTimeMillis(),
+    val reminderDate: Long? = null
 )
 
 // 워치리스트 Entity를 도메인 Movie 모델로 변환

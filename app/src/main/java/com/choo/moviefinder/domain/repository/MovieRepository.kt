@@ -2,6 +2,7 @@ package com.choo.moviefinder.domain.repository
 
 import androidx.paging.PagingData
 import com.choo.moviefinder.domain.model.Cast
+import com.choo.moviefinder.domain.model.CollectionDetail
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
@@ -55,4 +56,7 @@ interface MovieRepository {
 
     // 영화 장르 목록을 조회한다
     suspend fun getGenreList(): List<Genre>
+
+    // 컬렉션 ID로 컬렉션 상세 정보를 조회한다
+    suspend fun getCollection(collectionId: Int): CollectionDetail
 }

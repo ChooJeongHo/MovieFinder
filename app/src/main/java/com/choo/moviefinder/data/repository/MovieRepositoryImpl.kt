@@ -18,6 +18,7 @@ import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.data.util.Constants
 import com.choo.moviefinder.domain.model.Cast
+import com.choo.moviefinder.domain.model.CollectionDetail
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
+@Suppress("TooManyFunctions")
 class MovieRepositoryImpl @Inject constructor(
     private val apiService: MovieApiService,
     private val database: MovieDatabase,
@@ -167,4 +169,8 @@ class MovieRepositoryImpl @Inject constructor(
         require(movieId > 0) { "Movie ID must be positive" }
         return apiService.getMovieRecommendations(movieId).results.map { it.toDomain() }
     }
+
+    // 컬렉션 상세 정보를 API에서 조회
+    override suspend fun getCollection(collectionId: Int): CollectionDetail =
+        apiService.getCollection(collectionId).toDomain()
 }

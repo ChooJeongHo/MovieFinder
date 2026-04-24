@@ -56,4 +56,16 @@ abstract class WatchlistDao {
     // 여러 워치리스트 항목을 한 번에 삽입 (복원용)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertAll(entities: List<WatchlistEntity>)
+
+    // 워치리스트 영화의 알림 날짜를 설정한다
+    @Query("UPDATE watchlist_movies SET reminderDate = :dateMillis WHERE id = :movieId")
+    abstract suspend fun setReminder(movieId: Int, dateMillis: Long)
+
+    // 워치리스트 영화의 알림을 삭제한다
+    @Query("UPDATE watchlist_movies SET reminderDate = NULL WHERE id = :movieId")
+    abstract suspend fun clearReminder(movieId: Int)
+
+    // 알림 날짜가 설정된 워치리스트 영화를 조회한다
+    @Query("SELECT * FROM watchlist_movies WHERE reminderDate IS NOT NULL ORDER BY reminderDate ASC")
+    abstract suspend fun getMoviesWithReminder(): List<WatchlistEntity>
 }

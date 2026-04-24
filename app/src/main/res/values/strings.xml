@@ -234,6 +234,13 @@
     <string name="notification_channel_description">즐겨찾기한 영화의 개봉일을 알려줍니다</string>
     <string name="notification_release_today">오늘 개봉합니다!</string>
 
+    <!-- 워치리스트 알림 -->
+    <string name="watchlist_reminder_channel_name">워치리스트 알림</string>
+    <string name="reminder_notification_title">시청 알림</string>
+    <string name="reminder_notification_body">%s 을(를) 오늘 시청해보세요!</string>
+    <string name="reminder_picker_title">알림 날짜 선택</string>
+    <string name="reminder_set_confirmation">알림이 설정되었습니다.</string>
+
     <!-- 시청 목표 알림 -->
     <string name="notification_goal_channel_name">시청 목표 알림</string>
     <string name="notification_goal_channel_description">월간 시청 목표 달성 시 알림을 보냅니다</string>
@@ -321,6 +328,10 @@
     <string name="action_close">닫기</string>
     <string name="tag_suggested">AI 추천 태그</string>
     <string name="tag_no_suggestions">추천 태그를 찾을 수 없습니다</string>
+
+    <!-- 컬렉션 -->
+    <string name="collection_view_series">시리즈 보기</string>
+    <string name="collection_movies_header">시리즈 영화</string>
 
     <!-- 온보딩 -->
     <string name="onboarding_skip">건너뛰기</string>

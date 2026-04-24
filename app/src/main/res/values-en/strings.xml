@@ -220,6 +220,13 @@
     <string name="settings_watch_goal_not_set">Not set</string>
     <string name="settings_watch_goal_dialog_message">Set your monthly movie watching goal (0 = no goal)</string>
 
+    <!-- Watchlist Reminders -->
+    <string name="watchlist_reminder_channel_name">Watchlist Reminders</string>
+    <string name="reminder_notification_title">Watch Reminder</string>
+    <string name="reminder_notification_body">Time to watch %s today!</string>
+    <string name="reminder_picker_title">Select Reminder Date</string>
+    <string name="reminder_set_confirmation">Reminder set.</string>
+
     <!-- Watch Goal Notification -->
     <string name="notification_goal_channel_name">Watch Goal Alerts</string>
     <string name="notification_goal_channel_description">Get notified when you reach your monthly watch goal</string>
@@ -308,6 +315,10 @@
     <string name="stats_share_monthly">This month: %d movies</string>
     <string name="stats_share_rating">Avg rating: %.1f</string>
     <string name="stats_share_genres">Top genres: %s</string>
+
+    <!-- Collection -->
+    <string name="collection_view_series">View Series</string>
+    <string name="collection_movies_header">Series Movies</string>
 
     <!-- Tag feature -->
     <string name="tag_filter_all">All</string>

@@ -1,5 +1,6 @@
 package com.choo.moviefinder.data.remote.api
 
+import com.choo.moviefinder.data.remote.dto.CollectionDto
 import com.choo.moviefinder.data.remote.dto.CreditsResponse
 import com.choo.moviefinder.data.remote.dto.GenreListResponse
 import com.choo.moviefinder.data.remote.dto.MovieDetailDto
@@ -143,4 +144,11 @@ interface MovieApiService {
         @Query("page") page: Int = 1,
         @Query("language") language: String = Constants.LANGUAGE_KO
     ): PersonSearchResponse
+
+    // 영화 컬렉션 정보 조회
+    @GET("collection/{collection_id}")
+    suspend fun getCollection(
+        @Path("collection_id") collectionId: Int,
+        @Query("language") language: String = Constants.LANGUAGE_KO
+    ): CollectionDto
 }

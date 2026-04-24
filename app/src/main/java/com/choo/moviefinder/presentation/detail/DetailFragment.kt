@@ -43,6 +43,7 @@ import com.choo.moviefinder.presentation.adapter.CastAdapter
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
 import com.choo.moviefinder.presentation.adapter.MemoAdapter
 import com.choo.moviefinder.presentation.adapter.ReviewAdapter
+import com.choo.moviefinder.presentation.collection.CollectionFragmentArgs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
@@ -392,6 +393,22 @@ class DetailFragment : Fragment() {
                 isCheckable = false
             }
             binding.chipGroupGenres.addView(chip)
+        }
+
+        // 시리즈 보기 버튼
+        val collectionId = detail.belongsToCollectionId
+        val collectionName = detail.belongsToCollectionName
+        binding.btnViewCollection.isVisible = collectionId != null
+        if (collectionId != null) {
+            binding.btnViewCollection.text = collectionName ?: getString(R.string.collection_view_series)
+            binding.btnViewCollection.setOnClickListener {
+                if (findNavController().currentDestination?.id == R.id.detailFragment) {
+                    findNavController().navigate(
+                        R.id.action_detailFragment_to_collectionFragment,
+                        CollectionFragmentArgs(collectionId).toBundle()
+                    )
+                }
+            }
         }
 
         // 확장 정보

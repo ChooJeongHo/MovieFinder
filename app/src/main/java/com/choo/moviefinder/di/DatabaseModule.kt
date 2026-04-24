@@ -133,6 +133,15 @@ object DatabaseModule {
         }
     }
 
+    // watchlist_movies reminderDate 컬럼 추가 마이그레이션 (v17 → v18)
+    val MIGRATION_17_18 = object : Migration(17, 18) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE watchlist_movies ADD COLUMN reminderDate INTEGER"
+            )
+        }
+    }
+
     // Room 데이터베이스 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
@@ -143,7 +152,8 @@ object DatabaseModule {
             "movie_finder_db"
         )
             .addMigrations(
-                MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17
+                MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
+                MIGRATION_16_17, MIGRATION_17_18
             )
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
