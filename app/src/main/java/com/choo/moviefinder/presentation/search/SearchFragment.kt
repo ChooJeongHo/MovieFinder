@@ -30,6 +30,7 @@ import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.core.util.computeWindowWidthSizeClass
 import com.choo.moviefinder.core.util.toMovieGridSpanCount
 import com.choo.moviefinder.databinding.FragmentSearchBinding
+import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
 import com.choo.moviefinder.presentation.adapter.PersonSearchAdapter
@@ -57,6 +58,7 @@ class SearchFragment : Fragment() {
     private lateinit var searchAdapter: MoviePagingAdapter
     private lateinit var recentSearchAdapter: RecentSearchAdapter
     private lateinit var personSearchAdapter: PersonSearchAdapter
+    private lateinit var suggestionHistoryAdapter: HorizontalMovieAdapter
     private var activeDialog: Dialog? = null
 
     private val yearFilterItems: Array<String> by lazy {
@@ -193,6 +195,26 @@ class SearchFragment : Fragment() {
             setHasFixedSize(true)
             adapter = personSearchAdapter
         }
+
+        setupSuggestionHistoryRecyclerView()
+    }
+
+    // 시청 기록 제안 RecyclerView 초기화 (가로 스크롤)
+    private fun setupSuggestionHistoryRecyclerView() {
+        suggestionHistoryAdapter = HorizontalMovieAdapter(
+            transitionPrefix = "suggestion",
+            onMovieClick = { movieId ->
+                if (findNavController().currentDestination?.id == R.id.searchFragment) {
+                    val action = SearchFragmentDirections.actionSearchToDetail(movieId)
+                    findNavController().navigate(action)
+                }
+            }
+        )
+
+        binding.rvSuggestionHistory.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = suggestionHistoryAdapter
+        }
     }
 
     // 툴바 메뉴에 그리드/리스트 보기 모드 전환 버튼 설정
@@ -243,6 +265,7 @@ class SearchFragment : Fragment() {
         binding.rvPersonResults.isVisible = false
         binding.rvSearchResults.isVisible = false
         binding.noResultsSection.isVisible = false
+        hideWatchHistorySuggestions()
         binding.shimmerView.shimmerLayout.stopShimmer()
         binding.shimmerView.shimmerLayout.isVisible = false
         if (isPersonMode) {
@@ -334,6 +357,11 @@ class SearchFragment : Fragment() {
             val isEmpty = searchAdapter.itemCount == 0
             binding.noResultsSection.isVisible = isEmpty
             binding.rvSearchResults.isVisible = !isEmpty
+            if (isEmpty) {
+                showWatchHistorySuggestions()
+            } else {
+                hideWatchHistorySuggestions()
+            }
         }
         if (refreshState is LoadState.Error) {
             val errorType = ErrorMessageProvider.getErrorType(refreshState.error)
@@ -630,6 +658,24 @@ class SearchFragment : Fragment() {
         binding.etSearch.clearFocus()
     }
 
+    // 결과 없음 상태에서 최근 시청 기록 영화를 제안 섹션으로 표시
+    private fun showWatchHistorySuggestions() {
+        val suggestions = viewModel.watchHistory.value.take(SUGGESTION_HISTORY_COUNT)
+        if (suggestions.isNotEmpty()) {
+            suggestionHistoryAdapter.submitList(suggestions)
+            binding.rvSuggestionHistory.isVisible = true
+            binding.tvWatchHistorySuggestion.isVisible = true
+        } else {
+            hideWatchHistorySuggestions()
+        }
+    }
+
+    // 시청 기록 제안 섹션을 숨기고 어댑터 목록을 초기화
+    private fun hideWatchHistorySuggestions() {
+        binding.rvSuggestionHistory.isVisible = false
+        binding.tvWatchHistorySuggestion.isVisible = false
+    }
+
     // 검색 초기 안내 화면을 표시하고 다른 뷰를 숨김
     private fun showInitialState() {
         binding.recentSearchesSection.isVisible = false
@@ -648,7 +694,12 @@ class SearchFragment : Fragment() {
         binding.rvSearchResults.adapter = null
         binding.rvRecentSearches.adapter = null
         binding.rvPersonResults.adapter = null
+        binding.rvSuggestionHistory.adapter = null
         _binding = null
+    }
+
+    companion object {
+        private const val SUGGESTION_HISTORY_COUNT = 3
     }
 }
 

@@ -275,6 +275,9 @@ dependencies {
     // ViewPager2
     implementation(libs.androidx.viewpager2)
 
+    // YouTube Player (인앱 예고편 재생)
+    implementation(libs.youtube.player)
+
     // Timber
     implementation(libs.timber)
 

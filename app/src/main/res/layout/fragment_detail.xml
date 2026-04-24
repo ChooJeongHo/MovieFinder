@@ -185,7 +185,7 @@
 
             </LinearLayout>
 
-            <!-- 예고편 버튼 -->
+            <!-- 예고편 버튼 (fallback) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_trailer"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
@@ -195,6 +195,16 @@
                 android:text="@string/play_trailer"
                 android:visibility="gone"
                 app:icon="@drawable/ic_play" />
+
+            <!-- 예고편 인앱 재생 -->
+            <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+                android:id="@+id/youtube_player_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_md"
+                android:visibility="gone"
+                app:autoPlay="false"
+                app:showFullScreenButton="true" />
 
             <!-- 줄거리 -->
             <TextView

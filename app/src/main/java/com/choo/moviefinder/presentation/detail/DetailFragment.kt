@@ -46,6 +46,8 @@ import com.choo.moviefinder.presentation.adapter.ReviewAdapter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -465,29 +467,25 @@ class DetailFragment : Fragment() {
         }
     }
 
-    // 예고편 버튼 표시 및 YouTube 연결 설정
+    // 예고편 인앱 재생 (YouTubePlayerView) 또는 외부 YouTube 연결 (fallback)
     private fun bindTrailer(trailerKey: String?) {
-        if (trailerKey != null) {
-            binding.btnTrailer.isVisible = true
-            binding.btnTrailer.setOnClickListener {
-                // YouTube 앱 또는 웹으로 연결
-                val intent = Intent(
-                    Intent.ACTION_VIEW,
-                    "https://www.youtube.com/watch?v=$trailerKey".toUri()
-                )
-                try {
-                    startActivity(intent)
-                } catch (_: ActivityNotFoundException) {
-                    Snackbar.make(
-                        binding.root,
-                        R.string.error_no_browser,
-                        Snackbar.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        } else {
+        if (trailerKey == null) {
+            binding.youtubePlayerView.isVisible = false
             binding.btnTrailer.isVisible = false
+            return
         }
+        setupYouTubePlayer(trailerKey)
+    }
+
+    private fun setupYouTubePlayer(trailerKey: String) {
+        binding.youtubePlayerView.isVisible = true
+        binding.btnTrailer.isVisible = false
+        viewLifecycleOwner.lifecycle.addObserver(binding.youtubePlayerView)
+        binding.youtubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+            override fun onReady(youTubePlayer: YouTubePlayer) {
+                youTubePlayer.cueVideo(trailerKey, 0f)
+            }
+        })
     }
 
     // 에러 상태 표시 (에러 메시지 및 재시도 버튼)
@@ -572,6 +570,7 @@ class DetailFragment : Fragment() {
         memoEditDialog?.dismiss()
         memoEditDialog = null
         binding.rvMemos.adapter = null
+        binding.youtubePlayerView.release()
         _binding = null
     }
 

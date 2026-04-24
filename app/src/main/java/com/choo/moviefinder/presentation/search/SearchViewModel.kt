@@ -16,6 +16,7 @@ import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.DiscoverMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
+import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
 import com.choo.moviefinder.domain.usecase.SearchPersonUseCase
@@ -53,7 +54,8 @@ class SearchViewModel @Inject constructor(
     private val saveSearchQueryUseCase: SaveSearchQueryUseCase,
     private val deleteSearchQueryUseCase: DeleteSearchQueryUseCase,
     private val clearSearchHistoryUseCase: ClearSearchHistoryUseCase,
-    private val searchPersonUseCase: SearchPersonUseCase
+    private val searchPersonUseCase: SearchPersonUseCase,
+    getWatchHistoryUseCase: GetWatchHistoryUseCase
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow(savedStateHandle.get<String>(KEY_QUERY) ?: "")
@@ -93,6 +95,9 @@ class SearchViewModel @Inject constructor(
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
     val recentSearches = getRecentSearchesUseCase()
+        .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
+
+    val watchHistory = getWatchHistoryUseCase()
         .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     // 키보드 검색/최근 검색어 클릭 시 debounce 없이 즉시 검색

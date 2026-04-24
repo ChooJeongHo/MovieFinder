@@ -39,6 +39,7 @@ work = "2.11.2"
 kotlinxDatetime = "0.7.1"
 window = "1.3.0"
 viewpager2 = "1.1.0"
+youtubePlayer = "12.1.2"
 
 [libraries]
 # Core
@@ -144,6 +145,9 @@ androidx-window = { group = "androidx.window", name = "window", version.ref = "w
 
 # ViewPager2
 androidx-viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
+
+# YouTube Player
+youtube-player = { group = "com.pierfrancescosoffritti.androidyoutubeplayer", name = "core", version.ref = "youtubePlayer" }
 
 # ML Kit (unbundled via Play Services)
 mlkit-image-labeling = { module = "com.google.android.gms:play-services-mlkit-image-labeling", version = "16.0.8" }

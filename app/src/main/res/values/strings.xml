@@ -182,6 +182,7 @@
 
     <!-- 검색 추천 -->
     <string name="search_suggestions_label">이런 검색어는 어떠세요?</string>
+    <string name="search_watch_history_suggestion">이런 영화는 어떠세요?</string>
 
     <!-- 내 평점 -->
     <string name="my_rating_title">내 평점</string>
