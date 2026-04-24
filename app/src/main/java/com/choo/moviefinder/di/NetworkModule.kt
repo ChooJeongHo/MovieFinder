@@ -6,6 +6,8 @@ import com.choo.moviefinder.core.util.DebugEventListener
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.core.util.addDebugLogging
 import com.choo.moviefinder.data.remote.api.MovieApiService
+import com.choo.moviefinder.data.remote.api.TmdbAuthApiService
+import com.choo.moviefinder.data.remote.api.TmdbV3SessionApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,6 +28,14 @@ import javax.inject.Singleton
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class ImageOkHttpClient
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class TmdbV4OkHttpClient
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class TmdbV4Retrofit
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -156,6 +166,50 @@ object NetworkModule {
     @Singleton
     fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor {
         return NetworkMonitor(context)
+    }
+
+    // v4 인증용 OkHttpClient (Bearer: read_access_token)
+    @Provides
+    @Singleton
+    @TmdbV4OkHttpClient
+    fun provideTmdbV4OkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("Authorization", "Bearer ${BuildConfig.TMDB_READ_ACCESS_TOKEN}")
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+                chain.proceed(request)
+            }
+            .connectTimeout(30.seconds)
+            .readTimeout(30.seconds)
+            .build()
+    }
+
+    // v4 Retrofit (auth endpoints)
+    @Provides
+    @Singleton
+    @TmdbV4Retrofit
+    fun provideTmdbV4Retrofit(json: Json, @TmdbV4OkHttpClient client: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.TMDB_V4_BASE_URL)
+            .client(client)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+    }
+
+    // TmdbAuthApiService 제공 (v4 엔드포인트)
+    @Provides
+    @Singleton
+    fun provideTmdbAuthApiService(@TmdbV4Retrofit retrofit: Retrofit): TmdbAuthApiService {
+        return retrofit.create(TmdbAuthApiService::class.java)
+    }
+
+    // TmdbV3SessionApiService 제공 (기존 v3 Retrofit 사용)
+    @Provides
+    @Singleton
+    fun provideTmdbV3SessionApiService(retrofit: Retrofit): TmdbV3SessionApiService {
+        return retrofit.create(TmdbV3SessionApiService::class.java)
     }
 
     // 엔드포인트 경로에 따른 Cache-Control 헤더 값 반환

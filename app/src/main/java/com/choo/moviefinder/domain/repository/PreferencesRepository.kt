@@ -4,6 +4,19 @@ import com.choo.moviefinder.domain.model.ThemeMode
 import kotlinx.coroutines.flow.Flow
 
 interface PreferencesRepository {
+
+    // TMDB 액세스 토큰을 Flow로 반환한다
+    fun getTmdbAccessToken(): Flow<String?>
+
+    // TMDB 인증 정보(액세스 토큰, 계정 ID, 세션 ID)를 저장한다
+    suspend fun saveTmdbAuth(accessToken: String, accountId: String, sessionId: String)
+
+    // TMDB 인증 정보를 삭제한다
+    suspend fun clearTmdbAuth()
+
+    // TMDB 세션 ID를 일회성으로 조회한다
+    suspend fun getTmdbSessionIdOnce(): String?
+
     // 현재 테마 모드 설정을 Flow로 반환한다
     fun getThemeMode(): Flow<ThemeMode>
 

@@ -26,12 +26,14 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.local.UserSettingsSerializer
 import com.choo.moviefinder.databinding.ActivityMainBinding
+import com.choo.moviefinder.domain.usecase.ExchangeTmdbTokenUseCase
 import com.choo.moviefinder.presentation.detail.DetailFragmentArgs
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -40,6 +42,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var networkMonitor: NetworkMonitor
+
+    @Inject
+    lateinit var exchangeTmdbTokenUseCase: ExchangeTmdbTokenUseCase
 
     private lateinit var binding: ActivityMainBinding
     private var offlineSnackbar: Snackbar? = null
@@ -149,6 +154,34 @@ class MainActivity : AppCompatActivity() {
     // 기존 Activity에서 새 딥링크 Intent를 수신하여 처리한다
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+
+        // TMDB OAuth 콜백 처리 (moviefinder://auth/callback)
+        val uri = intent.data ?: return
+        val isTmdbCallback = uri.scheme == "moviefinder" && uri.host == "auth" && uri.path == "/callback"
+        if (isTmdbCallback) {
+            val requestToken = uri.getQueryParameter("request_token")
+            if (requestToken != null) {
+                lifecycleScope.launch {
+                    try {
+                        exchangeTmdbTokenUseCase(requestToken)
+                        Snackbar.make(
+                            binding.root,
+                            getString(R.string.tmdb_auth_success),
+                            Snackbar.LENGTH_SHORT
+                        ).show()
+                    } catch (e: Exception) {
+                        Timber.e(e, "TMDB 인증 실패")
+                        Snackbar.make(
+                            binding.root,
+                            getString(R.string.tmdb_auth_failed),
+                            Snackbar.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+                return
+            }
+        }
+
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val navController = navHostFragment.navController

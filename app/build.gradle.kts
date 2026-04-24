@@ -35,6 +35,8 @@ android {
         buildConfigField("String", "TMDB_API_KEY", "\"${localProperties.getProperty("TMDB_API_KEY", "")}\"")
         buildConfigField("String", "TMDB_BASE_URL", "\"https://api.themoviedb.org/3/\"")
         buildConfigField("String", "TMDB_IMAGE_BASE_URL", "\"https://image.tmdb.org/t/p/\"")
+        buildConfigField("String", "TMDB_READ_ACCESS_TOKEN", "\"${localProperties.getProperty("TMDB_READ_ACCESS_TOKEN", "")}\"")
+        buildConfigField("String", "TMDB_V4_BASE_URL", "\"https://api.themoviedb.org/4/\"")
 
         resourceConfigurations += setOf("ko", "en")
 
@@ -277,6 +279,9 @@ dependencies {
 
     // YouTube Player (인앱 예고편 재생)
     implementation(libs.youtube.player)
+
+    // Browser (Chrome Custom Tabs)
+    implementation(libs.androidx.browser)
 
     // Timber
     implementation(libs.timber)

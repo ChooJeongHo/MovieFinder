@@ -13,6 +13,8 @@ import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.core.util.suspendRunCatching
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
+import com.choo.moviefinder.domain.usecase.GetTmdbAccessTokenUseCase
+import com.choo.moviefinder.domain.usecase.SubmitTmdbRatingUseCase
 import com.choo.moviefinder.domain.usecase.DeleteUserRatingUseCase
 import com.choo.moviefinder.domain.usecase.GetMemosUseCase
 import com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
@@ -35,6 +37,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -59,7 +62,9 @@ class DetailViewModel @Inject constructor(
     private val updateMemoUseCase: UpdateMemoUseCase,
     private val deleteMemoUseCase: DeleteMemoUseCase,
     private val releaseNotificationScheduler: ReleaseNotificationScheduler,
-    private val watchGoalNotificationHelper: WatchGoalNotificationHelper
+    private val watchGoalNotificationHelper: WatchGoalNotificationHelper,
+    private val getTmdbAccessTokenUseCase: GetTmdbAccessTokenUseCase,
+    private val submitTmdbRatingUseCase: SubmitTmdbRatingUseCase
 ) : ViewModel() {
 
     private val movieId: Int = requireNotNull(savedStateHandle.get<Int>("movieId")) {
@@ -74,6 +79,13 @@ class DetailViewModel @Inject constructor(
 
     private var loadingJob: Job? = null
     private val toggleMutex = Mutex()
+
+    val isTmdbConnected: StateFlow<Boolean> = getTmdbAccessTokenUseCase()
+        .map { it != null }
+        .stateIn(viewModelScope, WhileSubscribed5s, false)
+
+    private val _tmdbRatingResult = Channel<Boolean>(Channel.CONFLATED)
+    val tmdbRatingResult = _tmdbRatingResult.receiveAsFlow()
 
     val isFavorite = isFavoriteUseCase(movieId)
         .stateIn(viewModelScope, WhileSubscribed5s, false)
@@ -244,5 +256,18 @@ class DetailViewModel @Inject constructor(
 
     // 메모를 삭제
     fun deleteMemo(memoId: Long) = memoDelegate.deleteMemo(memoId)
+
+    // TMDB에 영화 평점을 제출한다 (1.0~10.0, RatingBar 0.5~5.0 × 2)
+    fun submitTmdbRating(rating: Float) {
+        viewModelScope.launch {
+            try {
+                val success = submitTmdbRatingUseCase(movieId, rating)
+                _tmdbRatingResult.trySend(success)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                _tmdbRatingResult.trySend(false)
+            }
+        }
+    }
 
 }

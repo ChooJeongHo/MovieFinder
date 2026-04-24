@@ -1,5 +1,5 @@
 [versions]
-agp = "9.1.1"
+agp = "9.2.0"
 kotlin = "2.3.20"
 ksp = "2.3.6"
 coreKtx = "1.18.0"
@@ -40,6 +40,7 @@ kotlinxDatetime = "0.7.1"
 window = "1.3.0"
 viewpager2 = "1.1.0"
 youtubePlayer = "12.1.2"
+browser = "1.8.0"
 
 [libraries]
 # Core
@@ -151,6 +152,9 @@ youtube-player = { group = "com.pierfrancescosoffritti.androidyoutubeplayer", na
 
 # ML Kit (unbundled via Play Services)
 mlkit-image-labeling = { module = "com.google.android.gms:play-services-mlkit-image-labeling", version = "16.0.8" }
+
+# Browser (Chrome Custom Tabs)
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 
 [bundles]
 lifecycle = ["androidx-lifecycle-runtime-ktx", "androidx-lifecycle-viewmodel-ktx", "androidx-lifecycle-process"]

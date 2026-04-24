@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.repository.PreferencesRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
@@ -54,4 +55,34 @@ class PreferencesRepositoryImpl @Inject constructor(
             current.copy(lastGoalNotifiedMonth = yearMonth)
         }
     }
+
+    // TMDB 액세스 토큰을 Flow로 조회
+    override fun getTmdbAccessToken(): Flow<String?> =
+        userSettingsStore.data.map { it.tmdbAccessToken }
+
+    // TMDB 인증 정보(액세스 토큰, 계정 ID, 세션 ID)를 DataStore에 저장
+    override suspend fun saveTmdbAuth(accessToken: String, accountId: String, sessionId: String) {
+        userSettingsStore.updateData { current ->
+            current.copy(
+                tmdbAccessToken = accessToken,
+                tmdbAccountId = accountId,
+                tmdbSessionId = sessionId
+            )
+        }
+    }
+
+    // TMDB 인증 정보를 DataStore에서 삭제
+    override suspend fun clearTmdbAuth() {
+        userSettingsStore.updateData { current ->
+            current.copy(
+                tmdbAccessToken = null,
+                tmdbAccountId = null,
+                tmdbSessionId = null
+            )
+        }
+    }
+
+    // TMDB 세션 ID를 일회성으로 조회
+    override suspend fun getTmdbSessionIdOnce(): String? =
+        userSettingsStore.data.map { it.tmdbSessionId }.first()
 }

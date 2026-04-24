@@ -12,7 +12,10 @@ import com.choo.moviefinder.domain.usecase.ClearWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.ExportUserDataUseCase
 import com.choo.moviefinder.domain.usecase.GetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.GetThemeModeUseCase
+import com.choo.moviefinder.domain.usecase.GetTmdbAccessTokenUseCase
+import com.choo.moviefinder.domain.usecase.GetTmdbRequestTokenUseCase
 import com.choo.moviefinder.domain.usecase.ImportUserDataUseCase
+import com.choo.moviefinder.domain.usecase.RevokeTmdbAuthUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +32,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
+@Suppress("TooManyFunctions")
 class SettingsViewModel @Inject constructor(
     getThemeModeUseCase: GetThemeModeUseCase,
     private val setThemeModeUseCase: SetThemeModeUseCase,
@@ -37,7 +41,10 @@ class SettingsViewModel @Inject constructor(
     private val setMonthlyWatchGoalUseCase: SetMonthlyWatchGoalUseCase,
     private val exportUserDataUseCase: ExportUserDataUseCase,
     private val importUserDataUseCase: ImportUserDataUseCase,
-    private val json: Json
+    private val json: Json,
+    getTmdbAccessTokenUseCase: GetTmdbAccessTokenUseCase,
+    private val getTmdbRequestTokenUseCase: GetTmdbRequestTokenUseCase,
+    private val revokeTmdbAuthUseCase: RevokeTmdbAuthUseCase,
 ) : ViewModel() {
 
     val currentThemeMode: StateFlow<ThemeMode> = getThemeModeUseCase()
@@ -46,6 +53,10 @@ class SettingsViewModel @Inject constructor(
     // 이번 달 시청 목표 편수 Flow (0 = 목표 없음)
     val monthlyWatchGoal: StateFlow<Int> = getMonthlyWatchGoalUseCase()
         .stateIn(viewModelScope, WhileSubscribed5s, 0)
+
+    // TMDB 액세스 토큰 (null = 미연결)
+    val tmdbAccessToken: StateFlow<String?> = getTmdbAccessTokenUseCase()
+        .stateIn(viewModelScope, WhileSubscribed5s, null)
 
     private val _isImporting = MutableStateFlow(false)
     val isImporting: StateFlow<Boolean> = _isImporting
@@ -61,6 +72,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _importSuccess = Channel<Unit>(Channel.CONFLATED)
     val importSuccess = _importSuccess.receiveAsFlow()
+
+    private val _openTmdbAuth = Channel<String>(Channel.CONFLATED)
+    val openTmdbAuth = _openTmdbAuth.receiveAsFlow()
 
     // 파일 저장 런처가 실행되기 전까지 JSON을 임시 보관 (TransactionTooLargeException 방지로 SavedStateHandle 미사용)
     @Volatile
@@ -126,5 +140,37 @@ class SettingsViewModel @Inject constructor(
     ) {
         clearWatchHistoryUseCase()
         _watchHistoryCleared.trySend(Unit)
+    }
+
+    // TMDB v4 요청 토큰을 발급하고 Chrome Custom Tab으로 인증 URL을 연다
+    fun startTmdbAuth() {
+        viewModelScope.launch {
+            try {
+                val requestToken = getTmdbRequestTokenUseCase()
+                val authUrl = "https://www.themoviedb.org/auth/access" +
+                    "?request_token=$requestToken" +
+                    "&redirect_to=moviefinder://auth/callback"
+                _openTmdbAuth.trySend(authUrl)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "TMDB 요청 토큰 발급 실패")
+                _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(e))
+            }
+        }
+    }
+
+    // TMDB 계정 연결을 해제한다
+    fun disconnectTmdb() {
+        viewModelScope.launch {
+            try {
+                val token = tmdbAccessToken.value ?: return@launch
+                revokeTmdbAuthUseCase(token)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "TMDB 계정 연결 해제 실패")
+            }
+        }
     }
 }

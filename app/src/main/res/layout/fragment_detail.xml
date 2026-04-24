@@ -206,6 +206,16 @@
                 android:text="@string/collection_view_series"
                 android:visibility="gone" />
 
+            <!-- TMDB 평점 제출 버튼 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_submit_tmdb_rating"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:text="@string/tmdb_submit_rating"
+                android:visibility="gone" />
+
             <!-- 예고편 인앱 재생 -->
             <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
                 android:id="@+id/youtube_player_view"

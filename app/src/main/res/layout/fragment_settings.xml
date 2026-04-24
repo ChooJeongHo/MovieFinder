@@ -459,6 +459,49 @@
                 android:background="?android:attr/listDivider"
                 android:visibility="gone" />
 
+            <!-- TMDB 계정 연결 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_lg"
+                android:layout_marginBottom="@dimen/spacing_xs"
+                android:text="@string/tmdb_account_section"
+                android:textAppearance="?attr/textAppearanceBody1"
+                android:textStyle="bold"
+                android:paddingHorizontal="@dimen/spacing_md" />
+
+            <TextView
+                android:id="@+id/tv_tmdb_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_sm"
+                android:paddingHorizontal="@dimen/spacing_md"
+                android:textAppearance="?attr/textAppearanceCaption" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_tmdb_connect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_md"
+                android:text="@string/tmdb_connect"
+                android:visibility="visible" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_tmdb_disconnect"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_md"
+                android:text="@string/tmdb_disconnect"
+                android:visibility="gone" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="@dimen/spacing_md"
+                android:layout_marginVertical="@dimen/spacing_xs"
+                android:background="?android:attr/listDivider" />
+
             <!-- 앱 정보 -->
             <LinearLayout
                 android:layout_width="match_parent"

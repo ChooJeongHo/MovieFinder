@@ -228,6 +228,23 @@ class DetailFragment : Fragment() {
             animateFabBounce(binding.fabWatchlist)
             viewModel.toggleWatchlist()
         }
+        binding.btnSubmitTmdbRating.setOnClickListener { showTmdbRatingDialog() }
+    }
+
+    private fun showTmdbRatingDialog() {
+        val ratingBar = RatingBar(requireContext()).apply {
+            numStars = 5
+            stepSize = 0.5f
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.tmdb_rating_dialog_title))
+            .setView(ratingBar)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val rating = ratingBar.rating * 2f // TMDB: 1–10, RatingBar: 0.5–5
+                if (rating > 0f) viewModel.submitTmdbRating(rating)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     // FAB 토글 시 scale 바운스 애니메이션 실행
@@ -257,6 +274,13 @@ class DetailFragment : Fragment() {
                 launch { viewModel.userRating.collect { updateRatingBar(it) } }
                 launch { viewModel.snackbarEvent.collect { showFlowSnackbar(it) } }
                 launch { viewModel.memos.collect { memoAdapter.submitList(it) } }
+                launch { viewModel.isTmdbConnected.collect { binding.btnSubmitTmdbRating.isVisible = it } }
+                launch {
+                    viewModel.tmdbRatingResult.collect { success ->
+                        val msg = if (success) R.string.tmdb_rating_success else R.string.tmdb_rating_failed
+                        Snackbar.make(binding.root, msg, Snackbar.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
     }

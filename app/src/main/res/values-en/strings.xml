@@ -328,4 +328,17 @@
     <string name="action_close">Close</string>
     <string name="tag_suggested">AI Suggested Tags</string>
     <string name="tag_no_suggestions">No suggestions found</string>
+
+    <!-- TMDB Account -->
+    <string name="tmdb_account_section">TMDB Account</string>
+    <string name="tmdb_connected">TMDB account connected.</string>
+    <string name="tmdb_not_connected">No TMDB account connected.</string>
+    <string name="tmdb_connect">Connect TMDB Account</string>
+    <string name="tmdb_disconnect">Disconnect</string>
+    <string name="tmdb_auth_success">TMDB account connected successfully.</string>
+    <string name="tmdb_auth_failed">TMDB authentication failed.</string>
+    <string name="tmdb_submit_rating">Submit Rating to TMDB</string>
+    <string name="tmdb_rating_dialog_title">TMDB Rating (0.5 ~ 5.0)</string>
+    <string name="tmdb_rating_success">Rating submitted to TMDB.</string>
+    <string name="tmdb_rating_failed">Failed to submit rating.</string>
 </resources>
