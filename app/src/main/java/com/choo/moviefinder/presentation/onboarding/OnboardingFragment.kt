@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.datastore.core.DataStore
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
@@ -12,13 +13,16 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.choo.moviefinder.R
 import com.choo.moviefinder.data.local.UserSettings
-import com.choo.moviefinder.data.local.UserSettingsSerializer
 import com.choo.moviefinder.databinding.FragmentOnboardingBinding
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import androidx.datastore.core.DataStoreFactory
-import java.io.File
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class OnboardingFragment : Fragment() {
+
+    @Inject
+    lateinit var userSettingsDataStore: DataStore<UserSettings>
 
     private var _binding: FragmentOnboardingBinding? = null
     private val binding get() = _binding!!
@@ -97,13 +101,8 @@ class OnboardingFragment : Fragment() {
     }
 
     private fun completeOnboarding() {
-        val context = requireContext().applicationContext
-        val dataStore = DataStoreFactory.create(
-            serializer = UserSettingsSerializer,
-            produceFile = { File(context.filesDir, "datastore/user_settings.json") }
-        )
         lifecycleScope.launch {
-            dataStore.updateData { current: UserSettings ->
+            userSettingsDataStore.updateData { current ->
                 current.copy(onboardingCompleted = true)
             }
             findNavController().navigate(R.id.action_onboarding_to_home)

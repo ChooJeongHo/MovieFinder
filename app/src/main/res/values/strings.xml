@@ -349,6 +349,7 @@
     <!-- 컬렉션 -->
     <string name="collection_view_series">시리즈 보기</string>
     <string name="collection_movies_header">시리즈 영화</string>
+    <string name="collection_empty">이 컬렉션에 영화가 없습니다</string>
 
     <!-- TMDB 계정 연동 -->
     <string name="tmdb_account_section">TMDB 계정</string>

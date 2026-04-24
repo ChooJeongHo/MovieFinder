@@ -46,21 +46,24 @@
             android:layout_width="10dp"
             android:layout_height="10dp"
             android:layout_margin="4dp"
-            android:background="@drawable/onboarding_dot_active" />
+            android:background="@drawable/onboarding_dot_active"
+            android:importantForAccessibility="no" />
 
         <View
             android:id="@+id/dot_1"
             android:layout_width="10dp"
             android:layout_height="10dp"
             android:layout_margin="4dp"
-            android:background="@drawable/onboarding_dot_inactive" />
+            android:background="@drawable/onboarding_dot_inactive"
+            android:importantForAccessibility="no" />
 
         <View
             android:id="@+id/dot_2"
             android:layout_width="10dp"
             android:layout_height="10dp"
             android:layout_margin="4dp"
-            android:background="@drawable/onboarding_dot_inactive" />
+            android:background="@drawable/onboarding_dot_inactive"
+            android:importantForAccessibility="no" />
 
     </LinearLayout>
 

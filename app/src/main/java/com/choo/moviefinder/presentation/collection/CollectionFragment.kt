@@ -78,8 +78,13 @@ class CollectionFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    binding.progressBar.isVisible = state is CollectionUiState.Loading
-                    binding.tvError.isVisible = state is CollectionUiState.Error
+                    val shimmer = binding.shimmerView.shimmerLayout
+                    val isLoading = state is CollectionUiState.Loading
+                    shimmer.isVisible = isLoading
+                    if (isLoading) shimmer.startShimmer() else shimmer.stopShimmer()
+
+                    binding.errorView.root.isVisible = state is CollectionUiState.Error
+                    binding.tvEmpty.isVisible = false
 
                     val isSuccess = state is CollectionUiState.Success
                     binding.tvCollectionName.isVisible = isSuccess
@@ -88,8 +93,17 @@ class CollectionFragment : Fragment() {
                     binding.rvCollectionMovies.isVisible = isSuccess
 
                     when (state) {
-                        is CollectionUiState.Success -> bindCollection(state.collection)
-                        is CollectionUiState.Error -> binding.tvError.text = state.message
+                        is CollectionUiState.Success -> {
+                            bindCollection(state.collection)
+                            binding.tvEmpty.isVisible = state.collection.movies.isEmpty()
+                            binding.tvMoviesHeader.isVisible = state.collection.movies.isNotEmpty()
+                        }
+                        is CollectionUiState.Error -> {
+                            binding.errorView.tvErrorMessage.text = state.message
+                            binding.errorView.btnRetry.setOnClickListener {
+                                viewModel.loadCollection()
+                            }
+                        }
                         else -> Unit
                     }
                 }

@@ -333,6 +333,7 @@
     <!-- Collection -->
     <string name="collection_view_series">View Series</string>
     <string name="collection_movies_header">Series Movies</string>
+    <string name="collection_empty">No movies in this collection</string>
 
     <!-- Tag feature -->
     <string name="tag_filter_all">All</string>

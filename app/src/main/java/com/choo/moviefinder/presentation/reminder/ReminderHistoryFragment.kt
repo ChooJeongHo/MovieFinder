@@ -77,6 +77,7 @@ class ReminderHistoryFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.reminders.collect { reminders ->
+                        binding.progressBar.isVisible = false
                         adapter.submitList(reminders)
                         binding.tvEmpty.isVisible = reminders.isEmpty()
                         binding.recyclerView.isVisible = reminders.isNotEmpty()

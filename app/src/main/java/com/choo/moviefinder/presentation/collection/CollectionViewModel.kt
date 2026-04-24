@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.domain.model.CollectionDetail
 import com.choo.moviefinder.domain.usecase.GetCollectionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -37,6 +38,8 @@ class CollectionViewModel @Inject constructor(
             _uiState.value = CollectionUiState.Loading
             try {
                 _uiState.value = CollectionUiState.Success(getCollectionUseCase(collectionId))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = CollectionUiState.Error(e.message ?: "Unknown error")
             }

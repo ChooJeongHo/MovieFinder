@@ -35,6 +35,12 @@ class PieChartView @JvmOverloads constructor(
 
     private var textColor: Int
 
+    // onSizeChanged + setData 이후 캐시되는 범례 레이아웃 값
+    private var legendX = 0f
+    private var lineHeight = 0f
+    private var dotRadius = 0f
+    private var legendStartY = 0f
+
     init {
         val tv = TypedValue()
         context.theme.resolveAttribute(android.R.attr.textColorPrimary, tv, true)
@@ -60,6 +66,7 @@ class PieChartView @JvmOverloads constructor(
             slices.add(Slice(label, value / total, defaultColors[index % defaultColors.size], "$label $percent%"))
         }
         contentDescription = items.joinToString(", ") { "${it.first} ${(it.second / total * 100).toInt()}%" }
+        updateLegendGeometry()
         invalidate()
     }
 
@@ -74,6 +81,15 @@ class PieChartView @JvmOverloads constructor(
         val pieCy = paddingTop + (h - paddingTop - paddingBottom) / 2f
         arcRect.set(pieCx - pieRadius, pieCy - pieRadius, pieCx + pieRadius, pieCy + pieRadius)
         textPaint.textSize = pieDiameter / 10f
+        updateLegendGeometry()
+    }
+
+    private fun updateLegendGeometry() {
+        legendX = arcRect.right + (width - arcRect.right) * 0.15f
+        lineHeight = textPaint.textSize * 1.8f
+        dotRadius = textPaint.textSize * 0.3f
+        val totalLegendHeight = slices.size * lineHeight
+        legendStartY = arcRect.centerY() - totalLegendHeight / 2f + textPaint.textSize
     }
 
     // 파이 세그먼트와 범례를 그린다
@@ -89,17 +105,10 @@ class PieChartView @JvmOverloads constructor(
             startAngle += sweep
         }
 
-        val legendX = arcRect.right + (width - arcRect.right) * 0.15f
-        val lineHeight = textPaint.textSize * 1.8f
-        val totalLegendHeight = slices.size * lineHeight
-        var legendY = arcRect.centerY() - totalLegendHeight / 2f + textPaint.textSize
-
-        val dotRadius = textPaint.textSize * 0.3f
-
+        var legendY = legendStartY
         for (slice in slices) {
             dotPaint.color = slice.color
             canvas.drawCircle(legendX, legendY - dotRadius, dotRadius, dotPaint)
-
             canvas.drawText(slice.legendText, legendX + dotRadius * 3, legendY, textPaint)
             legendY += lineHeight
         }

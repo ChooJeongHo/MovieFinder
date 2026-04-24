@@ -40,7 +40,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import androidx.work.WorkManager
@@ -217,11 +216,16 @@ class FavoriteViewModel @Inject constructor(
     }
 
     // 워치리스트 영화에 알림 날짜를 설정하고 WorkManager 작업을 예약한다
-    fun setWatchlistReminder(movie: Movie, dateMillis: Long) {
-        viewModelScope.launch {
+    fun setWatchlistReminder(movie: Movie, dateMillis: Long) =
+        viewModelScope.launchWithErrorHandler(
+            onError = {
+                Timber.e("영화 %d 알림 설정 실패", movie.id)
+                _snackbarEvent.trySend(it)
+            }
+        ) {
             watchlistDao.setReminder(movie.id, dateMillis)
             val delay = dateMillis - System.currentTimeMillis()
-            if (delay <= 0) return@launch
+            if (delay <= 0) return@launchWithErrorHandler
             val inputData = workDataOf(
                 WatchlistReminderWorker.KEY_MOVIE_ID to movie.id,
                 WatchlistReminderWorker.KEY_MOVIE_TITLE to movie.title
@@ -236,22 +240,27 @@ class FavoriteViewModel @Inject constructor(
                 ExistingWorkPolicy.REPLACE,
                 request
             )
-            _reminderSnackbar.send(context.getString(com.choo.moviefinder.R.string.reminder_set_confirmation))
+            _reminderSnackbar.trySend(context.getString(com.choo.moviefinder.R.string.reminder_set_confirmation))
         }
-    }
 
     // 알림이 예약된 워치리스트 영화 목록을 로드한다
-    fun loadScheduledReminders() {
-        viewModelScope.launch {
-            _scheduledReminders.value = watchlistDao.getMoviesWithReminder()
+    fun loadScheduledReminders() = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("예약된 알림 목록 로드 실패")
+            _snackbarEvent.trySend(it)
         }
+    ) {
+        _scheduledReminders.value = watchlistDao.getMoviesWithReminder()
     }
 
     // 워치리스트 영화의 알림을 취소한다
-    fun clearWatchlistReminder(movieId: Int) {
-        viewModelScope.launch {
-            watchlistDao.clearReminder(movieId)
-            workManager.cancelUniqueWork("watchlist_reminder_$movieId")
+    fun clearWatchlistReminder(movieId: Int) = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("영화 %d 알림 취소 실패", movieId)
+            _snackbarEvent.trySend(it)
         }
+    ) {
+        watchlistDao.clearReminder(movieId)
+        workManager.cancelUniqueWork("watchlist_reminder_$movieId")
     }
 }

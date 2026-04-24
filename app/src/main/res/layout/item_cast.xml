@@ -16,7 +16,6 @@
         android:layout_width="@dimen/cast_image_size"
         android:layout_height="@dimen/cast_image_size"
         android:background="@drawable/bg_circle"
-        android:contentDescription="@string/cd_cast_profile"
         android:importantForAccessibility="no"
         android:scaleType="centerCrop"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.MovieFinder.Circle"
