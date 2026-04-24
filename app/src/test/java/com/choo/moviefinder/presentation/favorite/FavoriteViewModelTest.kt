@@ -1,10 +1,13 @@
 package com.choo.moviefinder.presentation.favorite
 
+import android.content.Context
 import app.cash.turbine.test
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.PosterTagSuggester
+import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.repository.UserRatingRepository
 import com.choo.moviefinder.domain.usecase.AddTagToMovieUseCase
 import com.choo.moviefinder.domain.usecase.GetAllTagNamesUseCase
 import com.choo.moviefinder.domain.usecase.GetFavoriteMoviesUseCase
@@ -47,6 +50,9 @@ class FavoriteViewModelTest {
     private lateinit var addTagToMovieUseCase: AddTagToMovieUseCase
     private lateinit var removeTagFromMovieUseCase: RemoveTagFromMovieUseCase
     private lateinit var posterTagSuggester: PosterTagSuggester
+    private lateinit var userRatingRepository: UserRatingRepository
+    private lateinit var watchlistDao: WatchlistDao
+    private lateinit var context: Context
 
     private val testMovies = listOf(
         Movie(1, "Movie 1", "/poster1.jpg", "/backdrop1.jpg", "Overview 1", "2024-01-01", 8.0, 500),
@@ -66,9 +72,14 @@ class FavoriteViewModelTest {
         addTagToMovieUseCase = mockk()
         removeTagFromMovieUseCase = mockk()
         posterTagSuggester = mockk()
+        userRatingRepository = mockk()
+        watchlistDao = mockk(relaxed = true)
+        context = mockk(relaxed = true)
 
         every { getWatchlistUseCase(any<FavoriteSortOrder>()) } returns flowOf(emptyList())
         every { getAllTagNamesUseCase() } returns flowOf(emptyList())
+        every { userRatingRepository.getAllUserRatings() } returns flowOf(emptyMap())
+        coEvery { watchlistDao.getMoviesWithReminder() } returns emptyList()
     }
 
     @After
@@ -87,7 +98,10 @@ class FavoriteViewModelTest {
             getAllTagNamesUseCase,
             addTagToMovieUseCase,
             removeTagFromMovieUseCase,
-            posterTagSuggester
+            posterTagSuggester,
+            userRatingRepository,
+            watchlistDao,
+            context
         )
     }
 
@@ -330,9 +344,11 @@ class FavoriteViewModelTest {
         assertEquals(null, viewModel.selectedTag.value)
 
         viewModel.onTagSelected("Action")
+        advanceUntilIdle()
         assertEquals("Action", viewModel.selectedTag.value)
 
         viewModel.onTagSelected(null)
+        advanceUntilIdle()
         assertEquals(null, viewModel.selectedTag.value)
     }
 

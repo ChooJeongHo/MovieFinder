@@ -7,7 +7,9 @@ import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.DiscoverMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
+import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
+import com.choo.moviefinder.domain.usecase.SearchLocalMoviesUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
 import com.choo.moviefinder.domain.usecase.SearchPersonUseCase
 import androidx.lifecycle.SavedStateHandle
@@ -43,6 +45,8 @@ class SearchViewModelTest {
     private lateinit var deleteSearchQueryUseCase: DeleteSearchQueryUseCase
     private lateinit var clearSearchHistoryUseCase: ClearSearchHistoryUseCase
     private lateinit var searchPersonUseCase: SearchPersonUseCase
+    private lateinit var searchLocalMoviesUseCase: SearchLocalMoviesUseCase
+    private lateinit var getWatchHistoryUseCase: GetWatchHistoryUseCase
 
     @Before
     fun setup() {
@@ -55,8 +59,12 @@ class SearchViewModelTest {
         deleteSearchQueryUseCase = mockk()
         clearSearchHistoryUseCase = mockk()
         searchPersonUseCase = mockk()
+        searchLocalMoviesUseCase = mockk()
+        getWatchHistoryUseCase = mockk()
 
         coEvery { getGenreListUseCase() } returns emptyList()
+        coEvery { searchLocalMoviesUseCase(any()) } returns emptyList()
+        every { getWatchHistoryUseCase() } returns flowOf(emptyList())
     }
 
     @After
@@ -78,7 +86,9 @@ class SearchViewModelTest {
             saveSearchQueryUseCase = saveSearchQueryUseCase,
             deleteSearchQueryUseCase = deleteSearchQueryUseCase,
             clearSearchHistoryUseCase = clearSearchHistoryUseCase,
-            searchPersonUseCase = searchPersonUseCase
+            searchPersonUseCase = searchPersonUseCase,
+            searchLocalMoviesUseCase = searchLocalMoviesUseCase,
+            getWatchHistoryUseCase = getWatchHistoryUseCase
         )
     }
 

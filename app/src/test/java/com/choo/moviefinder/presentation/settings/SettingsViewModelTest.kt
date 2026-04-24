@@ -7,9 +7,13 @@ import com.choo.moviefinder.domain.usecase.ClearWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.ExportUserDataUseCase
 import com.choo.moviefinder.domain.usecase.GetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.GetThemeModeUseCase
+import com.choo.moviefinder.domain.usecase.GetTmdbAccessTokenUseCase
+import com.choo.moviefinder.domain.usecase.GetTmdbRequestTokenUseCase
 import com.choo.moviefinder.domain.usecase.ImportUserDataUseCase
+import com.choo.moviefinder.domain.usecase.RevokeTmdbAuthUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
+import com.choo.moviefinder.domain.usecase.SyncTmdbAccountUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -40,6 +44,10 @@ class SettingsViewModelTest {
     private lateinit var setMonthlyWatchGoalUseCase: SetMonthlyWatchGoalUseCase
     private lateinit var exportUserDataUseCase: ExportUserDataUseCase
     private lateinit var importUserDataUseCase: ImportUserDataUseCase
+    private lateinit var getTmdbAccessTokenUseCase: GetTmdbAccessTokenUseCase
+    private lateinit var getTmdbRequestTokenUseCase: GetTmdbRequestTokenUseCase
+    private lateinit var revokeTmdbAuthUseCase: RevokeTmdbAuthUseCase
+    private lateinit var syncTmdbAccountUseCase: SyncTmdbAccountUseCase
 
     @Before
     fun setup() {
@@ -51,6 +59,11 @@ class SettingsViewModelTest {
         setMonthlyWatchGoalUseCase = mockk()
         exportUserDataUseCase = mockk()
         importUserDataUseCase = mockk()
+        getTmdbAccessTokenUseCase = mockk()
+        getTmdbRequestTokenUseCase = mockk()
+        revokeTmdbAuthUseCase = mockk()
+        syncTmdbAccountUseCase = mockk()
+        every { getTmdbAccessTokenUseCase() } returns flowOf(null)
     }
 
     @After
@@ -73,7 +86,11 @@ class SettingsViewModelTest {
             setMonthlyWatchGoalUseCase,
             exportUserDataUseCase,
             importUserDataUseCase,
-            testJson
+            testJson,
+            getTmdbAccessTokenUseCase,
+            getTmdbRequestTokenUseCase,
+            revokeTmdbAuthUseCase,
+            syncTmdbAccountUseCase
         )
     }
 
@@ -206,7 +223,11 @@ class SettingsViewModelTest {
             setMonthlyWatchGoalUseCase,
             exportUserDataUseCase,
             importUserDataUseCase,
-            testJson
+            testJson,
+            getTmdbAccessTokenUseCase,
+            getTmdbRequestTokenUseCase,
+            revokeTmdbAuthUseCase,
+            syncTmdbAccountUseCase
         )
     }
 

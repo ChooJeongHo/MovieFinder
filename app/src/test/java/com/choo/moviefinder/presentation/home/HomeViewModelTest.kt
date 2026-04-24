@@ -5,6 +5,7 @@ import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.GetNowPlayingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetPopularMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetTrendingMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetUpcomingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
 import app.cash.turbine.test
 import io.mockk.every
@@ -32,6 +33,7 @@ class HomeViewModelTest {
     private lateinit var getNowPlayingMoviesUseCase: GetNowPlayingMoviesUseCase
     private lateinit var getPopularMoviesUseCase: GetPopularMoviesUseCase
     private lateinit var getTrendingMoviesUseCase: GetTrendingMoviesUseCase
+    private lateinit var getUpcomingMoviesUseCase: GetUpcomingMoviesUseCase
     private lateinit var getWatchHistoryUseCase: GetWatchHistoryUseCase
 
     private val testMovies = listOf(
@@ -45,11 +47,13 @@ class HomeViewModelTest {
         getNowPlayingMoviesUseCase = mockk()
         getPopularMoviesUseCase = mockk()
         getTrendingMoviesUseCase = mockk()
+        getUpcomingMoviesUseCase = mockk()
         getWatchHistoryUseCase = mockk()
 
         every { getNowPlayingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getPopularMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getTrendingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
+        every { getUpcomingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getWatchHistoryUseCase() } returns flowOf(emptyList())
     }
 
@@ -63,6 +67,7 @@ class HomeViewModelTest {
             getNowPlayingMoviesUseCase = getNowPlayingMoviesUseCase,
             getPopularMoviesUseCase = getPopularMoviesUseCase,
             getTrendingMoviesUseCase = getTrendingMoviesUseCase,
+            getUpcomingMoviesUseCase = getUpcomingMoviesUseCase,
             getWatchHistoryUseCase = getWatchHistoryUseCase
         )
     }

@@ -223,8 +223,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_md"
                 android:visibility="gone"
-                app:autoPlay="false"
-                app:showFullScreenButton="true" />
+                app:autoPlay="false" />
 
             <!-- 줄거리 -->
             <TextView

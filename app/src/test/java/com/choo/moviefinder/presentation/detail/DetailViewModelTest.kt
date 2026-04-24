@@ -19,6 +19,8 @@ import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
 import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.IsInWatchlistUseCase
 import com.choo.moviefinder.domain.usecase.SaveWatchHistoryUseCase
+import com.choo.moviefinder.domain.usecase.GetTmdbAccessTokenUseCase
+import com.choo.moviefinder.domain.usecase.SubmitTmdbRatingUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import io.mockk.coEvery
@@ -67,6 +69,8 @@ class DetailViewModelTest {
     private lateinit var deleteMemoUseCase: com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
     private lateinit var releaseNotificationScheduler: ReleaseNotificationScheduler
     private lateinit var watchGoalNotificationHelper: WatchGoalNotificationHelper
+    private lateinit var getTmdbAccessTokenUseCase: GetTmdbAccessTokenUseCase
+    private lateinit var submitTmdbRatingUseCase: SubmitTmdbRatingUseCase
 
     private val testMovieDetail = MovieDetail(
         id = 1,
@@ -115,6 +119,9 @@ class DetailViewModelTest {
         deleteMemoUseCase = mockk()
         releaseNotificationScheduler = mockk(relaxed = true)
         watchGoalNotificationHelper = mockk(relaxed = true)
+        getTmdbAccessTokenUseCase = mockk()
+        submitTmdbRatingUseCase = mockk()
+        every { getTmdbAccessTokenUseCase() } returns flowOf(null)
 
         every { getMemosUseCase(any()) } returns flowOf(emptyList())
 
@@ -164,7 +171,9 @@ class DetailViewModelTest {
             updateMemoUseCase = updateMemoUseCase,
             deleteMemoUseCase = deleteMemoUseCase,
             releaseNotificationScheduler = releaseNotificationScheduler,
-            watchGoalNotificationHelper = watchGoalNotificationHelper
+            watchGoalNotificationHelper = watchGoalNotificationHelper,
+            getTmdbAccessTokenUseCase = getTmdbAccessTokenUseCase,
+            submitTmdbRatingUseCase = submitTmdbRatingUseCase
         )
     }
 

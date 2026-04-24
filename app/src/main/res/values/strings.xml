@@ -109,6 +109,9 @@
     <string name="reminder_cancel_confirm_title">알림 취소</string>
     <string name="reminder_cancel_confirm_message">"%s" 개봉 알림을 취소할까요?</string>
     <string name="reminder_cancelled">알림이 취소되었습니다.</string>
+    <string name="reminder_cancel">취소</string>
+    <string name="settings_reminder_history">알림 기록</string>
+    <string name="settings_reminder_history_description">예약된 개봉일 알림 목록</string>
 
     <!-- 평점 -->
     <string name="rating_format">%.1f</string>

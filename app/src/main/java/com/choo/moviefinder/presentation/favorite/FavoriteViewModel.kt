@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -63,7 +64,7 @@ class FavoriteViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val workManager = WorkManager.getInstance(context)
+    private val workManager by lazy { WorkManager.getInstance(context) }
 
     private val _sortOrder = MutableStateFlow(FavoriteSortOrder.ADDED_DATE)
     val sortOrder: StateFlow<FavoriteSortOrder> = _sortOrder.asStateFlow()
@@ -170,7 +171,7 @@ class FavoriteViewModel @Inject constructor(
     // selectedTag: 단일 태그 선택 상태 노출 (하위 호환용 — null = 전체)
     val selectedTag: StateFlow<String?> = _tagFilters
         .map { tags -> tags.singleOrNull() }
-        .stateIn(viewModelScope, WhileSubscribed5s, null)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     // 평점 필터 설정 (0f = 필터 없음)
     fun setMinRating(rating: Float) {
