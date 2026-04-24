@@ -4,7 +4,9 @@ import com.choo.moviefinder.data.remote.api.TmdbAuthApiService
 import com.choo.moviefinder.data.remote.api.TmdbV3SessionApiService
 import com.choo.moviefinder.data.remote.dto.RatingRequest
 import com.choo.moviefinder.domain.repository.PreferencesRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -54,7 +56,11 @@ class RevokeTmdbAuthUseCase @Inject constructor(
     suspend operator fun invoke(accessToken: String) {
         try {
             authApiService.revokeAccessToken(mapOf("access_token" to accessToken))
-        } catch (_: Exception) { }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "TMDB 액세스 토큰 폐기 실패 — 로컬 인증 정보는 삭제합니다")
+        }
         repository.clearTmdbAuth()
     }
 }

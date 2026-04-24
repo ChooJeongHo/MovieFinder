@@ -15,7 +15,7 @@ import androidx.core.widget.NestedScrollView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import androidx.datastore.core.DataStoreFactory
+import androidx.datastore.core.DataStore
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -24,17 +24,17 @@ import androidx.navigation.ui.setupWithNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.choo.moviefinder.core.util.NetworkMonitor
-import com.choo.moviefinder.data.local.UserSettingsSerializer
+import com.choo.moviefinder.data.local.UserSettings
 import com.choo.moviefinder.databinding.ActivityMainBinding
 import com.choo.moviefinder.domain.usecase.ExchangeTmdbTokenUseCase
 import com.choo.moviefinder.presentation.detail.DetailFragmentArgs
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
-import java.io.File
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -45,6 +45,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var exchangeTmdbTokenUseCase: ExchangeTmdbTokenUseCase
+
+    @Inject
+    lateinit var userSettingsDataStore: DataStore<UserSettings>
 
     private lateinit var binding: ActivityMainBinding
     private var offlineSnackbar: Snackbar? = null
@@ -67,11 +70,7 @@ class MainActivity : AppCompatActivity() {
         // 온보딩 완료 여부 확인 후 완료 시 홈 화면으로 이동
         if (savedInstanceState == null) {
             val onboardingCompleted = runBlocking {
-                val dataStore = DataStoreFactory.create(
-                    serializer = UserSettingsSerializer,
-                    produceFile = { File(filesDir, "datastore/user_settings.json") }
-                )
-                dataStore.data.first().onboardingCompleted
+                userSettingsDataStore.data.first().onboardingCompleted
             }
             if (onboardingCompleted) {
                 navController.navigate(R.id.action_onboarding_to_home)
@@ -169,6 +168,8 @@ class MainActivity : AppCompatActivity() {
                             getString(R.string.tmdb_auth_success),
                             Snackbar.LENGTH_SHORT
                         ).show()
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Timber.e(e, "TMDB 인증 실패")
                         Snackbar.make(
