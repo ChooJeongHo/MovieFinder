@@ -68,7 +68,9 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
             binding.tvDate.text = review.createdAt.take(10)
             val context = binding.root.context
             val ratingText = review.rating?.let { context.getString(R.string.cd_review_rating, it) } ?: ""
-            binding.root.contentDescription = context.getString(R.string.cd_review_item, review.author, ratingText)
+            val dateText = review.createdAt.take(10)
+            binding.root.contentDescription =
+                context.getString(R.string.cd_review_item, review.author, ratingText, dateText)
 
             binding.root.setOnClickListener {
                 val nowExpanded = review.id in expandedIds

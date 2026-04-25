@@ -29,7 +29,6 @@ class PopularMoviesRemoteViewsFactory(
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
-        isLenient = true
     }
 
     private val client get() = Companion.getClient(context.applicationContext)

@@ -78,9 +78,10 @@
     <string name="cd_review_expanded">Tap to collapse</string>
     <string name="cd_review_expand">Expand review</string>
     <string name="cd_review_collapse">Collapse review</string>
-    <string name="cd_review_item">Review by %1$s%2$s. Tap to expand</string>
+    <string name="cd_review_item">Review by %1$s%2$s, %3$s. Tap to expand</string>
     <string name="cd_review_rating">, rating %.1f</string>
     <string name="cd_recent_search_item">Search again for %s</string>
+    <string name="cd_remove_tag">Remove tag %s</string>
     <string name="cd_cast_item">%1$s, as %2$s</string>
     <string name="cd_widget_refresh">Refresh widget</string>
     <string name="cd_widget_rating">Rating %.1f</string>
@@ -198,6 +199,8 @@
 
     <!-- View Mode -->
     <string name="view_mode_toggle">Toggle view mode</string>
+    <string name="view_mode_switch_to_list">Switch to list view</string>
+    <string name="view_mode_switch_to_grid">Switch to grid view</string>
 
     <!-- Language Settings -->
     <string name="settings_language">Language</string>

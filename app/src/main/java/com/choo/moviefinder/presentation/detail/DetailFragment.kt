@@ -224,6 +224,7 @@ class DetailFragment : Fragment() {
         binding.rvReviews.apply {
             layoutManager = LinearLayoutManager(requireContext())
             itemAnimator = null
+            setHasFixedSize(true)
             adapter = reviewAdapter
         }
 
@@ -241,6 +242,7 @@ class DetailFragment : Fragment() {
         binding.rvMemos.apply {
             layoutManager = LinearLayoutManager(requireContext())
             itemAnimator = null
+            setHasFixedSize(true)
             adapter = memoAdapter
         }
     }
@@ -650,15 +652,10 @@ class DetailFragment : Fragment() {
             .setNegativeButton(R.string.cancel, null)
             .create()
         dialog.show()
-        // capture token while edit text is shown
-        val dialogEditText = dialog.findViewById<android.widget.EditText>(android.R.id.edit)
-            ?: editText
         dialog.setOnDismissListener {
-            val token = dialogEditText.windowToken ?: requireActivity().currentFocus?.windowToken
-            if (token != null) {
-                val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(token, 0)
-            }
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            val token = dialog.window?.decorView?.windowToken
+            if (token != null) imm.hideSoftInputFromWindow(token, 0)
         }
         memoEditDialog = dialog
     }

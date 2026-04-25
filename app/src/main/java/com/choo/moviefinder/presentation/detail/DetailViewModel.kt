@@ -69,7 +69,7 @@ class DetailViewModel @Inject constructor(
 
     private val movieId: Int = requireNotNull(savedStateHandle.get<Int>("movieId")) {
         "movieId argument is required for DetailViewModel"
-    }
+    }.also { require(it > 0) { "movieId must be positive, got $it" } }
 
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()

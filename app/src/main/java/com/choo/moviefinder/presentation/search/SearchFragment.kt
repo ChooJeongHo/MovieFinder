@@ -27,6 +27,7 @@ import androidx.paging.CombinedLoadStates
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.NetworkMonitor
+import com.choo.moviefinder.core.util.RateLimiter
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.core.util.computeWindowWidthSizeClass
@@ -60,6 +61,8 @@ class SearchFragment : Fragment() {
     private val viewModel: SearchViewModel by viewModels()
 
     @Inject lateinit var networkMonitor: NetworkMonitor
+
+    private val retryRateLimiter = RateLimiter()
 
     private lateinit var searchAdapter: MoviePagingAdapter
     private lateinit var recentSearchAdapter: RecentSearchAdapter
@@ -410,7 +413,9 @@ class SearchFragment : Fragment() {
                 val errorType = ErrorMessageProvider.getErrorType(refreshState.error)
                 binding.errorView.tvErrorMessage.text =
                     ErrorMessageProvider.getMessage(requireContext(), errorType)
-                binding.errorView.btnRetry.setOnClickListener { searchAdapter.retry() }
+                binding.errorView.btnRetry.setOnClickListener {
+                    if (retryRateLimiter.tryAcquire()) searchAdapter.retry()
+                }
             }
         }
     }
@@ -453,14 +458,22 @@ class SearchFragment : Fragment() {
         }
     }
 
-    // 현재 보기 모드에 따라 툴바 메뉴 아이콘 전환
+    // 현재 보기 모드에 따라 툴바 메뉴 아이콘 및 TalkBack 타이틀 전환
     private fun updateViewModeIcon(mode: MoviePagingAdapter.ViewMode) {
         val icon = if (mode == MoviePagingAdapter.ViewMode.GRID) {
             R.drawable.ic_view_list
         } else {
             R.drawable.ic_view_grid
         }
-        binding.toolbar.menu.findItem(R.id.action_view_mode)?.setIcon(icon)
+        binding.toolbar.menu.findItem(R.id.action_view_mode)?.let { menuItem ->
+            menuItem.setIcon(icon)
+            val titleRes = if (mode == MoviePagingAdapter.ViewMode.GRID) {
+                R.string.view_mode_switch_to_list
+            } else {
+                R.string.view_mode_switch_to_grid
+            }
+            menuItem.title = getString(titleRes)
+        }
     }
 
     // 연도 필터 칩 초기값 설정 및 클릭/닫기 리스너 등록

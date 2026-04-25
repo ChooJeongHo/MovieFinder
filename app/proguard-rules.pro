@@ -156,3 +156,10 @@
 # Keep line numbers for debugging
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# Strip Timber verbose/debug/info logs in release
+-assumenosideeffects class timber.log.Timber {
+    public static void v(...);
+    public static void d(...);
+    public static void i(...);
+}

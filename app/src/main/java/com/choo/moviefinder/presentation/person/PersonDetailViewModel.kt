@@ -26,7 +26,7 @@ class PersonDetailViewModel @Inject constructor(
 
     private val personId: Int = requireNotNull(savedStateHandle.get<Int>("personId")) {
         "personId argument is required for PersonDetailViewModel"
-    }
+    }.also { require(it > 0) { "personId must be positive, got $it" } }
 
     private val _uiState = MutableStateFlow<PersonDetailUiState>(PersonDetailUiState.Loading)
     val uiState: StateFlow<PersonDetailUiState> = _uiState.asStateFlow()

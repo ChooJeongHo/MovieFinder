@@ -419,6 +419,7 @@ class FavoriteFragment : Fragment() {
                 val chip = Chip(requireContext()).apply {
                     text = tag.tagName
                     isCloseIconVisible = true
+                    closeIconContentDescription = getString(R.string.cd_remove_tag, tag.tagName)
                     setOnCloseIconClickListener {
                         viewModel.removeTagFromMovie(movie.id, tag.tagName)
                     }
@@ -520,6 +521,7 @@ class FavoriteFragment : Fragment() {
         collectJob?.cancel()
         collectJob = null
         binding.rvFavorites.adapter = null
+        binding.shimmerView.shimmerLayout.stopShimmer()
         _binding = null
     }
 

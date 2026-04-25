@@ -78,6 +78,8 @@ class CollectionFragment : Fragment() {
     }
 
     private fun observeUiState() {
+        binding.shimmerView.shimmerLayout.startShimmer()
+        binding.shimmerView.shimmerLayout.isVisible = true
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->

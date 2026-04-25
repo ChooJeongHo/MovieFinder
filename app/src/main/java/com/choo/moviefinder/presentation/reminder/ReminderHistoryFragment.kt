@@ -92,6 +92,12 @@ class ReminderHistoryFragment : Fragment() {
                         binding.shimmerView.shimmerLayout.stopShimmer()
                         binding.shimmerView.shimmerLayout.isVisible = false
                         binding.errorView.layoutError.isVisible = true
+                        binding.errorView.btnRetry.setOnClickListener {
+                            binding.errorView.layoutError.isVisible = false
+                            binding.shimmerView.shimmerLayout.startShimmer()
+                            binding.shimmerView.shimmerLayout.isVisible = true
+                            observeViewModelFlows()
+                        }
                     }
                 }
                 launch {
