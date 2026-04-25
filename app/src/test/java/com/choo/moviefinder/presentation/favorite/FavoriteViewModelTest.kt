@@ -86,6 +86,7 @@ class FavoriteViewModelTest {
         every { getAllTagNamesUseCase() } returns flowOf(emptyList())
         every { userRatingRepository.getAllUserRatings() } returns flowOf(emptyMap())
         coEvery { getWatchlistRemindersUseCase() } returns emptyList()
+        every { getWatchlistRemindersUseCase.asFlow() } returns flowOf(emptyList())
     }
 
     @After

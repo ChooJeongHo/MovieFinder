@@ -26,7 +26,9 @@ class CollectionViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val collectionId: Int = savedStateHandle["collectionId"] ?: 0
+    private val collectionId: Int = requireNotNull(savedStateHandle.get<Int>("collectionId")) {
+        "collectionId argument is required for CollectionViewModel"
+    }.also { require(it > 0) { "collectionId must be positive, got $it" } }
 
     private val _uiState = MutableStateFlow<CollectionUiState>(CollectionUiState.Loading)
     val uiState: StateFlow<CollectionUiState> = _uiState

@@ -30,4 +30,7 @@ interface WatchlistRepository {
 
     // 알림 날짜가 설정된 워치리스트 영화 목록을 반환한다
     suspend fun getMoviesWithReminder(): List<WatchlistReminder>
+
+    // 알림 날짜가 설정된 워치리스트 영화 목록을 실시간 Flow로 관찰한다
+    fun observeMoviesWithReminder(): Flow<List<WatchlistReminder>>
 }

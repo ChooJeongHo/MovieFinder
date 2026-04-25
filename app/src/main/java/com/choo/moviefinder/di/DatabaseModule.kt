@@ -24,6 +24,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
+@Suppress("TooManyFunctions")
 object DatabaseModule {
 
     // 장르 정규화 테이블 추가 마이그레이션 (v12 → v13)
@@ -157,6 +158,81 @@ object DatabaseModule {
         }
     }
 
+    // watch_history PK를 autoincrement rowId로 교체 — 재시청 기록 누적 지원 (v19 → v20)
+    val MIGRATION_19_20 = object : Migration(19, 20) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            migrateWatchHistoryTable(db)
+            migrateWatchHistoryGenreTable(db)
+        }
+    }
+
+    // watch_history 테이블을 rowId autoincrement PK로 재생성하고 기존 데이터를 이전한다
+    private fun migrateWatchHistoryTable(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `watch_history_new` (
+                `rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `movieId` INTEGER NOT NULL,
+                `title` TEXT NOT NULL,
+                `posterPath` TEXT,
+                `backdropPath` TEXT,
+                `overview` TEXT NOT NULL,
+                `releaseDate` TEXT NOT NULL,
+                `voteAverage` REAL NOT NULL,
+                `voteCount` INTEGER NOT NULL,
+                `watchedAt` INTEGER NOT NULL,
+                `yearMonth` TEXT NOT NULL DEFAULT '',
+                `genres` TEXT NOT NULL DEFAULT ''
+            )"""
+        )
+        db.execSQL(
+            """INSERT INTO `watch_history_new`
+                (movieId, title, posterPath, backdropPath, overview, releaseDate,
+                 voteAverage, voteCount, watchedAt, yearMonth, genres)
+               SELECT id, title, posterPath, backdropPath, overview, releaseDate,
+                      voteAverage, voteCount, watchedAt, yearMonth, genres
+               FROM `watch_history`"""
+        )
+        db.execSQL("DROP TABLE `watch_history`")
+        db.execSQL("ALTER TABLE `watch_history_new` RENAME TO `watch_history`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_watch_history_movieId` ON `watch_history` (`movieId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_watch_history_watchedAt` ON `watch_history` (`watchedAt`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_watch_history_yearMonth` ON `watch_history` (`yearMonth`)")
+    }
+
+    // watch_history_genre FK를 새 rowId 기반으로 재생성하고 기존 장르 데이터를 이전한다
+    private fun migrateWatchHistoryGenreTable(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `watch_history_genre_new` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `watch_history_id` INTEGER NOT NULL,
+                `genre_name` TEXT NOT NULL,
+                FOREIGN KEY(`watch_history_id`) REFERENCES `watch_history`(`rowId`) ON DELETE CASCADE,
+                UNIQUE(`watch_history_id`, `genre_name`)
+            )"""
+        )
+        db.execSQL(
+            """INSERT OR IGNORE INTO `watch_history_genre_new` (watch_history_id, genre_name)
+               SELECT wh.rowId, wg.genre_name
+               FROM `watch_history_genre` wg
+               JOIN `watch_history` wh ON wh.movieId = wg.watch_history_id"""
+        )
+        db.execSQL("DROP TABLE `watch_history_genre`")
+        db.execSQL("ALTER TABLE `watch_history_genre_new` RENAME TO `watch_history_genre`")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_watch_history_genre_watch_history_id` " +
+                "ON `watch_history_genre` (`watch_history_id`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_watch_history_genre_genre_name` " +
+                "ON `watch_history_genre` (`genre_name`)"
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "`index_watch_history_genre_watch_history_id_genre_name` " +
+                "ON `watch_history_genre` (`watch_history_id`, `genre_name`)"
+        )
+    }
+
     // Room 데이터베이스 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
@@ -168,7 +244,7 @@ object DatabaseModule {
         )
             .addMigrations(
                 MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
-                MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19
+                MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20
             )
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()

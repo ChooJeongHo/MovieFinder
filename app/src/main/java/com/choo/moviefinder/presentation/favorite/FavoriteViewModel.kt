@@ -138,8 +138,8 @@ class FavoriteViewModel @Inject constructor(
     private val _reminderSnackbar = Channel<String>(Channel.CONFLATED)
     val reminderSnackbar = _reminderSnackbar.receiveAsFlow()
 
-    private val _scheduledReminders = MutableStateFlow<List<WatchlistReminder>>(emptyList())
-    val scheduledReminders: StateFlow<List<WatchlistReminder>> = _scheduledReminders.asStateFlow()
+    val scheduledReminders: StateFlow<List<WatchlistReminder>> = getWatchlistRemindersUseCase.asFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleFavorite(movie: Movie) = viewModelScope.launchWithErrorHandler(
@@ -246,16 +246,6 @@ class FavoriteViewModel @Inject constructor(
             )
             _reminderSnackbar.trySend(context.getString(com.choo.moviefinder.R.string.reminder_set_confirmation))
         }
-
-    // 알림이 예약된 워치리스트 영화 목록을 로드한다
-    fun loadScheduledReminders() = viewModelScope.launchWithErrorHandler(
-        onError = {
-            Timber.e("예약된 알림 목록 로드 실패")
-            _snackbarEvent.trySend(it)
-        }
-    ) {
-        _scheduledReminders.value = getWatchlistRemindersUseCase()
-    }
 
     // 워치리스트 영화의 알림을 취소한다
     fun clearWatchlistReminder(movieId: Int) = viewModelScope.launchWithErrorHandler(

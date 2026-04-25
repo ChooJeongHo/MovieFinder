@@ -85,9 +85,6 @@ class FavoriteFragment : Fragment() {
         updateSortLabel(viewModel.sortOrder.value)
         collectCurrentTab()
         observeViewModelFlows()
-        if (currentTab == TAB_WATCHLIST) {
-            viewModel.loadScheduledReminders()
-        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -190,11 +187,10 @@ class FavoriteFragment : Fragment() {
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 currentTab = tab.position
-                // 워치리스트 탭 전환 시 태그/평점 필터 초기화 및 알림 목록 로드
+                // 워치리스트 탭 전환 시 태그/평점 필터 초기화
                 if (currentTab == TAB_WATCHLIST) {
                     viewModel.onTagSelected(null)
                     viewModel.setMinRating(0f)
-                    viewModel.loadScheduledReminders()
                 }
                 updateReminderChipVisibility()
                 updateTagFilterVisibility()

@@ -159,6 +159,8 @@ class SearchViewModel @Inject constructor(
                     }
                 }
                 .collect { result ->
+                    // 모드가 변경된 경우 배우 검색 결과를 무시한다 (PERSON → MOVIE 전환 후 인플라이트 응답 블리드 방지)
+                    if (_searchMode.value != SearchMode.PERSON) return@collect
                     when {
                         result.isFailure -> {
                             _personResults.value = emptyList()

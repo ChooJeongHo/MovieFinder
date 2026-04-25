@@ -67,4 +67,17 @@ class WatchlistRepositoryImpl @Inject constructor(
             )
         }
     }
+
+    // 알림 날짜가 설정된 워치리스트 영화 목록을 실시간 Flow로 반환한다
+    override fun observeMoviesWithReminder(): Flow<List<WatchlistReminder>> {
+        return watchlistDao.observeMoviesWithReminder().map { entities ->
+            entities.map { entity ->
+                WatchlistReminder(
+                    movieId = entity.id,
+                    title = entity.title,
+                    reminderDate = entity.reminderDate
+                )
+            }
+        }
+    }
 }

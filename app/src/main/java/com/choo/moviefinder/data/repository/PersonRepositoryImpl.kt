@@ -21,7 +21,11 @@ class PersonRepositoryImpl @Inject constructor(
     // 인물 출연 영화 목록을 API에서 조회
     override suspend fun getPersonMovieCredits(personId: Int): List<Movie> {
         require(personId > 0) { "Person ID must be positive" }
-        return apiService.getPersonMovieCredits(personId).cast.map { it.toDomain() }
+        val response = apiService.getPersonMovieCredits(personId)
+        return (response.cast + response.crew)
+            .distinctBy { it.id }
+            .sortedByDescending { it.releaseDate }
+            .map { it.toDomain() }
     }
 
     // 이름으로 배우/인물을 검색하여 결과 목록을 반환한다

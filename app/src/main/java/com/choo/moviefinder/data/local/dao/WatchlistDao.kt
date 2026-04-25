@@ -72,4 +72,8 @@ abstract class WatchlistDao {
     // 알림 날짜가 설정된 워치리스트 영화를 조회한다
     @Query("SELECT * FROM watchlist_movies WHERE reminderDate IS NOT NULL ORDER BY reminderDate ASC")
     abstract suspend fun getMoviesWithReminder(): List<WatchlistEntity>
+
+    // 알림 날짜가 설정된 워치리스트 영화를 실시간 Flow로 관찰한다
+    @Query("SELECT * FROM watchlist_movies WHERE reminderDate IS NOT NULL ORDER BY reminderDate ASC")
+    abstract fun observeMoviesWithReminder(): Flow<List<WatchlistEntity>>
 }

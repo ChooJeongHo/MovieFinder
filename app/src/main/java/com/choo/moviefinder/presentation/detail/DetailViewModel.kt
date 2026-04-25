@@ -227,6 +227,11 @@ class DetailViewModel @Inject constructor(
         toggleMutex.withLock {
             val state = _uiState.value
             if (state is DetailUiState.Success) {
+                // NOTE: WhileSubscribed(5s) — stale read possible if upstream went cold.
+                // IsInWatchlistUseCase only exposes a Flow (no one-shot getOnce()),
+                // so we read the cached StateFlow value. The race window is narrow:
+                // the UI must be off-screen for >5s AND another actor must concurrently
+                // toggle the same movie. Acceptable for a low-priority notification side-effect.
                 val wasInWatchlist = isInWatchlist.value
                 val movie = state.movieDetail.toMovie()
                 toggleWatchlistUseCase(movie)

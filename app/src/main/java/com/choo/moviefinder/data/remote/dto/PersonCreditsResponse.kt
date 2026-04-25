@@ -5,5 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PersonCreditsResponse(
-    @SerialName("cast") val cast: List<MovieDto> = emptyList()
+    @SerialName("cast") val cast: List<MovieDto> = emptyList(),
+    @SerialName("crew") val crew: List<MovieDto> = emptyList()
 )

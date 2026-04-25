@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
     tableName = "watch_history_genre",
     foreignKeys = [ForeignKey(
         entity = WatchHistoryEntity::class,
-        parentColumns = ["id"],
+        parentColumns = ["rowId"],
         childColumns = ["watch_history_id"],
         onDelete = ForeignKey.CASCADE
     )],
@@ -22,6 +22,6 @@ import androidx.room.PrimaryKey
 )
 data class WatchHistoryGenreEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    @ColumnInfo(name = "watch_history_id") val watchHistoryId: Int,
+    @ColumnInfo(name = "watch_history_id") val watchHistoryId: Long,
     @ColumnInfo(name = "genre_name") val genreName: String
 )

@@ -61,13 +61,7 @@ class MovieRemoteMediator(
         }
 
         return try {
-            val response = withExponentialBackoff {
-                when (category) {
-                    CATEGORY_NOW_PLAYING -> apiService.getNowPlayingMovies(page)
-                    CATEGORY_POPULAR -> apiService.getPopularMovies(page)
-                    else -> throw IllegalArgumentException("Unknown category: $category")
-                }
-            }
+            val response = fetchMovies(page)
 
             val movies = response.results.map { dto ->
                 dto.toDomain().toCachedEntity(category, page)
@@ -82,10 +76,16 @@ class MovieRemoteMediator(
                 }
 
                 cachedMovieDao.insertAll(movies)
+                val lastUpdated = if (loadType == LoadType.REFRESH) {
+                    System.currentTimeMillis()
+                } else {
+                    remoteKeyDao.getRemoteKey(category)?.lastUpdated ?: System.currentTimeMillis()
+                }
                 remoteKeyDao.insert(
                     RemoteKeyEntity(
                         category = category,
-                        nextKey = if (endOfPaginationReached) null else page + 1
+                        nextKey = if (endOfPaginationReached) null else page + 1,
+                        lastUpdated = lastUpdated
                     )
                 )
             }
@@ -95,6 +95,15 @@ class MovieRemoteMediator(
             throw e
         } catch (e: Exception) {
             MediatorResult.Error(e)
+        }
+    }
+
+    // API 카테고리에 따라 적절한 엔드포인트를 호출한다
+    private suspend fun fetchMovies(page: Int) = withExponentialBackoff {
+        when (category) {
+            CATEGORY_NOW_PLAYING -> apiService.getNowPlayingMovies(page)
+            CATEGORY_POPULAR -> apiService.getPopularMovies(page)
+            else -> throw IllegalArgumentException("Unknown category: $category")
         }
     }
 

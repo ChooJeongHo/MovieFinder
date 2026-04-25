@@ -252,12 +252,12 @@ class SplitRepositoryImplTest {
     fun `getWatchHistory returns mapped domain movies`() = runTest {
         val entities = listOf(
             WatchHistoryEntity(
-                id = 1, title = "Movie 1", posterPath = "/p1.jpg",
+                movieId = 1, title = "Movie 1", posterPath = "/p1.jpg",
                 backdropPath = "/b1.jpg", overview = "Overview 1",
                 releaseDate = "2024-01-01", voteAverage = 8.0, voteCount = 500
             ),
             WatchHistoryEntity(
-                id = 2, title = "Movie 2", posterPath = "/p2.jpg",
+                movieId = 2, title = "Movie 2", posterPath = "/p2.jpg",
                 backdropPath = "/b2.jpg", overview = "Overview 2",
                 releaseDate = "2024-02-01", voteAverage = 7.5, voteCount = 300
             )
@@ -276,10 +276,11 @@ class SplitRepositoryImplTest {
     @Test
     fun `saveWatchHistory delegates to dao insert`() = runTest {
         val movie = Movie(1, "Test", "/p.jpg", "/b.jpg", "Overview", "2024-01-01", 8.0, 100)
+        coEvery { watchHistoryDao.insert(any()) } returns 1L
 
         watchHistoryRepo.saveWatchHistory(movie)
 
-        coVerify { watchHistoryDao.insert(match { it.id == 1 && it.title == "Test" }) }
+        coVerify { watchHistoryDao.insert(match { it.movieId == 1 && it.title == "Test" }) }
     }
 
     @Test
@@ -411,8 +412,8 @@ class SplitRepositoryImplTest {
         val result = personRepo.getPersonMovieCredits(5)
 
         assertEquals(2, result.size)
-        assertEquals("Similar 1", result[0].title)
-        assertEquals("Similar 2", result[1].title)
+        assertEquals("Similar 2", result[0].title)
+        assertEquals("Similar 1", result[1].title)
     }
 
     @Test(expected = IllegalArgumentException::class)

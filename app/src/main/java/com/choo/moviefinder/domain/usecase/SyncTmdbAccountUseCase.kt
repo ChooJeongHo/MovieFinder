@@ -28,6 +28,11 @@ class SyncTmdbAccountUseCase @Inject constructor(
         var favCount = 0
         for (movie in tmdbFavorites) {
             val alreadyFavorite = favoriteRepository.isFavorite(movie.id).first()
+            // NOTE: TOCTOU race — FavoriteRepository only exposes toggleFavorite() (no addFavorite()).
+            // Another coroutine could add the movie between the isFavorite check and the toggle,
+            // causing the toggle to delete it. The window is extremely narrow in practice
+            // (sync runs once at login, no concurrent writer expected). A dedicated addFavorite()
+            // method would eliminate this entirely but requires a new repository API.
             if (!alreadyFavorite) {
                 favoriteRepository.toggleFavorite(movie)
                 favCount++
@@ -39,6 +44,8 @@ class SyncTmdbAccountUseCase @Inject constructor(
         var watchCount = 0
         for (movie in tmdbWatchlist) {
             val alreadyInWatchlist = watchlistRepository.isInWatchlist(movie.id).first()
+            // NOTE: Same TOCTOU race as above — WatchlistRepository only exposes toggleWatchlist().
+            // Race window is narrow; acceptable for a one-shot sync operation.
             if (!alreadyInWatchlist) {
                 watchlistRepository.toggleWatchlist(movie)
                 watchCount++

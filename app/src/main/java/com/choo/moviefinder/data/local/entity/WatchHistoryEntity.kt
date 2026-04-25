@@ -11,12 +11,14 @@ import java.util.Locale
 @Entity(
     tableName = "watch_history",
     indices = [
+        Index(value = ["movieId"]),
         Index(value = ["watchedAt"]),
         Index(value = ["yearMonth"])
     ]
 )
 data class WatchHistoryEntity(
-    @PrimaryKey val id: Int,
+    @PrimaryKey(autoGenerate = true) val rowId: Long = 0,
+    val movieId: Int,
     val title: String,
     val posterPath: String?,
     val backdropPath: String?,
@@ -31,7 +33,7 @@ data class WatchHistoryEntity(
 
 // 시청 기록 Entity를 도메인 Movie 모델로 변환
 fun WatchHistoryEntity.toDomain() = Movie(
-    id = id,
+    id = movieId,
     title = title,
     posterPath = posterPath,
     backdropPath = backdropPath,
@@ -45,7 +47,8 @@ fun WatchHistoryEntity.toDomain() = Movie(
 fun Movie.toWatchHistoryEntity(genres: String = ""): WatchHistoryEntity {
     val now = System.currentTimeMillis()
     return WatchHistoryEntity(
-        id = id,
+        rowId = 0,
+        movieId = id,
         title = title,
         posterPath = posterPath,
         backdropPath = backdropPath,

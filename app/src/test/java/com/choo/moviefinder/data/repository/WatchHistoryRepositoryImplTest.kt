@@ -30,7 +30,7 @@ class WatchHistoryRepositoryImplTest {
     fun `saveWatchHistoryWithGenres inserts movie entity`() = runTest {
         repository.saveWatchHistoryWithGenres(testMovie, "Action,Drama")
 
-        coVerify { watchHistoryDao.insertWithGenres(match { it.id == 1 && it.title == "Test" }, any()) }
+        coVerify { watchHistoryDao.insertWithGenres(match { it.movieId == 1 && it.title == "Test" }, any()) }
     }
 
     @Test
@@ -81,13 +81,13 @@ class WatchHistoryRepositoryImplTest {
     }
 
     @Test
-    fun `saveWatchHistoryWithGenres sets correct watchHistoryId on genre entities`() = runTest {
+    fun `saveWatchHistoryWithGenres passes placeholder watchHistoryId — DAO overwrites with real rowId`() = runTest {
         repository.saveWatchHistoryWithGenres(testMovie, "Action")
 
         coVerify {
             watchHistoryDao.insertWithGenres(
                 any(),
-                match { genres -> genres.all { it.watchHistoryId == testMovie.id } }
+                match { genres -> genres.all { it.watchHistoryId == 0L } }
             )
         }
     }

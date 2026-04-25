@@ -31,11 +31,12 @@ class WatchHistoryRepositoryImpl @Inject constructor(
     }
 
     // 영화를 장르 정보와 함께 시청 기록에 저장 — insert + insertGenres를 단일 트랜잭션으로 처리
+    // watchHistoryId 플레이스홀더(0L)는 DAO의 insertWithGenres에서 실제 rowId로 교체됨
     override suspend fun saveWatchHistoryWithGenres(movie: Movie, genres: String) {
         val genreEntities = genres.split(",")
             .map { it.trim() }
             .filter { it.isNotEmpty() }
-            .map { WatchHistoryGenreEntity(watchHistoryId = movie.id, genreName = it) }
+            .map { WatchHistoryGenreEntity(watchHistoryId = 0L, genreName = it) }
         watchHistoryDao.insertWithGenres(movie.toWatchHistoryEntity(genres), genreEntities)
     }
 

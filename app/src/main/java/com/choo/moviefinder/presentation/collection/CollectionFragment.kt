@@ -94,14 +94,14 @@ class CollectionFragment : Fragment() {
                     val isSuccess = state is CollectionUiState.Success
                     binding.tvCollectionName.isVisible = isSuccess
                     binding.tvOverview.isVisible = isSuccess
-                    binding.tvMoviesHeader.isVisible = isSuccess
-                    binding.rvCollectionMovies.isVisible = isSuccess
 
                     when (state) {
                         is CollectionUiState.Success -> {
                             bindCollection(state.collection)
-                            binding.tvEmpty.isVisible = state.collection.movies.isEmpty()
-                            binding.tvMoviesHeader.isVisible = state.collection.movies.isNotEmpty()
+                            val hasMovies = state.collection.movies.isNotEmpty()
+                            binding.rvCollectionMovies.isVisible = hasMovies
+                            binding.tvEmpty.isVisible = !hasMovies
+                            binding.tvMoviesHeader.isVisible = hasMovies
                         }
                         is CollectionUiState.Error -> {
                             binding.errorView.tvErrorMessage.text =

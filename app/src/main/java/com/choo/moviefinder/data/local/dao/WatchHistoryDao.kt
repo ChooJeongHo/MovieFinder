@@ -16,9 +16,9 @@ abstract class WatchHistoryDao {
     @Query("SELECT * FROM watch_history ORDER BY watchedAt DESC LIMIT :limit")
     abstract fun getRecentHistory(limit: Int): Flow<List<WatchHistoryEntity>>
 
-    // 시청 기록 삽입 (중복 시 타임스탬프 갱신)
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insert(entity: WatchHistoryEntity)
+    // 시청 기록 삽입 (재시청 지원 — 새 rowId 발급, 기존 레코드 유지)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    abstract suspend fun insert(entity: WatchHistoryEntity): Long
 
     // 모든 시청 기록 삭제
     @Query("DELETE FROM watch_history")
@@ -63,10 +63,14 @@ abstract class WatchHistoryDao {
     abstract fun getDailyWatchCounts(since: Long): Flow<List<DailyCount>>
 
     // 시청 기록과 장르를 하나의 트랜잭션으로 원자적 삽입
+    // insert()가 반환한 rowId를 장르 엔티티의 watchHistoryId로 사용하여 FK 정합성 보장
     @Transaction
     open suspend fun insertWithGenres(entity: WatchHistoryEntity, genres: List<WatchHistoryGenreEntity>) {
-        insert(entity)
-        if (genres.isNotEmpty()) insertGenres(genres)
+        val rowId = insert(entity)
+        if (genres.isNotEmpty()) {
+            val linkedGenres = genres.map { it.copy(watchHistoryId = rowId) }
+            insertGenres(linkedGenres)
+        }
     }
 
     // 시청 기록 전체와 장르 기록을 하나의 트랜잭션으로 원자적 삭제 (고아 데이터 방지)
