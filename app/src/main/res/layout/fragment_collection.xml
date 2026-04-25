@@ -28,7 +28,7 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:navigationContentDescription="@string/cd_navigate_back"
+                app:navigationContentDescription="@string/cd_navigate_back"
                 app:navigationIcon="@drawable/ic_arrow_back"
                 app:layout_collapseMode="pin" />
 

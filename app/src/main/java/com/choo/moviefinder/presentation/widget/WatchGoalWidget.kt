@@ -7,14 +7,14 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
-import androidx.datastore.core.DataStoreFactory
 import androidx.room.Room
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.currentMonthStartMillis
 import com.choo.moviefinder.data.local.MovieDatabase
-import com.choo.moviefinder.data.local.UserSettingsSerializer
+import com.choo.moviefinder.data.local.UserSettings
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.io.File
 
@@ -85,11 +85,14 @@ class WatchGoalWidget : AppWidgetProvider() {
                         .getCountSince(currentMonthStartMillis())
                         .first()
 
-                    val dataStore = DataStoreFactory.create(
-                        serializer = UserSettingsSerializer,
-                        produceFile = { File(context.filesDir, "datastore/user_settings.json") }
-                    )
-                    val goal = dataStore.data.first().monthlyWatchGoal
+                    val settingsFile = File(context.filesDir, "datastore/user_settings.json")
+                    val goal = if (settingsFile.exists()) {
+                        runCatching {
+                            Json.decodeFromString<UserSettings>(settingsFile.readText()).monthlyWatchGoal
+                        }.getOrDefault(0)
+                    } else {
+                        0
+                    }
 
                     Pair(watched, goal)
                 }

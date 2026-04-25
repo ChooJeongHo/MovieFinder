@@ -2,6 +2,7 @@ package com.choo.moviefinder.domain.usecase
 
 import androidx.paging.PagingData
 import com.choo.moviefinder.domain.model.Cast
+import com.choo.moviefinder.domain.model.Credits
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
@@ -196,17 +197,18 @@ class MovieUseCasesTest {
     @Test
     fun `GetMovieCreditsUseCase returns cast list from repository`() = runTest {
         val cast = listOf(Cast(1, "Actor Name", "Character", "/profile.jpg"))
-        coEvery { movieRepository.getMovieCredits(1) } returns cast
+        val credits = Credits(cast = cast, directors = emptyList())
+        coEvery { movieRepository.getMovieCredits(1) } returns credits
         val useCase = GetMovieCreditsUseCase(movieRepository)
 
         val result = useCase(1)
 
-        assertEquals(cast, result)
+        assertEquals(credits, result)
     }
 
     @Test
     fun `GetMovieCreditsUseCase passes correct movieId`() = runTest {
-        coEvery { movieRepository.getMovieCredits(7) } returns emptyList()
+        coEvery { movieRepository.getMovieCredits(7) } returns Credits(cast = emptyList(), directors = emptyList())
         val useCase = GetMovieCreditsUseCase(movieRepository)
 
         useCase(7)

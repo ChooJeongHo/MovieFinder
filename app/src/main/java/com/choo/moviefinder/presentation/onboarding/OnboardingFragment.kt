@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.datastore.core.DataStore
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
@@ -12,8 +11,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.choo.moviefinder.R
-import com.choo.moviefinder.data.local.UserSettings
 import com.choo.moviefinder.databinding.FragmentOnboardingBinding
+import com.choo.moviefinder.domain.usecase.CompleteOnboardingUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -22,7 +21,7 @@ import javax.inject.Inject
 class OnboardingFragment : Fragment() {
 
     @Inject
-    lateinit var userSettingsDataStore: DataStore<UserSettings>
+    lateinit var completeOnboardingUseCase: CompleteOnboardingUseCase
 
     private var _binding: FragmentOnboardingBinding? = null
     private val binding get() = _binding!!
@@ -102,9 +101,7 @@ class OnboardingFragment : Fragment() {
 
     private fun completeOnboarding() {
         lifecycleScope.launch {
-            userSettingsDataStore.updateData { current ->
-                current.copy(onboardingCompleted = true)
-            }
+            completeOnboardingUseCase()
             findNavController().navigate(R.id.action_onboarding_to_home)
         }
     }

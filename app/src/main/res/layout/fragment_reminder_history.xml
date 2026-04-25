@@ -18,12 +18,11 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ProgressBar
-            android:id="@+id/progress_bar"
-            android:layout_width="wrap_content"
+        <include
+            android:id="@+id/shimmer_view"
+            layout="@layout/layout_shimmer_reminder"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:importantForAccessibility="no"
             android:visibility="visible" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -34,6 +33,13 @@
             android:paddingVertical="@dimen/spacing_xs"
             android:visibility="gone"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <include
+            android:id="@+id/error_view"
+            layout="@layout/layout_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/tv_empty"

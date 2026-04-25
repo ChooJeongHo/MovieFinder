@@ -11,6 +11,7 @@ import com.choo.moviefinder.data.remote.dto.PersonSearchResponse
 import com.choo.moviefinder.data.remote.dto.ReleaseDateResponse
 import com.choo.moviefinder.data.remote.dto.ReviewResponse
 import com.choo.moviefinder.data.remote.dto.VideoResponse
+import com.choo.moviefinder.data.remote.dto.WatchProviderResponse
 import com.choo.moviefinder.data.util.Constants
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -151,4 +152,8 @@ interface MovieApiService {
         @Path("collection_id") collectionId: Int,
         @Query("language") language: String = Constants.LANGUAGE_KO
     ): CollectionDto
+
+    // 영화 스트리밍 제공 정보 조회
+    @GET("movie/{id}/watch/providers")
+    suspend fun getWatchProviders(@Path("id") movieId: Int): WatchProviderResponse
 }

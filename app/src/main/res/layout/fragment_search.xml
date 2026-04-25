@@ -253,12 +253,12 @@
                 android:id="@+id/tv_offline_banner"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="?attr/colorSecondaryContainer"
+                android:background="?attr/colorSurface"
                 android:paddingHorizontal="@dimen/spacing_md"
                 android:paddingVertical="@dimen/spacing_sm"
                 android:text="@string/offline_local_search_banner"
                 android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="?attr/colorOnSecondaryContainer" />
+                android:textColor="?attr/colorOnSurface" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_offline_results"

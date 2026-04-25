@@ -3,6 +3,8 @@ package com.choo.moviefinder.presentation.collection
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.choo.moviefinder.core.util.ErrorMessageProvider
+import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.CollectionDetail
 import com.choo.moviefinder.domain.usecase.GetCollectionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +17,7 @@ import javax.inject.Inject
 sealed class CollectionUiState {
     object Loading : CollectionUiState()
     data class Success(val collection: CollectionDetail) : CollectionUiState()
-    data class Error(val message: String) : CollectionUiState()
+    data class Error(val errorType: ErrorType) : CollectionUiState()
 }
 
 @HiltViewModel
@@ -41,7 +43,7 @@ class CollectionViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _uiState.value = CollectionUiState.Error(e.message ?: "Unknown error")
+                _uiState.value = CollectionUiState.Error(ErrorMessageProvider.getErrorType(e))
             }
         }
     }

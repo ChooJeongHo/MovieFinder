@@ -63,9 +63,9 @@ class HistogramView @JvmOverloads constructor(
         countMap = items.associateBy { it.rating }
         cachedMaxCount = items.maxOfOrNull { it.count }?.coerceAtLeast(1) ?: 1
         ratingLabels.clear()
-        ALL_RATINGS.forEach { rating -> ratingLabels[rating] = "%.1f★".format(Locale.US, rating) }
+        ALL_RATINGS.forEach { rating -> ratingLabels[rating] = String.format(Locale.US, "%.1f★", rating) }
         contentDescription = buckets.joinToString(", ") { bucket ->
-            "%.1f★: %d".format(Locale.US, bucket.rating, bucket.count)
+            String.format(Locale.US, "%.1f★: %d", bucket.rating, bucket.count)
         }
         invalidate()
     }

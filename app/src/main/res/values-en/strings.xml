@@ -21,9 +21,11 @@
     <string name="search_initial_message">Enter a movie title to search</string>
 
     <!-- Detail Screen -->
+    <string name="streaming_providers_label">Streaming</string>
     <string name="release_date_format">Release Date: %s</string>
     <string name="runtime_format">%d min</string>
     <string name="overview_title">Overview</string>
+    <string name="director_label">Director</string>
     <string name="cast_title">Cast</string>
     <string name="similar_movies_title">Similar Movies</string>
     <string name="reviews_label">Reviews</string>
@@ -70,7 +72,7 @@
     <string name="cd_rating">Rating %.1f</string>
     <string name="cd_error_icon">Error icon</string>
     <string name="cd_loading">Loading</string>
-    <string name="cd_movie_item">%1$s, rating %2$.1f</string>
+    <string name="cd_movie_item">%1$s, released %3$s, rating %2$.1f</string>
     <string name="cd_certification">Rated %s</string>
     <string name="cd_review_collapsed">Tap to expand</string>
     <string name="cd_review_expanded">Tap to collapse</string>
@@ -81,6 +83,7 @@
     <string name="cd_recent_search_item">Search again for %s</string>
     <string name="cd_cast_item">%1$s, as %2$s</string>
     <string name="cd_widget_refresh">Refresh widget</string>
+    <string name="cd_widget_rating">Rating %.1f</string>
 
     <!-- Theme Settings -->
     <string name="theme_settings">Theme Settings</string>
@@ -359,6 +362,8 @@
     <string name="tmdb_syncing">Syncing…</string>
     <string name="tmdb_auth_success">TMDB account connected successfully.</string>
     <string name="tmdb_auth_failed">TMDB authentication failed.</string>
+    <string name="tmdb_sync_success">Imported %1$d favorites and %2$d watchlist items.</string>
+    <string name="tmdb_sync_failed">Sync failed: %1$s</string>
     <string name="tmdb_submit_rating">Submit Rating to TMDB</string>
     <string name="tmdb_rating_dialog_title">TMDB Rating (0.5 ~ 5.0)</string>
     <string name="tmdb_rating_success">Rating submitted to TMDB.</string>
@@ -369,4 +374,36 @@
     <string name="filter_rating_3">3.0★+</string>
     <string name="filter_rating_4">4.0★+</string>
     <string name="filter_rating_5">5.0★</string>
+
+    <!-- Home empty state -->
+    <string name="home_empty_title">No Movies to Show</string>
+    <string name="home_empty_message">Please try again later</string>
+
+    <!-- Home tabs -->
+    <string name="tab_upcoming">Upcoming</string>
+
+    <!-- Search -->
+    <string name="search_watch_history_suggestion">How about these movies?</string>
+
+    <!-- Reminder -->
+    <string name="reminder_cancel">Cancel</string>
+    <string name="settings_reminder_history">Reminder History</string>
+    <string name="settings_reminder_history_description">List of scheduled release date reminders</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_start">Get Started</string>
+    <string name="onboarding_page1_title">Search and Discover Movies</string>
+    <string name="onboarding_page1_desc">Search for movies by title or browse by genre and sort order</string>
+    <string name="onboarding_page2_title">Manage Favorites and Watchlist</string>
+    <string name="onboarding_page2_desc">Add movies you want to watch to your watchlist, and save favorites you love</string>
+    <string name="onboarding_page3_title">Analyze Your Taste with Watch Stats</string>
+    <string name="onboarding_page3_desc">See your monthly watch history and genre breakdown to discover your personal taste</string>
+
+    <!-- Accessibility -->
+    <string name="cd_swipe_refresh">Swipe down to refresh</string>
+    <string name="cd_cancel_reminder_for">Cancel reminder for %1$s</string>
+    <string name="cd_memo">Memo: %1$s (saved %2$s)</string>
+    <string name="reminder_cancel_failed">Failed to cancel reminder.</string>
 </resources>

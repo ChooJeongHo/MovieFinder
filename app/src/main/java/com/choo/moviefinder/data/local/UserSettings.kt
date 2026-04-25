@@ -8,7 +8,4 @@ data class UserSettings(
     val monthlyWatchGoal: Int = 0,
     val lastGoalNotifiedMonth: String = "",
     val onboardingCompleted: Boolean = false,
-    val tmdbAccessToken: String? = null,
-    val tmdbAccountId: String? = null,
-    val tmdbSessionId: String? = null,
 )

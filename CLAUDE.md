@@ -6,18 +6,18 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ## 기술 스택
 
 ### 빌드 환경
-- **AGP**: 9.1.0 (Android Gradle Plugin, Kotlin 2.2.10 내장)
+- **AGP**: 9.2.0 (Android Gradle Plugin, Kotlin 2.3.21 내장)
 - **Gradle**: 9.3.1
 - **compileSdk**: 36 (Android 15)
 - **minSdk**: 24 / **targetSdk**: 36
-- **KSP**: 2.3.2 (Kotlin Symbol Processing)
+- **KSP**: 2.3.6 (Kotlin Symbol Processing)
 
 ### 핵심 라이브러리
 | 라이브러리 | 버전 | 용도 |
 |---|---|---|
 | AppCompat | 1.7.1 | Android 하위 호환성 |
 | Material Components | 1.13.0 | Material Design XML 컴포넌트 |
-| Navigation (Fragment) | 2.9.7 | Safe Args 기반 Fragment 네비게이션 |
+| Navigation (Fragment) | 2.9.8 | Safe Args 기반 Fragment 네비게이션 |
 | Fragment KTX | 1.8.9 | Fragment 확장 함수 |
 | ConstraintLayout | 2.2.1 | 유연한 레이아웃 |
 | RecyclerView | 1.4.0 | 리스트/그리드 표시 |
@@ -27,7 +27,7 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | Paging 3 | 3.4.2 | 무한 스크롤 페이징 |
 | Retrofit 3 | 3.0.0 | REST API 통신 |
 | OkHttp 5 | 5.3.2 | HTTP 클라이언트 + 로깅 + 응답 캐시 (kotlin.time.Duration API) |
-| kotlinx.serialization | 1.10.0 | JSON 직렬화/역직렬화 |
+| kotlinx.serialization | 1.11.0 | JSON 직렬화/역직렬화 |
 | Coil 3 | 3.4.0 | 이미지 로딩 (View 버전, 메모리+디스크 캐시) |
 | Facebook Shimmer | 0.5.0 | 로딩 Shimmer 애니메이션 |
 | Lifecycle | 2.10.0 | 생명주기 인식 컴포넌트 |
@@ -42,6 +42,7 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | WorkManager | 2.11.2 | 개봉일 알림 스케줄링 |
 | kotlinx-datetime | 0.7.1 | 멀티플랫폼 날짜/시간 API |
 | Window | 1.3.0 | 윈도우 레이아웃 API |
+| android-youtube-player | 13.0.0 | YouTube 예고편 외부 연결 (임베드 제한으로 인해 앱 외부 실행) |
 
 ### 개발/디버그 도구
 | 도구 | 버전 | 용도 |
@@ -108,7 +109,7 @@ app/src/main/java/com/choo/moviefinder/
 ├── domain/                # 도메인 레이어 (순수 Kotlin)
 │   ├── model/             # 도메인 모델
 │   ├── repository/        # Repository 인터페이스 11개
-│   └── usecase/           # UseCase 48개
+│   └── usecase/           # UseCase 49개
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 8개 + MovieGridViewHolder + MovieListViewHolder
 │   ├── common/            # CircularRatingView, PieChartView, BarChartView, HistogramView, CalendarHeatmapView
@@ -194,7 +195,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (465개)
+### 유닛 테스트 (471개)
 ```bash
 ./gradlew testDebugUnitTest
 ```

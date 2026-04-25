@@ -5,6 +5,7 @@ import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
 import com.choo.moviefinder.core.notification.WatchGoalNotificationHelper
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Cast
+import com.choo.moviefinder.domain.model.Credits
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
@@ -16,6 +17,7 @@ import com.choo.moviefinder.domain.usecase.GetMovieRecommendationsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieReviewsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
 import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetWatchProvidersUseCase
 import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.IsInWatchlistUseCase
 import com.choo.moviefinder.domain.usecase.SaveWatchHistoryUseCase
@@ -37,6 +39,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -55,6 +58,7 @@ class DetailViewModelTest {
     private lateinit var getMovieCertificationUseCase: GetMovieCertificationUseCase
     private lateinit var getMovieReviewsUseCase: GetMovieReviewsUseCase
     private lateinit var getMovieRecommendationsUseCase: GetMovieRecommendationsUseCase
+    private lateinit var getWatchProvidersUseCase: GetWatchProvidersUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var isFavoriteUseCase: IsFavoriteUseCase
     private lateinit var toggleWatchlistUseCase: ToggleWatchlistUseCase
@@ -90,6 +94,8 @@ class DetailViewModelTest {
         Cast(1, "Actor 1", "Character 1", "/profile1.jpg"),
         Cast(2, "Actor 2", "Character 2", "/profile2.jpg")
     )
+
+    private val testCredits = Credits(cast = testCasts, directors = listOf("Test Director"))
 
     private val testSimilarMovies = listOf(
         Movie(2, "Similar 1", "/poster2.jpg", "/backdrop2.jpg", "Overview 2", "2024-02-01", 7.0, 500),
@@ -128,11 +134,13 @@ class DetailViewModelTest {
         every { getUserRatingUseCase(any()) } returns flowOf(null)
 
         getMovieRecommendationsUseCase = mockk()
+        getWatchProvidersUseCase = mockk()
 
         coEvery { getMovieTrailerUseCase(any()) } returns null
         coEvery { getMovieCertificationUseCase(any()) } returns null
         coEvery { getMovieReviewsUseCase(any()) } returns emptyList()
         coEvery { getMovieRecommendationsUseCase(any()) } returns emptyList()
+        coEvery { getWatchProvidersUseCase(any()) } returns emptyList()
         coEvery { saveWatchHistoryUseCase(any(), any()) } returns Unit
 
         every { isFavoriteUseCase(any()) } returns flowOf(false)
@@ -153,7 +161,8 @@ class DetailViewModelTest {
             getMovieTrailer = getMovieTrailerUseCase,
             getMovieCertification = getMovieCertificationUseCase,
             getMovieReviews = getMovieReviewsUseCase,
-            getMovieRecommendations = getMovieRecommendationsUseCase
+            getMovieRecommendations = getMovieRecommendationsUseCase,
+            getWatchProviders = getWatchProvidersUseCase
         )
         return DetailViewModel(
             savedStateHandle = savedStateHandle,
@@ -180,7 +189,7 @@ class DetailViewModelTest {
     @Test
     fun `init triggers loading then success state`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
 
         val viewModel = createViewModel()
@@ -190,7 +199,7 @@ class DetailViewModelTest {
         assertTrue(state is DetailUiState.Success)
         state as DetailUiState.Success
         assertEquals(testMovieDetail, state.movieDetail)
-        assertEquals(testCasts, state.credits)
+        assertEquals(testCredits, state.credits)
         assertEquals(testSimilarMovies, state.similarMovies)
     }
 
@@ -198,7 +207,7 @@ class DetailViewModelTest {
     fun `detail API failure shows error state with NETWORK type`() = runTest {
         val exception = UnknownHostException("no network")
         coEvery { getMovieDetailUseCase(1) } throws exception
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
 
         val viewModel = createViewModel()
@@ -222,14 +231,14 @@ class DetailViewModelTest {
         assertTrue(state is DetailUiState.Success)
         state as DetailUiState.Success
         assertEquals(testMovieDetail, state.movieDetail)
-        assertTrue(state.credits!!.isEmpty())
+        assertNull(state.credits)
         assertEquals(testSimilarMovies, state.similarMovies)
     }
 
     @Test
     fun `similar movies failure still shows success with empty similar`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } throws RuntimeException("similar failed")
 
         val viewModel = createViewModel()
@@ -239,13 +248,13 @@ class DetailViewModelTest {
         assertTrue(state is DetailUiState.Success)
         state as DetailUiState.Success
         assertTrue(state.similarMovies!!.isEmpty())
-        assertEquals(testCasts, state.credits)
+        assertEquals(testCredits, state.credits)
     }
 
     @Test
     fun `toggleFavorite calls use case with converted movie`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { toggleFavoriteUseCase(any()) } returns Unit
 
@@ -265,7 +274,7 @@ class DetailViewModelTest {
     @Test
     fun `toggleFavorite failure emits snackbar event with error type`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { toggleFavoriteUseCase(any()) } throws RuntimeException("DB error")
 
@@ -295,7 +304,7 @@ class DetailViewModelTest {
     fun `isFavorite reflects use case flow`() = runTest {
         every { isFavoriteUseCase(1) } returns flowOf(true)
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
 
         val viewModel = createViewModel()
@@ -314,7 +323,7 @@ class DetailViewModelTest {
     @Test
     fun `trailer failure still shows success with null trailer`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { getMovieTrailerUseCase(1) } throws RuntimeException("trailer failed")
 
@@ -331,7 +340,7 @@ class DetailViewModelTest {
     @Test
     fun `loadMovieDetail ignores duplicate call while loading`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
 
         val viewModel = createViewModel()
@@ -353,7 +362,7 @@ class DetailViewModelTest {
 
         // 재시도 시 성공
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
 
         viewModel.loadMovieDetail()
@@ -366,7 +375,7 @@ class DetailViewModelTest {
     @Test
     fun `toggleWatchlist calls use case with converted movie`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { toggleWatchlistUseCase(any()) } returns Unit
 
@@ -386,7 +395,7 @@ class DetailViewModelTest {
     @Test
     fun `toggleWatchlist failure emits snackbar event`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { toggleWatchlistUseCase(any()) } throws RuntimeException("DB error")
 
@@ -403,7 +412,7 @@ class DetailViewModelTest {
     fun `isInWatchlist reflects use case flow`() = runTest {
         every { isInWatchlistUseCase(1) } returns flowOf(true)
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
 
         val viewModel = createViewModel()
@@ -421,7 +430,7 @@ class DetailViewModelTest {
     @Test
     fun `certification loads in success state`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { getMovieCertificationUseCase(1) } returns "15"
 
@@ -441,7 +450,7 @@ class DetailViewModelTest {
             Review("r2", "Author2", "/avatar.jpg", null, "Not bad", "2024-02-01")
         )
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { getMovieReviewsUseCase(1) } returns testReviews
 
@@ -458,7 +467,7 @@ class DetailViewModelTest {
     @Test
     fun `reviews failure still shows success with empty reviews`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { getMovieReviewsUseCase(1) } throws RuntimeException("reviews failed")
 
@@ -474,7 +483,7 @@ class DetailViewModelTest {
     @Test
     fun `toggleWatchlist schedules notification when adding to watchlist`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { toggleWatchlistUseCase(any()) } returns Unit
         every { isInWatchlistUseCase(1) } returns flowOf(false)
@@ -499,7 +508,7 @@ class DetailViewModelTest {
     @Test
     fun `setUserRating calls use case with correct params`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { setUserRatingUseCase(any(), any()) } returns Unit
 
@@ -515,7 +524,7 @@ class DetailViewModelTest {
     @Test
     fun `setUserRating failure emits snackbar event`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { setUserRatingUseCase(any(), any()) } throws RuntimeException("DB error")
 
@@ -531,7 +540,7 @@ class DetailViewModelTest {
     @Test
     fun `deleteUserRating calls use case`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { deleteUserRatingUseCase(any()) } returns Unit
 
@@ -547,7 +556,7 @@ class DetailViewModelTest {
     @Test
     fun `deleteUserRating failure emits snackbar event`() = runTest {
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { deleteUserRatingUseCase(any()) } throws RuntimeException("DB error")
 
@@ -564,7 +573,7 @@ class DetailViewModelTest {
     fun `userRating emits values from use case`() = runTest {
         every { getUserRatingUseCase(1) } returns flowOf(4.0f)
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
 
         val viewModel = createViewModel()
@@ -583,7 +592,7 @@ class DetailViewModelTest {
     fun `toggleWatchlist cancels notification when removing from watchlist`() = runTest {
         every { isInWatchlistUseCase(1) } returns flowOf(true)
         coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
-        coEvery { getMovieCreditsUseCase(1) } returns testCasts
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
         coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
         coEvery { toggleWatchlistUseCase(any()) } returns Unit
 

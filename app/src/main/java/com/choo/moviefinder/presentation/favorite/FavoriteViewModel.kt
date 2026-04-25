@@ -11,17 +11,19 @@ import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.core.util.PosterTagSuggester
-import com.choo.moviefinder.data.local.dao.WatchlistDao
-import com.choo.moviefinder.data.local.entity.WatchlistEntity
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.model.WatchlistReminder
 import com.choo.moviefinder.domain.model.MovieTag
 import com.choo.moviefinder.domain.usecase.AddTagToMovieUseCase
 import com.choo.moviefinder.domain.usecase.GetAllTagNamesUseCase
 import com.choo.moviefinder.domain.usecase.GetFavoriteMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetFavoritesByTagUseCase
 import com.choo.moviefinder.domain.usecase.GetTagsForMovieUseCase
+import com.choo.moviefinder.domain.usecase.ClearWatchlistReminderUseCase
+import com.choo.moviefinder.domain.usecase.GetWatchlistRemindersUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchlistUseCase
 import com.choo.moviefinder.domain.usecase.RemoveTagFromMovieUseCase
+import com.choo.moviefinder.domain.usecase.SetWatchlistReminderUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import com.choo.moviefinder.domain.repository.UserRatingRepository
@@ -59,7 +61,9 @@ class FavoriteViewModel @Inject constructor(
     private val removeTagFromMovieUseCase: RemoveTagFromMovieUseCase,
     private val posterTagSuggester: PosterTagSuggester,
     private val userRatingRepository: UserRatingRepository,
-    private val watchlistDao: WatchlistDao,
+    private val setWatchlistReminderUseCase: SetWatchlistReminderUseCase,
+    private val clearWatchlistReminderUseCase: ClearWatchlistReminderUseCase,
+    private val getWatchlistRemindersUseCase: GetWatchlistRemindersUseCase,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -134,8 +138,8 @@ class FavoriteViewModel @Inject constructor(
     private val _reminderSnackbar = Channel<String>(Channel.CONFLATED)
     val reminderSnackbar = _reminderSnackbar.receiveAsFlow()
 
-    private val _scheduledReminders = MutableStateFlow<List<WatchlistEntity>>(emptyList())
-    val scheduledReminders: StateFlow<List<WatchlistEntity>> = _scheduledReminders.asStateFlow()
+    private val _scheduledReminders = MutableStateFlow<List<WatchlistReminder>>(emptyList())
+    val scheduledReminders: StateFlow<List<WatchlistReminder>> = _scheduledReminders.asStateFlow()
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleFavorite(movie: Movie) = viewModelScope.launchWithErrorHandler(
@@ -223,7 +227,7 @@ class FavoriteViewModel @Inject constructor(
                 _snackbarEvent.trySend(it)
             }
         ) {
-            watchlistDao.setReminder(movie.id, dateMillis)
+            setWatchlistReminderUseCase(movie.id, dateMillis)
             val delay = dateMillis - System.currentTimeMillis()
             if (delay <= 0) return@launchWithErrorHandler
             val inputData = workDataOf(
@@ -250,7 +254,7 @@ class FavoriteViewModel @Inject constructor(
             _snackbarEvent.trySend(it)
         }
     ) {
-        _scheduledReminders.value = watchlistDao.getMoviesWithReminder()
+        _scheduledReminders.value = getWatchlistRemindersUseCase()
     }
 
     // 워치리스트 영화의 알림을 취소한다
@@ -260,7 +264,7 @@ class FavoriteViewModel @Inject constructor(
             _snackbarEvent.trySend(it)
         }
     ) {
-        watchlistDao.clearReminder(movieId)
+        clearWatchlistReminderUseCase(movieId)
         workManager.cancelUniqueWork("watchlist_reminder_$movieId")
     }
 }

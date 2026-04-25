@@ -14,11 +14,15 @@ import android.view.View
 import android.view.ViewGroup
 import android.text.InputFilter
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -27,6 +31,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import coil3.load
 import coil3.request.crossfade
 import coil3.request.error
@@ -47,8 +52,6 @@ import com.choo.moviefinder.presentation.collection.CollectionFragmentArgs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -109,6 +112,31 @@ class DetailFragment : Fragment() {
         setupFab()
         setupMemoInput()
         observeViewModelFlows()
+
+        // edge-to-edge: 하단 네비게이션 바 인셋 처리 (상단은 fitsSystemWindows로 처리됨)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.nestedScroll) { v, insets ->
+            val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            v.updatePadding(bottom = navBar.bottom)
+            insets
+        }
+        val favOriginalBottom =
+            (binding.fabFavorite.layoutParams as? android.view.ViewGroup.MarginLayoutParams)
+                ?.bottomMargin ?: 0
+        val watchOriginalBottom =
+            (binding.fabWatchlist.layoutParams as? android.view.ViewGroup.MarginLayoutParams)
+                ?.bottomMargin ?: 0
+        ViewCompat.setOnApplyWindowInsetsListener(binding.fabFavorite) { v, insets ->
+            val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            (v.layoutParams as? android.view.ViewGroup.MarginLayoutParams)?.bottomMargin =
+                favOriginalBottom + navBar.bottom
+            insets
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(binding.fabWatchlist) { v, insets ->
+            val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            (v.layoutParams as? android.view.ViewGroup.MarginLayoutParams)?.bottomMargin =
+                watchOriginalBottom + navBar.bottom
+            insets
+        }
     }
 
     // 툴바 뒤로가기 및 공유 메뉴 설정
@@ -133,10 +161,23 @@ class DetailFragment : Fragment() {
         val state = viewModel.uiState.value
         if (state !is DetailUiState.Success) return
         val detail = state.movieDetail
+        val year = detail.releaseDate.take(4).takeIf { it.length == 4 }
         val shareText = buildString {
             append(detail.title)
-            if (detail.releaseDate.isNotBlank()) {
-                append(" (${detail.releaseDate})")
+            if (year != null) append(" ($year)")
+            append("\n")
+            if (detail.voteAverage > 0) {
+                append("⭐ ${"%.1f".format(detail.voteAverage)}/10")
+                if (state.certification != null) append("  |  ${state.certification}")
+                append("\n")
+            }
+            if (detail.genres.isNotEmpty()) {
+                append(detail.genres.joinToString(" · ") { it.name })
+                append("\n")
+            }
+            if ((detail.runtime ?: 0) > 0) {
+                append(getString(R.string.runtime_format, detail.runtime))
+                append("\n")
             }
             append("\n")
             if (detail.overview.isNotBlank()) {
@@ -147,6 +188,7 @@ class DetailFragment : Fragment() {
         }
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, detail.title)
             putExtra(Intent.EXTRA_TEXT, shareText)
         }
         startActivity(Intent.createChooser(intent, getString(R.string.share_chooser_title)))
@@ -160,12 +202,7 @@ class DetailFragment : Fragment() {
                 com.choo.moviefinder.presentation.person.PersonDetailFragmentArgs(personId).toBundle()
             )
         }
-        binding.rvCast.apply {
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            setHasFixedSize(true)
-            itemAnimator = null
-            adapter = castAdapter
-        }
+        binding.rvCast.setupHorizontal(castAdapter)
 
         // self-navigation 공통 핸들러 (비슷한 영화 / 추천 영화 공유)
         val onDetailSelfNavigate: (Int) -> Unit = { movieId ->
@@ -178,20 +215,10 @@ class DetailFragment : Fragment() {
         }
 
         similarMovieAdapter = HorizontalMovieAdapter(onMovieClick = onDetailSelfNavigate)
-        binding.rvSimilar.apply {
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            setHasFixedSize(true)
-            itemAnimator = null
-            adapter = similarMovieAdapter
-        }
+        binding.rvSimilar.setupHorizontal(similarMovieAdapter)
 
         recommendationAdapter = HorizontalMovieAdapter(onMovieClick = onDetailSelfNavigate)
-        binding.rvRecommendations.apply {
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            setHasFixedSize(true)
-            itemAnimator = null
-            adapter = recommendationAdapter
-        }
+        binding.rvRecommendations.setupHorizontal(recommendationAdapter)
 
         reviewAdapter = ReviewAdapter()
         binding.rvReviews.apply {
@@ -352,9 +379,18 @@ class DetailFragment : Fragment() {
         bindMovieDetail(detail)
         bindTrailer(state.trailerKey)
 
+        // 감독
+        val directors = state.credits?.directors.orEmpty()
+        binding.tvDirectorLabel.isVisible = directors.isNotEmpty()
+        binding.tvDirectorValue.isVisible = directors.isNotEmpty()
+        binding.tvDirectorValue.text = directors.joinToString(", ")
+
+        // 스트리밍 제공 정보
+        bindWatchProviders(state.watchProviders)
+
         // Cast (null = 로딩 중 → 숨김, 빈 리스트 = 데이터 없음 → 숨김, 데이터 있음 → 표시)
-        castAdapter.submitList(state.credits.orEmpty())
-        bindOptionalSection(!state.credits.isNullOrEmpty(), binding.tvCastLabel, binding.rvCast)
+        castAdapter.submitList(state.credits?.cast.orEmpty())
+        bindOptionalSection(!state.credits?.cast.isNullOrEmpty(), binding.tvCastLabel, binding.rvCast)
 
         // 비슷한 영화
         similarMovieAdapter.submitList(state.similarMovies.orEmpty())
@@ -392,19 +428,13 @@ class DetailFragment : Fragment() {
         binding.ratingView.setRating(detail.voteAverage)
         binding.tvReleaseDate.text = getString(R.string.release_date_format, detail.releaseDate)
 
-        if (detail.runtime != null && detail.runtime > 0) {
-            binding.tvRuntime.text = getString(R.string.runtime_format, detail.runtime)
-            binding.tvRuntime.isVisible = true
-        } else {
-            binding.tvRuntime.isVisible = false
-        }
+        val hasRuntime = detail.runtime != null && detail.runtime > 0
+        binding.tvRuntime.isVisible = hasRuntime
+        if (hasRuntime) binding.tvRuntime.text = getString(R.string.runtime_format, detail.runtime)
 
-        if (!detail.tagline.isNullOrBlank()) {
-            binding.tvTagline.text = detail.tagline
-            binding.tvTagline.isVisible = true
-        } else {
-            binding.tvTagline.isVisible = false
-        }
+        val hasTagline = !detail.tagline.isNullOrBlank()
+        binding.tvTagline.isVisible = hasTagline
+        if (hasTagline) binding.tvTagline.text = detail.tagline
 
         binding.tvOverview.text = detail.overview
 
@@ -484,6 +514,39 @@ class DetailFragment : Fragment() {
         }
     }
 
+    // 스트리밍 제공 정보 섹션 바인딩 (로고 이미지 동적 추가)
+    private fun bindWatchProviders(providers: List<com.choo.moviefinder.domain.model.WatchProvider>?) {
+        val hasProviders = !providers.isNullOrEmpty()
+        bindOptionalSection(hasProviders, binding.tvStreamingLabel, binding.scrollStreaming)
+        if (!hasProviders) return
+        binding.llStreamingProviders.removeAllViews()
+        val sizePx = (56 * resources.displayMetrics.density).toInt()
+        val marginPx = (8 * resources.displayMetrics.density).toInt()
+        providers.orEmpty().forEach { provider ->
+            val imageView = ImageView(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply {
+                    marginEnd = marginPx
+                }
+                contentDescription = provider.providerName
+                scaleType = ImageView.ScaleType.CENTER_CROP
+            }
+            imageView.load(ImageUrlProvider.profileUrl(provider.logoPath)) {
+                crossfade(true)
+                placeholder(R.drawable.bg_poster_placeholder)
+                error(R.drawable.bg_poster_placeholder)
+            }
+            binding.llStreamingProviders.addView(imageView)
+        }
+    }
+
+    // 가로 스크롤 RecyclerView 공통 설정 헬퍼
+    private fun RecyclerView.setupHorizontal(rvAdapter: RecyclerView.Adapter<*>) {
+        layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        setHasFixedSize(true)
+        itemAnimator = null
+        adapter = rvAdapter
+    }
+
     // 조건부 텍스트 필드 표시/숨김 헬퍼
     private fun bindOptionalField(textView: TextView, show: Boolean, text: String) {
         textView.isVisible = show
@@ -498,35 +561,34 @@ class DetailFragment : Fragment() {
 
     // 콘텐츠 등급 배지 칩 표시 (KR/US 등급)
     private fun bindCertification(certification: String?) {
-        if (!certification.isNullOrBlank()) {
+        val hasCert = !certification.isNullOrBlank()
+        binding.chipCertification.isVisible = hasCert
+        if (hasCert) {
             binding.chipCertification.text = certification
             binding.chipCertification.contentDescription =
                 getString(R.string.cd_certification, certification)
-            binding.chipCertification.isVisible = true
-        } else {
-            binding.chipCertification.isVisible = false
         }
     }
 
     // 예고편 인앱 재생 (YouTubePlayerView) 또는 외부 YouTube 연결 (fallback)
     private fun bindTrailer(trailerKey: String?) {
+        binding.youtubePlayerView.isVisible = false
         if (trailerKey == null) {
-            binding.youtubePlayerView.isVisible = false
             binding.btnTrailer.isVisible = false
             return
         }
-        setupYouTubePlayer(trailerKey)
+        binding.btnTrailer.isVisible = true
+        binding.btnTrailer.setOnClickListener { openYouTubeExternal(trailerKey) }
     }
 
-    private fun setupYouTubePlayer(trailerKey: String) {
-        binding.youtubePlayerView.isVisible = true
-        binding.btnTrailer.isVisible = false
-        viewLifecycleOwner.lifecycle.addObserver(binding.youtubePlayerView)
-        binding.youtubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
-            override fun onReady(youTubePlayer: YouTubePlayer) {
-                youTubePlayer.cueVideo(trailerKey, 0f)
-            }
-        })
+    private fun openYouTubeExternal(trailerKey: String) {
+        val appUri = "vnd.youtube:$trailerKey".toUri()
+        val webUri = "https://www.youtube.com/watch?v=$trailerKey".toUri()
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, appUri))
+        } catch (e: ActivityNotFoundException) {
+            startActivity(Intent(Intent.ACTION_VIEW, webUri))
+        }
     }
 
     // 에러 상태 표시 (에러 메시지 및 재시도 버튼)

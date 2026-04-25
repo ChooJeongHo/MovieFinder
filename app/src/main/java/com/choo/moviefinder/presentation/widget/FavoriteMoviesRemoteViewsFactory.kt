@@ -84,9 +84,11 @@ class FavoriteMoviesRemoteViewsFactory(
         if (position < movies.size) {
             val movie = movies[position]
             views.setTextViewText(R.id.movie_title, movie.title)
-            views.setTextViewText(
+            val ratingText = String.format(Locale.US, "★ %.1f", movie.voteAverage)
+            views.setTextViewText(R.id.movie_rating, ratingText)
+            views.setContentDescription(
                 R.id.movie_rating,
-                String.format(Locale.US, "★ %.1f", movie.voteAverage)
+                context.getString(R.string.cd_widget_rating, movie.voteAverage)
             )
 
             // Fill-in intent for item click (deeplink to movie detail)

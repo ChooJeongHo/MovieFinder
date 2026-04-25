@@ -7,6 +7,7 @@ import com.choo.moviefinder.domain.usecase.GetMovieRecommendationsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieReviewsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
 import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetWatchProvidersUseCase
 import dagger.Reusable
 import javax.inject.Inject
 
@@ -18,5 +19,6 @@ class DetailFetchUseCases @Inject constructor(
     val getMovieTrailer: GetMovieTrailerUseCase,
     val getMovieCertification: GetMovieCertificationUseCase,
     val getMovieReviews: GetMovieReviewsUseCase,
-    val getMovieRecommendations: GetMovieRecommendationsUseCase
+    val getMovieRecommendations: GetMovieRecommendationsUseCase,
+    val getWatchProviders: GetWatchProvidersUseCase
 )

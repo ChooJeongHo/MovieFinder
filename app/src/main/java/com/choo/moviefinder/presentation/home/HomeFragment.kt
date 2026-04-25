@@ -92,6 +92,7 @@ class HomeFragment : Fragment() {
                 movieAdapter.itemCount
             }
             setHasFixedSize(true)
+            itemAnimator = null
             // 탭 전환 시 ViewHolder 재생성 비용 절감: 탭 수(4) × 화면에 보이는 최대 아이템 수 기준으로 풀 크기 확장
             recycledViewPool.setMaxRecycledViews(MoviePagingAdapter.VIEW_TYPE_GRID, POOL_SIZE_GRID)
             recycledViewPool.setMaxRecycledViews(MoviePagingAdapter.VIEW_TYPE_LIST, POOL_SIZE_LIST)
@@ -248,6 +249,7 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         binding.shimmerView.shimmerLayout.stopShimmer()
+        collectJob?.cancel()
         collectJob = null
         binding.rvMovies.adapter = null
         binding.rvWatchHistory.adapter = null

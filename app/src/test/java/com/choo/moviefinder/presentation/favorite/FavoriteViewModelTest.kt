@@ -4,17 +4,19 @@ import android.content.Context
 import app.cash.turbine.test
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.PosterTagSuggester
-import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.repository.UserRatingRepository
 import com.choo.moviefinder.domain.usecase.AddTagToMovieUseCase
+import com.choo.moviefinder.domain.usecase.ClearWatchlistReminderUseCase
 import com.choo.moviefinder.domain.usecase.GetAllTagNamesUseCase
 import com.choo.moviefinder.domain.usecase.GetFavoriteMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetFavoritesByTagUseCase
 import com.choo.moviefinder.domain.usecase.GetTagsForMovieUseCase
+import com.choo.moviefinder.domain.usecase.GetWatchlistRemindersUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchlistUseCase
 import com.choo.moviefinder.domain.usecase.RemoveTagFromMovieUseCase
+import com.choo.moviefinder.domain.usecase.SetWatchlistReminderUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import io.mockk.coEvery
@@ -51,7 +53,9 @@ class FavoriteViewModelTest {
     private lateinit var removeTagFromMovieUseCase: RemoveTagFromMovieUseCase
     private lateinit var posterTagSuggester: PosterTagSuggester
     private lateinit var userRatingRepository: UserRatingRepository
-    private lateinit var watchlistDao: WatchlistDao
+    private lateinit var setWatchlistReminderUseCase: SetWatchlistReminderUseCase
+    private lateinit var clearWatchlistReminderUseCase: ClearWatchlistReminderUseCase
+    private lateinit var getWatchlistRemindersUseCase: GetWatchlistRemindersUseCase
     private lateinit var context: Context
 
     private val testMovies = listOf(
@@ -73,13 +77,15 @@ class FavoriteViewModelTest {
         removeTagFromMovieUseCase = mockk()
         posterTagSuggester = mockk()
         userRatingRepository = mockk()
-        watchlistDao = mockk(relaxed = true)
+        setWatchlistReminderUseCase = mockk()
+        clearWatchlistReminderUseCase = mockk()
+        getWatchlistRemindersUseCase = mockk()
         context = mockk(relaxed = true)
 
         every { getWatchlistUseCase(any<FavoriteSortOrder>()) } returns flowOf(emptyList())
         every { getAllTagNamesUseCase() } returns flowOf(emptyList())
         every { userRatingRepository.getAllUserRatings() } returns flowOf(emptyMap())
-        coEvery { watchlistDao.getMoviesWithReminder() } returns emptyList()
+        coEvery { getWatchlistRemindersUseCase() } returns emptyList()
     }
 
     @After
@@ -100,7 +106,9 @@ class FavoriteViewModelTest {
             removeTagFromMovieUseCase,
             posterTagSuggester,
             userRatingRepository,
-            watchlistDao,
+            setWatchlistReminderUseCase,
+            clearWatchlistReminderUseCase,
+            getWatchlistRemindersUseCase,
             context
         )
     }

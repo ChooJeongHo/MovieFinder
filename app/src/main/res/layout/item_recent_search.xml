@@ -14,6 +14,7 @@
         android:layout_width="@dimen/icon_size_small"
         android:layout_height="@dimen/icon_size_small"
         android:contentDescription="@null"
+        android:importantForAccessibility="no"
         android:src="@drawable/ic_history"
         app:tint="?attr/colorOnSurface"
         android:alpha="0.5" />

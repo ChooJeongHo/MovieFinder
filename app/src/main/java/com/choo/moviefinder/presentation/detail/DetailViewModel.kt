@@ -145,7 +145,7 @@ class DetailViewModel @Inject constructor(
                 // 2단계: 보조 데이터 병렬 로드, 각각 완료 시 점진적 업데이트
                 coroutineScope {
                     launch {
-                        val credits = loadOptional("credits") { fetch.getMovieCredits(movieId) }
+                        val credits = loadOptionalNullable("credits") { fetch.getMovieCredits(movieId) }
                         updateSuccess { it.copy(credits = credits) }
                     }
                     launch {
@@ -163,6 +163,10 @@ class DetailViewModel @Inject constructor(
                     launch {
                         val recs = loadOptional("recommendations") { fetch.getMovieRecommendations(movieId) }
                         updateSuccess { it.copy(recommendations = recs) }
+                    }
+                    launch {
+                        val providers = loadOptional("watchProviders") { fetch.getWatchProviders(movieId) }
+                        updateSuccess { it.copy(watchProviders = providers) }
                     }
                 }
 

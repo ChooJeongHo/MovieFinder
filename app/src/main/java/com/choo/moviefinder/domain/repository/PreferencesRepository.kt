@@ -37,4 +37,7 @@ interface PreferencesRepository {
 
     // 마지막으로 목표 달성 알림을 보낸 월을 저장한다
     suspend fun setLastGoalNotifiedMonth(yearMonth: String)
+
+    // 온보딩 완료 상태를 저장한다
+    suspend fun setOnboardingCompleted()
 }

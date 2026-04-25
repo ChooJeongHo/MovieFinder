@@ -7,6 +7,7 @@ import com.choo.moviefinder.data.local.dao.RemoteKeyDao
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.CastDto
 import com.choo.moviefinder.data.remote.dto.CreditsResponse
+import com.choo.moviefinder.data.remote.dto.CrewDto
 import com.choo.moviefinder.data.remote.dto.GenreDto
 import com.choo.moviefinder.data.remote.dto.GenreListResponse
 import com.choo.moviefinder.data.remote.dto.MovieDetailDto
@@ -20,6 +21,9 @@ import com.choo.moviefinder.data.remote.dto.ReviewDto
 import com.choo.moviefinder.data.remote.dto.ReviewResponse
 import com.choo.moviefinder.data.remote.dto.VideoDto
 import com.choo.moviefinder.data.remote.dto.VideoResponse
+import com.choo.moviefinder.data.remote.dto.WatchProviderDto
+import com.choo.moviefinder.data.remote.dto.WatchProviderRegionResult
+import com.choo.moviefinder.data.remote.dto.WatchProviderResponse
 import androidx.paging.PagingData
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.presentation.search.SortOption
@@ -134,11 +138,11 @@ class MovieRepositoryImplTest {
 
         val result = repository.getMovieCredits(1)
 
-        assertEquals(2, result.size)
-        assertEquals("Actor 1", result[0].name)
-        assertEquals("Character 1", result[0].character)
-        assertEquals("/p1.jpg", result[0].profilePath)
-        assertEquals("Actor 2", result[1].name)
+        assertEquals(2, result.cast.size)
+        assertEquals("Actor 1", result.cast[0].name)
+        assertEquals("Character 1", result.cast[0].character)
+        assertEquals("/p1.jpg", result.cast[0].profilePath)
+        assertEquals("Actor 2", result.cast[1].name)
     }
 
     @Test
@@ -147,7 +151,22 @@ class MovieRepositoryImplTest {
 
         val result = repository.getMovieCredits(1)
 
-        assertTrue(result.isEmpty())
+        assertTrue(result.cast.isEmpty())
+        assertTrue(result.directors.isEmpty())
+    }
+
+    @Test
+    fun `getMovieCredits extracts directors from crew`() = runTest {
+        val crew = listOf(
+            CrewDto(id = 10, name = "Christopher Nolan", job = "Director"),
+            CrewDto(id = 11, name = "John Doe", job = "Producer")
+        )
+        coEvery { apiService.getMovieCredits(1) } returns CreditsResponse(id = 1, cast = testCastDtos, crew = crew)
+
+        val result = repository.getMovieCredits(1)
+
+        assertEquals(listOf("Christopher Nolan"), result.directors)
+        assertEquals(2, result.cast.size)
     }
 
     // --- getSimilarMovies ---
@@ -413,5 +432,73 @@ class MovieRepositoryImplTest {
         val flow: Flow<PagingData<Movie>> = repository.getPopularMovies()
 
         assertNotNull(flow)
+    }
+
+    // --- getWatchProviders ---
+
+    @Test
+    fun `getWatchProviders returns KR flatrate providers`() = runTest {
+        val kr = WatchProviderRegionResult(
+            flatrate = listOf(WatchProviderDto(8, "Netflix", "/netflix.jpg")),
+            rent = emptyList(), buy = emptyList()
+        )
+        coEvery { apiService.getWatchProviders(1) } returns WatchProviderResponse(
+            id = 1, results = mapOf("KR" to kr, "US" to WatchProviderRegionResult())
+        )
+
+        val result = repository.getWatchProviders(1)
+
+        assertEquals(1, result.size)
+        assertEquals("Netflix", result[0].providerName)
+        assertEquals(8, result[0].providerId)
+    }
+
+    @Test
+    fun `getWatchProviders falls back to US when KR absent`() = runTest {
+        val us = WatchProviderRegionResult(
+            flatrate = listOf(WatchProviderDto(9, "Amazon Prime", "/prime.jpg")),
+            rent = emptyList(), buy = emptyList()
+        )
+        coEvery { apiService.getWatchProviders(1) } returns WatchProviderResponse(
+            id = 1, results = mapOf("US" to us)
+        )
+
+        val result = repository.getWatchProviders(1)
+
+        assertEquals(1, result.size)
+        assertEquals("Amazon Prime", result[0].providerName)
+    }
+
+    @Test
+    fun `getWatchProviders falls back to rent when flatrate empty`() = runTest {
+        val kr = WatchProviderRegionResult(
+            flatrate = emptyList(),
+            rent = listOf(WatchProviderDto(10, "Apple TV", "/appletv.jpg")),
+            buy = emptyList()
+        )
+        coEvery { apiService.getWatchProviders(1) } returns WatchProviderResponse(
+            id = 1, results = mapOf("KR" to kr)
+        )
+
+        val result = repository.getWatchProviders(1)
+
+        assertEquals(1, result.size)
+        assertEquals("Apple TV", result[0].providerName)
+    }
+
+    @Test
+    fun `getWatchProviders returns empty list when no results`() = runTest {
+        coEvery { apiService.getWatchProviders(1) } returns WatchProviderResponse(
+            id = 1, results = emptyMap()
+        )
+
+        val result = repository.getWatchProviders(1)
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `getWatchProviders throws on invalid movieId`() = runTest {
+        repository.getWatchProviders(0)
     }
 }

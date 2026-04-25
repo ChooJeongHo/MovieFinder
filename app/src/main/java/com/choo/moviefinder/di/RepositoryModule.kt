@@ -2,6 +2,7 @@ package com.choo.moviefinder.di
 
 import com.choo.moviefinder.data.local.PreferencesRepositoryImpl
 import com.choo.moviefinder.data.repository.BackupRepositoryImpl
+import com.choo.moviefinder.data.repository.TmdbAuthRepositoryImpl
 import com.choo.moviefinder.data.repository.FavoriteRepositoryImpl
 import com.choo.moviefinder.data.repository.MemoRepositoryImpl
 import com.choo.moviefinder.data.repository.MovieRepositoryImpl
@@ -13,6 +14,7 @@ import com.choo.moviefinder.data.repository.UserRatingRepositoryImpl
 import com.choo.moviefinder.data.repository.WatchHistoryRepositoryImpl
 import com.choo.moviefinder.data.repository.WatchlistRepositoryImpl
 import com.choo.moviefinder.domain.repository.BackupRepository
+import com.choo.moviefinder.domain.repository.TmdbAuthRepository
 import com.choo.moviefinder.domain.repository.FavoriteRepository
 import com.choo.moviefinder.domain.repository.MemoRepository
 import com.choo.moviefinder.domain.repository.MovieRepository
@@ -93,4 +95,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindReminderRepository(impl: ReminderRepositoryImpl): ReminderRepository
+
+    // TmdbAuthRepositoryImpl을 TmdbAuthRepository 인터페이스에 바인딩한다
+    @Binds
+    @Singleton
+    abstract fun bindTmdbAuthRepository(impl: TmdbAuthRepositoryImpl): TmdbAuthRepository
 }

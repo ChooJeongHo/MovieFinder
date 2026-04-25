@@ -1,5 +1,6 @@
 package com.choo.moviefinder.presentation.settings
 
+import android.content.Context
 import app.cash.turbine.test
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.ThemeMode
@@ -36,6 +37,7 @@ import org.junit.Test
 class SettingsViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private val context: Context = mockk(relaxed = true)
 
     private lateinit var getThemeModeUseCase: GetThemeModeUseCase
     private lateinit var setThemeModeUseCase: SetThemeModeUseCase
@@ -79,6 +81,7 @@ class SettingsViewModelTest {
         every { getThemeModeUseCase() } returns themeFlow
         every { getMonthlyWatchGoalUseCase() } returns flowOf(0)
         return SettingsViewModel(
+            context,
             getThemeModeUseCase,
             setThemeModeUseCase,
             clearWatchHistoryUseCase,
@@ -216,6 +219,7 @@ class SettingsViewModelTest {
         every { getThemeModeUseCase() } returns flowOf(ThemeMode.SYSTEM)
         every { getMonthlyWatchGoalUseCase() } returns goalFlow
         return SettingsViewModel(
+            context,
             getThemeModeUseCase,
             setThemeModeUseCase,
             clearWatchHistoryUseCase,

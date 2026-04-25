@@ -27,7 +27,7 @@ class MovieGridViewHolder(
         binding.ratingView.setRating(movie.voteAverage)
 
         binding.cardMovie.contentDescription = binding.root.context.getString(
-            R.string.cd_movie_item, movie.title, movie.voteAverage
+            R.string.cd_movie_item, movie.title, movie.voteAverage, movie.releaseDate
         )
 
         ViewCompat.setTransitionName(binding.ivPoster, "poster_${movie.id}")

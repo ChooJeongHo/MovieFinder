@@ -28,7 +28,7 @@ import com.choo.moviefinder.domain.model.MovieTag
 import com.choo.moviefinder.presentation.adapter.MovieAdapter
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-import com.choo.moviefinder.data.local.entity.WatchlistEntity
+import com.choo.moviefinder.domain.model.WatchlistReminder
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -148,6 +148,7 @@ class FavoriteFragment : Fragment() {
                 requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount()
             )
             setHasFixedSize(true)
+            itemAnimator = null
             adapter = movieAdapter
         }
     }
@@ -168,17 +169,14 @@ class FavoriteFragment : Fragment() {
     }
 
     private fun onSwipeDelete(movie: Movie) {
-        if (currentTab == TAB_FAVORITES) {
-            viewModel.toggleFavorite(movie)
-            Snackbar.make(binding.root, getString(R.string.favorite_removed), Snackbar.LENGTH_LONG)
-                .setAction(getString(R.string.undo)) { viewModel.toggleFavorite(movie) }
-                .show()
-        } else {
-            viewModel.toggleWatchlist(movie)
-            Snackbar.make(binding.root, getString(R.string.watchlist_removed), Snackbar.LENGTH_LONG)
-                .setAction(getString(R.string.undo)) { viewModel.toggleWatchlist(movie) }
-                .show()
-        }
+        val isFavorite = currentTab == TAB_FAVORITES
+        val toggle = if (isFavorite) viewModel::toggleFavorite else viewModel::toggleWatchlist
+        val messageRes = if (isFavorite) R.string.favorite_removed else R.string.watchlist_removed
+        toggle(movie)
+        Snackbar.make(binding.root, getString(messageRes), Snackbar.LENGTH_LONG)
+            .setAction(getString(R.string.undo)) { toggle(movie) }
+            .setAnchorView(R.id.bottom_nav)
+            .show()
     }
 
     private fun setupTabs() {
@@ -250,12 +248,14 @@ class FavoriteFragment : Fragment() {
                 launch {
                     viewModel.snackbarEvent.collect { errorType ->
                         val message = ErrorMessageProvider.getMessage(requireContext(), errorType)
-                        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT)
+                            .setAnchorView(R.id.bottom_nav).show()
                     }
                 }
                 launch {
                     viewModel.reminderSnackbar.collect { message ->
-                        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT)
+                            .setAnchorView(R.id.bottom_nav).show()
                     }
                 }
                 launch {
@@ -321,7 +321,7 @@ class FavoriteFragment : Fragment() {
     }
 
     // 알림 칩 텍스트와 가시성 갱신
-    private fun updateReminderChip(reminders: List<WatchlistEntity>) {
+    private fun updateReminderChip(reminders: List<WatchlistReminder>) {
         updateReminderChipVisibility()
         if (reminders.isNotEmpty()) {
             binding.chipReminders.text = getString(R.string.reminder_count, reminders.size)
@@ -336,14 +336,14 @@ class FavoriteFragment : Fragment() {
     }
 
     // 예약된 알림 목록 다이얼로그 표시
-    private fun showRemindersDialog(reminders: List<WatchlistEntity>) {
+    private fun showRemindersDialog(reminders: List<WatchlistReminder>) {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val message = if (reminders.isEmpty()) {
             getString(R.string.reminder_none)
         } else {
-            reminders.joinToString("\n") { entity ->
-                val dateStr = entity.reminderDate?.let { dateFormat.format(Date(it)) } ?: "-"
-                "• ${entity.title}  ($dateStr)"
+            reminders.joinToString("\n") { reminder ->
+                val dateStr = reminder.reminderDate?.let { dateFormat.format(Date(it)) } ?: "-"
+                "• ${reminder.title}  ($dateStr)"
             }
         }
         activeDialog?.dismiss()
@@ -359,10 +359,15 @@ class FavoriteFragment : Fragment() {
         movieAdapter.submitList(emptyList())
         binding.rvFavorites.scrollToPosition(0)
         updateEmptyState()
-        // Show shimmer while waiting for first Room emission
-        binding.shimmerView.shimmerLayout.startShimmer()
-        binding.shimmerView.shimmerLayout.isVisible = true
-        binding.rvFavorites.isVisible = false
+        // Only show shimmer if no data is already loaded for this tab
+        val hasData = if (currentTab == TAB_FAVORITES) {
+            viewModel.favoriteMovies.value.isNotEmpty()
+        } else {
+            viewModel.watchlistMovies.value.isNotEmpty()
+        }
+        binding.shimmerView.shimmerLayout.isVisible = !hasData
+        if (!hasData) binding.shimmerView.shimmerLayout.startShimmer()
+        binding.rvFavorites.isVisible = hasData
         binding.emptyView.layoutEmpty.isVisible = false
         binding.errorView.layoutError.isVisible = false
         collectJob = viewLifecycleOwner.lifecycleScope.launch {

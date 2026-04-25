@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -28,6 +29,7 @@ import com.choo.moviefinder.data.local.UserSettings
 import com.choo.moviefinder.databinding.ActivityMainBinding
 import com.choo.moviefinder.domain.usecase.ExchangeTmdbTokenUseCase
 import com.choo.moviefinder.presentation.detail.DetailFragmentArgs
+import com.choo.moviefinder.presentation.settings.SettingsViewModel
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
@@ -48,6 +50,8 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var userSettingsDataStore: DataStore<UserSettings>
+
+    private val settingsViewModel: SettingsViewModel by viewModels()
 
     private lateinit var binding: ActivityMainBinding
     private var offlineSnackbar: Snackbar? = null
@@ -160,6 +164,12 @@ class MainActivity : AppCompatActivity() {
         if (isTmdbCallback) {
             val requestToken = uri.getQueryParameter("request_token")
             if (requestToken != null) {
+                val pendingToken = settingsViewModel.pendingRequestToken
+                if (pendingToken == null || requestToken != pendingToken) {
+                    Timber.w("OAuth 콜백 토큰 불일치 — 요청 무시 (CSRF 방지)")
+                    return
+                }
+                settingsViewModel.clearPendingToken()
                 lifecycleScope.launch {
                     try {
                         exchangeTmdbTokenUseCase(requestToken)

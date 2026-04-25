@@ -1,9 +1,8 @@
 package com.choo.moviefinder.domain.usecase
 
-import com.choo.moviefinder.data.remote.api.TmdbAuthApiService
-import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.domain.repository.FavoriteRepository
 import com.choo.moviefinder.domain.repository.PreferencesRepository
+import com.choo.moviefinder.domain.repository.TmdbAuthRepository
 import com.choo.moviefinder.domain.repository.WatchlistRepository
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -11,7 +10,7 @@ import javax.inject.Singleton
 
 @Singleton
 class SyncTmdbAccountUseCase @Inject constructor(
-    private val authApiService: TmdbAuthApiService,
+    private val tmdbAuthRepository: TmdbAuthRepository,
     private val preferencesRepository: PreferencesRepository,
     private val favoriteRepository: FavoriteRepository,
     private val watchlistRepository: WatchlistRepository
@@ -25,23 +24,23 @@ class SyncTmdbAccountUseCase @Inject constructor(
         val bearer = "Bearer $accessToken"
 
         // TMDB 즐겨찾기 목록 가져오기 (1페이지)
-        val tmdbFavorites = authApiService.getAccountFavorites(accountId, bearer).results
+        val tmdbFavorites = tmdbAuthRepository.getAccountFavorites(accountId, bearer)
         var favCount = 0
-        for (dto in tmdbFavorites) {
-            val alreadyFavorite = favoriteRepository.isFavorite(dto.id).first()
+        for (movie in tmdbFavorites) {
+            val alreadyFavorite = favoriteRepository.isFavorite(movie.id).first()
             if (!alreadyFavorite) {
-                favoriteRepository.toggleFavorite(dto.toDomain())
+                favoriteRepository.toggleFavorite(movie)
                 favCount++
             }
         }
 
         // TMDB 워치리스트 목록 가져오기 (1페이지)
-        val tmdbWatchlist = authApiService.getAccountWatchlist(accountId, bearer).results
+        val tmdbWatchlist = tmdbAuthRepository.getAccountWatchlist(accountId, bearer)
         var watchCount = 0
-        for (dto in tmdbWatchlist) {
-            val alreadyInWatchlist = watchlistRepository.isInWatchlist(dto.id).first()
+        for (movie in tmdbWatchlist) {
+            val alreadyInWatchlist = watchlistRepository.isInWatchlist(movie.id).first()
             if (!alreadyInWatchlist) {
-                watchlistRepository.toggleWatchlist(dto.toDomain())
+                watchlistRepository.toggleWatchlist(movie)
                 watchCount++
             }
         }

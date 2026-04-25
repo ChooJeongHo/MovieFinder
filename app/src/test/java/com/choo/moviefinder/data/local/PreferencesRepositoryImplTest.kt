@@ -4,6 +4,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import app.cash.turbine.test
 import com.choo.moviefinder.domain.model.ThemeMode
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -24,6 +26,7 @@ class PreferencesRepositoryImplTest {
     private val testScope = TestScope(testDispatcher)
 
     private lateinit var dataStore: DataStore<UserSettings>
+    private lateinit var secureTokenStore: SecureTokenStore
     private lateinit var repository: PreferencesRepositoryImpl
 
     @Before
@@ -33,7 +36,10 @@ class PreferencesRepositoryImplTest {
             scope = testScope,
             produceFile = { tmpFolder.newFile("test_user_settings.json") }
         )
-        repository = PreferencesRepositoryImpl(dataStore)
+        secureTokenStore = mockk(relaxed = true) {
+            every { getAccessToken() } returns null
+        }
+        repository = PreferencesRepositoryImpl(dataStore, secureTokenStore)
     }
 
     @Test

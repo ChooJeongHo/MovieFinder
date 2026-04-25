@@ -29,9 +29,11 @@
     <string name="person_known_for_format">%s 분야</string>
 
     <!-- 상세 화면 -->
+    <string name="streaming_providers_label">스트리밍</string>
     <string name="release_date_format">개봉일: %s</string>
     <string name="runtime_format">%d분</string>
     <string name="overview_title">줄거리</string>
+    <string name="director_label">감독</string>
     <string name="cast_title">출연진</string>
     <string name="similar_movies_title">비슷한 영화</string>
     <string name="reviews_label">리뷰</string>
@@ -71,6 +73,7 @@
     <string name="cd_movie_backdrop">영화 배경 이미지</string>
     <string name="cd_cast_profile">출연진 프로필</string>
     <string name="cd_cast_item">%1$s, %2$s 역할</string>
+    <string name="cd_memo">메모: %1$s (%2$s 저장)</string>
     <string name="cd_person_profile">%s 프로필 사진</string>
     <string name="cd_filmography">%s 출연작 목록</string>
     <string name="cd_clear_search">검색어 지우기</string>
@@ -79,7 +82,7 @@
     <string name="cd_rating">평점 %.1f점</string>
     <string name="cd_error_icon">오류 아이콘</string>
     <string name="cd_loading">로딩 중</string>
-    <string name="cd_movie_item">%1$s, 평점 %2$.1f</string>
+    <string name="cd_movie_item">%1$s, 개봉일 %3$s, 평점 %2$.1f</string>
     <string name="cd_certification">등급 %s</string>
     <string name="cd_review_collapsed">탭하여 펼치기</string>
     <string name="cd_review_expanded">탭하여 접기</string>
@@ -89,6 +92,7 @@
     <string name="cd_review_rating">, 평점 %.1f</string>
     <string name="cd_recent_search_item">%s 재검색</string>
     <string name="cd_widget_refresh">위젯 새로고침</string>
+    <string name="cd_widget_rating">평점 %.1f</string>
 
     <!-- 테마 설정 -->
     <string name="theme_settings">테마 설정</string>
@@ -110,6 +114,8 @@
     <string name="reminder_cancel_confirm_message">"%s" 개봉 알림을 취소할까요?</string>
     <string name="reminder_cancelled">알림이 취소되었습니다.</string>
     <string name="reminder_cancel">취소</string>
+    <string name="reminder_cancel_failed">알림 취소에 실패했습니다.</string>
+    <string name="cd_cancel_reminder_for">%1$s 알림 취소</string>
     <string name="settings_reminder_history">알림 기록</string>
     <string name="settings_reminder_history_description">예약된 개봉일 알림 목록</string>
 
@@ -196,6 +202,7 @@
 
     <!-- 스크롤 -->
     <string name="cd_scroll_to_top">맨 위로 스크롤</string>
+    <string name="cd_swipe_refresh">당겨서 새로고침</string>
 
     <!-- 검색 추천 -->
     <string name="search_suggestions_label">이런 검색어는 어떠세요?</string>
@@ -361,6 +368,8 @@
     <string name="tmdb_syncing">동기화 중…</string>
     <string name="tmdb_auth_success">TMDB 계정이 연결되었습니다.</string>
     <string name="tmdb_auth_failed">TMDB 인증에 실패했습니다.</string>
+    <string name="tmdb_sync_success">즐겨찾기 %1$d개, 워치리스트 %2$d개 가져왔습니다.</string>
+    <string name="tmdb_sync_failed">동기화 실패: %1$s</string>
     <string name="tmdb_submit_rating">TMDB에 평점 제출</string>
     <string name="tmdb_rating_dialog_title">TMDB 평점 선택 (0.5 ~ 5.0)</string>
     <string name="tmdb_rating_success">TMDB에 평점이 제출되었습니다.</string>

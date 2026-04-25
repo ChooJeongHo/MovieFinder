@@ -265,7 +265,10 @@ class SearchViewModel @Inject constructor(
 
     // 영화/배우 검색 모드 전환
     fun toggleSearchMode() {
-        _searchMode.value = if (_searchMode.value == SearchMode.MOVIE) SearchMode.PERSON else SearchMode.MOVIE
+        _searchMode.value = when (_searchMode.value) {
+            SearchMode.MOVIE -> SearchMode.PERSON
+            SearchMode.PERSON -> SearchMode.MOVIE
+        }
         _personSearchQuery.value = ""
         _personResults.value = emptyList()
     }

@@ -17,7 +17,9 @@ import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
 import com.choo.moviefinder.R
+import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ImageUrlProvider
+import com.choo.moviefinder.core.util.RateLimiter
 import com.choo.moviefinder.databinding.FragmentCollectionBinding
 import com.choo.moviefinder.domain.model.CollectionDetail
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
@@ -34,6 +36,7 @@ class CollectionFragment : Fragment() {
     private val viewModel: CollectionViewModel by viewModels()
 
     private lateinit var moviesAdapter: HorizontalMovieAdapter
+    private val retryRateLimiter = RateLimiter()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -99,9 +102,10 @@ class CollectionFragment : Fragment() {
                             binding.tvMoviesHeader.isVisible = state.collection.movies.isNotEmpty()
                         }
                         is CollectionUiState.Error -> {
-                            binding.errorView.tvErrorMessage.text = state.message
+                            binding.errorView.tvErrorMessage.text =
+                                ErrorMessageProvider.getMessage(requireContext(), state.errorType)
                             binding.errorView.btnRetry.setOnClickListener {
-                                viewModel.loadCollection()
+                                if (retryRateLimiter.tryAcquire()) viewModel.loadCollection()
                             }
                         }
                         else -> Unit
@@ -122,6 +126,7 @@ class CollectionFragment : Fragment() {
                 crossfade(true)
                 placeholder(R.drawable.bg_poster_placeholder)
                 error(R.drawable.bg_poster_placeholder)
+                size(coil3.size.ViewSizeResolver(binding.ivBackdrop))
             }
         }
 

@@ -1,6 +1,7 @@
 package com.choo.moviefinder.data.local
 
 import androidx.datastore.core.Serializer
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.io.InputStream
@@ -17,6 +18,8 @@ object UserSettingsSerializer : Serializer<UserSettings> {
                 UserSettings.serializer(),
                 input.readBytes().decodeToString()
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.w(e, "UserSettings 읽기 실패, 기본값 반환")
             defaultValue

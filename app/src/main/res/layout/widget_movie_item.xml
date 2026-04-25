@@ -26,5 +26,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:textColor="@color/rating_green"
-        android:textSize="13sp" />
+        android:textSize="13sp"
+        android:importantForAccessibility="yes" />
 </LinearLayout>

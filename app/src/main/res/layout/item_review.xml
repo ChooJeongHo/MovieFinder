@@ -66,6 +66,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/spacing_sm"
             android:alpha="0.6"
+            android:importantForAccessibility="no"
             android:textSize="12sp"
             tools:text="2024-01-15" />
 

@@ -73,14 +73,25 @@ class ReminderHistoryFragment : Fragment() {
 
     // 모든 ViewModel Flow를 단일 repeatOnLifecycle 블록에서 병렬 수집
     private fun observeViewModelFlows() {
+        binding.shimmerView.shimmerLayout.startShimmer()
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.reminders.collect { reminders ->
-                        binding.progressBar.isVisible = false
-                        adapter.submitList(reminders)
-                        binding.tvEmpty.isVisible = reminders.isEmpty()
-                        binding.recyclerView.isVisible = reminders.isNotEmpty()
+                    try {
+                        viewModel.reminders.collect { reminders ->
+                            val shimmer = binding.shimmerView.shimmerLayout
+                            shimmer.stopShimmer()
+                            shimmer.isVisible = false
+                            binding.errorView.layoutError.isVisible = false
+                            adapter.submitList(reminders)
+                            binding.tvEmpty.isVisible = reminders.isEmpty()
+                            binding.recyclerView.isVisible = reminders.isNotEmpty()
+                        }
+                    } catch (e: Exception) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        binding.shimmerView.shimmerLayout.stopShimmer()
+                        binding.shimmerView.shimmerLayout.isVisible = false
+                        binding.errorView.layoutError.isVisible = true
                     }
                 }
                 launch {
@@ -96,8 +107,8 @@ class ReminderHistoryFragment : Fragment() {
                     viewModel.errorEvent.collect {
                         Snackbar.make(
                             binding.root,
-                            R.string.error_unknown,
-                            Snackbar.LENGTH_SHORT
+                            R.string.reminder_cancel_failed,
+                            Snackbar.LENGTH_LONG
                         ).show()
                     }
                 }
@@ -107,6 +118,7 @@ class ReminderHistoryFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        binding.shimmerView.shimmerLayout.stopShimmer()
         _binding = null
     }
 }

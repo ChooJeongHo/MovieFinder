@@ -1,12 +1,13 @@
 package com.choo.moviefinder.domain.repository
 
 import androidx.paging.PagingData
-import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.CollectionDetail
+import com.choo.moviefinder.domain.model.Credits
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.Review
+import com.choo.moviefinder.domain.model.WatchProvider
 import kotlinx.coroutines.flow.Flow
 
 interface MovieRepository {
@@ -37,7 +38,7 @@ interface MovieRepository {
     suspend fun getMovieDetail(movieId: Int): MovieDetail
 
     // 영화 ID로 출연진 목록을 조회한다
-    suspend fun getMovieCredits(movieId: Int): List<Cast>
+    suspend fun getMovieCredits(movieId: Int): Credits
 
     // 영화 ID로 비슷한 영화 목록을 조회한다
     suspend fun getSimilarMovies(movieId: Int): List<Movie>
@@ -59,4 +60,7 @@ interface MovieRepository {
 
     // 컬렉션 ID로 컬렉션 상세 정보를 조회한다
     suspend fun getCollection(collectionId: Int): CollectionDetail
+
+    // 영화 ID로 스트리밍 제공 정보를 조회한다 (KR 우선, US 폴백)
+    suspend fun getWatchProviders(movieId: Int): List<WatchProvider>
 }

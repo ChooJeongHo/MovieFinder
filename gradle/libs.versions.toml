@@ -39,8 +39,9 @@ work = "2.11.2"
 kotlinxDatetime = "0.7.1"
 window = "1.3.0"
 viewpager2 = "1.1.0"
-youtubePlayer = "12.1.2"
+youtubePlayer = "13.0.0"
 browser = "1.10.0"
+securityCrypto = "1.1.0-alpha06"
 
 [libraries]
 # Core
@@ -155,6 +156,9 @@ mlkit-image-labeling = { module = "com.google.android.gms:play-services-mlkit-im
 
 # Browser (Chrome Custom Tabs)
 androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
+
+# Security Crypto (EncryptedSharedPreferences)
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
 [bundles]
 lifecycle = ["androidx-lifecycle-runtime-ktx", "androidx-lifecycle-viewmodel-ktx", "androidx-lifecycle-process"]

@@ -181,6 +181,19 @@ object NetworkModule {
                     .build()
                 chain.proceed(request)
             }
+            .apply {
+                if (!BuildConfig.DEBUG) {
+                    certificatePinner(
+                        CertificatePinner.Builder()
+                            .add(
+                                "api.themoviedb.org",
+                                "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
+                                "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
+                            )
+                            .build()
+                    )
+                }
+            }
             .connectTimeout(30.seconds)
             .readTimeout(30.seconds)
             .build()

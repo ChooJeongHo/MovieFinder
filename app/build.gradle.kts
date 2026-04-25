@@ -283,6 +283,9 @@ dependencies {
     // Browser (Chrome Custom Tabs)
     implementation(libs.androidx.browser)
 
+    // Security Crypto (EncryptedSharedPreferences for TMDB tokens)
+    implementation(libs.androidx.security.crypto)
+
     // Timber
     implementation(libs.timber)
 

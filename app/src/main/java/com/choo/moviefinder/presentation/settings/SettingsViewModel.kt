@@ -19,7 +19,10 @@ import com.choo.moviefinder.domain.usecase.RevokeTmdbAuthUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import com.choo.moviefinder.domain.usecase.SyncTmdbAccountUseCase
+import android.content.Context
+import com.choo.moviefinder.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +38,7 @@ import javax.inject.Inject
 @HiltViewModel
 @Suppress("TooManyFunctions")
 class SettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     getThemeModeUseCase: GetThemeModeUseCase,
     private val setThemeModeUseCase: SetThemeModeUseCase,
     private val clearWatchHistoryUseCase: ClearWatchHistoryUseCase,
@@ -87,6 +91,15 @@ class SettingsViewModel @Inject constructor(
     // 파일 저장 런처가 실행되기 전까지 JSON을 임시 보관 (TransactionTooLargeException 방지로 SavedStateHandle 미사용)
     @Volatile
     var pendingExportJson: String? = null
+
+    // OAuth CSRF 방지: startTmdbAuth()에서 발급한 요청 토큰을 콜백 검증 전까지 보관
+    @Volatile
+    var pendingRequestToken: String? = null
+        private set
+
+    fun clearPendingToken() {
+        pendingRequestToken = null
+    }
 
     // 테마 모드를 DataStore에 저장 (에러 시 Snackbar 피드백)
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launchWithErrorHandler(
@@ -155,6 +168,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val requestToken = getTmdbRequestTokenUseCase()
+                pendingRequestToken = requestToken
                 val authUrl = "https://www.themoviedb.org/auth/access" +
                     "?request_token=$requestToken" +
                     "&redirect_to=moviefinder://auth/callback"
@@ -189,13 +203,13 @@ class SettingsViewModel @Inject constructor(
             try {
                 val result = syncTmdbAccountUseCase()
                 _syncResult.trySend(
-                    "즐겨찾기 ${result.favoritesAdded}개, 워치리스트 ${result.watchlistAdded}개 가져왔습니다."
+                    context.getString(R.string.tmdb_sync_success, result.favoritesAdded, result.watchlistAdded)
                 )
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "TMDB 동기화 실패")
-                _syncResult.trySend("동기화 실패: ${e.message}")
+                _syncResult.trySend(context.getString(R.string.tmdb_sync_failed, e.message))
             } finally {
                 _isSyncing.value = false
             }

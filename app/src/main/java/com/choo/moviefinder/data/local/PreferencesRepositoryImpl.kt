@@ -4,14 +4,18 @@ import androidx.datastore.core.DataStore
 import com.choo.moviefinder.domain.model.ThemeMode
 import com.choo.moviefinder.domain.repository.PreferencesRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
 
 class PreferencesRepositoryImpl @Inject constructor(
-    private val userSettingsStore: DataStore<UserSettings>
+    private val userSettingsStore: DataStore<UserSettings>,
+    private val secureTokenStore: SecureTokenStore
 ) : PreferencesRepository {
+
+    private val _tmdbAccessToken = MutableStateFlow(secureTokenStore.getAccessToken())
 
     // 저장된 테마 모드를 Flow로 조회 (잘못된 값은 SYSTEM으로 복구)
     override fun getThemeMode(): Flow<ThemeMode> {
@@ -56,39 +60,32 @@ class PreferencesRepositoryImpl @Inject constructor(
         }
     }
 
-    // TMDB 액세스 토큰을 Flow로 조회
-    override fun getTmdbAccessToken(): Flow<String?> =
-        userSettingsStore.data.map { it.tmdbAccessToken }
+    // TMDB 액세스 토큰을 Flow로 조회 (EncryptedSharedPreferences 기반 MutableStateFlow)
+    override fun getTmdbAccessToken(): Flow<String?> = _tmdbAccessToken.asStateFlow()
 
-    // TMDB 인증 정보(액세스 토큰, 계정 ID, 세션 ID)를 DataStore에 저장
+    // TMDB 인증 정보(액세스 토큰, 계정 ID, 세션 ID)를 EncryptedSharedPreferences에 저장
     override suspend fun saveTmdbAuth(accessToken: String, accountId: String, sessionId: String) {
-        userSettingsStore.updateData { current ->
-            current.copy(
-                tmdbAccessToken = accessToken,
-                tmdbAccountId = accountId,
-                tmdbSessionId = sessionId
-            )
-        }
+        secureTokenStore.saveTokens(accessToken, accountId, sessionId)
+        _tmdbAccessToken.value = accessToken
     }
 
-    // TMDB 인증 정보를 DataStore에서 삭제
+    // TMDB 인증 정보를 EncryptedSharedPreferences에서 삭제
     override suspend fun clearTmdbAuth() {
-        userSettingsStore.updateData { current ->
-            current.copy(
-                tmdbAccessToken = null,
-                tmdbAccountId = null,
-                tmdbSessionId = null
-            )
-        }
+        secureTokenStore.clearTokens()
+        _tmdbAccessToken.value = null
     }
 
     // TMDB 세션 ID를 일회성으로 조회
-    override suspend fun getTmdbSessionIdOnce(): String? =
-        userSettingsStore.data.map { it.tmdbSessionId }.first()
+    override suspend fun getTmdbSessionIdOnce(): String? = secureTokenStore.getSessionId()
 
     // TMDB 액세스 토큰과 계정 ID를 일회성으로 조회
-    override suspend fun getTmdbAuthOnce(): Pair<String?, String?> {
-        val settings = userSettingsStore.data.first()
-        return Pair(settings.tmdbAccessToken, settings.tmdbAccountId)
+    override suspend fun getTmdbAuthOnce(): Pair<String?, String?> =
+        Pair(secureTokenStore.getAccessToken(), secureTokenStore.getAccountId())
+
+    // 온보딩 완료 상태를 DataStore에 저장
+    override suspend fun setOnboardingCompleted() {
+        userSettingsStore.updateData { current ->
+            current.copy(onboardingCompleted = true)
+        }
     }
 }

@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.choo.moviefinder.R
 import com.choo.moviefinder.databinding.ItemReminderBinding
 import com.choo.moviefinder.domain.model.ScheduledReminder
 
@@ -30,6 +31,8 @@ class ReminderAdapter(
         fun bind(reminder: ScheduledReminder) {
             binding.tvMovieTitle.text = reminder.movieTitle
             binding.tvReleaseDate.text = reminder.releaseDate
+            binding.btnCancelReminder.contentDescription =
+                binding.root.context.getString(R.string.cd_cancel_reminder_for, reminder.movieTitle)
             binding.btnCancelReminder.setOnClickListener {
                 onCancelClick(reminder)
             }

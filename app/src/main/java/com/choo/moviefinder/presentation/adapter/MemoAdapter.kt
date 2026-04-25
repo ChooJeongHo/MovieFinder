@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.choo.moviefinder.R
 import com.choo.moviefinder.databinding.ItemMemoBinding
 import com.choo.moviefinder.domain.model.Memo
 import kotlin.time.Instant
@@ -36,7 +37,9 @@ class MemoAdapter(
             binding.tvMemoDate.text = formatDate(memo.updatedAt)
             binding.btnEditMemo.setOnClickListener { onEditClick(memo) }
             binding.btnDeleteMemo.setOnClickListener { onDeleteClick(memo) }
-            binding.root.contentDescription = memo.content
+            val date = formatDate(memo.updatedAt)
+            binding.root.contentDescription =
+                binding.root.context.getString(R.string.cd_memo, memo.content, date)
         }
 
         private fun formatDate(timestamp: Long): String {

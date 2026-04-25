@@ -17,12 +17,13 @@ import com.choo.moviefinder.data.paging.UpcomingPagingSource
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.data.util.Constants
-import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.CollectionDetail
+import com.choo.moviefinder.domain.model.Credits
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.Review
+import com.choo.moviefinder.domain.model.WatchProvider
 import com.choo.moviefinder.domain.repository.MovieRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -116,12 +117,14 @@ class MovieRepositoryImpl @Inject constructor(
         return apiService.getMovieDetail(movieId).toDomain()
     }
 
-    // 영화 출연진 정보를 order 기준 정렬하여 조회
-    override suspend fun getMovieCredits(movieId: Int): List<Cast> {
+    // 영화 출연진 및 감독 정보를 조회 (cast는 order 기준 정렬)
+    override suspend fun getMovieCredits(movieId: Int): Credits {
         require(movieId > 0) { "Movie ID must be positive" }
-        return apiService.getMovieCredits(movieId).cast
-            .sortedBy { it.order }
-            .map { it.toDomain() }
+        val response = apiService.getMovieCredits(movieId)
+        return Credits(
+            cast = response.cast.sortedBy { it.order }.map { it.toDomain() },
+            directors = response.crew.filter { it.job == "Director" }.map { it.name }
+        )
     }
 
     // 비슷한 영화 목록을 API에서 조회
@@ -173,4 +176,13 @@ class MovieRepositoryImpl @Inject constructor(
     // 컬렉션 상세 정보를 API에서 조회
     override suspend fun getCollection(collectionId: Int): CollectionDetail =
         apiService.getCollection(collectionId).toDomain()
+
+    // 스트리밍 제공 정보를 API에서 조회 (KR 우선, US 폴백, flatrate → rent → buy 순)
+    override suspend fun getWatchProviders(movieId: Int): List<WatchProvider> {
+        require(movieId > 0) { "Movie ID must be positive" }
+        val response = apiService.getWatchProviders(movieId)
+        val regionResult = response.results["KR"] ?: response.results["US"]
+        val providers = regionResult?.flatrate?.ifEmpty { regionResult.rent }?.ifEmpty { regionResult.buy }
+        return providers?.map { WatchProvider(it.providerId, it.providerName, it.logoPath) } ?: emptyList()
+    }
 }

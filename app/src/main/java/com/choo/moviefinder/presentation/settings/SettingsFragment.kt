@@ -78,12 +78,13 @@ class SettingsFragment : Fragment() {
             try {
                 val maxImportBytes = 10L * 1024 * 1024 // 10MB
                 val json = withContext(Dispatchers.IO) {
-                    requireContext().contentResolver.openInputStream(uri)?.use { stream ->
-                        val bytes = stream.readBytes()
-                        if (bytes.size > maxImportBytes) {
-                            null
-                        } else {
-                            bytes.toString(Charsets.UTF_8)
+                    val fileSize = requireContext().contentResolver
+                        .openFileDescriptor(uri, "r")?.use { it.statSize } ?: -1L
+                    if (fileSize > maxImportBytes) {
+                        null
+                    } else {
+                        requireContext().contentResolver.openInputStream(uri)?.use { stream ->
+                            stream.readBytes().toString(Charsets.UTF_8)
                         }
                     }
                 } ?: run {

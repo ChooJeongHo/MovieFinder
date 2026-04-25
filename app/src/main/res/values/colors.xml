@@ -23,9 +23,9 @@
     <color name="colorOnPrimaryDark">#FF003822</color>
     <color name="colorSecondaryDark">#FF01B4E4</color>
     <color name="colorOnSecondaryDark">#FF003547</color>
-    <color name="colorSurfaceDark">#FF1A1A2E</color>
+    <color name="colorSurfaceDark">#FF121212</color>
     <color name="colorOnSurfaceDark">#FFE6E1E5</color>
-    <color name="colorBackgroundDark">#FF0F0F23</color>
+    <color name="colorBackgroundDark">#FF000000</color>
     <color name="colorOnBackgroundDark">#FFE6E1E5</color>
 
     <!-- 평점 색상 -->

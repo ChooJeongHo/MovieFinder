@@ -127,7 +127,7 @@ class SearchFragment : Fragment() {
                             binding.root,
                             R.string.offline_local_search_snackbar,
                             Snackbar.LENGTH_SHORT
-                        ).show()
+                        ).setAnchorView(R.id.bottom_nav).show()
                     } else {
                         viewModel.clearOfflineResults()
                         viewModel.onSearch(query)
@@ -157,6 +157,7 @@ class SearchFragment : Fragment() {
                 searchAdapter.itemCount
             }
             setHasFixedSize(true)
+            itemAnimator = null
             adapter = searchAdapter.withLoadStateFooter(
                 footer = MovieLoadStateAdapter { searchAdapter.retry() }
             )
@@ -201,21 +202,23 @@ class SearchFragment : Fragment() {
                 .show()
         }
 
+        setupPersonRecyclerView()
+        setupSuggestionHistoryRecyclerView()
+        setupOfflineResultsRecyclerView()
+    }
+
+    private fun setupPersonRecyclerView() {
         personSearchAdapter = PersonSearchAdapter { personId ->
             if (findNavController().currentDestination?.id == R.id.searchFragment) {
                 val action = SearchFragmentDirections.actionSearchToPersonDetail(personId)
                 findNavController().navigate(action)
             }
         }
-
         binding.rvPersonResults.apply {
             layoutManager = LinearLayoutManager(requireContext())
             setHasFixedSize(true)
             adapter = personSearchAdapter
         }
-
-        setupSuggestionHistoryRecyclerView()
-        setupOfflineResultsRecyclerView()
     }
 
     // 시청 기록 제안 RecyclerView 초기화 (가로 스크롤)
@@ -378,38 +381,36 @@ class SearchFragment : Fragment() {
         val query = viewModel.searchQuery.value
         val hasGenreFilter = viewModel.selectedGenres.value.isNotEmpty()
         if (query.isBlank() && !hasGenreFilter) return
-        val refreshState = loadStates.refresh
-        binding.rvSearchResults.isVisible = refreshState is LoadState.NotLoading
+
         binding.recentSearchesSection.isVisible = false
         binding.emptyInitial.layoutEmpty.isVisible = false
         binding.errorView.layoutError.isVisible = false
-        if (refreshState is LoadState.Loading) {
-            binding.shimmerView.shimmerLayout.startShimmer()
-            binding.shimmerView.shimmerLayout.isVisible = true
-            binding.noResultsSection.isVisible = false
-        } else {
-            binding.shimmerView.shimmerLayout.stopShimmer()
-            binding.shimmerView.shimmerLayout.isVisible = false
-        }
-        if (refreshState is LoadState.NotLoading) {
-            val isEmpty = searchAdapter.itemCount == 0
-            binding.noResultsSection.isVisible = isEmpty
-            binding.rvSearchResults.isVisible = !isEmpty
-            if (isEmpty) {
-                showWatchHistorySuggestions()
-            } else {
-                hideWatchHistorySuggestions()
+
+        when (val refreshState = loadStates.refresh) {
+            is LoadState.Loading -> {
+                binding.shimmerView.shimmerLayout.startShimmer()
+                binding.shimmerView.shimmerLayout.isVisible = true
+                binding.rvSearchResults.isVisible = false
+                binding.noResultsSection.isVisible = false
             }
-        }
-        if (refreshState is LoadState.Error) {
-            val errorType = ErrorMessageProvider.getErrorType(refreshState.error)
-            binding.noResultsSection.isVisible = false
-            binding.rvSearchResults.isVisible = false
-            binding.errorView.layoutError.isVisible = true
-            binding.errorView.tvErrorMessage.text =
-                ErrorMessageProvider.getMessage(requireContext(), errorType)
-            binding.errorView.btnRetry.setOnClickListener {
-                searchAdapter.retry()
+            is LoadState.NotLoading -> {
+                binding.shimmerView.shimmerLayout.stopShimmer()
+                binding.shimmerView.shimmerLayout.isVisible = false
+                val isEmpty = searchAdapter.itemCount == 0
+                binding.noResultsSection.isVisible = isEmpty
+                binding.rvSearchResults.isVisible = !isEmpty
+                if (isEmpty) showWatchHistorySuggestions() else hideWatchHistorySuggestions()
+            }
+            is LoadState.Error -> {
+                binding.shimmerView.shimmerLayout.stopShimmer()
+                binding.shimmerView.shimmerLayout.isVisible = false
+                binding.noResultsSection.isVisible = false
+                binding.rvSearchResults.isVisible = false
+                binding.errorView.layoutError.isVisible = true
+                val errorType = ErrorMessageProvider.getErrorType(refreshState.error)
+                binding.errorView.tvErrorMessage.text =
+                    ErrorMessageProvider.getMessage(requireContext(), errorType)
+                binding.errorView.btnRetry.setOnClickListener { searchAdapter.retry() }
             }
         }
     }
@@ -419,7 +420,7 @@ class SearchFragment : Fragment() {
             binding.root,
             ErrorMessageProvider.getMessage(requireContext(), errorType),
             Snackbar.LENGTH_SHORT
-        ).show()
+        ).setAnchorView(R.id.bottom_nav).show()
     }
 
     private fun handleOfflineResults(results: List<Movie>) {
@@ -523,7 +524,7 @@ class SearchFragment : Fragment() {
                 binding.root,
                 R.string.genre_load_failed,
                 Snackbar.LENGTH_SHORT
-            ).show()
+            ).setAnchorView(R.id.bottom_nav).show()
             return
         }
 
@@ -698,14 +699,18 @@ class SearchFragment : Fragment() {
         }
     }
 
-    // 최근 검색어 섹션을 표시하고 다른 뷰를 숨김
-    private fun showRecentSearches() {
-        binding.recentSearchesSection.isVisible = true
-        binding.emptyInitial.layoutEmpty.isVisible = false
+    // 최근 검색어 / 초기 안내 화면 공통 전환 (검색 결과 영역 숨김)
+    private fun showIdleState(showRecentSearches: Boolean) {
+        binding.recentSearchesSection.isVisible = showRecentSearches
+        binding.emptyInitial.layoutEmpty.isVisible = !showRecentSearches
         binding.rvSearchResults.isVisible = false
         binding.noResultsSection.isVisible = false
         binding.fabScrollTop.hide()
     }
+
+    private fun showRecentSearches() = showIdleState(showRecentSearches = true)
+
+    private fun showInitialState() = showIdleState(showRecentSearches = false)
 
     // 소프트 키보드를 숨기고 검색 입력 포커스 해제
     private fun hideKeyboard() {
@@ -730,15 +735,6 @@ class SearchFragment : Fragment() {
     private fun hideWatchHistorySuggestions() {
         binding.rvSuggestionHistory.isVisible = false
         binding.tvWatchHistorySuggestion.isVisible = false
-    }
-
-    // 검색 초기 안내 화면을 표시하고 다른 뷰를 숨김
-    private fun showInitialState() {
-        binding.recentSearchesSection.isVisible = false
-        binding.emptyInitial.layoutEmpty.isVisible = true
-        binding.rvSearchResults.isVisible = false
-        binding.noResultsSection.isVisible = false
-        binding.fabScrollTop.hide()
     }
 
     // 다이얼로그 dismiss, Shimmer 중지, 어댑터 해제 및 바인딩 null 처리

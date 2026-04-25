@@ -2,6 +2,7 @@ package com.choo.moviefinder.domain.repository
 
 import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.model.WatchlistReminder
 import kotlinx.coroutines.flow.Flow
 
 interface WatchlistRepository {
@@ -20,4 +21,13 @@ interface WatchlistRepository {
 
     // 제목으로 워치리스트 영화를 검색한다 (오프라인 검색용)
     suspend fun searchWatchlistMovies(query: String): List<Movie>
+
+    // 워치리스트 영화의 알림 날짜를 설정한다
+    suspend fun setReminder(movieId: Int, dateMillis: Long)
+
+    // 워치리스트 영화의 알림을 삭제한다
+    suspend fun clearReminder(movieId: Int)
+
+    // 알림 날짜가 설정된 워치리스트 영화 목록을 반환한다
+    suspend fun getMoviesWithReminder(): List<WatchlistReminder>
 }
