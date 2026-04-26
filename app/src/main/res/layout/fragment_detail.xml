@@ -402,6 +402,7 @@
                     android:id="@+id/et_memo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:imeOptions="actionSend"
                     android:inputType="textMultiLine"
                     android:maxLines="4" />
 

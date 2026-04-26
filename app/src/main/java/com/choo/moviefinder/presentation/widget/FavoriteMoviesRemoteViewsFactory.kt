@@ -125,8 +125,10 @@ class FavoriteMoviesRemoteViewsFactory(
         @Volatile private var instance: MovieDatabase? = null
 
         fun releaseDatabase() {
-            instance?.close()
-            instance = null
+            synchronized(this) {
+                instance?.close()
+                instance = null
+            }
         }
 
         fun getDatabase(context: Context): MovieDatabase =

@@ -120,7 +120,9 @@ internal object WatchGoalWidgetDb {
         }
 
     fun release() {
-        instance?.close()
-        instance = null
+        synchronized(this) {
+            instance?.close()
+            instance = null
+        }
     }
 }

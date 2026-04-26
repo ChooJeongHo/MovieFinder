@@ -619,7 +619,7 @@ class DetailFragment : Fragment() {
     // 메모 입력 필드 및 저장 버튼 설정
     private fun setupMemoInput() {
         binding.etMemo.filters = arrayOf(InputFilter.LengthFilter(MemoConstants.MAX_LENGTH))
-        binding.tilMemo.setEndIconOnClickListener {
+        val saveMemoAction = {
             val content = binding.etMemo.text?.toString()?.trim().orEmpty()
             if (content.isNotBlank()) {
                 viewModel.saveMemo(content)
@@ -627,6 +627,15 @@ class DetailFragment : Fragment() {
                 binding.etMemo.clearFocus()
                 val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(binding.etMemo.windowToken, 0)
+            }
+        }
+        binding.tilMemo.setEndIconOnClickListener { saveMemoAction() }
+        binding.etMemo.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
+                saveMemoAction()
+                true
+            } else {
+                false
             }
         }
     }
