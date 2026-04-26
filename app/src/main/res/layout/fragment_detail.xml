@@ -132,7 +132,6 @@
                     android:layout_marginStart="@dimen/spacing_sm"
                     android:clickable="false"
                     android:checkable="false"
-                    android:importantForAccessibility="no"
                     android:visibility="gone"
                     tools:text="15" />
 

@@ -457,7 +457,10 @@ class FavoriteFragment : Fragment() {
                 val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(requireActivity().currentFocus?.windowToken, 0)
             }
-            .setNegativeButton(R.string.action_close, null)
+            .setNegativeButton(R.string.action_close) { _, _ ->
+                val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(requireActivity().currentFocus?.windowToken, 0)
+            }
             .show()
         activeDialog = dialog
 

@@ -9,7 +9,10 @@ import com.choo.moviefinder.domain.usecase.CancelReminderUseCase
 import com.choo.moviefinder.domain.usecase.GetScheduledRemindersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
@@ -21,9 +24,19 @@ class ReminderHistoryViewModel @Inject constructor(
     private val cancelReminderUseCase: CancelReminderUseCase
 ) : ViewModel() {
 
-    // 예약된 알림 목록 (개봉일 오름차순)
-    val reminders: StateFlow<List<ScheduledReminder>> = getScheduledRemindersUseCase()
+    // 재시도 트리거 — retry() 호출 시 새로운 collect 사이클 시작
+    private val _retryTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    // 예약된 알림 목록 (개봉일 오름차순) — 에러 후 retry()로 재구독 가능
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val reminders: StateFlow<List<ScheduledReminder>> = _retryTrigger
+        .onStart { emit(Unit) }
+        .flatMapLatest { getScheduledRemindersUseCase() }
         .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
+
+    fun retry() {
+        _retryTrigger.tryEmit(Unit)
+    }
 
     private val _cancelledEvent = Channel<Unit>(Channel.CONFLATED)
     val cancelledEvent = _cancelledEvent.receiveAsFlow()

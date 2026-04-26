@@ -136,6 +136,7 @@ class CollectionFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        binding.shimmerView.shimmerLayout.stopShimmer()
         binding.rvCollectionMovies.adapter = null
         super.onDestroyView()
         _binding = null
