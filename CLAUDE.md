@@ -41,7 +41,7 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | App Startup | 1.2.0 | 초기화 최적화 (Timber 등) |
 | WorkManager | 2.11.2 | 개봉일 알림 스케줄링 |
 | kotlinx-datetime | 0.7.1 | 멀티플랫폼 날짜/시간 API |
-| Window | 1.3.0 | 윈도우 레이아웃 API |
+| Window | 1.4.0 | 윈도우 레이아웃 API |
 | android-youtube-player | 13.0.0 | YouTube 예고편 외부 연결 (임베드 제한으로 인해 앱 외부 실행) |
 
 ### 개발/디버그 도구
@@ -90,9 +90,9 @@ app/src/main/java/com/choo/moviefinder/
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 ├── data/                  # 데이터 레이어
 │   ├── local/
-│   │   ├── MovieDatabase.kt       # Room DB (version 17)
+│   │   ├── MovieDatabase.kt       # Room DB (version 21)
 │   │   ├── dao/                   # DAO 8개 (FavoriteMovieDao, WatchlistDao: abstract class)
-│   │   └── entity/                # Room Entity 8개
+│   │   └── entity/                # Room Entity 11개
 │   ├── paging/
 │   │   ├── MoviePagingSource.kt       # 네트워크 전용 PagingSource (검색용)
 │   │   ├── DiscoverPagingSource.kt    # 장르/정렬 기반 탐색
@@ -195,7 +195,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (471개)
+### 유닛 테스트 (509개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
