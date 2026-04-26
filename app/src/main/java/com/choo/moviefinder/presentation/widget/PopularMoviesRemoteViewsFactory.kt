@@ -131,7 +131,9 @@ class PopularMoviesRemoteViewsFactory(
         @Volatile private var instance: OkHttpClient? = null
 
         fun releaseClient() {
-            instance = null
+            synchronized(this) {
+                instance = null
+            }
         }
 
         fun getClient(context: Context): OkHttpClient =
