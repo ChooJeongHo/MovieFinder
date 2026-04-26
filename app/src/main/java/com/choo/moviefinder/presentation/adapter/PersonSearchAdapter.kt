@@ -71,11 +71,22 @@ class PersonSearchAdapter(
                 onPersonClick(item.id)
             }
 
-            binding.root.contentDescription = if (item.knownForDepartment.isNotBlank()) {
-                "${item.name}, ${item.knownForDepartment}"
+            val knownForPart = buildString {
+                if (item.knownForDepartment.isNotBlank()) append(item.knownForDepartment)
+                if (item.knownForTitles.isNotBlank()) {
+                    if (isNotEmpty()) append(", ")
+                    append(item.knownForTitles)
+                }
+            }
+            binding.root.contentDescription = if (knownForPart.isNotBlank()) {
+                "${item.name}, $knownForPart"
             } else {
                 item.name
             }
+            // 루트 contentDescription이 전체 정보를 담으므로 자식 TextView 중복 발화 방지
+            binding.tvName.importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            binding.tvKnownForDepartment.importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            binding.tvKnownForTitles.importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
     }
 

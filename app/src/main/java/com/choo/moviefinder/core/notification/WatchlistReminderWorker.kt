@@ -1,15 +1,18 @@
 package com.choo.moviefinder.core.notification
 
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.choo.moviefinder.MainActivity
 import com.choo.moviefinder.R
+import timber.log.Timber
 
 class WatchlistReminderWorker(
     context: android.content.Context,
@@ -20,6 +23,17 @@ class WatchlistReminderWorker(
         val movieId = inputData.getInt(KEY_MOVIE_ID, -1)
         val movieTitle = inputData.getString(KEY_MOVIE_TITLE) ?: return Result.failure()
         if (movieId == -1) return Result.failure()
+
+        // Android 13+에서 POST_NOTIFICATIONS 권한 미부여 시 크래시 방지
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permission = ContextCompat.checkSelfPermission(
+                applicationContext, android.Manifest.permission.POST_NOTIFICATIONS
+            )
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                Timber.w("POST_NOTIFICATIONS 권한 미부여, 워치리스트 알림 건너뜀")
+                return Result.success()
+            }
+        }
 
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             action = Intent.ACTION_VIEW
@@ -41,10 +55,7 @@ class WatchlistReminderWorker(
             .setAutoCancel(true)
             .build()
 
-        val notificationManager = ContextCompat.getSystemService(
-            applicationContext, NotificationManager::class.java
-        ) as NotificationManager
-        notificationManager.notify(movieId, notification)
+        NotificationManagerCompat.from(applicationContext).notify(movieId, notification)
 
         return Result.success()
     }

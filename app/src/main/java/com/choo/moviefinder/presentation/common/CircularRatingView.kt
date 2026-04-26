@@ -17,6 +17,7 @@ class CircularRatingView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private var rating: Double = 0.0
+    private var ratingText: String = "0.0"
     private val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -42,6 +43,7 @@ class CircularRatingView @JvmOverloads constructor(
     fun setRating(value: Double) {
         if (rating == value) return
         rating = value
+        ratingText = String.format(Locale.US, "%.1f", value)
         contentDescription = context.getString(R.string.cd_rating, value)
         updateProgressColor()
         invalidate()
@@ -92,9 +94,8 @@ class CircularRatingView @JvmOverloads constructor(
         val sweepAngle = (rating / 10.0 * 360.0).toFloat()
         canvas.drawArc(arcRect, -90f, sweepAngle, false, progressPaint)
 
-        // Locale.US 고정으로 소수점 표기 일관성 보장
-        val text = String.format(Locale.US, "%.1f", rating)
+        // Locale.US 고정으로 소수점 표기 일관성 보장 (setRating()에서 미리 계산)
         val textY = cy - (textPaint.descent() + textPaint.ascent()) / 2
-        canvas.drawText(text, cx, textY, textPaint)
+        canvas.drawText(ratingText, cx, textY, textPaint)
     }
 }

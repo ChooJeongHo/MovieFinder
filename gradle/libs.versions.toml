@@ -41,7 +41,7 @@ window = "1.3.0"
 viewpager2 = "1.1.0"
 youtubePlayer = "13.0.0"
 browser = "1.10.0"
-securityCrypto = "1.1.0-alpha06"
+securityCrypto = "1.1.0"
 
 [libraries]
 # Core
