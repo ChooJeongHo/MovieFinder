@@ -34,6 +34,9 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
         private val binding: ItemReviewBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        // rebind 시 이전 접근성 액션이 누적되지 않도록 ID 추적
+        private var expandCollapseActionId: Int = -1
+
         // 접근성: 확장/축소 상태 설명 갱신
         private fun updateStateDescription(isExpanded: Boolean) {
             val desc = itemView.context.getString(
@@ -60,7 +63,11 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(DIFF_C
             val actionLabel = binding.root.context.getString(
                 if (isExpanded) R.string.cd_review_collapse else R.string.cd_review_expand
             )
-            ViewCompat.addAccessibilityAction(binding.root, actionLabel) { _, _ ->
+            // 이전 액션을 먼저 제거하여 rebind 시 액션 누적 방지
+            if (expandCollapseActionId != -1) {
+                ViewCompat.removeAccessibilityAction(binding.root, expandCollapseActionId)
+            }
+            expandCollapseActionId = ViewCompat.addAccessibilityAction(binding.root, actionLabel) { _, _ ->
                 binding.root.performClick()
                 true
             }

@@ -418,6 +418,7 @@ class DetailFragment : Fragment() {
 
         binding.ivBackdrop.load(ImageUrlProvider.backdropUrl(detail.backdropPath)) {
             crossfade(true)
+            size(coil3.size.ViewSizeResolver(binding.ivBackdrop))
             placeholder(R.drawable.bg_poster_placeholder)
             error(R.drawable.bg_poster_placeholder)
             listener(
@@ -534,6 +535,7 @@ class DetailFragment : Fragment() {
             }
             imageView.load(ImageUrlProvider.profileUrl(provider.logoPath)) {
                 crossfade(true)
+                size(sizePx, sizePx)
                 placeholder(R.drawable.bg_poster_placeholder)
                 error(R.drawable.bg_poster_placeholder)
             }

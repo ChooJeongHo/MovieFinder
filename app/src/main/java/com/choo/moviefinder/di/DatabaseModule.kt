@@ -199,6 +199,16 @@ object DatabaseModule {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_watch_history_yearMonth` ON `watch_history` (`yearMonth`)")
     }
 
+    // watchlist_movies reminderDate 인덱스 추가 마이그레이션 (v20 → v21)
+    val MIGRATION_20_21 = object : Migration(20, 21) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_watchlist_movies_reminderDate` " +
+                    "ON `watchlist_movies` (`reminderDate`)"
+            )
+        }
+    }
+
     // watch_history_genre FK를 새 rowId 기반으로 재생성하고 기존 장르 데이터를 이전한다
     private fun migrateWatchHistoryGenreTable(db: SupportSQLiteDatabase) {
         db.execSQL(
@@ -244,7 +254,8 @@ object DatabaseModule {
         )
             .addMigrations(
                 MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
-                MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20
+                MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20,
+                MIGRATION_20_21
             )
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()

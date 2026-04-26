@@ -8,7 +8,12 @@ import com.choo.moviefinder.domain.model.Movie
 
 @Entity(
     tableName = "watchlist_movies",
-    indices = [Index(value = ["addedAt"]), Index(value = ["title"]), Index(value = ["voteAverage"])]
+    indices = [
+        Index(value = ["addedAt"]),
+        Index(value = ["title"]),
+        Index(value = ["voteAverage"]),
+        Index(value = ["reminderDate"])
+    ]
 )
 data class WatchlistEntity(
     @PrimaryKey val id: Int,
