@@ -12,20 +12,7 @@ import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.core.util.suspendRunCatching
 import com.choo.moviefinder.domain.model.MovieDetail
-import com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
-import com.choo.moviefinder.domain.usecase.GetTmdbAccessTokenUseCase
-import com.choo.moviefinder.domain.usecase.SubmitTmdbRatingUseCase
-import com.choo.moviefinder.domain.usecase.DeleteUserRatingUseCase
-import com.choo.moviefinder.domain.usecase.GetMemosUseCase
-import com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
-import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
-import com.choo.moviefinder.domain.usecase.IsInWatchlistUseCase
-import com.choo.moviefinder.domain.usecase.SaveMemoUseCase
 import com.choo.moviefinder.domain.usecase.SaveWatchHistoryUseCase
-import com.choo.moviefinder.domain.usecase.SetUserRatingUseCase
-import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
-import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
-import com.choo.moviefinder.domain.usecase.UpdateMemoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -49,22 +36,12 @@ import javax.inject.Inject
 class DetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val fetch: DetailFetchUseCases,
-    private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val isFavoriteUseCase: IsFavoriteUseCase,
-    private val toggleWatchlistUseCase: ToggleWatchlistUseCase,
-    private val isInWatchlistUseCase: IsInWatchlistUseCase,
+    private val toggle: DetailToggleUseCases,
+    private val memo: DetailMemoUseCases,
+    private val ratingCases: DetailRatingUseCases,
     private val saveWatchHistoryUseCase: SaveWatchHistoryUseCase,
-    private val getUserRatingUseCase: GetUserRatingUseCase,
-    private val setUserRatingUseCase: SetUserRatingUseCase,
-    private val deleteUserRatingUseCase: DeleteUserRatingUseCase,
-    private val getMemosUseCase: GetMemosUseCase,
-    private val saveMemoUseCase: SaveMemoUseCase,
-    private val updateMemoUseCase: UpdateMemoUseCase,
-    private val deleteMemoUseCase: DeleteMemoUseCase,
     private val releaseNotificationScheduler: ReleaseNotificationScheduler,
-    private val watchGoalNotificationHelper: WatchGoalNotificationHelper,
-    private val getTmdbAccessTokenUseCase: GetTmdbAccessTokenUseCase,
-    private val submitTmdbRatingUseCase: SubmitTmdbRatingUseCase
+    private val watchGoalNotificationHelper: WatchGoalNotificationHelper
 ) : ViewModel() {
 
     private val movieId: Int = requireNotNull(savedStateHandle.get<Int>("movieId")) {
@@ -80,33 +57,33 @@ class DetailViewModel @Inject constructor(
     private var loadingJob: Job? = null
     private val toggleMutex = Mutex()
 
-    val isTmdbConnected: StateFlow<Boolean> = getTmdbAccessTokenUseCase()
+    val isTmdbConnected: StateFlow<Boolean> = ratingCases.getTmdbAccessToken()
         .map { it != null }
         .stateIn(viewModelScope, WhileSubscribed5s, false)
 
     private val _tmdbRatingResult = Channel<Boolean>(Channel.CONFLATED)
     val tmdbRatingResult = _tmdbRatingResult.receiveAsFlow()
 
-    val isFavorite = isFavoriteUseCase(movieId)
+    val isFavorite = toggle.isFavorite(movieId)
         .stateIn(viewModelScope, WhileSubscribed5s, false)
 
-    val isInWatchlist = isInWatchlistUseCase(movieId)
+    val isInWatchlist = toggle.isInWatchlist(movieId)
         .stateIn(viewModelScope, WhileSubscribed5s, false)
 
     private val memoDelegate = MemoDelegate(
-        getMemosUseCase = getMemosUseCase,
-        saveMemoUseCase = saveMemoUseCase,
-        updateMemoUseCase = updateMemoUseCase,
-        deleteMemoUseCase = deleteMemoUseCase,
+        getMemosUseCase = memo.getMemos,
+        saveMemoUseCase = memo.saveMemo,
+        updateMemoUseCase = memo.updateMemo,
+        deleteMemoUseCase = memo.deleteMemo,
         movieId = movieId,
         viewModelScope = viewModelScope,
         snackbarChannel = _snackbarEvent
     )
 
     private val userRatingDelegate = UserRatingDelegate(
-        getUserRatingUseCase = getUserRatingUseCase,
-        setUserRatingUseCase = setUserRatingUseCase,
-        deleteUserRatingUseCase = deleteUserRatingUseCase,
+        getUserRatingUseCase = ratingCases.getUserRating,
+        setUserRatingUseCase = ratingCases.setUserRating,
+        deleteUserRatingUseCase = ratingCases.deleteUserRating,
         movieId = movieId,
         viewModelScope = viewModelScope,
         snackbarChannel = _snackbarEvent
@@ -215,7 +192,7 @@ class DetailViewModel @Inject constructor(
         toggleMutex.withLock {
             val state = _uiState.value
             if (state is DetailUiState.Success) {
-                toggleFavoriteUseCase(state.movieDetail.toMovie())
+                toggle.toggleFavorite(state.movieDetail.toMovie())
             }
         }
     }
@@ -234,7 +211,7 @@ class DetailViewModel @Inject constructor(
                 // toggle the same movie. Acceptable for a low-priority notification side-effect.
                 val wasInWatchlist = isInWatchlist.value
                 val movie = state.movieDetail.toMovie()
-                toggleWatchlistUseCase(movie)
+                toggle.toggleWatchlist(movie)
                 if (!wasInWatchlist) {
                     val detail = state.movieDetail
                     releaseNotificationScheduler.schedule(
@@ -270,7 +247,7 @@ class DetailViewModel @Inject constructor(
     fun submitTmdbRating(rating: Float) {
         viewModelScope.launch {
             try {
-                val success = submitTmdbRatingUseCase(movieId, rating)
+                val success = ratingCases.submitTmdbRating(movieId, rating)
                 _tmdbRatingResult.trySend(success)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -278,5 +255,4 @@ class DetailViewModel @Inject constructor(
             }
         }
     }
-
 }

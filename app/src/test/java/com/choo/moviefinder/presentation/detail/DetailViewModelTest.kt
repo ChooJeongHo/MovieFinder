@@ -164,25 +164,34 @@ class DetailViewModelTest {
             getMovieRecommendations = getMovieRecommendationsUseCase,
             getWatchProviders = getWatchProvidersUseCase
         )
+        val toggle = DetailToggleUseCases(
+            toggleFavorite = toggleFavoriteUseCase,
+            isFavorite = isFavoriteUseCase,
+            toggleWatchlist = toggleWatchlistUseCase,
+            isInWatchlist = isInWatchlistUseCase
+        )
+        val memo = DetailMemoUseCases(
+            getMemos = getMemosUseCase,
+            saveMemo = saveMemoUseCase,
+            updateMemo = updateMemoUseCase,
+            deleteMemo = deleteMemoUseCase
+        )
+        val ratingCases = DetailRatingUseCases(
+            getUserRating = getUserRatingUseCase,
+            setUserRating = setUserRatingUseCase,
+            deleteUserRating = deleteUserRatingUseCase,
+            getTmdbAccessToken = getTmdbAccessTokenUseCase,
+            submitTmdbRating = submitTmdbRatingUseCase
+        )
         return DetailViewModel(
             savedStateHandle = savedStateHandle,
             fetch = fetch,
-            toggleFavoriteUseCase = toggleFavoriteUseCase,
-            isFavoriteUseCase = isFavoriteUseCase,
-            toggleWatchlistUseCase = toggleWatchlistUseCase,
-            isInWatchlistUseCase = isInWatchlistUseCase,
+            toggle = toggle,
+            memo = memo,
+            ratingCases = ratingCases,
             saveWatchHistoryUseCase = saveWatchHistoryUseCase,
-            getUserRatingUseCase = getUserRatingUseCase,
-            setUserRatingUseCase = setUserRatingUseCase,
-            deleteUserRatingUseCase = deleteUserRatingUseCase,
-            getMemosUseCase = getMemosUseCase,
-            saveMemoUseCase = saveMemoUseCase,
-            updateMemoUseCase = updateMemoUseCase,
-            deleteMemoUseCase = deleteMemoUseCase,
             releaseNotificationScheduler = releaseNotificationScheduler,
-            watchGoalNotificationHelper = watchGoalNotificationHelper,
-            getTmdbAccessTokenUseCase = getTmdbAccessTokenUseCase,
-            submitTmdbRatingUseCase = submitTmdbRatingUseCase
+            watchGoalNotificationHelper = watchGoalNotificationHelper
         )
     }
 

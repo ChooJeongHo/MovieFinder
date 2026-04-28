@@ -24,9 +24,9 @@ import com.choo.moviefinder.domain.usecase.GetWatchlistRemindersUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchlistUseCase
 import com.choo.moviefinder.domain.usecase.RemoveTagFromMovieUseCase
 import com.choo.moviefinder.domain.usecase.SetWatchlistReminderUseCase
+import com.choo.moviefinder.domain.usecase.GetAllUserRatingsUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
-import com.choo.moviefinder.domain.repository.UserRatingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -60,7 +60,7 @@ class FavoriteViewModel @Inject constructor(
     private val addTagToMovieUseCase: AddTagToMovieUseCase,
     private val removeTagFromMovieUseCase: RemoveTagFromMovieUseCase,
     private val posterTagSuggester: PosterTagSuggester,
-    private val userRatingRepository: UserRatingRepository,
+    getAllUserRatingsUseCase: GetAllUserRatingsUseCase,
     private val setWatchlistReminderUseCase: SetWatchlistReminderUseCase,
     private val clearWatchlistReminderUseCase: ClearWatchlistReminderUseCase,
     private val getWatchlistRemindersUseCase: GetWatchlistRemindersUseCase,
@@ -85,7 +85,7 @@ class FavoriteViewModel @Inject constructor(
         .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     // 모든 사용자 평점 맵 (movieId → rating)
-    private val userRatings: StateFlow<Map<Int, Float>> = userRatingRepository.getAllUserRatings()
+    private val userRatings: StateFlow<Map<Int, Float>> = getAllUserRatingsUseCase()
         .stateIn(viewModelScope, WhileSubscribed5s, emptyMap())
 
     // 선택된 태그·정렬 순서에 따라 DB ORDER BY로 정렬된 즐겨찾기 기본 목록

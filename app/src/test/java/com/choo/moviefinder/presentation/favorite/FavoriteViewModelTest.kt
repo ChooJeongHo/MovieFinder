@@ -6,8 +6,8 @@ import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.PosterTagSuggester
 import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.Movie
-import com.choo.moviefinder.domain.repository.UserRatingRepository
 import com.choo.moviefinder.domain.usecase.AddTagToMovieUseCase
+import com.choo.moviefinder.domain.usecase.GetAllUserRatingsUseCase
 import com.choo.moviefinder.domain.usecase.ClearWatchlistReminderUseCase
 import com.choo.moviefinder.domain.usecase.GetAllTagNamesUseCase
 import com.choo.moviefinder.domain.usecase.GetFavoriteMoviesUseCase
@@ -52,7 +52,7 @@ class FavoriteViewModelTest {
     private lateinit var addTagToMovieUseCase: AddTagToMovieUseCase
     private lateinit var removeTagFromMovieUseCase: RemoveTagFromMovieUseCase
     private lateinit var posterTagSuggester: PosterTagSuggester
-    private lateinit var userRatingRepository: UserRatingRepository
+    private lateinit var getAllUserRatingsUseCase: GetAllUserRatingsUseCase
     private lateinit var setWatchlistReminderUseCase: SetWatchlistReminderUseCase
     private lateinit var clearWatchlistReminderUseCase: ClearWatchlistReminderUseCase
     private lateinit var getWatchlistRemindersUseCase: GetWatchlistRemindersUseCase
@@ -76,7 +76,7 @@ class FavoriteViewModelTest {
         addTagToMovieUseCase = mockk()
         removeTagFromMovieUseCase = mockk()
         posterTagSuggester = mockk()
-        userRatingRepository = mockk()
+        getAllUserRatingsUseCase = mockk()
         setWatchlistReminderUseCase = mockk()
         clearWatchlistReminderUseCase = mockk()
         getWatchlistRemindersUseCase = mockk()
@@ -84,7 +84,7 @@ class FavoriteViewModelTest {
 
         every { getWatchlistUseCase(any<FavoriteSortOrder>()) } returns flowOf(emptyList())
         every { getAllTagNamesUseCase() } returns flowOf(emptyList())
-        every { userRatingRepository.getAllUserRatings() } returns flowOf(emptyMap())
+        every { getAllUserRatingsUseCase() } returns flowOf(emptyMap())
         coEvery { getWatchlistRemindersUseCase() } returns emptyList()
         every { getWatchlistRemindersUseCase.asFlow() } returns flowOf(emptyList())
     }
@@ -106,7 +106,7 @@ class FavoriteViewModelTest {
             addTagToMovieUseCase,
             removeTagFromMovieUseCase,
             posterTagSuggester,
-            userRatingRepository,
+            getAllUserRatingsUseCase,
             setWatchlistReminderUseCase,
             clearWatchlistReminderUseCase,
             getWatchlistRemindersUseCase,
