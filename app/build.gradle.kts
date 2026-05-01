@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.navigation.safeargs)
     alias(libs.plugins.baseline.profile)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.kotlin.compose)
     jacoco
 }
 
@@ -75,6 +76,7 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
+        compose = true
     }
 }
 
@@ -291,6 +293,14 @@ dependencies {
 
     // ML Kit Image Labeling unbundled (포스터 태그 자동 추천 — 모델은 Play Services에서 다운로드)
     implementation(libs.mlkit.image.labeling)
+
+    // Compose
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.foundation)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 
     // LeakCanary (debug only)
     debugImplementation(libs.leakcanary)

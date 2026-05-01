@@ -4,18 +4,25 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import androidx.viewpager2.adapter.FragmentStateAdapter
-import androidx.viewpager2.widget.ViewPager2
 import com.choo.moviefinder.R
-import com.choo.moviefinder.databinding.FragmentOnboardingBinding
 import com.choo.moviefinder.domain.usecase.CompleteOnboardingUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+// XML에서 제거된 것들:
+//   - FragmentOnboardingBinding (ViewBinding)
+//   - OnboardingPagerAdapter 내부 클래스 (FragmentStateAdapter)
+//   - buildPages() / updateDots() / updateNextButton() / completeOnboarding() 메서드 4개
+//   - onViewCreated() / onDestroyView() 생명주기 콜백 2개
+//   - ViewPager2.OnPageChangeCallback 등록 코드
+// → 모두 OnboardingScreen.kt 컴포저블로 이동
 
 @AndroidEntryPoint
 class OnboardingFragment : Fragment() {
@@ -23,104 +30,24 @@ class OnboardingFragment : Fragment() {
     @Inject
     lateinit var completeOnboardingUseCase: CompleteOnboardingUseCase
 
-    private var _binding: FragmentOnboardingBinding? = null
-    private val binding get() = _binding!!
-
-    private val dots get() = listOf(binding.dot0, binding.dot1, binding.dot2)
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = FragmentOnboardingBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        val pages = buildPages()
-        binding.viewPager.adapter = OnboardingPagerAdapter(requireActivity(), pages)
-
-        binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                updateDots(position)
-                updateNextButton(position, pages.size)
+        savedInstanceState: Bundle?,
+    ): View = ComposeView(requireContext()).apply {
+        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        setContent {
+            val scope = rememberCoroutineScope()
+            MaterialTheme {
+                OnboardingScreen(
+                    onComplete = {
+                        scope.launch {
+                            completeOnboardingUseCase()
+                            findNavController().navigate(R.id.action_onboarding_to_home)
+                        }
+                    },
+                )
             }
-        })
-
-        binding.btnSkip.setOnClickListener { completeOnboarding() }
-
-        binding.btnNext.setOnClickListener {
-            val current = binding.viewPager.currentItem
-            if (current < pages.size - 1) {
-                binding.viewPager.currentItem = current + 1
-            } else {
-                completeOnboarding()
-            }
-        }
-
-        updateDots(0)
-        updateNextButton(0, pages.size)
-    }
-
-    private fun buildPages(): List<Triple<Int, String, String>> {
-        val res = requireContext().resources
-        return listOf(
-            Triple(
-                R.drawable.ic_search,
-                res.getString(R.string.onboarding_page1_title),
-                res.getString(R.string.onboarding_page1_desc)
-            ),
-            Triple(
-                R.drawable.ic_favorite,
-                res.getString(R.string.onboarding_page2_title),
-                res.getString(R.string.onboarding_page2_desc)
-            ),
-            Triple(
-                R.drawable.ic_stats,
-                res.getString(R.string.onboarding_page3_title),
-                res.getString(R.string.onboarding_page3_desc)
-            )
-        )
-    }
-
-    private fun updateDots(position: Int) {
-        dots.forEachIndexed { index, dot ->
-            val bg = if (index == position) R.drawable.onboarding_dot_active else R.drawable.onboarding_dot_inactive
-            dot.setBackgroundResource(bg)
-        }
-    }
-
-    private fun updateNextButton(position: Int, pageCount: Int) {
-        binding.btnNext.text = getString(
-            if (position == pageCount - 1) R.string.onboarding_start else R.string.onboarding_next
-        )
-    }
-
-    private fun completeOnboarding() {
-        lifecycleScope.launch {
-            completeOnboardingUseCase()
-            findNavController().navigate(R.id.action_onboarding_to_home)
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
-    private class OnboardingPagerAdapter(
-        activity: FragmentActivity,
-        private val pages: List<Triple<Int, String, String>>
-    ) : FragmentStateAdapter(activity) {
-
-        override fun getItemCount(): Int = pages.size
-
-        override fun createFragment(position: Int): Fragment {
-            val (icon, title, desc) = pages[position]
-            return OnboardingPageFragment.newInstance(icon, title, desc)
         }
     }
 }

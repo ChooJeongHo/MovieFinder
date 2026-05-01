@@ -42,6 +42,7 @@ viewpager2 = "1.1.0"
 youtubePlayer = "13.0.0"
 browser = "1.10.0"
 securityCrypto = "1.1.0"
+composeBom = "2025.05.01"
 
 [libraries]
 # Core
@@ -160,6 +161,14 @@ androidx-browser = { group = "androidx.browser", name = "browser", version.ref =
 # Security Crypto (EncryptedSharedPreferences)
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
+# Compose
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+
 [bundles]
 lifecycle = ["androidx-lifecycle-runtime-ktx", "androidx-lifecycle-viewmodel-ktx", "androidx-lifecycle-process"]
 room = ["androidx-room-runtime", "androidx-room-ktx", "androidx-room-paging"]
@@ -177,3 +186,4 @@ navigation-safeargs = { id = "androidx.navigation.safeargs.kotlin", version.ref 
 android-test = { id = "com.android.test", version.ref = "agp" }
 baseline-profile = { id = "androidx.baselineprofile", version.ref = "benchmark" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
