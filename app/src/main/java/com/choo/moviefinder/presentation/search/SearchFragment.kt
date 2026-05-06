@@ -51,7 +51,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import javax.inject.Inject
 
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 @AndroidEntryPoint
 class SearchFragment : Fragment() {
 
@@ -292,6 +292,17 @@ class SearchFragment : Fragment() {
                 launch { searchAdapter.loadStateFlow.collectLatest { handleLoadStates(it) } }
                 launch { viewModel.snackbarEvent.collect { showSearchSnackbar(it) } }
                 launch { viewModel.offlineResults.collect { handleOfflineResults(it) } }
+                launch {
+                    viewModel.watchHistory.collect { history ->
+                        if (binding.rvSuggestionHistory.isVisible || binding.tvWatchHistorySuggestion.isVisible) {
+                            if (history.isNotEmpty()) {
+                                suggestionHistoryAdapter.submitList(history)
+                            } else {
+                                hideWatchHistorySuggestions()
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -734,7 +745,7 @@ class SearchFragment : Fragment() {
 
     // 결과 없음 상태에서 최근 시청 기록 영화를 제안 섹션으로 표시
     private fun showWatchHistorySuggestions() {
-        val suggestions = viewModel.watchHistory.value.take(SUGGESTION_HISTORY_COUNT)
+        val suggestions = viewModel.watchHistory.value
         if (suggestions.isNotEmpty()) {
             suggestionHistoryAdapter.submitList(suggestions)
             binding.rvSuggestionHistory.isVisible = true
@@ -764,9 +775,6 @@ class SearchFragment : Fragment() {
         _binding = null
     }
 
-    companion object {
-        private const val SUGGESTION_HISTORY_COUNT = 3
-    }
 }
 
 private fun SortOption.labelRes(): Int = when (this) {
