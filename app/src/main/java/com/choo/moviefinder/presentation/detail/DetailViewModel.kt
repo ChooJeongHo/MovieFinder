@@ -1,6 +1,5 @@
 package com.choo.moviefinder.presentation.detail
 
-// Detail screen ViewModel - manages movie detail UI state and user actions
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,7 +14,6 @@ import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.usecase.SaveWatchHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -54,7 +52,7 @@ class DetailViewModel @Inject constructor(
     private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
-    private var loadingJob: Job? = null
+    private val loadingMutex = Mutex()
     private val toggleMutex = Mutex()
 
     val isTmdbConnected: StateFlow<Boolean> = ratingCases.getTmdbAccessToken()
@@ -97,8 +95,8 @@ class DetailViewModel @Inject constructor(
 
     // 핵심 데이터(영화 상세 + 등급) 먼저 표시 후 나머지 API를 점진적으로 업데이트
     fun loadMovieDetail() {
-        if (loadingJob?.isActive == true) return
-        loadingJob = viewModelScope.launch {
+        if (!loadingMutex.tryLock()) return
+        viewModelScope.launch {
             _uiState.value = DetailUiState.Loading
             try {
                 // 1단계: 핵심 데이터 (영화 상세 + 등급) 병렬 로드
@@ -152,6 +150,8 @@ class DetailViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _uiState.value = DetailUiState.Error(ErrorMessageProvider.getErrorType(e))
+            } finally {
+                loadingMutex.unlock()
             }
         }
     }

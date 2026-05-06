@@ -1,12 +1,13 @@
 package com.choo.moviefinder.core.util
 
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Clock
 
 class RateLimiter(private val minIntervalMs: Long = DEFAULT_COOLDOWN_MS) {
     private val lastActionTime = AtomicLong(0)
 
     fun tryAcquire(): Boolean {
-        val now = System.currentTimeMillis()
+        val now = Clock.System.now().toEpochMilliseconds()
         while (true) {
             val last = lastActionTime.get()
             if (now - last < minIntervalMs) return false
