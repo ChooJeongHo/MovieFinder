@@ -39,7 +39,6 @@ import java.util.Locale
 import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 // Rating filter options: threshold value (0f = no filter) paired with string resource
@@ -60,8 +59,6 @@ class FavoriteFragment : Fragment() {
     private val viewModel: FavoriteViewModel by viewModels()
 
     private lateinit var movieAdapter: MovieAdapter
-    private var currentTab = TAB_FAVORITES
-    private var collectJob: Job? = null
     private var swipeHelper: ItemTouchHelper? = null
     private var activeDialog: Dialog? = null
 
@@ -76,20 +73,14 @@ class FavoriteFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        currentTab = savedInstanceState?.getInt(KEY_CURRENT_TAB, TAB_FAVORITES) ?: TAB_FAVORITES
         setupToolbar()
         setupRecyclerView()
         setupSwipeToDelete()
         setupTabs()
         setupRatingFilterChips()
         updateSortLabel(viewModel.sortOrder.value)
-        collectCurrentTab()
+        observeSelectedTab()
         observeViewModelFlows()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt(KEY_CURRENT_TAB, currentTab)
     }
 
     private fun setupToolbar() {
@@ -131,7 +122,7 @@ class FavoriteFragment : Fragment() {
                 }
             },
             onMovieLongClick = { movie ->
-                if (currentTab == TAB_FAVORITES) {
+                if (viewModel.selectedTab.value == FavoriteTab.FAVORITES) {
                     showTagManagementDialog(movie)
                 } else {
                     showReminderDialog(movie)
@@ -166,7 +157,7 @@ class FavoriteFragment : Fragment() {
     }
 
     private fun onSwipeDelete(movie: Movie) {
-        val isFavorite = currentTab == TAB_FAVORITES
+        val isFavorite = viewModel.selectedTab.value == FavoriteTab.FAVORITES
         val toggle = if (isFavorite) viewModel::toggleFavorite else viewModel::toggleWatchlist
         val messageRes = if (isFavorite) R.string.favorite_removed else R.string.watchlist_removed
         toggle(movie)
@@ -180,22 +171,9 @@ class FavoriteFragment : Fragment() {
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.favorite_title))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.watchlist_title))
 
-        if (currentTab != TAB_FAVORITES) {
-            binding.tabLayout.getTabAt(currentTab)?.select()
-        }
-
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
-                currentTab = tab.position
-                // 워치리스트 탭 전환 시 태그/평점 필터 초기화
-                if (currentTab == TAB_WATCHLIST) {
-                    viewModel.onTagSelected(null)
-                    viewModel.setMinRating(0f)
-                }
-                updateReminderChipVisibility()
-                updateTagFilterVisibility()
-                updateRatingFilterVisibility()
-                collectCurrentTab()
+                viewModel.onTabSelected(FavoriteTab.entries[tab.position])
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {
@@ -212,18 +190,54 @@ class FavoriteFragment : Fragment() {
                 text = getString(labelRes)
                 isCheckable = true
                 isChecked = threshold == 0f
-                setOnClickListener {
-                    viewModel.setMinRating(threshold)
-                }
+                setOnClickListener { viewModel.setMinRating(threshold) }
             }
             chipGroup.addView(chip)
         }
     }
 
-    // 태그/선택태그/스낵바 Flow를 단일 repeatOnLifecycle 블록에서 병렬 수집
+    private fun observeSelectedTab() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.selectedTab.collect { tab ->
+                    val tabView = binding.tabLayout.getTabAt(tab.ordinal)
+                    if (tabView?.isSelected == false) tabView.select()
+                    binding.rvFavorites.scrollToPosition(0)
+                    updateEmptyState()
+                    updateReminderChipVisibility()
+                    updateTagFilterVisibility()
+                    updateRatingFilterVisibility()
+                }
+            }
+        }
+    }
+
+    private suspend fun collectCurrentMovies() {
+        try {
+            viewModel.currentMovies.collect { movies ->
+                binding.shimmerView.shimmerLayout.stopShimmer()
+                binding.shimmerView.shimmerLayout.isVisible = false
+                binding.errorView.layoutError.isVisible = false
+                movieAdapter.submitList(movies)
+                binding.rvFavorites.isVisible = movies.isNotEmpty()
+                binding.emptyView.layoutEmpty.isVisible = movies.isEmpty()
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            binding.shimmerView.shimmerLayout.stopShimmer()
+            binding.shimmerView.shimmerLayout.isVisible = false
+            binding.rvFavorites.isVisible = false
+            binding.emptyView.layoutEmpty.isVisible = false
+            binding.errorView.layoutError.isVisible = true
+        }
+    }
+
+    // 태그/평점/스낵바 Flow를 단일 repeatOnLifecycle 블록에서 병렬 수집
     private fun observeViewModelFlows() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { collectCurrentMovies() }
                 launch {
                     viewModel.allTagNames.collect { tagNames ->
                         updateTagChips(tagNames)
@@ -308,12 +322,12 @@ class FavoriteFragment : Fragment() {
     // 즐겨찾기 탭이고 태그가 존재할 때만 태그 필터 표시
     private fun updateTagFilterVisibility() {
         binding.tagFilterScroll.isVisible =
-            currentTab == TAB_FAVORITES && viewModel.allTagNames.value.isNotEmpty()
+            viewModel.selectedTab.value == FavoriteTab.FAVORITES && viewModel.allTagNames.value.isNotEmpty()
     }
 
     // 즐겨찾기 탭에서만 평점 필터 표시
     private fun updateRatingFilterVisibility() {
-        binding.ratingFilterScroll.isVisible = currentTab == TAB_FAVORITES
+        binding.ratingFilterScroll.isVisible = viewModel.selectedTab.value == FavoriteTab.FAVORITES
     }
 
     // 알림 칩 텍스트와 가시성 갱신
@@ -328,7 +342,8 @@ class FavoriteFragment : Fragment() {
     // 워치리스트 탭에서만 알림 칩 표시
     private fun updateReminderChipVisibility() {
         val reminders = viewModel.scheduledReminders.value
-        binding.chipReminders.isVisible = currentTab == TAB_WATCHLIST && reminders.isNotEmpty()
+        binding.chipReminders.isVisible =
+            viewModel.selectedTab.value == FavoriteTab.WATCHLIST && reminders.isNotEmpty()
     }
 
     // 예약된 알림 목록 다이얼로그 표시
@@ -348,52 +363,6 @@ class FavoriteFragment : Fragment() {
             .setMessage(message)
             .setPositiveButton(R.string.action_close, null)
             .show()
-    }
-
-    private fun collectCurrentTab() {
-        collectJob?.cancel()
-        movieAdapter.submitList(emptyList())
-        binding.rvFavorites.scrollToPosition(0)
-        updateEmptyState()
-        // Only show shimmer if no data is already loaded for this tab
-        val hasData = if (currentTab == TAB_FAVORITES) {
-            viewModel.favoriteMovies.value.isNotEmpty()
-        } else {
-            viewModel.watchlistMovies.value.isNotEmpty()
-        }
-        binding.shimmerView.shimmerLayout.isVisible = !hasData
-        if (!hasData) binding.shimmerView.shimmerLayout.startShimmer()
-        binding.rvFavorites.isVisible = hasData
-        binding.emptyView.layoutEmpty.isVisible = false
-        binding.errorView.layoutError.isVisible = false
-        collectJob = viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                val flow = if (currentTab == TAB_FAVORITES) {
-                    viewModel.favoriteMovies
-                } else {
-                    viewModel.watchlistMovies
-                }
-                try {
-                    flow.collect { movies ->
-                        // Hide shimmer on first emission
-                        binding.shimmerView.shimmerLayout.stopShimmer()
-                        binding.shimmerView.shimmerLayout.isVisible = false
-                        binding.errorView.layoutError.isVisible = false
-                        movieAdapter.submitList(movies)
-                        binding.rvFavorites.isVisible = movies.isNotEmpty()
-                        binding.emptyView.layoutEmpty.isVisible = movies.isEmpty()
-                    }
-                } catch (e: Exception) {
-                    if (e is CancellationException) throw e
-                    binding.shimmerView.shimmerLayout.stopShimmer()
-                    binding.shimmerView.shimmerLayout.isVisible = false
-                    binding.rvFavorites.isVisible = false
-                    binding.emptyView.layoutEmpty.isVisible = false
-                    binding.errorView.layoutError.isVisible = true
-                }
-            }
-        }
-        binding.errorView.btnRetry.setOnClickListener { collectCurrentTab() }
     }
 
     // 태그 관리 다이얼로그: 기존 태그 삭제 + ML Kit 추천 태그 + 새 태그 추가
@@ -500,7 +469,7 @@ class FavoriteFragment : Fragment() {
     }
 
     private fun updateEmptyState() {
-        if (currentTab == TAB_FAVORITES) {
+        if (viewModel.selectedTab.value == FavoriteTab.FAVORITES) {
             binding.emptyView.ivEmptyIcon.setImageResource(R.drawable.ic_favorite_border)
             binding.emptyView.tvEmptyTitle.text = getString(R.string.favorite_empty_title)
             binding.emptyView.tvEmptyMessage.text = getString(R.string.favorite_empty_message)
@@ -517,17 +486,9 @@ class FavoriteFragment : Fragment() {
         activeDialog = null
         swipeHelper?.attachToRecyclerView(null)
         swipeHelper = null
-        collectJob?.cancel()
-        collectJob = null
         binding.rvFavorites.adapter = null
         binding.shimmerView.shimmerLayout.stopShimmer()
         _binding = null
-    }
-
-    companion object {
-        private const val KEY_CURRENT_TAB = "favorite_current_tab"
-        private const val TAB_FAVORITES = 0
-        private const val TAB_WATCHLIST = 1
     }
 }
 

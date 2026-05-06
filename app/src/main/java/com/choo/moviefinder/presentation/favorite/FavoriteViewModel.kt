@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import kotlin.time.Clock
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import androidx.work.WorkManager
@@ -67,7 +68,10 @@ class FavoriteViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val workManager by lazy { WorkManager.getInstance(context) }
+    private val workManager by lazy(LazyThreadSafetyMode.NONE) { WorkManager.getInstance(context) }
+
+    private val _selectedTab = MutableStateFlow(FavoriteTab.FAVORITES)
+    val selectedTab: StateFlow<FavoriteTab> = _selectedTab.asStateFlow()
 
     private val _sortOrder = MutableStateFlow(FavoriteSortOrder.ADDED_DATE)
     val sortOrder: StateFlow<FavoriteSortOrder> = _sortOrder.asStateFlow()
@@ -132,6 +136,14 @@ class FavoriteViewModel @Inject constructor(
         getWatchlistUseCase(sort)
     }.stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
+    // 현재 선택된 탭의 목록 (탭 전환 시 자동으로 소스 전환)
+    val currentMovies: StateFlow<List<Movie>> = _selectedTab.flatMapLatest { tab ->
+        when (tab) {
+            FavoriteTab.FAVORITES -> favoriteMovies
+            FavoriteTab.WATCHLIST -> watchlistMovies
+        }
+    }.stateIn(viewModelScope, WhileSubscribed5s, emptyList())
+
     private val _snackbarEvent = Channel<ErrorType>(Channel.CONFLATED)
     val snackbarEvent = _snackbarEvent.receiveAsFlow()
 
@@ -139,7 +151,7 @@ class FavoriteViewModel @Inject constructor(
     val reminderSnackbar = _reminderSnackbar.receiveAsFlow()
 
     val scheduledReminders: StateFlow<List<WatchlistReminder>> = getWatchlistRemindersUseCase.asFlow()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)
     fun toggleFavorite(movie: Movie) = viewModelScope.launchWithErrorHandler(
@@ -179,6 +191,14 @@ class FavoriteViewModel @Inject constructor(
     // 평점 필터 설정 (0f = 필터 없음)
     fun setMinRating(rating: Float) {
         _minRating.value = rating
+    }
+
+    fun onTabSelected(tab: FavoriteTab) {
+        if (tab == FavoriteTab.WATCHLIST) {
+            onTagSelected(null)
+            setMinRating(0f)
+        }
+        _selectedTab.value = tab
     }
 
     // 워치리스트 상태 토글 (에러 시 Snackbar 이벤트 전송)
@@ -228,7 +248,7 @@ class FavoriteViewModel @Inject constructor(
             }
         ) {
             setWatchlistReminderUseCase(movie.id, dateMillis)
-            val delay = dateMillis - System.currentTimeMillis()
+            val delay = dateMillis - Clock.System.now().toEpochMilliseconds()
             if (delay <= 0) return@launchWithErrorHandler
             val inputData = workDataOf(
                 WatchlistReminderWorker.KEY_MOVIE_ID to movie.id,

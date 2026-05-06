@@ -378,4 +378,57 @@ class FavoriteViewModelTest {
             }
         }
     }
+
+    @Test
+    fun `currentMovies uses favoriteMovies source for default FAVORITES tab`() = runTest {
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
+
+        val viewModel = createViewModel()
+
+        assertEquals(FavoriteTab.FAVORITES, viewModel.selectedTab.value)
+        viewModel.currentMovies.test {
+            val item = awaitItem()
+            if (item.isEmpty()) {
+                assertEquals(testMovies, awaitItem())
+            } else {
+                assertEquals(testMovies, item)
+            }
+        }
+    }
+
+    @Test
+    fun `currentMovies switches to watchlistMovies on tab change to WATCHLIST`() = runTest {
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(emptyList())
+        every { getWatchlistUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
+
+        val viewModel = createViewModel()
+
+        viewModel.currentMovies.test {
+            awaitItem() // initial FAVORITES emission (empty list)
+            viewModel.onTabSelected(FavoriteTab.WATCHLIST)
+            advanceUntilIdle()
+            assertEquals(testMovies, awaitItem())
+        }
+    }
+
+    @Test
+    fun `onTabSelected to WATCHLIST resets tag filter and rating filter`() = runTest {
+        every { getFavoriteMoviesUseCase(any<FavoriteSortOrder>()) } returns flowOf(testMovies)
+        every { getFavoritesByTagUseCase(any(), any<FavoriteSortOrder>()) } returns flowOf(testMovies)
+
+        val viewModel = createViewModel()
+        viewModel.onTagSelected("Action")
+        viewModel.setMinRating(3.0f)
+        advanceUntilIdle()
+
+        assertEquals("Action", viewModel.selectedTag.value)
+        assertEquals(3.0f, viewModel.minRating.value)
+
+        viewModel.onTabSelected(FavoriteTab.WATCHLIST)
+        advanceUntilIdle()
+
+        assertEquals(FavoriteTab.WATCHLIST, viewModel.selectedTab.value)
+        assertEquals(null, viewModel.selectedTag.value)
+        assertEquals(0f, viewModel.minRating.value)
+    }
 }
