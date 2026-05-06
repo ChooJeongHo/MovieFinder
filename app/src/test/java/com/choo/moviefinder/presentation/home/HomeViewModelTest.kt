@@ -20,7 +20,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -73,39 +72,37 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `nowPlayingMovies is lazily initialized on first access`() {
-        val viewModel = createViewModel()
-
-        verify(exactly = 0) { getNowPlayingMoviesUseCase() }
-        assertNotNull(viewModel.nowPlayingMovies)
-        verify(exactly = 1) { getNowPlayingMoviesUseCase() }
-    }
-
-    @Test
-    fun `popularMovies is lazily initialized on first access`() {
-        val viewModel = createViewModel()
-
-        verify(exactly = 0) { getPopularMoviesUseCase() }
-        assertNotNull(viewModel.popularMovies)
-        verify(exactly = 1) { getPopularMoviesUseCase() }
-    }
-
-    @Test
-    fun `trendingMovies is lazily initialized on first access`() {
-        val viewModel = createViewModel()
-
-        verify(exactly = 0) { getTrendingMoviesUseCase() }
-        assertNotNull(viewModel.trendingMovies)
-        verify(exactly = 1) { getTrendingMoviesUseCase() }
-    }
-
-    @Test
     fun `paging use cases are not invoked on construction`() {
         createViewModel()
-
         verify(exactly = 0) { getNowPlayingMoviesUseCase() }
         verify(exactly = 0) { getPopularMoviesUseCase() }
         verify(exactly = 0) { getTrendingMoviesUseCase() }
+        verify(exactly = 0) { getUpcomingMoviesUseCase() }
+    }
+
+    @Test
+    fun `currentMovies uses nowPlaying source for default tab`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.currentMovies.test {
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+        verify(exactly = 1) { getNowPlayingMoviesUseCase() }
+        verify(exactly = 0) { getPopularMoviesUseCase() }
+        verify(exactly = 0) { getTrendingMoviesUseCase() }
+        verify(exactly = 0) { getUpcomingMoviesUseCase() }
+    }
+
+    @Test
+    fun `currentMovies switches to correct source on tab change`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.currentMovies.test {
+            awaitItem()
+            viewModel.onTabSelected(HomeTab.POPULAR)
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+        verify(exactly = 1) { getPopularMoviesUseCase() }
     }
 
     @Test
@@ -133,9 +130,26 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `selectedTab defaults to NOW_PLAYING`() {
+    fun `watchHistory limits results to 20 items`() = runTest {
+        val manyMovies = (1..30).map {
+            Movie(it, "Movie $it", "/p.jpg", "/b.jpg", "Overview", "2024-01-01", 7.0, 100)
+        }
+        every { getWatchHistoryUseCase() } returns flowOf(manyMovies)
         val viewModel = createViewModel()
 
+        viewModel.watchHistory.test {
+            val item = awaitItem()
+            if (item.isEmpty()) {
+                assertEquals(20, awaitItem().size)
+            } else {
+                assertEquals(20, item.size)
+            }
+        }
+    }
+
+    @Test
+    fun `selectedTab defaults to NOW_PLAYING`() {
+        val viewModel = createViewModel()
         assertEquals(HomeTab.NOW_PLAYING, viewModel.selectedTab.value)
     }
 

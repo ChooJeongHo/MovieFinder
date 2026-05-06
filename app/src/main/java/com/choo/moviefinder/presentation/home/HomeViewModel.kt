@@ -13,10 +13,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
-
-enum class HomeTab { NOW_PLAYING, POPULAR, TRENDING, UPCOMING }
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -30,23 +30,33 @@ class HomeViewModel @Inject constructor(
     private val _selectedTab = MutableStateFlow(HomeTab.NOW_PLAYING)
     val selectedTab: StateFlow<HomeTab> = _selectedTab.asStateFlow()
 
-    val nowPlayingMovies by lazy {
+    private val nowPlayingMovies by lazy(LazyThreadSafetyMode.NONE) {
         getNowPlayingMoviesUseCase().cachedIn(viewModelScope)
     }
 
-    val popularMovies by lazy {
+    private val popularMovies by lazy(LazyThreadSafetyMode.NONE) {
         getPopularMoviesUseCase().cachedIn(viewModelScope)
     }
 
-    val trendingMovies by lazy {
+    private val trendingMovies by lazy(LazyThreadSafetyMode.NONE) {
         getTrendingMoviesUseCase().cachedIn(viewModelScope)
     }
 
-    val upcomingMovies by lazy(LazyThreadSafetyMode.NONE) {
+    private val upcomingMovies by lazy(LazyThreadSafetyMode.NONE) {
         getUpcomingMoviesUseCase().cachedIn(viewModelScope)
     }
 
+    val currentMovies = _selectedTab.flatMapLatest { tab ->
+        when (tab) {
+            HomeTab.NOW_PLAYING -> nowPlayingMovies
+            HomeTab.POPULAR -> popularMovies
+            HomeTab.TRENDING -> trendingMovies
+            HomeTab.UPCOMING -> upcomingMovies
+        }
+    }
+
     val watchHistory = getWatchHistoryUseCase()
+        .map { it.take(20) }
         .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     fun onTabSelected(tab: HomeTab) {

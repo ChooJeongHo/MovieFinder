@@ -27,7 +27,6 @@ import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
 import com.choo.moviefinder.presentation.common.createMovieGridLayoutManager
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -43,10 +42,7 @@ class HomeFragment : Fragment() {
 
     private lateinit var movieAdapter: MoviePagingAdapter
     private lateinit var watchHistoryAdapter: HorizontalMovieAdapter
-    private var currentTab = HomeTab.NOW_PLAYING
-    private var collectJob: Job? = null
 
-    // 홈 화면 레이아웃을 인플레이트하고 바인딩 초기화
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -56,10 +52,8 @@ class HomeFragment : Fragment() {
         return binding.root
     }
 
-    // 뷰 생성 후 RecyclerView, 탭, SwipeRefresh 등 UI 컴포넌트 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        currentTab = HomeTab.entries[savedInstanceState?.getInt(KEY_CURRENT_TAB, 0) ?: 0]
         setupRecyclerView()
         setupWatchHistory()
         setupSwipeRefresh()
@@ -67,16 +61,10 @@ class HomeFragment : Fragment() {
         setupTabs()
         observeLoadStates()
         observeWatchHistory()
-        collectMovies()
+        observeSelectedTab()
+        collectCurrentMovies()
     }
 
-    // 현재 선택된 탭 인덱스를 저장하여 화면 회전 시 복원
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt(KEY_CURRENT_TAB, currentTab.ordinal)
-    }
-
-    // 영화 목록 RecyclerView에 PagingAdapter와 GridLayoutManager 설정
     private fun setupRecyclerView() {
         movieAdapter = MoviePagingAdapter { movieId, posterView ->
             if (findNavController().currentDestination?.id == R.id.homeFragment) {
@@ -93,7 +81,6 @@ class HomeFragment : Fragment() {
             }
             setHasFixedSize(true)
             itemAnimator = null
-            // 탭 전환 시 ViewHolder 재생성 비용 절감: 탭 수(4) × 화면에 보이는 최대 아이템 수 기준으로 풀 크기 확장
             recycledViewPool.setMaxRecycledViews(MoviePagingAdapter.VIEW_TYPE_GRID, POOL_SIZE_GRID)
             recycledViewPool.setMaxRecycledViews(MoviePagingAdapter.VIEW_TYPE_LIST, POOL_SIZE_LIST)
             adapter = movieAdapter.withLoadStateFooter(
@@ -102,7 +89,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // 시청 기록 가로 스크롤 RecyclerView 설정
     private fun setupWatchHistory() {
         watchHistoryAdapter = HorizontalMovieAdapter(transitionPrefix = "poster_history") { movieId ->
             if (findNavController().currentDestination?.id == R.id.homeFragment) {
@@ -117,7 +103,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // 당겨서 새로고침 색상 및 리스너 설정
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.setColorSchemeColors(
             requireContext().getColor(R.color.colorPrimary)
@@ -127,7 +112,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // 시청 기록 Flow를 수집하여 섹션 표시 여부 및 어댑터 갱신
     private fun observeWatchHistory() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -139,7 +123,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // 스크롤 위치에 따라 맨 위로 FAB 표시/숨김 및 클릭 동작 설정
     private fun setupScrollToTopFab() {
         binding.rvMovies.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -157,22 +140,15 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // 현재 상영작/인기 영화/트렌딩/개봉 예정 탭 생성 및 탭 전환 리스너 설정
     private fun setupTabs() {
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_now_playing))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_popular))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_trending))
         binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_upcoming))
 
-        if (currentTab != HomeTab.NOW_PLAYING) {
-            binding.tabLayout.getTabAt(currentTab.ordinal)?.select()
-        }
-
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
-                currentTab = HomeTab.entries[tab.position]
-                viewModel.onTabSelected(currentTab)
-                collectMovies()
+                viewModel.onTabSelected(HomeTab.entries[tab.position])
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {
@@ -181,7 +157,29 @@ class HomeFragment : Fragment() {
         })
     }
 
-    // Paging LoadState를 수집하여 Shimmer, 에러 뷰, 빈 상태, SwipeRefresh 상태 전환
+    // ViewModel의 selectedTab을 관찰해 TabLayout UI와 동기화한다.
+    // StateFlow는 동일 값을 재방출하지 않으므로 select() 호출 → onTabSelected → onTabSelected 루프가 발생하지 않는다.
+    private fun observeSelectedTab() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.selectedTab.collect { tab ->
+                    val tabView = binding.tabLayout.getTabAt(tab.ordinal)
+                    if (tabView?.isSelected == false) tabView.select()
+                }
+            }
+        }
+    }
+
+    private fun collectCurrentMovies() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.currentMovies.collectLatest { pagingData ->
+                    movieAdapter.submitData(pagingData)
+                }
+            }
+        }
+    }
+
     private fun observeLoadStates() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -227,39 +225,16 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // 탭 전환 시 이전 수집 코루틴을 취소하고 새로 시작하여 코루틴 스태킹 방지
-    private fun collectMovies() {
-        collectJob?.cancel()
-        collectJob = viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                val flow = when (currentTab) {
-                    HomeTab.NOW_PLAYING -> viewModel.nowPlayingMovies
-                    HomeTab.POPULAR -> viewModel.popularMovies
-                    HomeTab.TRENDING -> viewModel.trendingMovies
-                    HomeTab.UPCOMING -> viewModel.upcomingMovies
-                }
-                flow.collectLatest { pagingData ->
-                    movieAdapter.submitData(pagingData)
-                }
-            }
-        }
-    }
-
-    // Shimmer 중지, 어댑터 해제 및 바인딩 null 처리로 메모리 누수 방지
     override fun onDestroyView() {
         super.onDestroyView()
         binding.shimmerView.shimmerLayout.stopShimmer()
-        collectJob?.cancel()
-        collectJob = null
         binding.rvMovies.adapter = null
         binding.rvWatchHistory.adapter = null
         _binding = null
     }
 
     companion object {
-        private const val KEY_CURRENT_TAB = "current_tab"
-
-        // 탭 3개 × 화면에 동시에 보이는 최대 아이템 수 기준 (그리드: 3열×3행=9 → 여유 포함 20, 리스트: 5행 → 여유 포함 10)
+        // 탭 수(4) × 화면에 동시에 보이는 최대 아이템 수 기준 (그리드: 3열×3행=9 → 여유 포함 20, 리스트: 5행 → 여유 포함 10)
         private const val POOL_SIZE_GRID = 20
         private const val POOL_SIZE_LIST = 10
     }
