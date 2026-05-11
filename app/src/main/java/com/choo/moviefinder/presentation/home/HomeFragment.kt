@@ -98,7 +98,6 @@ class HomeFragment : Fragment() {
         }
         binding.rvWatchHistory.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            setHasFixedSize(true)
             adapter = watchHistoryAdapter
         }
     }

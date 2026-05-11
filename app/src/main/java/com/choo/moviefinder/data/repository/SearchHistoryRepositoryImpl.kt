@@ -20,7 +20,7 @@ class SearchHistoryRepositoryImpl @Inject constructor(
 
     // 검색어를 trim 후 DB에 저장
     override suspend fun saveSearchQuery(query: String) {
-        val trimmed = query.trim()
+        val trimmed = query.trim().replace(Regex("\\s+"), " ")
         require(trimmed.isNotBlank()) { "Search query must not be blank" }
         recentSearchDao.insert(RecentSearchEntity(query = trimmed))
     }
