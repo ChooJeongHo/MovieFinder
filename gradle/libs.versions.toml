@@ -42,7 +42,7 @@ viewpager2 = "1.1.0"
 youtubePlayer = "13.0.0"
 browser = "1.10.0"
 securityCrypto = "1.1.0"
-composeBom = "2025.05.01"
+composeBom = "2026.05.00"
 
 [libraries]
 # Core
