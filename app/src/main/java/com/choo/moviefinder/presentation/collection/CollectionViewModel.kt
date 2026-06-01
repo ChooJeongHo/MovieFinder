@@ -3,15 +3,14 @@ package com.choo.moviefinder.presentation.collection
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
+import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.domain.model.CollectionDetail
 import com.choo.moviefinder.domain.usecase.GetCollectionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 
 sealed class CollectionUiState {
@@ -31,22 +30,18 @@ class CollectionViewModel @Inject constructor(
     }.also { require(it > 0) { "collectionId must be positive, got $it" } }
 
     private val _uiState = MutableStateFlow<CollectionUiState>(CollectionUiState.Loading)
-    val uiState: StateFlow<CollectionUiState> = _uiState
+    val uiState: StateFlow<CollectionUiState> = _uiState.asStateFlow()
 
     init {
         loadCollection()
     }
 
     fun loadCollection() {
-        viewModelScope.launch {
+        viewModelScope.launchWithErrorHandler(
+            onError = { _uiState.value = CollectionUiState.Error(it) }
+        ) {
             _uiState.value = CollectionUiState.Loading
-            try {
-                _uiState.value = CollectionUiState.Success(getCollectionUseCase(collectionId))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _uiState.value = CollectionUiState.Error(ErrorMessageProvider.getErrorType(e))
-            }
+            _uiState.value = CollectionUiState.Success(getCollectionUseCase(collectionId))
         }
     }
 }

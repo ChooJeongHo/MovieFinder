@@ -37,6 +37,7 @@ annotation class TmdbV4OkHttpClient
 @Retention(AnnotationRetention.BINARY)
 annotation class TmdbV4Retrofit
 
+@Suppress("TooManyFunctions")
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
@@ -71,7 +72,6 @@ object NetworkModule {
                             .build()
                     )
                 }
-                if (BuildConfig.DEBUG) eventListener(DebugEventListener())
             }
             .addDebugLogging()
             // User-Agent: TMDB 측 로그 식별 및 API 정책 준수
@@ -110,10 +110,7 @@ object NetworkModule {
                 val cc = cacheTtlHeader(path)
                 response.newBuilder().header("Cache-Control", cc).build()
             }
-            // 타임아웃 15초: ExponentialBackoff 재시도(최대 3회)와 조합하면 충분
-            .connectTimeout(15.seconds)
-            .readTimeout(15.seconds)
-            .writeTimeout(15.seconds)
+            .applyCommonConfig()
             .build()
     }
 
@@ -153,11 +150,8 @@ object NetworkModule {
                             .build()
                     )
                 }
-                if (BuildConfig.DEBUG) eventListener(DebugEventListener())
             }
-            .connectTimeout(15.seconds)
-            .readTimeout(15.seconds)
-            .writeTimeout(15.seconds)
+            .applyCommonConfig()
             .build()
     }
 
@@ -234,6 +228,13 @@ object NetworkModule {
             else -> 300 // 그 외: 5분
         }
         return if (ttl > 0) "public, max-age=$ttl" else "no-store"
+    }
+
+    private fun OkHttpClient.Builder.applyCommonConfig(): OkHttpClient.Builder = apply {
+        if (BuildConfig.DEBUG) eventListener(DebugEventListener())
+        connectTimeout(15.seconds)
+        readTimeout(15.seconds)
+        writeTimeout(15.seconds)
     }
 
     private const val HTTP_CACHE_SIZE = 10L * 1024 * 1024 // 10MB

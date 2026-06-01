@@ -9,6 +9,7 @@ import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.getEnum
+import com.choo.moviefinder.core.util.suspendRunCatching
 import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.PersonSearchItem
@@ -168,13 +169,14 @@ class SearchViewModel @Inject constructor(
                         result.isFailure -> {
                             _personResults.value = emptyList()
                             _isPersonSearchLoading.value = false
-                            _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(result.exceptionOrNull()!!))
+                            val error = result.exceptionOrNull() ?: Exception("Unknown error")
+                            _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(error))
                         }
                         result.getOrNull() == null -> {
                             _isPersonSearchLoading.value = true
                         }
                         else -> {
-                            _personResults.value = result.getOrNull()!!
+                            _personResults.value = result.getOrNull() ?: return@collect
                             _isPersonSearchLoading.value = false
                         }
                     }
@@ -185,12 +187,10 @@ class SearchViewModel @Inject constructor(
     // TMDB API에서 장르 목록을 로드하여 StateFlow 갱신
     private fun loadGenres() {
         viewModelScope.launch {
-            try {
+            suspendRunCatching {
                 _genres.value = getGenreListUseCase()
                 _genreLoadFailed.value = false
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 _genreLoadFailed.value = true
                 Timber.w(e, "장르 목록 로드 실패")
             }
