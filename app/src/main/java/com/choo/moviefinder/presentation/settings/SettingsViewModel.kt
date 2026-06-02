@@ -184,15 +184,14 @@ class SettingsViewModel @Inject constructor(
 
     // TMDB 계정 연결을 해제한다
     fun disconnectTmdb() {
-        viewModelScope.launch {
-            try {
-                val token = tmdbAccessToken.value ?: return@launch
-                revokeTmdbAuthUseCase(token)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "TMDB 계정 연결 해제 실패")
+        val token = tmdbAccessToken.value ?: return
+        viewModelScope.launchWithErrorHandler(
+            onError = {
+                Timber.e("TMDB 계정 연결 해제 실패")
+                _snackbarEvent.trySend(it)
             }
+        ) {
+            revokeTmdbAuthUseCase(token)
         }
     }
 

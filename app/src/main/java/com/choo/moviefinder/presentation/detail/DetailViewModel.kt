@@ -244,15 +244,9 @@ class DetailViewModel @Inject constructor(
     fun deleteMemo(memoId: Long) = memoDelegate.deleteMemo(memoId)
 
     // TMDB에 영화 평점을 제출한다 (1.0~10.0, RatingBar 0.5~5.0 × 2)
-    fun submitTmdbRating(rating: Float) {
-        viewModelScope.launch {
-            try {
-                val success = ratingCases.submitTmdbRating(movieId, rating)
-                _tmdbRatingResult.trySend(success)
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                _tmdbRatingResult.trySend(false)
-            }
-        }
+    fun submitTmdbRating(rating: Float) = viewModelScope.launchWithErrorHandler(
+        onError = { _tmdbRatingResult.trySend(false) }
+    ) {
+        _tmdbRatingResult.trySend(ratingCases.submitTmdbRating(movieId, rating))
     }
 }
