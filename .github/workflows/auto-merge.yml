@@ -1,0 +1,46 @@
+name: Dependabot 자동 Merge
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# 여러 Dependabot PR이 동시에 auto-merge를 돌리면 base(main)가 머지 도중 바뀌어
+# "Base branch was modified" 충돌이 난다. 그룹으로 직렬화해 한 번에 하나만 실행한다.
+concurrency:
+  group: dependabot-auto-merge
+  cancel-in-progress: false
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Dependabot 메타데이터 조회
+        id: metadata
+        uses: dependabot/fetch-metadata@v3
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: PR 자동 승인
+        run: gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: CI 통과 후 자동 Merge
+        # base 변경 등 일시적 충돌("Base branch was modified")에 대비해 최대 3회 재시도.
+        run: |
+          for attempt in 1 2 3; do
+            if gh pr merge --auto --squash "$PR_URL"; then
+              exit 0
+            fi
+            echo "auto-merge 시도 ${attempt} 실패 — 일시적 충돌 가능, 15초 후 재시도"
+            sleep 15
+          done
+          echo "::error::auto-merge 3회 시도 후에도 실패"
+          exit 1
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

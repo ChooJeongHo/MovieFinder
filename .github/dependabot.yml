@@ -4,14 +4,37 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 5
+    groups:
+      androidx:
+        patterns: [ "androidx.*" ]
+      hilt:
+        patterns: [ "com.google.dagger*", "androidx.hilt*" ]
+      room:
+        patterns: [ "androidx.room*" ]
+      kotlin:
+        patterns: [ "org.jetbrains.kotlin*", "org.jetbrains.kotlinx*" ]
+      network:
+        patterns: [ "com.squareup.*" ]
+      coil:
+        patterns: [ "io.coil-kt*" ]
+      material:
+        patterns: [ "com.google.android.material*" ]
+      testing:
+        patterns: [ "io.mockk*", "app.cash.turbine*" ]
     labels:
       - "dependencies"
+    commit-message:
+      prefix: "chore"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
+      interval: "monthly"
     labels:
       - "ci"
+    commit-message:
+      prefix: "chore"
