@@ -18,11 +18,17 @@ updates:
       kotlin:
         patterns: [ "org.jetbrains.kotlin*", "org.jetbrains.kotlinx*" ]
       network:
-        patterns: [ "com.squareup.*" ]
+        patterns: [ "com.squareup.retrofit2*", "com.squareup.okhttp3*" ]
       coil:
         patterns: [ "io.coil-kt*" ]
       material:
         patterns: [ "com.google.android.material*" ]
+      ksp:
+        patterns: [ "com.google.devtools.ksp*" ]
+      detekt:
+        patterns: [ "dev.detekt*" ]
+      leakcanary:
+        patterns: [ "com.squareup.leakcanary*" ]
       testing:
         patterns: [ "io.mockk*", "app.cash.turbine*" ]
     labels:
