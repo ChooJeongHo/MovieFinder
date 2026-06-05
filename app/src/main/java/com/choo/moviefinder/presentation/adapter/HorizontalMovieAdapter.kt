@@ -6,13 +6,7 @@ import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil3.dispose
-import coil3.load
-import coil3.request.crossfade
-import coil3.request.error
-import coil3.request.placeholder
-import coil3.size.ViewSizeResolver
 import com.choo.moviefinder.R
-import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.databinding.ItemMovieHorizontalBinding
 import com.choo.moviefinder.domain.model.Movie
 
@@ -55,12 +49,7 @@ class HorizontalMovieAdapter(
                 R.string.cd_movie_item, movie.title, movie.voteAverage, movie.releaseDate
             )
 
-            binding.ivPoster.load(ImageUrlProvider.posterUrl(movie.posterPath)) {
-                crossfade(true)
-                placeholder(R.drawable.bg_poster_placeholder)
-                error(R.drawable.bg_poster_placeholder)
-                size(ViewSizeResolver(binding.ivPoster))
-            }
+            binding.ivPoster.loadPoster(movie.posterPath)
 
             binding.cardMovie.setOnClickListener {
                 onMovieClick(movie.id)

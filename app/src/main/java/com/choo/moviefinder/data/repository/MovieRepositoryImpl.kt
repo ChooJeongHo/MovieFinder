@@ -123,7 +123,7 @@ class MovieRepositoryImpl @Inject constructor(
         val response = apiService.getMovieCredits(movieId)
         return Credits(
             cast = response.cast.sortedBy { it.order }.map { it.toDomain() },
-            directors = response.crew.filter { it.job == "Director" }.map { it.name }
+            directors = response.crew.filter { it.job == Constants.CREW_JOB_DIRECTOR }.map { it.name }
         )
     }
 
@@ -136,9 +136,10 @@ class MovieRepositoryImpl @Inject constructor(
     // YouTube 예고편 키 조회 (공식 Trailer 우선, YouTube 영상 폴백)
     override suspend fun getMovieTrailerKey(movieId: Int): String? {
         require(movieId > 0) { "Movie ID must be positive" }
-        val youtubeVideos = apiService.getMovieVideos(movieId).results.filter { it.site == "YouTube" }
+        val youtubeVideos = apiService.getMovieVideos(movieId).results
+            .filter { it.site == Constants.VIDEO_SITE_YOUTUBE }
         return youtubeVideos
-            .filter { it.type == "Trailer" }
+            .filter { it.type == Constants.VIDEO_TYPE_TRAILER }
             .sortedByDescending { it.official }
             .firstOrNull()?.key
             ?: youtubeVideos.firstOrNull()?.key
@@ -154,8 +155,8 @@ class MovieRepositoryImpl @Inject constructor(
     override suspend fun getMovieCertification(movieId: Int): String? {
         require(movieId > 0) { "Movie ID must be positive" }
         val response = apiService.getMovieReleaseDates(movieId)
-        val krResult = response.results.find { it.iso31661 == "KR" }
-        val usResult = response.results.find { it.iso31661 == "US" }
+        val krResult = response.results.find { it.iso31661 == Constants.REGION_KR }
+        val usResult = response.results.find { it.iso31661 == Constants.REGION_US }
         val result = krResult ?: usResult ?: return null
         return result.releaseDates
             .map { it.certification }
@@ -181,7 +182,7 @@ class MovieRepositoryImpl @Inject constructor(
     override suspend fun getWatchProviders(movieId: Int): List<WatchProvider> {
         require(movieId > 0) { "Movie ID must be positive" }
         val response = apiService.getWatchProviders(movieId)
-        val regionResult = response.results["KR"] ?: response.results["US"]
+        val regionResult = response.results[Constants.REGION_KR] ?: response.results[Constants.REGION_US]
         val providers = regionResult?.flatrate?.ifEmpty { regionResult.rent }?.ifEmpty { regionResult.buy }
         return providers?.map { WatchProvider(it.providerId, it.providerName, it.logoPath) } ?: emptyList()
     }

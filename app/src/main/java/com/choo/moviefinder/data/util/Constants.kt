@@ -15,6 +15,13 @@ object Constants {
     // 시청 기록 최대 표시 개수
     const val WATCH_HISTORY_LIMIT = 20
 
+    // TMDB API 응답 필터링 값 (ISO 3166-1 지역 코드, 크레딧 직책, 영상 사이트/타입)
+    const val REGION_KR = "KR"
+    const val REGION_US = "US"
+    const val CREW_JOB_DIRECTOR = "Director"
+    const val VIDEO_SITE_YOUTUBE = "YouTube"
+    const val VIDEO_TYPE_TRAILER = "Trailer"
+
     val DEFAULT_PAGING_CONFIG = PagingConfig(
         pageSize = PAGE_SIZE,
         prefetchDistance = PREFETCH_DISTANCE,

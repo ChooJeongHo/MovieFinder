@@ -4,13 +4,7 @@ import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil3.dispose
-import coil3.load
-import coil3.request.crossfade
-import coil3.request.error
-import coil3.request.placeholder
-import coil3.size.ViewSizeResolver
 import com.choo.moviefinder.R
-import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.databinding.ItemMovieListBinding
 import com.choo.moviefinder.domain.model.Movie
 import java.util.Locale
@@ -34,12 +28,7 @@ class MovieListViewHolder(
 
         ViewCompat.setTransitionName(binding.ivPoster, "poster_${movie.id}")
 
-        binding.ivPoster.load(ImageUrlProvider.posterUrl(movie.posterPath)) {
-            crossfade(true)
-            placeholder(R.drawable.bg_poster_placeholder)
-            error(R.drawable.bg_poster_placeholder)
-            size(ViewSizeResolver(binding.ivPoster))
-        }
+        binding.ivPoster.loadPoster(movie.posterPath)
 
         binding.cardMovie.setOnClickListener {
             onMovieClick(movie.id, binding.ivPoster)
