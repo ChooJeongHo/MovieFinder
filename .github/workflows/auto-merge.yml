@@ -23,13 +23,24 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
+      # major 업데이트는 breaking change 가능성이 높아 자동 머지에서 제외하고 수동 검토.
+      - name: Major 업데이트는 수동 검토 안내
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        run: gh pr comment "$PR_URL" --body "⚠️ **semver-major 업데이트**는 자동 머지 대상에서 제외됩니다. breaking change 확인 후 수동으로 머지해주세요."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: PR 자동 승인
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         run: gh pr review --approve "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: CI 통과 후 자동 Merge
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        # required check(build, coverage) 통과 시 GitHub이 자동 머지 (브랜치 보호 필수).
         # base 변경 등 일시적 충돌("Base branch was modified")에 대비해 최대 3회 재시도.
         run: |
           for attempt in 1 2 3; do
