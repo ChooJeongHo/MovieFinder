@@ -74,7 +74,7 @@ class HomeFragment : Fragment() {
             }
         }
 
-        val spanCount = requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount()
+        val spanCount = maxOf(requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount(), 3)
         binding.rvMovies.apply {
             layoutManager = createMovieGridLayoutManager(requireContext(), spanCount) {
                 movieAdapter.itemCount
