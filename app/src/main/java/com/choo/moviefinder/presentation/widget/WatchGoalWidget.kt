@@ -12,6 +12,7 @@ import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.currentMonthStartMillis
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.UserSettings
+import com.choo.moviefinder.di.DatabaseModule
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -107,6 +108,8 @@ class WatchGoalWidget : AppWidgetProvider() {
 internal object WatchGoalWidgetDb {
     @Volatile private var instance: MovieDatabase? = null
 
+    // 앱과 동일한 마이그레이션을 적용해야 함 — 누락 시 위젯이 구버전 DB를 열 때
+    // destructive fallback으로 사용자 데이터가 전부 삭제될 수 있다
     fun getDb(context: Context): MovieDatabase =
         instance ?: synchronized(this) {
             instance ?: Room.databaseBuilder(
@@ -114,6 +117,7 @@ internal object WatchGoalWidgetDb {
                 MovieDatabase::class.java,
                 "movie_finder_db"
             )
+                .addMigrations(*DatabaseModule.ALL_MIGRATIONS)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
                 .also { instance = it }

@@ -11,6 +11,7 @@ import com.choo.moviefinder.R
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.WatchlistEntity
+import com.choo.moviefinder.di.DatabaseModule
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.util.Locale
@@ -131,6 +132,8 @@ class FavoriteMoviesRemoteViewsFactory(
             }
         }
 
+        // 앱과 동일한 마이그레이션을 적용해야 함 — 누락 시 위젯이 구버전 DB를 열 때
+        // destructive fallback으로 사용자 데이터가 전부 삭제될 수 있다
         fun getDatabase(context: Context): MovieDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -138,6 +141,7 @@ class FavoriteMoviesRemoteViewsFactory(
                     MovieDatabase::class.java,
                     "movie_finder_db"
                 )
+                    .addMigrations(*DatabaseModule.ALL_MIGRATIONS)
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                     .also { instance = it }

@@ -22,9 +22,10 @@ class ReminderRepositoryImpl @Inject constructor(
             entities.map { it.toDomain() }
         }
 
-    // WorkManager 알림을 예약하고 DB에 ScheduledReminderEntity를 삽입한다
+    // DB에 ScheduledReminderEntity를 먼저 삽입한 뒤 WorkManager 알림을 예약한다.
+    // 순서 중요: WorkManager를 먼저 등록하면 DB 삽입 실패 시 레코드 없는 잡이 남아
+    // 사용자가 취소할 수 없는 고스트 알림이 발화될 수 있다.
     override suspend fun scheduleReminder(movieId: Int, movieTitle: String, releaseDate: String) {
-        releaseNotificationScheduler.schedule(movieId, movieTitle, releaseDate)
         scheduledReminderDao.insertReminder(
             ScheduledReminderEntity(
                 movieId = movieId,
@@ -33,9 +34,13 @@ class ReminderRepositoryImpl @Inject constructor(
                 scheduledAt = System.currentTimeMillis()
             )
         )
+        releaseNotificationScheduler.schedule(movieId, movieTitle, releaseDate)
     }
 
-    // WorkManager 알림을 취소하고 DB에서 레코드를 삭제한다
+    // WorkManager 알림을 취소하고 DB에서 레코드를 삭제한다.
+    // 순서 중요: WorkManager 취소를 먼저 해야 함 — DB를 먼저 지우면 취소 실패 시
+    // 레코드 없는 잡이 남아 고스트 알림이 된다. 현재 순서의 실패 모드는
+    // "발화되지 않을 알림이 목록에 남는 것"으로 재시도 가능해 더 안전하다.
     override suspend fun cancelReminder(movieId: Int) {
         releaseNotificationScheduler.cancel(movieId)
         scheduledReminderDao.deleteReminder(movieId)

@@ -243,6 +243,15 @@ object DatabaseModule {
         )
     }
 
+    // 전체 마이그레이션 단일 출처 — Hilt DB와 위젯의 수동 DB 인스턴스가 공유한다.
+    // 위젯이 마이그레이션 없이 같은 DB 파일을 열면 destructive fallback으로
+    // 사용자 데이터가 전부 삭제될 수 있으므로 새 마이그레이션은 반드시 여기에 추가할 것.
+    val ALL_MIGRATIONS = arrayOf(
+        MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
+        MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20,
+        MIGRATION_20_21
+    )
+
     // Room 데이터베이스 인스턴스를 생성하여 제공한다
     @Provides
     @Singleton
@@ -252,11 +261,7 @@ object DatabaseModule {
             MovieDatabase::class.java,
             "movie_finder_db"
         )
-            .addMigrations(
-                MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
-                MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20,
-                MIGRATION_20_21
-            )
+            .addMigrations(*ALL_MIGRATIONS)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
