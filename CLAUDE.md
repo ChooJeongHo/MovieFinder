@@ -13,54 +13,54 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 - **KSP**: 2.3.6 (Kotlin Symbol Processing)
 
 ### 핵심 라이브러리
-| 라이브러리 | 버전 | 용도 |
-|---|---|---|
-| AppCompat | 1.7.1 | Android 하위 호환성 |
-| Material Components | 1.13.0 | Material Design XML 컴포넌트 |
-| Navigation (Fragment) | 2.9.8 | Safe Args 기반 Fragment 네비게이션 |
-| Fragment KTX | 1.8.9 | Fragment 확장 함수 |
-| ConstraintLayout | 2.2.1 | 유연한 레이아웃 |
-| RecyclerView | 1.4.0 | 리스트/그리드 표시 |
-| Hilt | 2.59.2 | 의존성 주입 (DI) |
-| Room | 2.8.4 | 로컬 SQLite 데이터베이스 |
-| Room Paging | 2.8.4 | Room + Paging 3 통합 (RemoteMediator) |
-| Paging 3 | 3.4.2 | 무한 스크롤 페이징 |
-| Retrofit 3 | 3.0.0 | REST API 통신 |
-| OkHttp 5 | 5.3.2 | HTTP 클라이언트 + 로깅 + 응답 캐시 (kotlin.time.Duration API) |
-| kotlinx.serialization | 1.11.0 | JSON 직렬화/역직렬화 |
-| Coil 3 | 3.4.0 | 이미지 로딩 (View 버전, 메모리+디스크 캐시) |
-| Facebook Shimmer | 0.5.0 | 로딩 Shimmer 애니메이션 |
-| Lifecycle | 2.10.0 | 생명주기 인식 컴포넌트 |
-| Splash Screen API | 1.2.0 | 스플래시 화면 |
-| SwipeRefreshLayout | 1.2.0 | 당겨서 새로고침 |
-| DataStore (Typed) | 1.2.1 | kotlinx.serialization JSON 기반 타입 안전 설정 저장 |
-| Lifecycle Process | 2.10.0 | ProcessLifecycleOwner (앱 수준 생명주기) |
-| ProfileInstaller | 1.4.1 | Baseline Profiles 설치 |
-| Benchmark Macro | 1.5.0-alpha05 | Baseline Profile 생성 |
-| Timber | 5.0.1 | 구조화 로깅 |
-| App Startup | 1.2.0 | 초기화 최적화 (Timber 등) |
-| WorkManager | 2.11.2 | 개봉일 알림 스케줄링 |
-| kotlinx-datetime | 0.7.1 | 멀티플랫폼 날짜/시간 API |
-| Window | 1.4.0 | 윈도우 레이아웃 API |
-| android-youtube-player | 13.0.0 | YouTube 예고편 외부 연결 (임베드 제한으로 인해 앱 외부 실행) |
+| 라이브러리 | 용도 |
+|---|---|
+| AppCompat | Android 하위 호환성 |
+| Material Components | Material Design XML 컴포넌트 |
+| Navigation (Fragment) | Safe Args 기반 Fragment 네비게이션 |
+| Fragment KTX | Fragment 확장 함수 |
+| ConstraintLayout | 유연한 레이아웃 |
+| RecyclerView | 리스트/그리드 표시 |
+| Hilt | 의존성 주입 (DI) |
+| Room | 로컬 SQLite 데이터베이스 |
+| Room Paging | Room + Paging 3 통합 (RemoteMediator) |
+| Paging 3 | 무한 스크롤 페이징 |
+| Retrofit 3 | REST API 통신 |
+| OkHttp 5 | HTTP 클라이언트 + 로깅 + 응답 캐시 (kotlin.time.Duration API) |
+| kotlinx.serialization | JSON 직렬화/역직렬화 |
+| Coil 3 | 이미지 로딩 (View 버전, 메모리+디스크 캐시) |
+| Facebook Shimmer | 로딩 Shimmer 애니메이션 |
+| Lifecycle | 생명주기 인식 컴포넌트 |
+| Splash Screen API | 스플래시 화면 |
+| SwipeRefreshLayout | 당겨서 새로고침 |
+| DataStore (Typed) | kotlinx.serialization JSON 기반 타입 안전 설정 저장 |
+| Lifecycle Process | ProcessLifecycleOwner (앱 수준 생명주기) |
+| ProfileInstaller | Baseline Profiles 설치 |
+| Benchmark Macro | Baseline Profile 생성 |
+| Timber | 구조화 로깅 |
+| App Startup | 초기화 최적화 (Timber 등) |
+| WorkManager | 개봉일 알림 스케줄링 |
+| kotlinx-datetime | 멀티플랫폼 날짜/시간 API |
+| Window | 윈도우 레이아웃 API |
+| android-youtube-player | YouTube 예고편 외부 연결 (임베드 제한으로 인해 앱 외부 실행) |
 
 ### 개발/디버그 도구
-| 도구 | 버전 | 용도 |
-|---|---|---|
-| Detekt | 2.0.0-alpha.2 | Kotlin 정적 분석 + KtLint 규칙 |
-| JaCoCo | (Gradle 내장) | 테스트 코드 커버리지 리포트 (최소 50% 기준) |
-| LeakCanary | 2.14 | 메모리 누수 감지 (debugImplementation) |
+| 도구 | 용도 |
+|---|---|
+| Detekt | Kotlin 정적 분석 + KtLint 규칙 |
+| JaCoCo | 테스트 코드 커버리지 리포트 (최소 50% 기준) |
+| LeakCanary | 메모리 누수 감지 (debugImplementation) |
 
 ### 테스트 라이브러리
-| 라이브러리 | 버전 | 용도 |
-|---|---|---|
-| MockK | 1.14.9 | Kotlin 모킹 프레임워크 |
-| Turbine | 1.2.1 | Flow 테스트 유틸리티 |
-| Coroutines Test | 1.10.2 | 코루틴 테스트 디스패처 |
-| Paging Testing | 3.4.0 | PagingData 테스트 유틸리티 |
-| JUnit 4 | 4.13.2 | 유닛 테스트 프레임워크 |
-| Espresso | 3.7.0 | UI 테스트 프레임워크 (core + contrib) |
-| Hilt Testing | 2.59.2 | Hilt 의존성 주입 테스트 지원 |
+| 라이브러리 | 용도 |
+|---|---|
+| MockK | Kotlin 모킹 프레임워크 |
+| Turbine | Flow 테스트 유틸리티 |
+| Coroutines Test | 코루틴 테스트 디스패처 |
+| Paging Testing | PagingData 테스트 유틸리티 |
+| JUnit 4 | 유닛 테스트 프레임워크 |
+| Espresso | UI 테스트 프레임워크 (core + contrib) |
+| Hilt Testing | Hilt 의존성 주입 테스트 지원 |
 
 ## 아키텍처
 
@@ -69,24 +69,24 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 app/src/main/java/com/choo/moviefinder/
 ├── core/                  # 공유 유틸리티
 │   ├── startup/
-│   │   ├── TimberInitializer.kt   # App Startup Timber 초기화
-│   │   └── StrictModeInitializer.kt # App Startup StrictMode (src/debug 소스셋 — release 빌드에 클래스 미포함)
+│   │   ├── TimberInitializer.kt
+│   │   └── StrictModeInitializer.kt
 │   ├── notification/
-│   │   ├── ReleaseNotificationScheduler.kt # 개봉일 알림 스케줄링 (WorkManager)
-│   │   ├── ReleaseNotificationWorker.kt    # 개봉일 알림 Worker
-│   │   └── WatchGoalNotificationHelper.kt  # 시청 목표 달성 알림 (Mutex 중복 방지)
+│   │   ├── ReleaseNotificationScheduler.kt
+│   │   ├── ReleaseNotificationWorker.kt
+│   │   └── WatchGoalNotificationHelper.kt
 │   └── util/
-│       ├── DateUtils.kt           # currentMonthStartMillis(), currentYearMonth()
-│       ├── ImageUrlProvider.kt    # 이미지 URL 빌더 (posterUrl, backdropUrl, profileUrl)
-│       ├── ErrorMessageProvider.kt # 예외 → ErrorType 매핑 + 사용자 메시지 변환
-│       ├── NetworkMonitor.kt      # 실시간 네트워크 상태 모니터링 (StateFlow)
-│       ├── CoroutineExt.kt        # launchWithErrorHandler 공통 에러 처리 헬퍼
-│       ├── ExponentialBackoff.kt  # 재시도 간격 점진 증가 (1s→2s→4s, 최대 3회)
-│       ├── RateLimiter.kt         # 재시도 버튼 2초 쿨다운
-│       ├── DebugHealthCheck.kt    # 앱 시작 시 API/이미지/DB 헬스체크 (디버그 전용)
-│       ├── DebugEventListener.kt  # OkHttp SSL/연결 실패 로깅 (src/debug 소스셋, src/release는 no-op)
-│       ├── FileLoggingTree.kt     # Timber 파일 로깅 2MB 로테이션 (디버그 전용)
-│       └── AnrWatchdog.kt         # 메인 스레드 5초+ 블로킹 감지 (디버그 전용)
+│       ├── DateUtils.kt
+│       ├── ImageUrlProvider.kt
+│       ├── ErrorMessageProvider.kt
+│       ├── NetworkMonitor.kt
+│       ├── CoroutineExt.kt
+│       ├── ExponentialBackoff.kt
+│       ├── RateLimiter.kt
+│       ├── DebugHealthCheck.kt
+│       ├── DebugEventListener.kt
+│       ├── FileLoggingTree.kt
+│       └── AnrWatchdog.kt
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 ├── data/                  # 데이터 레이어
 │   ├── local/
@@ -94,10 +94,10 @@ app/src/main/java/com/choo/moviefinder/
 │   │   ├── dao/                   # DAO 8개 (FavoriteMovieDao, WatchlistDao: abstract class)
 │   │   └── entity/                # Room Entity 11개
 │   ├── paging/
-│   │   ├── MoviePagingSource.kt       # 네트워크 전용 PagingSource (검색용)
-│   │   ├── DiscoverPagingSource.kt    # 장르/정렬 기반 탐색
-│   │   ├── TrendingPagingSource.kt    # 일별 트렌딩
-│   │   └── MovieRemoteMediator.kt     # 오프라인 지원 (홈 화면, 1시간 캐시 만료)
+│   │   ├── MoviePagingSource.kt
+│   │   ├── DiscoverPagingSource.kt
+│   │   ├── TrendingPagingSource.kt
+│   │   └── MovieRemoteMediator.kt
 │   ├── remote/            # Retrofit API (Service, DTO)
 │   ├── repository/        # Repository 구현체 (9개 도메인별 분리)
 │   └── util/              # 상수 (PAGE_SIZE, DEFAULT_PAGING_CONFIG 등)
@@ -141,20 +141,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
 - 즐겨찾기: `Flow<List<Entity>>` → `stateIn()` → `repeatOnLifecycle` 수집
 - UI 상태: 하나의 `repeatOnLifecycle(STARTED)` 블록 안에서 여러 `launch { flow.collect {} }` 병렬 수집 (DetailFragment 6개, SearchFragment 9개)
 - 즐겨찾기/워치리스트 정렬: 앱 레벨 `sortedBy` 대신 Room DAO `ORDER BY` 쿼리로 DB 레벨 처리 (`FavoriteSortOrder` → domain 레이어로 이동)
-
-## RecyclerView 어댑터
-| 어댑터 | 부모 클래스 | 용도 |
-|---|---|---|
-| `MoviePagingAdapter` | `PagingDataAdapter` | 홈/검색 (무한 스크롤, ViewMode.GRID/LIST) |
-| `MovieAdapter` | `ListAdapter` | 즐겨찾기/워치리스트 목록 |
-| `CastAdapter` | `ListAdapter` | 상세 출연진 (onCastClick 콜백 → PersonDetailFragment) |
-| `HorizontalMovieAdapter` | `ListAdapter` | 가로 스크롤 (비슷한 영화, 추천 영화, 시청 기록) |
-| `ReviewAdapter` | `ListAdapter` | 상세 리뷰 (클릭 시 확장/축소) |
-| `RecentSearchAdapter` | `ListAdapter` | 검색 최근 검색어 |
-| `MemoAdapter` | `ListAdapter` | 상세 메모 목록 (수정/삭제, Undo) |
-| `MovieLoadStateAdapter` | `LoadStateAdapter` | 페이징 로딩/에러 footer |
-
-- 모든 이미지 어댑터: `onViewRecycled()` → Coil `dispose()`
+- 홈 오프라인: Room 캐시 즉시 표시 (1시간 캐시 만료: `RemoteKeyEntity.lastUpdated`)
 
 ## API 설정
 
@@ -186,59 +173,13 @@ TMDB_API_KEY=여기에_API_키_입력
 - CertificatePinner: `api.themoviedb.org` + `image.tmdb.org` leaf + intermediate SHA-256 핀
 - HTTP 응답 캐시: OkHttp Cache 10MB
 
-## 오프라인 지원 (RemoteMediator 패턴)
-
-- 홈 (현재 상영작/인기 영화): Room DB를 Single Source of Truth
-- **온라인**: API → RemoteMediator → Room 캐시 → Room PagingSource → UI
-- **오프라인**: Room 캐시 즉시 표시 (1시간 캐시 만료: `RemoteKeyEntity.lastUpdated`)
-- 검색: 네트워크 전용 (MoviePagingSource)
-
 ## 테스트
 
 ### 유닛 테스트 (509개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
-
-| 테스트 클래스 | 수 | 대상 |
-|---|---|---|
-| `SearchViewModelTest` | 27 | 검색, 필터, SavedStateHandle 복원, 뷰모드 토글, Discover 모드 |
-| `DetailViewModelTest` | 24 | 초기 상태, 에러, 부분 실패, FAB 토글, Snackbar, 재시도, 중복 방지 |
-| `MovieUseCasesTest` | 23 | 영화 관련 UseCase 위임 검증 |
-| `PreferencesTagUseCasesTest` | 21 | 테마/시청목표 UseCase + 태그 UseCase 위임 검증 |
-| `MemoRatingPersonUseCasesTest` | 20 | 메모/평점/배우 UseCase 위임 검증 |
-| `MovieRepositoryImplTest` | 25 | 영화 API 호출 (상세, 출연진, 비슷한 영화, 예고편, 리뷰 등) + 페이징 메서드 스모크 테스트 |
-| `SettingsViewModelTest` | 18 | 테마, 시청기록 삭제, 시청 목표 |
-| `FavoriteViewModelTest` | 16 | 즐겨찾기/워치리스트 목록·토글·정렬, 태그 추가/삭제 |
-| `SearchWatchHistoryUseCasesTest` | 15 | 검색기록/시청기록 UseCase 위임 검증 |
-| `TagRepositoryImplTest` | 13 | 태그 Repository 구현체 |
-| `FavoriteWatchlistUseCasesTest` | 12 | 즐겨찾기/워치리스트 UseCase 위임 검증 |
-| `GetWatchStatsUseCaseTest` | 10 | combine 로직, 장르 빈도, 월별/일별 카운트, 평점 분포 |
-| `ErrorMessageProviderTest` | 27 | 예외 타입별 ErrorType 매핑 + getMessage() Context 위임 검증 |
-| `PreferencesRepositoryImplTest` | 9 | 테마, 시청 목표, 알림 월 |
-| `DelegateTest` | 8 | MemoDelegate + UserRatingDelegate 로직 |
-| `StatsViewModelTest` | 7 | Loading/Success/Error, 목표 달성률 |
-| `SplitRepositoryImplTest` | 35 | 분리된 Repository 구현체 (Favorite, Watchlist, SearchHistory 등, MemoRepository 포함, getFavoriteMoviesSorted 3분기 검증) |
-| `MovieRemoteMediatorTest` | 10 | REFRESH/APPEND/SKIP, 캐시 만료, 오프라인 REFRESH, POPULAR 카테고리, 빈 응답 |
-| `MoviePagingSourceTest` | 7 | 페이지 로드, 에러, nextKey/prevKey |
-| `CachedMovieEntityMapperTest` | 7 | Entity ↔ 도메인 모델 변환 |
-| `WatchGoalNotificationHelperTest` | 7 | 달성/미달/중복 알림 방지 |
-| `ReleaseNotificationSchedulerTest` | 7 | WorkManager 스케줄/취소, 과거날짜/API 레벨 가드 |
-| `PersonDetailViewModelTest` | 6 | 배우 상세 상태, 병렬 호출 |
-| `HomeViewModelTest` | 8 | UseCase 호출, 시청기록 |
-| `ExponentialBackoffTest` | 10 | 첫 성공, 재시도 후 성공, 전체 실패, CancellationException 처리, require 가드 (maxRetries/initialDelayMs/factor 유효성), maxDelayMs 상한 검증 |
-| `TrendingPagingSourceTest` | 8 | 트렌딩 페이징, getRefreshKey |
-| `DiscoverPagingSourceTest` | 8 | Discover 페이징, getRefreshKey |
-| `BackupRepositoryImplTest` | 9 | exportUserData 매핑, importUserData insertAll 호출·타임스탬프 |
-| `WatchHistoryRepositoryImplTest` | 7 | saveWatchHistoryWithGenres @Transaction 원자적 저장 에지 케이스, clearWatchHistory @Transaction 원자적 삭제 |
-| `RateLimiterTest` | 5 | 2초 쿨다운, 동시 호출 차단 |
-| `ExportImportUseCaseTest` | 4 | 내보내기/가져오기 검증 |
-| `PersonRepositoryImplTest` | 10 | getPersonDetail, getPersonMovieCredits, searchPerson + 유효성 검사 |
-| `NetworkMonitorTest` | 8 | 초기 상태, 콜백, SecurityException 처리 |
-| `DateUtilsTest` | 7 | currentMonthStartMillis, currentYearMonth (고정 Clock) |
-| `ImageUrlProviderTest` | 6 | posterUrl, backdropUrl, profileUrl URL 생성 |
-| `CoroutineExtTest` | 7 | launchWithErrorHandler 성공/에러/CancellationException, suspendRunCatching 성공/에러/CancellationException 재전파 |
-| `ReleaseNotificationWorkerTest` | 3 | 유효하지 않은 입력 실패 경로 |
+37개 테스트 클래스. 주요 커버: ViewModel 5종, Repository 9종, UseCase 5종, PagingSource 3종, 유틸/워커 다수.
 
 ### Espresso UI 테스트 (23개)
 ```bash
@@ -299,8 +240,8 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - 딥링크: `moviefinder://movie/{id}`, `moviefinder://person/{id}`, `moviefinder://stats`
 
 ### Room DB
-- 버전: 17, 이름: `movie_finder_db`, 스키마: `app/schemas/`
-- Entity 8개: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity, MemoEntity
+- 버전: 21, 이름: `movie_finder_db`, 스키마: `app/schemas/`
+- Entity 11개: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity, MemoEntity, ScheduledReminderEntity 외
 - `FavoriteMovieDao`, `WatchlistDao`, `WatchHistoryDao`: `abstract class` — `@Transaction` wrapper 메서드 (toggleFavorite/toggleWatchlist, insertWithGenres/clearAllWithGenres)
 - Destructive migration fallback 적용 (개발 환경)
 - Room의 `withTransaction`은 MockK로 모킹 어려움 → `@Transaction` on abstract DAO 사용
