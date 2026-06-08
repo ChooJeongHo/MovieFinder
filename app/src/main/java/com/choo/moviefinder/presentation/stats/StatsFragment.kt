@@ -347,9 +347,10 @@ class StatsFragment : Fragment() {
         genreText: String?,
         goalText: String?
     ): Bitmap {
-        val cardWidth = 800
-        val padding = 48
-        val lineHeight = 52
+        val density = resources.displayMetrics.density
+        val cardWidth = (400 * density).toInt()
+        val padding = (24 * density).toInt()
+        val lineHeight = (52 * density).toInt()
 
         // 카드에 표시할 줄 수 계산 (제목 + 총 시청 + 이번 달 + 평점(옵션) + 장르(옵션) + 목표(옵션))
         var lineCount = 3 // 제목 + 총시청 + 이번달
@@ -357,14 +358,14 @@ class StatsFragment : Fragment() {
         if (genreText != null) lineCount++
         if (goalText != null) lineCount++
 
-        val cardHeight = padding * 2 + lineHeight * lineCount + 24
+        val cardHeight = padding * 2 + lineHeight * lineCount + (12 * density).toInt()
 
         val bitmap = Bitmap.createBitmap(cardWidth, cardHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
         // 배경 (둥근 모서리 카드)
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colors.surfaceColor }
-        val cornerRadius = 24f
+        val cornerRadius = 12f * density
         canvas.drawRoundRect(
             RectF(0f, 0f, cardWidth.toFloat(), cardHeight.toFloat()),
             cornerRadius, cornerRadius, bgPaint
@@ -373,25 +374,25 @@ class StatsFragment : Fragment() {
         // 상단 강조 바
         val accentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colors.primaryColor }
         canvas.drawRoundRect(
-            RectF(0f, 0f, cardWidth.toFloat(), 8f),
+            RectF(0f, 0f, cardWidth.toFloat(), 4f * density),
             cornerRadius, cornerRadius, accentPaint
         )
 
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colors.primaryColor
-            textSize = 36f
+            textSize = 18f * density
             typeface = Typeface.DEFAULT_BOLD
         }
         val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colors.textPrimaryColor
-            textSize = 28f
+            textSize = 14f * density
         }
         val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = colors.textSecondaryColor
-            textSize = 24f
+            textSize = 12f * density
         }
 
-        var y = padding.toFloat() + 36f
+        var y = padding.toFloat() + 18f * density
 
         // 제목
         canvas.drawText(cardTitle, padding.toFloat(), y, titlePaint)

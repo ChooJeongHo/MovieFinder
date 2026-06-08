@@ -155,7 +155,7 @@ class PopularMoviesRemoteViewsFactory(
                                 CertificatePinner.Builder()
                                     .add(
                                         "api.themoviedb.org",
-                                        "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
+                                        "sha256/QfyoR20v8hyYX7L+ikLzM/euPGSDl67gFFcor/sROMs=",
                                         "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
                                     )
                                     .build()

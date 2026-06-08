@@ -61,17 +61,7 @@ object NetworkModule {
             .cache(cache)
             .apply {
                 // 디버그 빌드(에뮬레이터)에서는 인증서 피닝 비활성화
-                if (!BuildConfig.DEBUG) {
-                    certificatePinner(
-                        CertificatePinner.Builder()
-                            .add(
-                                "api.themoviedb.org",
-                                "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
-                                "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
-                            )
-                            .build()
-                    )
-                }
+                if (!BuildConfig.DEBUG) certificatePinner(buildApiCertPinner())
             }
             .addDebugLogging()
             // User-Agent: TMDB 측 로그 식별 및 API 정책 준수
@@ -139,17 +129,7 @@ object NetworkModule {
     fun provideImageOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
             .apply {
-                if (!BuildConfig.DEBUG) {
-                    certificatePinner(
-                        CertificatePinner.Builder()
-                            .add(
-                                "image.tmdb.org",
-                                "sha256/B/uFV1xlBj83gXfsZfdC7IUKMYq9E0EgYKJaTVUAbus=",
-                                "sha256/kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ="
-                            )
-                            .build()
-                    )
-                }
+                if (!BuildConfig.DEBUG) certificatePinner(buildImageCertPinner())
             }
             .applyCommonConfig()
             .build()
@@ -176,17 +156,7 @@ object NetworkModule {
                 chain.proceed(request)
             }
             .apply {
-                if (!BuildConfig.DEBUG) {
-                    certificatePinner(
-                        CertificatePinner.Builder()
-                            .add(
-                                "api.themoviedb.org",
-                                "sha256/f78NVAesYtdZ9OGSbK7VtGQkSIVykh3DnduuLIJHMu4=",
-                                "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
-                            )
-                            .build()
-                    )
-                }
+                if (!BuildConfig.DEBUG) certificatePinner(buildApiCertPinner())
             }
             .connectTimeout(30.seconds)
             .readTimeout(30.seconds)
@@ -238,4 +208,17 @@ object NetworkModule {
     }
 
     private const val HTTP_CACHE_SIZE = 10L * 1024 * 1024 // 10MB
+
+    private const val PIN_API_LEAF = "sha256/QfyoR20v8hyYX7L+ikLzM/euPGSDl67gFFcor/sROMs="
+    private const val PIN_API_INTER = "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
+    private const val PIN_IMAGE_LEAF = "sha256/D9+FUQAcRTKvnv4RFbvEOfxIdAaqGJVOtOKBUZPFlak="
+    private const val PIN_IMAGE_INTER = "sha256/LoMHBotttiDko50Gi13uXW71eIy7LAttI+rYT8wXF4w="
+
+    private fun buildApiCertPinner() = CertificatePinner.Builder()
+        .add("api.themoviedb.org", PIN_API_LEAF, PIN_API_INTER)
+        .build()
+
+    private fun buildImageCertPinner() = CertificatePinner.Builder()
+        .add("image.tmdb.org", PIN_IMAGE_LEAF, PIN_IMAGE_INTER)
+        .build()
 }
