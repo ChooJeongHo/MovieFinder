@@ -3,10 +3,7 @@ package com.choo.moviefinder.presentation.favorite
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.workDataOf
-import com.choo.moviefinder.core.notification.WatchlistReminderWorker
+import com.choo.moviefinder.core.notification.WatchlistReminderScheduler
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.launchWithErrorHandler
@@ -42,10 +39,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
-import kotlin.time.Clock
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
-import androidx.work.WorkManager
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -65,10 +59,9 @@ class FavoriteViewModel @Inject constructor(
     private val setWatchlistReminderUseCase: SetWatchlistReminderUseCase,
     private val clearWatchlistReminderUseCase: ClearWatchlistReminderUseCase,
     private val getWatchlistRemindersUseCase: GetWatchlistRemindersUseCase,
+    private val watchlistReminderScheduler: WatchlistReminderScheduler,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
-
-    private val workManager by lazy(LazyThreadSafetyMode.NONE) { WorkManager.getInstance(context) }
 
     private val _selectedTab = MutableStateFlow(FavoriteTab.FAVORITES)
     val selectedTab: StateFlow<FavoriteTab> = _selectedTab.asStateFlow()
@@ -248,22 +241,7 @@ class FavoriteViewModel @Inject constructor(
             }
         ) {
             setWatchlistReminderUseCase(movie.id, dateMillis)
-            val delay = dateMillis - Clock.System.now().toEpochMilliseconds()
-            if (delay <= 0) return@launchWithErrorHandler
-            val inputData = workDataOf(
-                WatchlistReminderWorker.KEY_MOVIE_ID to movie.id,
-                WatchlistReminderWorker.KEY_MOVIE_TITLE to movie.title
-            )
-            val request = OneTimeWorkRequestBuilder<WatchlistReminderWorker>()
-                .setInputData(inputData)
-                .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-                .addTag("watchlist_reminder")
-                .build()
-            workManager.enqueueUniqueWork(
-                "watchlist_reminder_${movie.id}",
-                ExistingWorkPolicy.REPLACE,
-                request
-            )
+            watchlistReminderScheduler.schedule(movie.id, movie.title, dateMillis)
             _reminderSnackbar.trySend(context.getString(com.choo.moviefinder.R.string.reminder_set_confirmation))
         }
 
@@ -275,6 +253,6 @@ class FavoriteViewModel @Inject constructor(
         }
     ) {
         clearWatchlistReminderUseCase(movieId)
-        workManager.cancelUniqueWork("watchlist_reminder_$movieId")
+        watchlistReminderScheduler.cancel(movieId)
     }
 }
