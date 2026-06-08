@@ -19,6 +19,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -95,8 +96,8 @@ class DetailViewModel @Inject constructor(
 
     // 핵심 데이터(영화 상세 + 등급) 먼저 표시 후 나머지 API를 점진적으로 업데이트
     fun loadMovieDetail() {
-        if (!loadingMutex.tryLock()) return
         viewModelScope.launch {
+            if (!loadingMutex.tryLock()) return@launch
             _uiState.value = DetailUiState.Loading
             try {
                 // 1단계: 핵심 데이터 (영화 상세 + 등급) 병렬 로드
@@ -209,7 +210,7 @@ class DetailViewModel @Inject constructor(
                 // so we read the cached StateFlow value. The race window is narrow:
                 // the UI must be off-screen for >5s AND another actor must concurrently
                 // toggle the same movie. Acceptable for a low-priority notification side-effect.
-                val wasInWatchlist = isInWatchlist.value
+                val wasInWatchlist = toggle.isInWatchlist(movieId).first()
                 val movie = state.movieDetail.toMovie()
                 toggle.toggleWatchlist(movie)
                 if (!wasInWatchlist) {

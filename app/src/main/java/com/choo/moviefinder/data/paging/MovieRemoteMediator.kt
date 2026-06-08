@@ -30,6 +30,7 @@ class MovieRemoteMediator(
 
     // 캐시 만료 여부를 확인하여 초기 새로고침 필요 여부 결정
     override suspend fun initialize(): InitializeAction {
+        if (!networkMonitor.isConnected.value) return InitializeAction.SKIP_INITIAL_REFRESH
         val remoteKey = remoteKeyDao.getRemoteKey(category)
         val lastUpdated = remoteKey?.lastUpdated ?: 0L
         val cacheAge = System.currentTimeMillis() - lastUpdated

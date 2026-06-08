@@ -27,7 +27,7 @@ class SearchHistoryRepositoryImpl @Inject constructor(
 
     // 특정 검색어 삭제
     override suspend fun deleteSearchQuery(query: String) {
-        recentSearchDao.delete(query)
+        recentSearchDao.delete(query.trim().replace(Regex("\\s+"), " "))
     }
 
     // 모든 검색 기록 삭제

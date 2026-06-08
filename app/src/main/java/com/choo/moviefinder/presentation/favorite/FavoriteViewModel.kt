@@ -1,6 +1,7 @@
 package com.choo.moviefinder.presentation.favorite
 
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.notification.WatchlistReminderScheduler
@@ -45,6 +46,7 @@ import javax.inject.Inject
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class FavoriteViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     private val getFavoriteMoviesUseCase: GetFavoriteMoviesUseCase,
     private val getFavoritesByTagUseCase: GetFavoritesByTagUseCase,
     private val getWatchlistUseCase: GetWatchlistUseCase,
@@ -63,7 +65,9 @@ class FavoriteViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val _selectedTab = MutableStateFlow(FavoriteTab.FAVORITES)
+    private val _selectedTab = MutableStateFlow(
+        savedStateHandle.get<String>("selectedTab")?.let { FavoriteTab.valueOf(it) } ?: FavoriteTab.FAVORITES
+    )
     val selectedTab: StateFlow<FavoriteTab> = _selectedTab.asStateFlow()
 
     private val _sortOrder = MutableStateFlow(FavoriteSortOrder.ADDED_DATE)
@@ -192,6 +196,7 @@ class FavoriteViewModel @Inject constructor(
             setMinRating(0f)
         }
         _selectedTab.value = tab
+        savedStateHandle["selectedTab"] = tab.name
     }
 
     // 워치리스트 상태 토글 (에러 시 Snackbar 이벤트 전송)

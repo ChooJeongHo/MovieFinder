@@ -3,7 +3,7 @@ package com.choo.moviefinder.presentation.stats
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.util.ErrorMessageProvider
-import com.choo.moviefinder.core.util.WhileSubscribed5s
+import kotlinx.coroutines.flow.SharingStarted
 import com.choo.moviefinder.domain.usecase.GetWatchStatsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -35,7 +35,7 @@ class StatsViewModel @Inject constructor(
                     emit(StatsUiState.Error(ErrorMessageProvider.getErrorType(e)))
                 }
         }
-        .stateIn(viewModelScope, WhileSubscribed5s, StatsUiState.Loading)
+        .stateIn(viewModelScope, SharingStarted.Lazily, StatsUiState.Loading)
 
     fun retry() {
         _retryTrigger.value++

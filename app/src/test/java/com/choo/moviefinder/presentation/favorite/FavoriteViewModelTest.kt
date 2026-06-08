@@ -1,6 +1,7 @@
 package com.choo.moviefinder.presentation.favorite
 
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.PosterTagSuggester
@@ -59,6 +60,7 @@ class FavoriteViewModelTest {
     private lateinit var getWatchlistRemindersUseCase: GetWatchlistRemindersUseCase
     private lateinit var watchlistReminderScheduler: WatchlistReminderScheduler
     private lateinit var context: Context
+    private lateinit var savedStateHandle: SavedStateHandle
 
     private val testMovies = listOf(
         Movie(1, "Movie 1", "/poster1.jpg", "/backdrop1.jpg", "Overview 1", "2024-01-01", 8.0, 500),
@@ -84,6 +86,7 @@ class FavoriteViewModelTest {
         getWatchlistRemindersUseCase = mockk()
         watchlistReminderScheduler = mockk(relaxUnitFun = true)
         context = mockk(relaxed = true)
+        savedStateHandle = SavedStateHandle()
 
         every { getWatchlistUseCase(any<FavoriteSortOrder>()) } returns flowOf(emptyList())
         every { getAllTagNamesUseCase() } returns flowOf(emptyList())
@@ -98,6 +101,7 @@ class FavoriteViewModelTest {
 
     private fun createViewModel(): FavoriteViewModel {
         return FavoriteViewModel(
+            savedStateHandle,
             getFavoriteMoviesUseCase,
             getFavoritesByTagUseCase,
             getWatchlistUseCase,

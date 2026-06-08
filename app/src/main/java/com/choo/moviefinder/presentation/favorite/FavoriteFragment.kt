@@ -39,6 +39,7 @@ import java.util.Locale
 import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 // Rating filter options: threshold value (0f = no filter) paired with string resource
@@ -168,12 +169,16 @@ class FavoriteFragment : Fragment() {
     }
 
     private fun setupTabs() {
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.favorite_title))
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.watchlist_title))
+        mapOf(
+            FavoriteTab.FAVORITES to R.string.favorite_title,
+            FavoriteTab.WATCHLIST to R.string.watchlist_title
+        ).forEach { (favoriteTab, labelRes) ->
+            binding.tabLayout.addTab(binding.tabLayout.newTab().setText(labelRes).also { it.tag = favoriteTab })
+        }
 
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
-                viewModel.onTabSelected(FavoriteTab.entries[tab.position])
+                viewModel.onTabSelected(tab.tag as FavoriteTab)
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {
@@ -199,10 +204,12 @@ class FavoriteFragment : Fragment() {
     private fun observeSelectedTab() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                var initialEmit = true
                 viewModel.selectedTab.collect { tab ->
                     val tabView = binding.tabLayout.getTabAt(tab.ordinal)
                     if (tabView?.isSelected == false) tabView.select()
-                    binding.rvFavorites.scrollToPosition(0)
+                    if (!initialEmit) binding.rvFavorites.scrollToPosition(0)
+                    initialEmit = false
                     updateEmptyState()
                     updateReminderChipVisibility()
                     updateTagFilterVisibility()
@@ -230,6 +237,7 @@ class FavoriteFragment : Fragment() {
             binding.rvFavorites.isVisible = false
             binding.emptyView.layoutEmpty.isVisible = false
             binding.errorView.layoutError.isVisible = true
+            throw e
         }
     }
 
@@ -237,7 +245,20 @@ class FavoriteFragment : Fragment() {
     private fun observeViewModelFlows() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { collectCurrentMovies() }
+                launch {
+                    val retryChannel = Channel<Unit>(Channel.CONFLATED)
+                    binding.errorView.btnRetry.setOnClickListener { retryChannel.trySend(Unit) }
+                    while (true) {
+                        try {
+                            collectCurrentMovies()
+                            break
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            retryChannel.receive()
+                        }
+                    }
+                }
                 launch {
                     viewModel.allTagNames.collect { tagNames ->
                         updateTagChips(tagNames)

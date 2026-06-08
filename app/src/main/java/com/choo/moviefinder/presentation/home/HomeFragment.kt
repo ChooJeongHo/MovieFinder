@@ -140,14 +140,18 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupTabs() {
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_now_playing))
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_popular))
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_trending))
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_upcoming))
+        mapOf(
+            HomeTab.NOW_PLAYING to R.string.tab_now_playing,
+            HomeTab.POPULAR to R.string.tab_popular,
+            HomeTab.TRENDING to R.string.tab_trending,
+            HomeTab.UPCOMING to R.string.tab_upcoming
+        ).forEach { (homeTab, labelRes) ->
+            binding.tabLayout.addTab(binding.tabLayout.newTab().setText(labelRes).also { it.tag = homeTab })
+        }
 
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
-                viewModel.onTabSelected(HomeTab.entries[tab.position])
+                viewModel.onTabSelected(tab.tag as HomeTab)
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {
