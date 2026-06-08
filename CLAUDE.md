@@ -6,11 +6,11 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ## 기술 스택
 
 ### 빌드 환경
-- **AGP**: 9.2.0 (Android Gradle Plugin, Kotlin 2.3.21 내장)
+- **AGP**: 9.2.1 (Android Gradle Plugin, Kotlin 2.3.21 내장)
 - **Gradle**: 9.3.1
 - **compileSdk**: 36 (Android 15)
 - **minSdk**: 24 / **targetSdk**: 36
-- **KSP**: 2.3.6 (Kotlin Symbol Processing)
+- **KSP**: 2.3.9 (Kotlin Symbol Processing)
 
 ### 핵심 라이브러리
 | 라이브러리 | 용도 |
@@ -175,11 +175,11 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (509개)
+### 유닛 테스트 (638개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
-37개 테스트 클래스. 주요 커버: ViewModel 5종, Repository 9종, UseCase 5종, PagingSource 3종, 유틸/워커 다수.
+주요 커버: ViewModel 5종, Repository 9종, UseCase 5종, PagingSource 3종, 유틸/워커 다수.
 
 ### Espresso UI 테스트 (23개)
 ```bash
@@ -229,7 +229,8 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `kotlinOptions` 블록 사용 불가 (Kotlin이 AGP에 내장)
 - `android.disallowKotlinSourceSets=false` 필요 (KSP 호환)
 - `Theme.MaterialComponents.DayNight.NoActionBar` 사용
-- Hilt 2.59.1 이상 필요
+- Hilt 2.59.2 이상 필요 (2.59.2 기준 Kotlin 2.4.0 미지원 — kotlin-metadata-jvm max 2.3.0)
+- **Dependabot 호환성**: core-ktx 1.19.0은 compileSdk 37 요구; Kotlin 2.4.0은 Hilt 호환 이슈로 보류
 
 ### Navigation
 - `nav_graph.xml`에 destination + argument + deepLink 정의
@@ -273,7 +274,8 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - Application에서 DI 없이 접근: `@EntryPoint` + `EntryPointAccessors.fromApplication()`
 
 ### Certificate Pinning
-- `NetworkModule.kt`의 `CertificatePinner` 설정
+- `NetworkModule.kt`의 `CertificatePinner` 설정 — 핀 상수 4개(`PIN_API_LEAF/INTER`, `PIN_IMAGE_LEAF/INTER`) + `buildApiCertPinner()` / `buildImageCertPinner()` helper로 3곳 중복 제거
+- 디버그 빌드에서는 핀 비활성화 (`if (!BuildConfig.DEBUG)`)
 - 인증서 갱신 시 핀 업데이트:
   ```bash
   echo | openssl s_client -connect api.themoviedb.org:443 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
@@ -285,14 +287,24 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - **RateLimiter**: 재시도 버튼 2초 쿨다운 (`AtomicLong.compareAndSet`)
 
 ### DetailViewModel 패턴
-- `Mutex.tryLock()`: 중복 API 호출 차단, `finally`에서 unlock (에러 후 재시도 가능)
-- `toggleMutex.withLock()`: FAB 즐겨찾기/워치리스트 연타 방지
+- `Mutex.tryLock()`: 반드시 `viewModelScope.launch {}` 내부에서 호출 — 스코프 외부 호출 시 취소 시 영구 잠금 위험
+- `toggleMutex.withLock()`: FAB 즐겨찾기/워치리스트 연타 방지; `isInWatchlist(movieId).first()` 사용 (`.value` stale read 방지)
 - `loadOptional`/`loadOptionalNullable`: 출연진/추천 등 부분 실패 graceful degradation
 - **점진적 로딩**: 핵심 데이터(상세+등급) 먼저 `DetailUiState.Success` emit → 이후 출연진/비슷한 영화/리뷰/예고편/추천 각각 완료 시 `_uiState.update { it.copy(...) }` — `DetailUiState.Success`의 secondary 필드는 nullable (null = 로딩 중)
 - `saveWatchHistory`: 별도 `coroutineScope` fire-and-forget (UI 상태 영향 없음)
 - `launchWithErrorHandler`: 공통 에러 처리 (`core/util/CoroutineExt.kt`)
 - **MemoDelegate** / **UserRatingDelegate**: 생성자 의존성 19개 → 13개 (`snackbarChannel` 공유)
 - `Channel.CONFLATED` + `receiveAsFlow()`: Snackbar 일회성 이벤트 (모든 ViewModel 통일)
+
+### FavoriteViewModel / FavoriteFragment 패턴
+- `FavoriteViewModel`: `SavedStateHandle`로 선택 탭(`_selectedTab`) 프로세스 종료 후 복원 — `savedStateHandle["selectedTab"] = tab.name`
+- `StatsViewModel` 포함 전체 stats/favorite StateFlow: `SharingStarted.Lazily` 사용 (재진입 시 Loading 플래시 방지; `WhileSubscribed`는 백스택 복귀 시 재구독 트리거)
+- **탭 태그 패턴**: `TabLayout` 탭에 `tab.tag = HomeTab/FavoriteTab` 설정 → `onTabSelected`에서 `tab.tag as HomeTab` 캐스팅 (enum `entries[position]` 인덱스 의존 제거)
+- **FavoriteFragment retry loop**: `Channel<Unit>` + `while(true)` 패턴으로 collect 재시작 — `CancellationException`은 반드시 rethrow
+- **resume 스크롤 방지**: `initialEmit` 플래그로 StateFlow 첫 emit(resume 재방출) 시 `scrollToPosition(0)` 스킵
+
+### StatsFragment 공유 이미지
+- `createStatsCardBitmap()` 내 Canvas 크기/패딩/텍스트는 px 하드코딩 금지 — `resources.displayMetrics.density` 곱해 dp→px 변환
 
 ### 기타 주의사항
 - **POST_NOTIFICATIONS 권한**: Android 13+ (TIRAMISU) 런타임 권한 필요 — `MainActivity.onCreate()`에서 `ActivityCompat.requestPermissions()` 호출 (시스템이 자동 팝업 불가)
@@ -301,6 +313,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - **FavoriteSortOrder 문자열 매핑**: 도메인 모델 순수성 유지 — `FavoriteFragment.kt` 파일 레벨 private 확장함수 `labelRes()` / `subtitleRes()`로 `@StringRes` 변환 (Domain 레이어에 Android 의존성 미추가)
 - **Widget**: OkHttp 싱글턴 + kotlinx.serialization 직접 호출, `response.use {}` 패턴
 - **WatchGoalNotificationHelper**: `Mutex.withLock()` 원자적 달성 체크, `lastGoalNotifiedMonth`로 월 1회 제한
+- **BackupRepository**: `UserDataBackup` @Serializable — favorites/watchlist/ratings/memos/tags/watchHistory 6종; `WatchHistoryDao.getAllHistoryOnce()` 백업용 일회성 쿼리; `restoreWatchHistory()`에서 `watchedAt.toYearMonth()` (kotlinx-datetime) 재계산
 - **StrictMode**: `src/debug/java/` 소스셋 분리 — release 빌드에 클래스 자체 미포함, debug manifest에 meta-data 등록
 - **디버그 도구**: DebugHealthCheck/FileLoggingTree/AnrWatchdog — `BuildConfig.DEBUG` 가드; `DebugEventListener` — `src/debug/` 소스셋 분리 (릴리스 바이너리에 로깅 코드 미포함, `src/release/`에 no-op 존재); `StrictModeInitializer` — `src/debug/` 소스셋 분리 (release 빌드에 클래스 자체 미포함, lintVitalRelease 통과)
 - **R8 Full Mode**: `android.enableR8.fullMode=true` — serialization 클래스 ProGuard keep 필수
