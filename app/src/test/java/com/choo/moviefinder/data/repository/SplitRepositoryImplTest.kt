@@ -443,6 +443,7 @@ class SplitRepositoryImplTest {
         coEvery { userRatingDao.getAllRatings() } returns ratingEntities
         coEvery { memoDao.getAllMemos() } returns memoEntities
         coEvery { movieTagDao.getAllTagsOnce() } returns emptyList()
+        coEvery { watchHistoryDao.getAllHistoryOnce() } returns emptyList()
 
         val result = backupRepo.exportUserData()
 
