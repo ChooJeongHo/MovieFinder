@@ -1,7 +1,6 @@
 package com.choo.moviefinder.data.remote.dto
 
 import com.choo.moviefinder.domain.model.Cast
-import com.choo.moviefinder.domain.model.Credits
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -44,10 +43,4 @@ fun CastDto.toDomain() = Cast(
     name = name,
     character = character,
     profilePath = profilePath
-)
-
-// CreditsResponse를 도메인 Credits 모델로 변환 (감독만 추출)
-fun CreditsResponse.toDomain() = Credits(
-    cast = cast.map { it.toDomain() },
-    directors = crew.filter { it.job == "Director" }.map { it.name }
 )

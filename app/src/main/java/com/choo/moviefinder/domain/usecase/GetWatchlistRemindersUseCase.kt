@@ -8,11 +8,7 @@ import javax.inject.Inject
 class GetWatchlistRemindersUseCase @Inject constructor(
     private val watchlistRepository: WatchlistRepository
 ) {
-    // 알림 날짜가 설정된 워치리스트 영화 목록을 반환한다
-    suspend operator fun invoke(): List<WatchlistReminder> =
-        watchlistRepository.getMoviesWithReminder()
-
     // 알림 날짜가 설정된 워치리스트 영화 목록을 실시간 Flow로 반환한다
-    fun asFlow(): Flow<List<WatchlistReminder>> =
+    operator fun invoke(): Flow<List<WatchlistReminder>> =
         watchlistRepository.observeMoviesWithReminder()
 }

@@ -5,10 +5,10 @@ import com.choo.moviefinder.domain.repository.PreferencesRepository
 import com.choo.moviefinder.domain.repository.TmdbAuthRepository
 import com.choo.moviefinder.domain.repository.WatchlistRepository
 import kotlinx.coroutines.flow.first
+import dagger.Reusable
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
+@Reusable
 class SyncTmdbAccountUseCase @Inject constructor(
     private val tmdbAuthRepository: TmdbAuthRepository,
     private val preferencesRepository: PreferencesRepository,

@@ -1,5 +1,3 @@
-@file:OptIn(kotlin.time.ExperimentalTime::class)
-
 package com.choo.moviefinder.core.notification
 
 import android.app.PendingIntent
@@ -13,12 +11,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.choo.moviefinder.MovieFinderApp
 import com.choo.moviefinder.R
-import com.choo.moviefinder.core.util.currentMonthStartMillis
-import com.choo.moviefinder.core.util.currentYearMonth
-import com.choo.moviefinder.domain.repository.PreferencesRepository
-import com.choo.moviefinder.domain.repository.WatchHistoryRepository
+import com.choo.moviefinder.domain.usecase.CheckWatchGoalAchievedUseCase
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
@@ -28,27 +22,16 @@ import javax.inject.Singleton
 @Singleton
 class WatchGoalNotificationHelper @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val preferencesRepository: PreferencesRepository,
-    private val watchHistoryRepository: WatchHistoryRepository
+    private val checkWatchGoalAchievedUseCase: CheckWatchGoalAchievedUseCase
 ) {
 
     private val checkMutex = Mutex()
 
     // 시청 목표 달성 여부를 확인하고 알림을 표시한다 (Mutex로 중복 알림 방지)
     suspend fun checkAndNotifyGoalAchieved() = checkMutex.withLock {
-        val goal = preferencesRepository.getMonthlyWatchGoal().first()
-        if (goal <= 0) return
-
-        val monthStartMillis = currentMonthStartMillis()
-        val currentCount = watchHistoryRepository.getWatchedCountSince(monthStartMillis).first()
-        if (currentCount < goal) return
-
-        val yearMonth = currentYearMonth()
-        val lastNotified = preferencesRepository.getLastGoalNotifiedMonth().first()
-        if (lastNotified == yearMonth) return
-
-        showGoalAchievedNotification()
-        preferencesRepository.setLastGoalNotifiedMonth(yearMonth)
+        if (checkWatchGoalAchievedUseCase()) {
+            showGoalAchievedNotification()
+        }
     }
 
     // 목표 달성 축하 알림을 표시한다 (테스트에서 오버라이드 가능)

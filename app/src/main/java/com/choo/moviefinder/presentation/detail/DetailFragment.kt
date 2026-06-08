@@ -674,6 +674,7 @@ class DetailFragment : Fragment() {
     // 어댑터 해제 및 바인딩 null 처리로 메모리 누수 방지
     override fun onDestroyView() {
         super.onDestroyView()
+        binding.shimmerDetail.shimmerLayout.stopShimmer()
         binding.rvCast.adapter = null
         binding.rvSimilar.adapter = null
         binding.rvRecommendations.adapter = null

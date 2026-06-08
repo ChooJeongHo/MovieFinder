@@ -2,6 +2,7 @@ package com.choo.moviefinder.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.choo.moviefinder.domain.model.ScheduledReminder
 
 @Entity(tableName = "scheduled_reminders")
 data class ScheduledReminderEntity(
@@ -11,4 +12,11 @@ data class ScheduledReminderEntity(
     val releaseDate: String,
     // System.currentTimeMillis()
     val scheduledAt: Long
+)
+
+fun ScheduledReminderEntity.toDomain() = ScheduledReminder(
+    movieId = movieId,
+    movieTitle = movieTitle,
+    releaseDate = releaseDate,
+    scheduledAt = scheduledAt
 )

@@ -1,12 +1,15 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
 package com.choo.moviefinder.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.choo.moviefinder.domain.model.Movie
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlin.time.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @Entity(
     tableName = "watch_history",
@@ -45,7 +48,10 @@ fun WatchHistoryEntity.toDomain() = Movie(
 
 // 도메인 Movie를 시청 기록 Entity로 변환
 fun Movie.toWatchHistoryEntity(genres: String = ""): WatchHistoryEntity {
-    val now = System.currentTimeMillis()
+    val now = Clock.System.now().toEpochMilliseconds()
+    val localDate = Instant.fromEpochMilliseconds(now)
+        .toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val yearMonth = "${localDate.year}-${localDate.monthNumber.toString().padStart(2, '0')}"
     return WatchHistoryEntity(
         rowId = 0,
         movieId = id,
@@ -57,7 +63,7 @@ fun Movie.toWatchHistoryEntity(genres: String = ""): WatchHistoryEntity {
         voteAverage = voteAverage,
         voteCount = voteCount,
         watchedAt = now,
-        yearMonth = SimpleDateFormat("yyyy-MM", Locale.US).format(Date(now)),
+        yearMonth = yearMonth,
         genres = genres
     )
 }

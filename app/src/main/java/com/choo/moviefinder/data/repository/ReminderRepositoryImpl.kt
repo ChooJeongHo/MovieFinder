@@ -3,6 +3,7 @@ package com.choo.moviefinder.data.repository
 import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
 import com.choo.moviefinder.data.local.dao.ScheduledReminderDao
 import com.choo.moviefinder.data.local.entity.ScheduledReminderEntity
+import com.choo.moviefinder.data.local.entity.toDomain
 import com.choo.moviefinder.domain.model.ScheduledReminder
 import com.choo.moviefinder.domain.repository.ReminderRepository
 import kotlinx.coroutines.flow.Flow
@@ -46,10 +47,4 @@ class ReminderRepositoryImpl @Inject constructor(
         scheduledReminderDao.deleteReminder(movieId)
     }
 
-    private fun ScheduledReminderEntity.toDomain() = ScheduledReminder(
-        movieId = movieId,
-        movieTitle = movieTitle,
-        releaseDate = releaseDate,
-        scheduledAt = scheduledAt
-    )
 }

@@ -5,17 +5,17 @@ import com.choo.moviefinder.domain.repository.TmdbAuthRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
+import dagger.Reusable
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
+@Reusable
 class GetTmdbAccessTokenUseCase @Inject constructor(
     private val repository: PreferencesRepository
 ) {
     operator fun invoke(): Flow<String?> = repository.getTmdbAccessToken()
 }
 
-@Singleton
+@Reusable
 class GetTmdbRequestTokenUseCase @Inject constructor(
     private val tmdbAuthRepository: TmdbAuthRepository
 ) {
@@ -23,7 +23,7 @@ class GetTmdbRequestTokenUseCase @Inject constructor(
     suspend operator fun invoke(): String = tmdbAuthRepository.getRequestToken()
 }
 
-@Singleton
+@Reusable
 class ExchangeTmdbTokenUseCase @Inject constructor(
     private val tmdbAuthRepository: TmdbAuthRepository,
     private val repository: PreferencesRepository
@@ -39,7 +39,7 @@ class ExchangeTmdbTokenUseCase @Inject constructor(
     }
 }
 
-@Singleton
+@Reusable
 class RevokeTmdbAuthUseCase @Inject constructor(
     private val tmdbAuthRepository: TmdbAuthRepository,
     private val repository: PreferencesRepository
@@ -57,7 +57,7 @@ class RevokeTmdbAuthUseCase @Inject constructor(
     }
 }
 
-@Singleton
+@Reusable
 class SubmitTmdbRatingUseCase @Inject constructor(
     private val tmdbAuthRepository: TmdbAuthRepository,
     private val repository: PreferencesRepository

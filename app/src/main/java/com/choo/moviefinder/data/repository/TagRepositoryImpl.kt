@@ -17,7 +17,7 @@ class TagRepositoryImpl @Inject constructor(
 
     override fun getTagsForMovie(movieId: Int): Flow<List<MovieTag>> =
         movieTagDao.getTagsByMovieId(movieId).map { entities ->
-            entities.map { MovieTag(it.id, it.movieId, it.tagName, it.addedAt) }
+            entities.map { it.toDomain() }
         }
 
     override fun getAllTagNames(): Flow<List<String>> =

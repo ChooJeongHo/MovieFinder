@@ -150,7 +150,7 @@ class FavoriteViewModel @Inject constructor(
     private val _reminderSnackbar = Channel<String>(Channel.CONFLATED)
     val reminderSnackbar = _reminderSnackbar.receiveAsFlow()
 
-    val scheduledReminders: StateFlow<List<WatchlistReminder>> = getWatchlistRemindersUseCase.asFlow()
+    val scheduledReminders: StateFlow<List<WatchlistReminder>> = getWatchlistRemindersUseCase()
         .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)

@@ -2,6 +2,7 @@ package com.choo.moviefinder.data.repository
 
 import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.entity.MemoEntity
+import com.choo.moviefinder.data.local.entity.toDomain
 import com.choo.moviefinder.domain.model.Memo
 import com.choo.moviefinder.domain.model.MemoConstants
 import com.choo.moviefinder.domain.repository.MemoRepository
@@ -17,15 +18,7 @@ class MemoRepositoryImpl @Inject constructor(
     override fun getMemos(movieId: Int): Flow<List<Memo>> {
         require(movieId > 0) { "Movie ID must be positive" }
         return memoDao.getMemosByMovieId(movieId).map { entities ->
-            entities.map {
-                Memo(
-                    id = it.id,
-                    movieId = it.movieId,
-                    content = it.content,
-                    createdAt = it.createdAt,
-                    updatedAt = it.updatedAt
-                )
-            }
+            entities.map { it.toDomain() }
         }
     }
 

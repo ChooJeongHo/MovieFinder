@@ -438,6 +438,7 @@ class StatsFragment : Fragment() {
     // 바인딩 및 통계 참조 null 처리로 메모리 누수 방지
     override fun onDestroyView() {
         super.onDestroyView()
+        binding.shimmerStats.shimmerLayout.stopShimmer()
         currentStats = null
         _binding = null
     }
