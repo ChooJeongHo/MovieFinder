@@ -25,6 +25,7 @@ import com.choo.moviefinder.data.remote.dto.WatchProviderDto
 import com.choo.moviefinder.data.remote.dto.WatchProviderRegionResult
 import com.choo.moviefinder.data.remote.dto.WatchProviderResponse
 import androidx.paging.PagingData
+import com.choo.moviefinder.domain.model.DomainException
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.presentation.search.SortOption
 import io.mockk.coEvery
@@ -123,8 +124,8 @@ class MovieRepositoryImplTest {
         assertEquals("Test tagline", result.tagline)
     }
 
-    @Test(expected = RuntimeException::class)
-    fun `getMovieDetail propagates exception on API failure`() = runTest {
+    @Test(expected = DomainException.Unknown::class)
+    fun `getMovieDetail wraps exception in DomainException on API failure`() = runTest {
         coEvery { apiService.getMovieDetail(1) } throws RuntimeException("Network error")
 
         repository.getMovieDetail(1)

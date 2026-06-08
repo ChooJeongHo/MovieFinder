@@ -19,6 +19,7 @@ import com.choo.moviefinder.domain.usecase.RemoveTagFromMovieUseCase
 import com.choo.moviefinder.domain.usecase.SetWatchlistReminderUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
+import com.choo.moviefinder.core.notification.WatchlistReminderScheduler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -56,6 +57,7 @@ class FavoriteViewModelTest {
     private lateinit var setWatchlistReminderUseCase: SetWatchlistReminderUseCase
     private lateinit var clearWatchlistReminderUseCase: ClearWatchlistReminderUseCase
     private lateinit var getWatchlistRemindersUseCase: GetWatchlistRemindersUseCase
+    private lateinit var watchlistReminderScheduler: WatchlistReminderScheduler
     private lateinit var context: Context
 
     private val testMovies = listOf(
@@ -80,13 +82,13 @@ class FavoriteViewModelTest {
         setWatchlistReminderUseCase = mockk()
         clearWatchlistReminderUseCase = mockk()
         getWatchlistRemindersUseCase = mockk()
+        watchlistReminderScheduler = mockk(relaxUnitFun = true)
         context = mockk(relaxed = true)
 
         every { getWatchlistUseCase(any<FavoriteSortOrder>()) } returns flowOf(emptyList())
         every { getAllTagNamesUseCase() } returns flowOf(emptyList())
         every { getAllUserRatingsUseCase() } returns flowOf(emptyMap())
-        coEvery { getWatchlistRemindersUseCase() } returns emptyList()
-        every { getWatchlistRemindersUseCase.asFlow() } returns flowOf(emptyList())
+        every { getWatchlistRemindersUseCase() } returns flowOf(emptyList())
     }
 
     @After
@@ -110,6 +112,7 @@ class FavoriteViewModelTest {
             setWatchlistReminderUseCase,
             clearWatchlistReminderUseCase,
             getWatchlistRemindersUseCase,
+            watchlistReminderScheduler,
             context
         )
     }

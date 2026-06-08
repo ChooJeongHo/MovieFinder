@@ -2,6 +2,7 @@ package com.choo.moviefinder.core.util
 
 import android.content.Context
 import com.choo.moviefinder.R
+import com.choo.moviefinder.domain.model.DomainException
 import retrofit2.HttpException
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -24,28 +25,36 @@ object ErrorMessageProvider {
 
     // 예외를 분석하여 해당하는 ErrorType 열거형으로 매핑한다
     fun getErrorType(throwable: Throwable): ErrorType {
-        return when (throwable) {
-            is UnknownHostException,
-            is java.net.ConnectException -> ErrorType.NETWORK
+        if (throwable is DomainException) return domainErrorType(throwable)
+        return rawErrorType(throwable)
+    }
 
-            is SocketTimeoutException -> ErrorType.TIMEOUT
+    private fun domainErrorType(e: DomainException): ErrorType = when (e) {
+        is DomainException.NetworkError -> ErrorType.NETWORK
+        is DomainException.Timeout -> ErrorType.TIMEOUT
+        is DomainException.SslError -> ErrorType.SSL
+        is DomainException.ServerError -> ErrorType.SERVER
+        is DomainException.Unauthorized -> ErrorType.UNAUTHORIZED
+        is DomainException.NotFound -> ErrorType.NOT_FOUND
+        is DomainException.RateLimited -> ErrorType.RATE_LIMITED
+        is DomainException.ParseError -> ErrorType.PARSE
+        is DomainException.Unknown -> ErrorType.UNKNOWN
+    }
 
-            is SSLException -> ErrorType.SSL
-
-            is HttpException -> when (throwable.code()) {
-                401, 403 -> ErrorType.UNAUTHORIZED
-                404 -> ErrorType.NOT_FOUND
-                429 -> ErrorType.RATE_LIMITED
-                in 500..599 -> ErrorType.SERVER
-                else -> ErrorType.SERVER
-            }
-
-            is kotlinx.serialization.SerializationException -> ErrorType.PARSE
-
-            is IOException -> ErrorType.NETWORK
-
-            else -> ErrorType.UNKNOWN
+    private fun rawErrorType(throwable: Throwable): ErrorType = when (throwable) {
+        is UnknownHostException,
+        is java.net.ConnectException -> ErrorType.NETWORK
+        is SocketTimeoutException -> ErrorType.TIMEOUT
+        is SSLException -> ErrorType.SSL
+        is HttpException -> when (throwable.code()) {
+            401, 403 -> ErrorType.UNAUTHORIZED
+            404 -> ErrorType.NOT_FOUND
+            429 -> ErrorType.RATE_LIMITED
+            else -> ErrorType.SERVER
         }
+        is kotlinx.serialization.SerializationException -> ErrorType.PARSE
+        is IOException -> ErrorType.NETWORK
+        else -> ErrorType.UNKNOWN
     }
 
     // ErrorType에 대응하는 사용자 친화적 에러 메시지 문자열을 반환한다

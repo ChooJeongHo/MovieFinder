@@ -4,7 +4,6 @@ import com.choo.moviefinder.domain.model.ScheduledReminder
 import com.choo.moviefinder.domain.model.WatchlistReminder
 import com.choo.moviefinder.domain.repository.ReminderRepository
 import com.choo.moviefinder.domain.repository.WatchlistRepository
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -135,37 +134,40 @@ class ReminderUseCasesTest {
     // --- GetWatchlistRemindersUseCase ---
 
     @Test
-    fun `GetWatchlistRemindersUseCase delegates to WatchlistRepository getMoviesWithReminder`() = runTest {
-        coEvery { watchlistRepository.getMoviesWithReminder() } returns testWatchlistReminders
+    fun `GetWatchlistRemindersUseCase delegates to WatchlistRepository observeMoviesWithReminder`() {
+        val flow = flowOf(testWatchlistReminders)
+        every { watchlistRepository.observeMoviesWithReminder() } returns flow
         val useCase = GetWatchlistRemindersUseCase(watchlistRepository)
 
         val result = useCase()
 
-        coVerify(exactly = 1) { watchlistRepository.getMoviesWithReminder() }
-        assertEquals(testWatchlistReminders, result)
+        verify(exactly = 1) { watchlistRepository.observeMoviesWithReminder() }
+        assertEquals(flow, result)
     }
 
     @Test
-    fun `GetWatchlistRemindersUseCase returns empty list when no reminders set`() = runTest {
-        coEvery { watchlistRepository.getMoviesWithReminder() } returns emptyList()
+    fun `GetWatchlistRemindersUseCase returns empty-list-emitting flow when no reminders set`() {
+        every { watchlistRepository.observeMoviesWithReminder() } returns flowOf(emptyList())
         val useCase = GetWatchlistRemindersUseCase(watchlistRepository)
 
         val result = useCase()
 
-        assertEquals(emptyList<WatchlistReminder>(), result)
+        assertEquals(flowOf<List<WatchlistReminder>>(emptyList()).javaClass, result.javaClass)
     }
 
     @Test
-    fun `GetWatchlistRemindersUseCase returns list including entries with null reminderDate`() = runTest {
+    fun `GetWatchlistRemindersUseCase flow emits list including entries with null reminderDate`() = runTest {
         val remindersWithNull = listOf(
             WatchlistReminder(movieId = 20, title = "No Date Movie", reminderDate = null)
         )
-        coEvery { watchlistRepository.getMoviesWithReminder() } returns remindersWithNull
+        every { watchlistRepository.observeMoviesWithReminder() } returns flowOf(remindersWithNull)
         val useCase = GetWatchlistRemindersUseCase(watchlistRepository)
 
         val result = useCase()
 
-        assertEquals(1, result.size)
-        assertEquals(null, result[0].reminderDate)
+        result.collect { list ->
+            assertEquals(1, list.size)
+            assertEquals(null, list[0].reminderDate)
+        }
     }
 }

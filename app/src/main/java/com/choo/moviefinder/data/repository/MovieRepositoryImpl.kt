@@ -17,6 +17,7 @@ import com.choo.moviefinder.data.paging.UpcomingPagingSource
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.toDomain
 import com.choo.moviefinder.data.util.Constants
+import com.choo.moviefinder.data.util.safeApiCall
 import com.choo.moviefinder.domain.model.CollectionDetail
 import com.choo.moviefinder.domain.model.Credits
 import com.choo.moviefinder.domain.model.Genre
@@ -114,76 +115,83 @@ class MovieRepositoryImpl @Inject constructor(
     // 영화 상세 정보를 API에서 조회
     override suspend fun getMovieDetail(movieId: Int): MovieDetail {
         require(movieId > 0) { "Movie ID must be positive" }
-        return apiService.getMovieDetail(movieId).toDomain()
+        return safeApiCall { apiService.getMovieDetail(movieId).toDomain() }
     }
 
     // 영화 출연진 및 감독 정보를 조회 (cast는 order 기준 정렬)
     override suspend fun getMovieCredits(movieId: Int): Credits {
         require(movieId > 0) { "Movie ID must be positive" }
-        val response = apiService.getMovieCredits(movieId)
-        return Credits(
-            cast = response.cast.sortedBy { it.order }.map { it.toDomain() },
-            directors = response.crew.filter { it.job == Constants.CREW_JOB_DIRECTOR }.map { it.name }
-        )
+        return safeApiCall {
+            val response = apiService.getMovieCredits(movieId)
+            Credits(
+                cast = response.cast.sortedBy { it.order }.map { it.toDomain() },
+                directors = response.crew.filter { it.job == Constants.CREW_JOB_DIRECTOR }.map { it.name }
+            )
+        }
     }
 
     // 비슷한 영화 목록을 API에서 조회
     override suspend fun getSimilarMovies(movieId: Int): List<Movie> {
         require(movieId > 0) { "Movie ID must be positive" }
-        return apiService.getSimilarMovies(movieId).results.map { it.toDomain() }
+        return safeApiCall { apiService.getSimilarMovies(movieId).results.map { it.toDomain() } }
     }
 
     // YouTube 예고편 키 조회 (공식 Trailer 우선, YouTube 영상 폴백)
     override suspend fun getMovieTrailerKey(movieId: Int): String? {
         require(movieId > 0) { "Movie ID must be positive" }
-        val youtubeVideos = apiService.getMovieVideos(movieId).results
-            .filter { it.site == Constants.VIDEO_SITE_YOUTUBE }
-        return youtubeVideos
-            .filter { it.type == Constants.VIDEO_TYPE_TRAILER }
-            .sortedByDescending { it.official }
-            .firstOrNull()?.key
-            ?: youtubeVideos.firstOrNull()?.key
+        return safeApiCall {
+            val youtubeVideos = apiService.getMovieVideos(movieId).results
+                .filter { it.site == Constants.VIDEO_SITE_YOUTUBE }
+            youtubeVideos
+                .filter { it.type == Constants.VIDEO_TYPE_TRAILER }
+                .sortedByDescending { it.official }
+                .firstOrNull()?.key
+                ?: youtubeVideos.firstOrNull()?.key
+        }
     }
 
     // 영화 리뷰 목록을 API에서 조회
     override suspend fun getMovieReviews(movieId: Int): List<Review> {
         require(movieId > 0) { "Movie ID must be positive" }
-        return apiService.getMovieReviews(movieId).results.map { it.toDomain() }
+        return safeApiCall { apiService.getMovieReviews(movieId).results.map { it.toDomain() } }
     }
 
     // 영화 콘텐츠 등급 조회 (KR 우선, US 폴백)
     override suspend fun getMovieCertification(movieId: Int): String? {
         require(movieId > 0) { "Movie ID must be positive" }
-        val response = apiService.getMovieReleaseDates(movieId)
-        val krResult = response.results.find { it.iso31661 == Constants.REGION_KR }
-        val usResult = response.results.find { it.iso31661 == Constants.REGION_US }
-        val result = krResult ?: usResult ?: return null
-        return result.releaseDates
-            .map { it.certification }
-            .firstOrNull { it.isNotBlank() }
+        return safeApiCall {
+            val response = apiService.getMovieReleaseDates(movieId)
+            val krResult = response.results.find { it.iso31661 == Constants.REGION_KR }
+            val usResult = response.results.find { it.iso31661 == Constants.REGION_US }
+            val result = krResult ?: usResult ?: return@safeApiCall null
+            result.releaseDates
+                .map { it.certification }
+                .firstOrNull { it.isNotBlank() }
+        }
     }
 
     // 영화 장르 목록을 API에서 조회
-    override suspend fun getGenreList(): List<Genre> {
-        return apiService.getGenreList().toDomain()
-    }
+    override suspend fun getGenreList(): List<Genre> =
+        safeApiCall { apiService.getGenreList().toDomain() }
 
     // 추천 영화 목록을 API에서 조회
     override suspend fun getMovieRecommendations(movieId: Int): List<Movie> {
         require(movieId > 0) { "Movie ID must be positive" }
-        return apiService.getMovieRecommendations(movieId).results.map { it.toDomain() }
+        return safeApiCall { apiService.getMovieRecommendations(movieId).results.map { it.toDomain() } }
     }
 
     // 컬렉션 상세 정보를 API에서 조회
     override suspend fun getCollection(collectionId: Int): CollectionDetail =
-        apiService.getCollection(collectionId).toDomain()
+        safeApiCall { apiService.getCollection(collectionId).toDomain() }
 
     // 스트리밍 제공 정보를 API에서 조회 (KR 우선, US 폴백, flatrate → rent → buy 순)
     override suspend fun getWatchProviders(movieId: Int): List<WatchProvider> {
         require(movieId > 0) { "Movie ID must be positive" }
-        val response = apiService.getWatchProviders(movieId)
-        val regionResult = response.results[Constants.REGION_KR] ?: response.results[Constants.REGION_US]
-        val providers = regionResult?.flatrate?.ifEmpty { regionResult.rent }?.ifEmpty { regionResult.buy }
-        return providers?.map { WatchProvider(it.providerId, it.providerName, it.logoPath) } ?: emptyList()
+        return safeApiCall {
+            val response = apiService.getWatchProviders(movieId)
+            val regionResult = response.results[Constants.REGION_KR] ?: response.results[Constants.REGION_US]
+            val providers = regionResult?.flatrate?.ifEmpty { regionResult.rent }?.ifEmpty { regionResult.buy }
+            providers?.map { WatchProvider(it.providerId, it.providerName, it.logoPath) } ?: emptyList()
+        }
     }
 }
