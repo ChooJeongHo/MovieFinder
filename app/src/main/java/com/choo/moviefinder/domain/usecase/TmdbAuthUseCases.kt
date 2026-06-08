@@ -1,18 +1,18 @@
 package com.choo.moviefinder.domain.usecase
 
-import com.choo.moviefinder.domain.repository.PreferencesRepository
 import com.choo.moviefinder.domain.repository.TmdbAuthRepository
+import com.choo.moviefinder.domain.repository.TokenRepository
+import dagger.Reusable
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
-import dagger.Reusable
 import javax.inject.Inject
 
 @Reusable
 class GetTmdbAccessTokenUseCase @Inject constructor(
-    private val repository: PreferencesRepository
+    private val tokenRepository: TokenRepository
 ) {
-    operator fun invoke(): Flow<String?> = repository.getTmdbAccessToken()
+    operator fun invoke(): Flow<String?> = tokenRepository.getAccessToken()
 }
 
 @Reusable
@@ -26,12 +26,12 @@ class GetTmdbRequestTokenUseCase @Inject constructor(
 @Reusable
 class ExchangeTmdbTokenUseCase @Inject constructor(
     private val tmdbAuthRepository: TmdbAuthRepository,
-    private val repository: PreferencesRepository
+    private val tokenRepository: TokenRepository
 ) {
     // 승인된 요청 토큰을 액세스 토큰으로 교환하고 v3 세션 ID까지 함께 저장한다
     suspend operator fun invoke(requestToken: String) {
         val (accessToken, accountId, sessionId) = tmdbAuthRepository.exchangeAccessToken(requestToken)
-        repository.saveTmdbAuth(
+        tokenRepository.saveTokens(
             accessToken = accessToken,
             accountId = accountId,
             sessionId = sessionId
@@ -42,7 +42,7 @@ class ExchangeTmdbTokenUseCase @Inject constructor(
 @Reusable
 class RevokeTmdbAuthUseCase @Inject constructor(
     private val tmdbAuthRepository: TmdbAuthRepository,
-    private val repository: PreferencesRepository
+    private val tokenRepository: TokenRepository
 ) {
     // 액세스 토큰을 폐기하고 로컬 인증 정보를 삭제한다
     suspend operator fun invoke(accessToken: String) {
@@ -53,18 +53,18 @@ class RevokeTmdbAuthUseCase @Inject constructor(
         } catch (e: Exception) {
             Timber.w(e, "TMDB 액세스 토큰 폐기 실패 — 로컬 인증 정보는 삭제합니다")
         }
-        repository.clearTmdbAuth()
+        tokenRepository.clearTokens()
     }
 }
 
 @Reusable
 class SubmitTmdbRatingUseCase @Inject constructor(
     private val tmdbAuthRepository: TmdbAuthRepository,
-    private val repository: PreferencesRepository
+    private val tokenRepository: TokenRepository
 ) {
     // v3 세션 ID로 영화 평점을 TMDB에 제출하고 성공 여부를 반환한다
     suspend operator fun invoke(movieId: Int, rating: Float): Boolean {
-        val sessionId = repository.getTmdbSessionIdOnce() ?: return false
+        val sessionId = tokenRepository.getSessionIdOnce() ?: return false
         return tmdbAuthRepository.rateMovie(movieId, sessionId, rating)
     }
 }

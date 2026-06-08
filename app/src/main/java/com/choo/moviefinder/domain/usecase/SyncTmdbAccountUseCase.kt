@@ -1,8 +1,8 @@
 package com.choo.moviefinder.domain.usecase
 
 import com.choo.moviefinder.domain.repository.FavoriteRepository
-import com.choo.moviefinder.domain.repository.PreferencesRepository
 import com.choo.moviefinder.domain.repository.TmdbAuthRepository
+import com.choo.moviefinder.domain.repository.TokenRepository
 import com.choo.moviefinder.domain.repository.WatchlistRepository
 import kotlinx.coroutines.flow.first
 import dagger.Reusable
@@ -11,14 +11,14 @@ import javax.inject.Inject
 @Reusable
 class SyncTmdbAccountUseCase @Inject constructor(
     private val tmdbAuthRepository: TmdbAuthRepository,
-    private val preferencesRepository: PreferencesRepository,
+    private val tokenRepository: TokenRepository,
     private val favoriteRepository: FavoriteRepository,
     private val watchlistRepository: WatchlistRepository
 ) {
     data class SyncResult(val favoritesAdded: Int, val watchlistAdded: Int)
 
     suspend operator fun invoke(): SyncResult {
-        val (accessToken, accountId) = preferencesRepository.getTmdbAuthOnce()
+        val (accessToken, accountId) = tokenRepository.getAuthOnce()
         requireNotNull(accessToken) { "TMDB 계정이 연결되지 않았습니다" }
         requireNotNull(accountId) { "TMDB 계정 ID가 없습니다" }
         val bearer = "Bearer $accessToken"

@@ -1,6 +1,7 @@
 package com.choo.moviefinder.di
 
 import com.choo.moviefinder.data.local.PreferencesRepositoryImpl
+import com.choo.moviefinder.data.local.TokenRepositoryImpl
 import com.choo.moviefinder.data.repository.BackupRepositoryImpl
 import com.choo.moviefinder.data.repository.TmdbAuthRepositoryImpl
 import com.choo.moviefinder.data.repository.FavoriteRepositoryImpl
@@ -15,6 +16,7 @@ import com.choo.moviefinder.data.repository.WatchHistoryRepositoryImpl
 import com.choo.moviefinder.data.repository.WatchlistRepositoryImpl
 import com.choo.moviefinder.domain.repository.BackupRepository
 import com.choo.moviefinder.domain.repository.TmdbAuthRepository
+import com.choo.moviefinder.domain.repository.TokenRepository
 import com.choo.moviefinder.domain.repository.FavoriteRepository
 import com.choo.moviefinder.domain.repository.MemoRepository
 import com.choo.moviefinder.domain.repository.MovieRepository
@@ -85,6 +87,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindPreferencesRepository(impl: PreferencesRepositoryImpl): PreferencesRepository
+
+    // TokenRepositoryImpl을 TokenRepository 인터페이스에 바인딩한다
+    @Binds
+    @Singleton
+    abstract fun bindTokenRepository(impl: TokenRepositoryImpl): TokenRepository
 
     // TagRepositoryImpl을 TagRepository 인터페이스에 바인딩한다
     @Binds
