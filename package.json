@@ -1,0 +1,16 @@
+{
+  "name": "moviefinder-mcp-server",
+  "version": "1.0.0",
+  "description": "MovieFinder ADB automation MCP server",
+  "type": "module",
+  "main": "moviefinder-mcp-server.js",
+  "scripts": {
+    "start": "node moviefinder-mcp-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

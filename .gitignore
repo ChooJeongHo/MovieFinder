@@ -11,3 +11,6 @@
 local.properties
 .omc/
 *.hprof
+.claude/
+node_modules/
+screenshot_test/
