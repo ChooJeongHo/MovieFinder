@@ -1,5 +1,6 @@
 package com.choo.moviefinder.domain.usecase
 
+import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.repository.FavoriteRepository
 import com.choo.moviefinder.domain.repository.WatchlistRepository
@@ -173,5 +174,41 @@ class FavoriteWatchlistUseCasesTest {
         useCase(testMovie)
 
         assertEquals(testMovie, capturedMovies.first())
+    }
+
+    // --- GetFavoriteMoviesUseCase sortOrder overload ---
+
+    @Test
+    fun `GetFavoriteMoviesUseCase invoke with sortOrder delegates to getFavoriteMoviesSorted`() {
+        val flow = flowOf(listOf(testMovie))
+        every {
+            favoriteRepository.getFavoriteMoviesSorted(FavoriteSortOrder.TITLE)
+        } returns flow
+        val useCase = GetFavoriteMoviesUseCase(favoriteRepository)
+
+        val result = useCase(FavoriteSortOrder.TITLE)
+
+        verify(exactly = 1) {
+            favoriteRepository.getFavoriteMoviesSorted(FavoriteSortOrder.TITLE)
+        }
+        assertEquals(flow, result)
+    }
+
+    // --- GetWatchlistUseCase sortOrder overload ---
+
+    @Test
+    fun `GetWatchlistUseCase invoke with sortOrder delegates to getWatchlistMoviesSorted`() {
+        val flow = flowOf(listOf(testMovie))
+        every {
+            watchlistRepository.getWatchlistMoviesSorted(FavoriteSortOrder.RATING)
+        } returns flow
+        val useCase = GetWatchlistUseCase(watchlistRepository)
+
+        val result = useCase(FavoriteSortOrder.RATING)
+
+        verify(exactly = 1) {
+            watchlistRepository.getWatchlistMoviesSorted(FavoriteSortOrder.RATING)
+        }
+        assertEquals(flow, result)
     }
 }

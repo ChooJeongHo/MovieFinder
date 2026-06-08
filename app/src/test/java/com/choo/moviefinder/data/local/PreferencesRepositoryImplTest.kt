@@ -5,10 +5,12 @@ import androidx.datastore.core.DataStoreFactory
 import app.cash.turbine.test
 import com.choo.moviefinder.domain.model.ThemeMode
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -111,5 +113,22 @@ class PreferencesRepositoryImplTest {
         repository.getLastGoalNotifiedMonth().test {
             assertEquals("2026-03", awaitItem())
         }
+    }
+
+    @Test
+    fun `getThemeMode returns SYSTEM when stored value is invalid`() = testScope.runTest {
+        dataStore.updateData { it.copy(themeMode = "INVALID_THEME") }
+
+        repository.getThemeMode().test {
+            assertEquals(ThemeMode.SYSTEM, awaitItem())
+        }
+    }
+
+    @Test
+    fun `setOnboardingCompleted persists flag to true`() = testScope.runTest {
+        repository.setOnboardingCompleted()
+
+        val settings = dataStore.data.first()
+        assertTrue(settings.onboardingCompleted)
     }
 }

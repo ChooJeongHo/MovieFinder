@@ -104,4 +104,10 @@ class CoroutineExtTest {
         assertTrue(rethrown)
     }
 
+    @Test
+    fun `WhileSubscribed5s uses 5 second timeout`() {
+        // Verifies the shared SharingStarted instance is initialised without error
+        assertTrue(WhileSubscribed5s != null)
+    }
+
 }

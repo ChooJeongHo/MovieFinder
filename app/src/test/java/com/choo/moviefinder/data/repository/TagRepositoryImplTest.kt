@@ -3,6 +3,7 @@ package com.choo.moviefinder.data.repository
 import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.MovieTagEntity
+import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.MovieTag
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -180,5 +181,38 @@ class TagRepositoryImplTest {
         val result = repository.getFavoritesByTag("unknown").first()
 
         assertEquals(emptyList<com.choo.moviefinder.domain.model.Movie>(), result)
+    }
+
+    // --- getFavoritesByTagSorted ---
+
+    @Test
+    fun `getFavoritesByTagSorted ADDED_DATE delegates to getFavoritesByTag`() = runTest {
+        every { movieTagDao.getFavoritesByTag("action") } returns flowOf(emptyList())
+
+        repository.getFavoritesByTagSorted("action", FavoriteSortOrder.ADDED_DATE).first()
+
+        verify(exactly = 1) { movieTagDao.getFavoritesByTag("action") }
+        verify(exactly = 0) { movieTagDao.getFavoritesByTagSortedByTitle(any()) }
+        verify(exactly = 0) { movieTagDao.getFavoritesByTagSortedByRating(any()) }
+    }
+
+    @Test
+    fun `getFavoritesByTagSorted TITLE delegates to getFavoritesByTagSortedByTitle`() = runTest {
+        every { movieTagDao.getFavoritesByTagSortedByTitle("action") } returns flowOf(emptyList())
+
+        repository.getFavoritesByTagSorted("action", FavoriteSortOrder.TITLE).first()
+
+        verify(exactly = 1) { movieTagDao.getFavoritesByTagSortedByTitle("action") }
+        verify(exactly = 0) { movieTagDao.getFavoritesByTag(any()) }
+    }
+
+    @Test
+    fun `getFavoritesByTagSorted RATING delegates to getFavoritesByTagSortedByRating`() = runTest {
+        every { movieTagDao.getFavoritesByTagSortedByRating("action") } returns flowOf(emptyList())
+
+        repository.getFavoritesByTagSorted("action", FavoriteSortOrder.RATING).first()
+
+        verify(exactly = 1) { movieTagDao.getFavoritesByTagSortedByRating("action") }
+        verify(exactly = 0) { movieTagDao.getFavoritesByTag(any()) }
     }
 }

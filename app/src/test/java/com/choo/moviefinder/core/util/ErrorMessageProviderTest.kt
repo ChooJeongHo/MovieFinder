@@ -2,6 +2,7 @@ package com.choo.moviefinder.core.util
 
 import android.content.Context
 import com.choo.moviefinder.R
+import com.choo.moviefinder.domain.model.DomainException
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -260,5 +261,54 @@ class ErrorMessageProviderTest {
 
         assertEquals("rate limited", result)
         verify { context.getString(R.string.error_rate_limited) }
+    }
+
+    // --- DomainException dispatch via domainErrorType() ---
+
+    private val cause = RuntimeException("cause")
+
+    @Test
+    fun `getErrorType returns NETWORK for DomainException NetworkError`() {
+        assertEquals(ErrorType.NETWORK, ErrorMessageProvider.getErrorType(DomainException.NetworkError(cause)))
+    }
+
+    @Test
+    fun `getErrorType returns TIMEOUT for DomainException Timeout`() {
+        assertEquals(ErrorType.TIMEOUT, ErrorMessageProvider.getErrorType(DomainException.Timeout(cause)))
+    }
+
+    @Test
+    fun `getErrorType returns SSL for DomainException SslError`() {
+        assertEquals(ErrorType.SSL, ErrorMessageProvider.getErrorType(DomainException.SslError(cause)))
+    }
+
+    @Test
+    fun `getErrorType returns SERVER for DomainException ServerError`() {
+        assertEquals(ErrorType.SERVER, ErrorMessageProvider.getErrorType(DomainException.ServerError(500, cause)))
+    }
+
+    @Test
+    fun `getErrorType returns UNAUTHORIZED for DomainException Unauthorized`() {
+        assertEquals(ErrorType.UNAUTHORIZED, ErrorMessageProvider.getErrorType(DomainException.Unauthorized(cause)))
+    }
+
+    @Test
+    fun `getErrorType returns NOT_FOUND for DomainException NotFound`() {
+        assertEquals(ErrorType.NOT_FOUND, ErrorMessageProvider.getErrorType(DomainException.NotFound(cause)))
+    }
+
+    @Test
+    fun `getErrorType returns RATE_LIMITED for DomainException RateLimited`() {
+        assertEquals(ErrorType.RATE_LIMITED, ErrorMessageProvider.getErrorType(DomainException.RateLimited(cause)))
+    }
+
+    @Test
+    fun `getErrorType returns PARSE for DomainException ParseError`() {
+        assertEquals(ErrorType.PARSE, ErrorMessageProvider.getErrorType(DomainException.ParseError(cause)))
+    }
+
+    @Test
+    fun `getErrorType returns UNKNOWN for DomainException Unknown`() {
+        assertEquals(ErrorType.UNKNOWN, ErrorMessageProvider.getErrorType(DomainException.Unknown(cause)))
     }
 }

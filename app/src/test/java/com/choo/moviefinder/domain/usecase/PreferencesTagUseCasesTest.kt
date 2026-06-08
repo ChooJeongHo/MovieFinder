@@ -1,5 +1,6 @@
 package com.choo.moviefinder.domain.usecase
 
+import com.choo.moviefinder.domain.model.FavoriteSortOrder
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieTag
 import com.choo.moviefinder.domain.model.ThemeMode
@@ -287,5 +288,21 @@ class PreferencesTagUseCasesTest {
         val result = useCase("drama").first()
 
         assertEquals(listOf(testMovie), result)
+    }
+
+    @Test
+    fun `GetFavoritesByTagUseCase invoke with sortOrder delegates to getFavoritesByTagSorted`() {
+        val flow = flowOf(listOf(testMovie))
+        every {
+            tagRepository.getFavoritesByTagSorted("action", FavoriteSortOrder.TITLE)
+        } returns flow
+        val useCase = GetFavoritesByTagUseCase(tagRepository)
+
+        val result = useCase("action", FavoriteSortOrder.TITLE)
+
+        verify(exactly = 1) {
+            tagRepository.getFavoritesByTagSorted("action", FavoriteSortOrder.TITLE)
+        }
+        assertEquals(flow, result)
     }
 }

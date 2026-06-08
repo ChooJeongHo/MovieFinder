@@ -113,6 +113,18 @@ class MemoRatingPersonUseCasesTest {
         assertEquals("Important note", capturedContents.first())
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `SaveMemoUseCase throws for non-positive movieId`() = runTest {
+        val useCase = SaveMemoUseCase(memoRepository)
+        useCase(0, "content")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `SaveMemoUseCase throws for blank content`() = runTest {
+        val useCase = SaveMemoUseCase(memoRepository)
+        useCase(1, "   ")
+    }
+
     // --- UpdateMemoUseCase ---
 
     @Test
