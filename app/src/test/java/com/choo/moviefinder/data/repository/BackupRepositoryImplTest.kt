@@ -6,6 +6,7 @@ import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.UserRatingDao
+import com.choo.moviefinder.data.local.dao.WatchHistoryDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.MemoEntity
@@ -36,6 +37,7 @@ class BackupRepositoryImplTest {
     private lateinit var userRatingDao: UserRatingDao
     private lateinit var memoDao: MemoDao
     private lateinit var movieTagDao: MovieTagDao
+    private lateinit var watchHistoryDao: WatchHistoryDao
     private lateinit var repository: BackupRepositoryImpl
 
     private val testFavoriteEntity = FavoriteMovieEntity(
@@ -53,8 +55,9 @@ class BackupRepositoryImplTest {
         userRatingDao = mockk(relaxed = true)
         memoDao = mockk(relaxed = true)
         movieTagDao = mockk(relaxed = true)
+        watchHistoryDao = mockk(relaxed = true)
         repository = BackupRepositoryImpl(
-            database, favoriteMovieDao, watchlistDao, userRatingDao, memoDao, movieTagDao
+            database, favoriteMovieDao, watchlistDao, userRatingDao, memoDao, movieTagDao, watchHistoryDao
         )
         coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
             @Suppress("UNCHECKED_CAST")

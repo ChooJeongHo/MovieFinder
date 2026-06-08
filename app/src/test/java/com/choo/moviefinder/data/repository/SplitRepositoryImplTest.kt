@@ -114,7 +114,9 @@ class SplitRepositoryImplTest {
         userRatingRepo = UserRatingRepositoryImpl(userRatingDao)
         memoRepo = MemoRepositoryImpl(memoDao)
         personRepo = PersonRepositoryImpl(apiService)
-        backupRepo = BackupRepositoryImpl(database, favoriteMovieDao, watchlistDao, userRatingDao, memoDao, movieTagDao)
+        backupRepo = BackupRepositoryImpl(
+            database, favoriteMovieDao, watchlistDao, userRatingDao, memoDao, movieTagDao, watchHistoryDao
+        )
     }
 
     // --- FavoriteRepository ---
