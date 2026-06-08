@@ -62,6 +62,10 @@ abstract class WatchHistoryDao {
     )
     abstract fun getDailyWatchCounts(since: Long): Flow<List<DailyCount>>
 
+    // 모든 시청 기록을 한 번에 조회 (백업/내보내기용 일회성 쿼리)
+    @Query("SELECT * FROM watch_history ORDER BY watchedAt DESC")
+    abstract suspend fun getAllHistoryOnce(): List<WatchHistoryEntity>
+
     // 시청 기록과 장르를 하나의 트랜잭션으로 원자적 삽입
     // insert()가 반환한 rowId를 장르 엔티티의 watchHistoryId로 사용하여 FK 정합성 보장
     @Transaction

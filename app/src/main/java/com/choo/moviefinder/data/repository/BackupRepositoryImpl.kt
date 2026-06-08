@@ -2,21 +2,27 @@ package com.choo.moviefinder.data.repository
 
 import androidx.room.withTransaction
 import com.choo.moviefinder.data.local.MovieDatabase
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.UserRatingDao
+import com.choo.moviefinder.data.local.dao.WatchHistoryDao
 import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.MemoEntity
 import com.choo.moviefinder.data.local.entity.MovieTagEntity
 import com.choo.moviefinder.data.local.entity.UserRatingEntity
+import com.choo.moviefinder.data.local.entity.WatchHistoryEntity
 import com.choo.moviefinder.data.local.entity.WatchlistEntity
 import com.choo.moviefinder.data.local.entity.toBackupMovie
 import com.choo.moviefinder.domain.model.BackupMemo
 import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.BackupRating
 import com.choo.moviefinder.domain.model.BackupTag
+import com.choo.moviefinder.domain.model.BackupWatchHistory
 import com.choo.moviefinder.domain.model.UserDataBackup
 import com.choo.moviefinder.domain.repository.BackupRepository
 import javax.inject.Inject
@@ -27,10 +33,11 @@ class BackupRepositoryImpl @Inject constructor(
     private val watchlistDao: WatchlistDao,
     private val userRatingDao: UserRatingDao,
     private val memoDao: MemoDao,
-    private val movieTagDao: MovieTagDao
+    private val movieTagDao: MovieTagDao,
+    private val watchHistoryDao: WatchHistoryDao
 ) : BackupRepository {
 
-    // 즐겨찾기, 워치리스트, 평점, 메모, 태그를 백업 모델로 내보낸다
+    // 즐겨찾기, 워치리스트, 평점, 메모, 태그, 시청기록을 백업 모델로 내보낸다
     override suspend fun exportUserData(): UserDataBackup = database.withTransaction {
         val favorites = favoriteMovieDao.getAllFavoritesOnce().map { it.toBackupMovie() }
         val watchlist = watchlistDao.getAllWatchlistOnce().map { it.toBackupMovie() }
@@ -52,12 +59,27 @@ class BackupRepositoryImpl @Inject constructor(
                 addedAt = entity.addedAt
             )
         }
+        val watchHistory = watchHistoryDao.getAllHistoryOnce().map { entity ->
+            BackupWatchHistory(
+                movieId = entity.movieId,
+                title = entity.title,
+                posterPath = entity.posterPath,
+                backdropPath = entity.backdropPath,
+                overview = entity.overview,
+                releaseDate = entity.releaseDate,
+                voteAverage = entity.voteAverage,
+                voteCount = entity.voteCount,
+                watchedAt = entity.watchedAt,
+                genres = entity.genres
+            )
+        }
         UserDataBackup(
             favorites = favorites,
             watchlist = watchlist,
             ratings = ratings,
             memos = memos,
-            tags = tags
+            tags = tags,
+            watchHistory = watchHistory
         )
     }
 
@@ -69,6 +91,7 @@ class BackupRepositoryImpl @Inject constructor(
             restoreRatings(backup.ratings)
             restoreMemos(backup.memos)
             restoreTags(backup.tags)
+            restoreWatchHistory(backup.watchHistory)
         }
     }
 
@@ -124,4 +147,30 @@ class BackupRepositoryImpl @Inject constructor(
         }
         if (entities.isNotEmpty()) movieTagDao.insertAll(entities)
     }
+
+    private suspend fun restoreWatchHistory(history: List<BackupWatchHistory>) {
+        history.forEach { item ->
+            watchHistoryDao.insert(
+                WatchHistoryEntity(
+                    movieId = item.movieId,
+                    title = item.title,
+                    posterPath = item.posterPath,
+                    backdropPath = item.backdropPath,
+                    overview = item.overview,
+                    releaseDate = item.releaseDate,
+                    voteAverage = item.voteAverage,
+                    voteCount = item.voteCount,
+                    watchedAt = item.watchedAt,
+                    yearMonth = item.watchedAt.toYearMonth(),
+                    genres = item.genres
+                )
+            )
+        }
+    }
+}
+
+private fun Long.toYearMonth(): String {
+    val date = Instant.fromEpochMilliseconds(this)
+        .toLocalDateTime(TimeZone.currentSystemDefault()).date
+    return "${date.year}-${date.monthNumber.toString().padStart(2, '0')}"
 }

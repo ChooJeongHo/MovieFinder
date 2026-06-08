@@ -13,7 +13,8 @@ data class UserDataBackup(
     val watchlist: List<BackupMovie> = emptyList(),
     val ratings: List<BackupRating> = emptyList(),
     val memos: List<BackupMemo> = emptyList(),
-    val tags: List<BackupTag> = emptyList()
+    val tags: List<BackupTag> = emptyList(),
+    val watchHistory: List<BackupWatchHistory> = emptyList()
 )
 
 @Serializable
@@ -48,4 +49,18 @@ data class BackupTag(
     val movieId: Int,
     val tagName: String,
     val addedAt: Long = 0
+)
+
+@Serializable
+data class BackupWatchHistory(
+    val movieId: Int,
+    val title: String,
+    val posterPath: String? = null,
+    val backdropPath: String? = null,
+    val overview: String = "",
+    val releaseDate: String = "",
+    val voteAverage: Double = 0.0,
+    val voteCount: Int = 0,
+    val watchedAt: Long,
+    val genres: String = ""
 )
