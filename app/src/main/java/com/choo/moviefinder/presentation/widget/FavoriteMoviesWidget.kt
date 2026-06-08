@@ -25,7 +25,6 @@ class FavoriteMoviesWidget : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        FavoriteMoviesRemoteViewsFactory.releaseDatabase()
     }
 
     // 새로고침 브로드캐스트 수신 시 위젯 데이터 갱신 트리거

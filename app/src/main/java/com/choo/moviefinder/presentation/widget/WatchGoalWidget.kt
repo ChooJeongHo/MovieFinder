@@ -7,19 +7,26 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
-import androidx.room.Room
 import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.currentMonthStartMillis
-import com.choo.moviefinder.data.local.MovieDatabase
-import com.choo.moviefinder.data.local.UserSettings
-import com.choo.moviefinder.di.DatabaseModule
+import com.choo.moviefinder.data.local.dao.WatchHistoryDao
+import com.choo.moviefinder.domain.repository.PreferencesRepository
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
 import timber.log.Timber
-import java.io.File
 
 class WatchGoalWidget : AppWidgetProvider() {
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface WatchGoalWidgetEntryPoint {
+        fun watchHistoryDao(): WatchHistoryDao
+        fun preferencesRepository(): PreferencesRepository
+    }
 
     override fun onUpdate(
         context: Context,
@@ -29,11 +36,6 @@ class WatchGoalWidget : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
-    }
-
-    override fun onDisabled(context: Context) {
-        super.onDisabled(context)
-        WatchGoalWidgetDb.release()
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -80,53 +82,23 @@ class WatchGoalWidget : AppWidgetProvider() {
 
         private fun loadData(context: Context): Pair<Int, Int> {
             return try {
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    context.applicationContext,
+                    WatchGoalWidgetEntryPoint::class.java
+                )
                 runBlocking {
-                    val db = WatchGoalWidgetDb.getDb(context.applicationContext)
-                    val watched = db.watchHistoryDao()
+                    val watched = entryPoint.watchHistoryDao()
                         .getCountSince(currentMonthStartMillis())
                         .first()
-
-                    val settingsFile = File(context.filesDir, "datastore/user_settings.json")
-                    val goal = if (settingsFile.exists()) {
-                        runCatching {
-                            Json.decodeFromString<UserSettings>(settingsFile.readText()).monthlyWatchGoal
-                        }.getOrDefault(0)
-                    } else {
-                        0
-                    }
-
+                    val goal = entryPoint.preferencesRepository()
+                        .getMonthlyWatchGoal()
+                        .first()
                     Pair(watched, goal)
                 }
             } catch (e: Exception) {
                 Timber.w(e, "위젯: 시청 목표 데이터 로드 실패")
                 Pair(0, 0)
             }
-        }
-    }
-}
-
-internal object WatchGoalWidgetDb {
-    @Volatile private var instance: MovieDatabase? = null
-
-    // 앱과 동일한 마이그레이션을 적용해야 함 — 누락 시 위젯이 구버전 DB를 열 때
-    // destructive fallback으로 사용자 데이터가 전부 삭제될 수 있다
-    fun getDb(context: Context): MovieDatabase =
-        instance ?: synchronized(this) {
-            instance ?: Room.databaseBuilder(
-                context.applicationContext,
-                MovieDatabase::class.java,
-                "movie_finder_db"
-            )
-                .addMigrations(*DatabaseModule.ALL_MIGRATIONS)
-                .fallbackToDestructiveMigration(dropAllTables = true)
-                .build()
-                .also { instance = it }
-        }
-
-    fun release() {
-        synchronized(this) {
-            instance?.close()
-            instance = null
         }
     }
 }
