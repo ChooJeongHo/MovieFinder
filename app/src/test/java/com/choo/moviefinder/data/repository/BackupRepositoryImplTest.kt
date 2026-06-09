@@ -12,10 +12,12 @@ import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.MemoEntity
 import com.choo.moviefinder.data.local.entity.MovieTagEntity
 import com.choo.moviefinder.data.local.entity.UserRatingEntity
+import com.choo.moviefinder.data.local.entity.WatchHistoryEntity
 import com.choo.moviefinder.domain.model.BackupMemo
 import com.choo.moviefinder.domain.model.BackupMovie
 import com.choo.moviefinder.domain.model.BackupRating
 import com.choo.moviefinder.domain.model.BackupTag
+import com.choo.moviefinder.domain.model.BackupWatchHistory
 import com.choo.moviefinder.domain.model.UserDataBackup
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -199,5 +201,62 @@ class BackupRepositoryImplTest {
         coVerify(exactly = 0) { userRatingDao.insertAll(any()) }
         coVerify(exactly = 0) { memoDao.insertAll(any()) }
         coVerify(exactly = 0) { movieTagDao.insertAll(any()) }
+    }
+
+    // ── watchHistory export / import ────────────────────────────
+
+    @Test
+    fun `exportUserData maps watchHistory correctly`() = runTest {
+        coEvery { favoriteMovieDao.getAllFavoritesOnce() } returns emptyList()
+        coEvery { watchlistDao.getAllWatchlistOnce() } returns emptyList()
+        coEvery { userRatingDao.getAllRatings() } returns emptyList()
+        coEvery { memoDao.getAllMemos() } returns emptyList()
+        coEvery { movieTagDao.getAllTagsOnce() } returns emptyList()
+        coEvery { watchHistoryDao.getAllHistoryOnce() } returns listOf(
+            WatchHistoryEntity(
+                rowId = 1, movieId = 42, title = "Inception",
+                posterPath = "/poster.jpg", backdropPath = null,
+                overview = "A thief...", releaseDate = "2010-07-16",
+                voteAverage = 8.8, voteCount = 30000,
+                watchedAt = 5000L, yearMonth = "2010-07", genres = "Action"
+            )
+        )
+
+        val backup = repository.exportUserData()
+
+        assertEquals(1, backup.watchHistory.size)
+        with(backup.watchHistory[0]) {
+            assertEquals(42, movieId)
+            assertEquals("Inception", title)
+            assertEquals(5000L, watchedAt)
+            assertEquals("Action", genres)
+        }
+    }
+
+    @Test
+    fun `importUserData calls insertAll for non-empty watchHistory`() = runTest {
+        val backup = UserDataBackup(
+            favorites = emptyList(), watchlist = emptyList(),
+            ratings = emptyList(), memos = emptyList(), tags = emptyList(),
+            watchHistory = listOf(
+                BackupWatchHistory(movieId = 42, title = "Inception", watchedAt = 5000L)
+            )
+        )
+
+        repository.importUserData(backup)
+
+        coVerify { watchHistoryDao.insertAll(any()) }
+    }
+
+    @Test
+    fun `importUserData skips watchHistory insertAll when watchHistory is empty`() = runTest {
+        repository.importUserData(
+            UserDataBackup(
+                favorites = emptyList(), watchlist = emptyList(), ratings = emptyList(),
+                memos = emptyList(), tags = emptyList(), watchHistory = emptyList()
+            )
+        )
+
+        coVerify(exactly = 0) { watchHistoryDao.insertAll(any()) }
     }
 }

@@ -149,23 +149,22 @@ class BackupRepositoryImpl @Inject constructor(
     }
 
     private suspend fun restoreWatchHistory(history: List<BackupWatchHistory>) {
-        history.forEach { item ->
-            watchHistoryDao.insert(
-                WatchHistoryEntity(
-                    movieId = item.movieId,
-                    title = item.title,
-                    posterPath = item.posterPath,
-                    backdropPath = item.backdropPath,
-                    overview = item.overview,
-                    releaseDate = item.releaseDate,
-                    voteAverage = item.voteAverage,
-                    voteCount = item.voteCount,
-                    watchedAt = item.watchedAt,
-                    yearMonth = item.watchedAt.toYearMonth(),
-                    genres = item.genres
-                )
+        val entities = history.map { item ->
+            WatchHistoryEntity(
+                movieId = item.movieId,
+                title = item.title,
+                posterPath = item.posterPath,
+                backdropPath = item.backdropPath,
+                overview = item.overview,
+                releaseDate = item.releaseDate,
+                voteAverage = item.voteAverage,
+                voteCount = item.voteCount,
+                watchedAt = item.watchedAt,
+                yearMonth = item.watchedAt.toYearMonth(),
+                genres = item.genres
             )
         }
+        if (entities.isNotEmpty()) watchHistoryDao.insertAll(entities)
     }
 }
 
