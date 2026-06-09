@@ -85,7 +85,7 @@ class BackupRepositoryImplTest {
         assertEquals(1, backup.favorites.size)
         assertEquals(1, backup.favorites[0].id)
         assertEquals("Test Movie", backup.favorites[0].title)
-        assertEquals(9999L, backup.favorites[0].addedAt) // intentional failure for autofix-pr test
+        assertEquals(1000L, backup.favorites[0].addedAt)
     }
 
     @Test
