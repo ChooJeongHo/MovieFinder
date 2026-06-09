@@ -66,6 +66,10 @@ abstract class WatchHistoryDao {
     @Query("SELECT * FROM watch_history ORDER BY watchedAt DESC")
     abstract suspend fun getAllHistoryOnce(): List<WatchHistoryEntity>
 
+    // 시청 기록 목록을 일괄 삽입한다 (복원/가져오기용 배치 처리)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    abstract suspend fun insertAll(entities: List<WatchHistoryEntity>): List<Long>
+
     // 시청 기록과 장르를 하나의 트랜잭션으로 원자적 삽입
     // insert()가 반환한 rowId를 장르 엔티티의 watchHistoryId로 사용하여 FK 정합성 보장
     @Transaction
