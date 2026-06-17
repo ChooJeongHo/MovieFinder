@@ -9,7 +9,10 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -18,6 +21,7 @@ class ExportImportUseCaseTest {
     private lateinit var repository: BackupRepository
     private lateinit var exportUseCase: ExportUserDataUseCase
     private lateinit var importUseCase: ImportUserDataUseCase
+    private val json = Json { ignoreUnknownKeys = true }
 
     private val testBackup = UserDataBackup(
         version = 1,
@@ -47,8 +51,8 @@ class ExportImportUseCaseTest {
     @Before
     fun setup() {
         repository = mockk()
-        exportUseCase = ExportUserDataUseCase(repository)
-        importUseCase = ImportUserDataUseCase(repository)
+        exportUseCase = ExportUserDataUseCase(repository, json)
+        importUseCase = ImportUserDataUseCase(repository, json)
     }
 
     @Test
@@ -61,34 +65,37 @@ class ExportImportUseCaseTest {
     }
 
     @Test
-    fun `exportUserData returns correct backup data`() = runTest {
+    fun `exportUserData returns json string with correct data`() = runTest {
         coEvery { repository.exportUserData() } returns testBackup
 
         val result = exportUseCase()
 
-        assertEquals(testBackup, result)
-        assertEquals(1, result.favorites.size)
-        assertEquals("Favorite Movie", result.favorites[0].title)
-        assertEquals(1, result.ratings.size)
-        assertEquals(4.5f, result.ratings[0].rating)
-        assertEquals(1, result.memos.size)
-        assertEquals("Amazing film", result.memos[0].content)
+        assertTrue(result.isNotBlank())
+        val decoded = json.decodeFromString<UserDataBackup>(result)
+        assertEquals(1, decoded.favorites.size)
+        assertEquals("Favorite Movie", decoded.favorites[0].title)
+        assertEquals(1, decoded.ratings.size)
+        assertEquals(4.5f, decoded.ratings[0].rating)
+        assertEquals(1, decoded.memos.size)
+        assertEquals("Amazing film", decoded.memos[0].content)
     }
 
     @Test
     fun `importUserData delegates to repository`() = runTest {
         coEvery { repository.importUserData(any()) } returns Unit
+        val jsonString = json.encodeToString(testBackup)
 
-        importUseCase(testBackup)
+        importUseCase(jsonString)
 
         coVerify(exactly = 1) { repository.importUserData(any()) }
     }
 
     @Test
-    fun `importUserData passes backup to repository`() = runTest {
+    fun `importUserData passes correct backup to repository`() = runTest {
         coEvery { repository.importUserData(testBackup) } returns Unit
+        val jsonString = json.encodeToString(testBackup)
 
-        importUseCase(testBackup)
+        importUseCase(jsonString)
 
         coVerify(exactly = 1) { repository.importUserData(testBackup) }
     }

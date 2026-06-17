@@ -4,28 +4,22 @@ import app.cash.turbine.test
 import com.choo.moviefinder.domain.model.ScheduledReminder
 import com.choo.moviefinder.domain.usecase.CancelReminderUseCase
 import com.choo.moviefinder.domain.usecase.GetScheduledRemindersUseCase
+import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ReminderHistoryViewModelTest {
-
-    private val testDispatcher = StandardTestDispatcher()
+class ReminderHistoryViewModelTest : CoroutineTestBase() {
 
     private lateinit var getScheduledRemindersUseCase: GetScheduledRemindersUseCase
     private lateinit var cancelReminderUseCase: CancelReminderUseCase
@@ -47,14 +41,8 @@ class ReminderHistoryViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         getScheduledRemindersUseCase = mockk()
         cancelReminderUseCase = mockk()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): ReminderHistoryViewModel {

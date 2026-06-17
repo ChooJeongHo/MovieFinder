@@ -1,14 +1,15 @@
 package com.choo.moviefinder.domain.usecase
 
-import com.choo.moviefinder.domain.model.UserDataBackup
 import com.choo.moviefinder.domain.repository.BackupRepository
 import dagger.Reusable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 @Reusable
 class ExportUserDataUseCase @Inject constructor(
-    private val repository: BackupRepository
+    private val repository: BackupRepository,
+    private val json: Json
 ) {
-    // 사용자 데이터(즐겨찾기, 워치리스트, 평점, 메모)를 백업 모델로 내보낸다
-    suspend operator fun invoke(): UserDataBackup = repository.exportUserData()
+    suspend operator fun invoke(): String = json.encodeToString(repository.exportUserData())
 }

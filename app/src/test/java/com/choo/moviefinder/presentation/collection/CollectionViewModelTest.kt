@@ -6,17 +6,13 @@ import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.CollectionDetail
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.GetCollectionUseCase
+import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -25,9 +21,7 @@ import java.io.IOException
 import java.net.UnknownHostException
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class CollectionViewModelTest {
-
-    private val testDispatcher = StandardTestDispatcher()
+class CollectionViewModelTest : CoroutineTestBase() {
 
     private lateinit var getCollectionUseCase: GetCollectionUseCase
 
@@ -53,13 +47,7 @@ class CollectionViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         getCollectionUseCase = mockk()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(collectionId: Int = 10): CollectionViewModel {

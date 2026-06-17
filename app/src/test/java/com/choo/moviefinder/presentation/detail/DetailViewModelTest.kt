@@ -25,19 +25,15 @@ import com.choo.moviefinder.domain.usecase.GetTmdbAccessTokenUseCase
 import com.choo.moviefinder.domain.usecase.SubmitTmdbRatingUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
+import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -47,9 +43,7 @@ import java.net.UnknownHostException
 import androidx.lifecycle.SavedStateHandle
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class DetailViewModelTest {
-
-    private val testDispatcher = StandardTestDispatcher()
+class DetailViewModelTest : CoroutineTestBase() {
 
     private lateinit var getMovieDetailUseCase: GetMovieDetailUseCase
     private lateinit var getMovieCreditsUseCase: GetMovieCreditsUseCase
@@ -104,7 +98,6 @@ class DetailViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         getMovieDetailUseCase = mockk()
         getMovieCreditsUseCase = mockk()
         getSimilarMoviesUseCase = mockk()
@@ -145,11 +138,6 @@ class DetailViewModelTest {
 
         every { isFavoriteUseCase(any()) } returns flowOf(false)
         every { isInWatchlistUseCase(any()) } returns flowOf(false)
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(movieId: Int = 1): DetailViewModel {

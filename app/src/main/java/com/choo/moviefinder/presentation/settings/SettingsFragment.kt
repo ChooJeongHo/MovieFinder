@@ -44,7 +44,7 @@ class SettingsFragment : Fragment() {
     private val viewModel: SettingsViewModel by viewModels()
     private var activeDialog: Dialog? = null
 
-    // 내보내기: JSON 파일 저장 위치 선택 후 내용을 기록
+    // 내보내기: JSON 파일 저장 위치 선택 후 내용 기록
     private val createDocumentLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
@@ -68,7 +68,7 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    // 가져오기: JSON 파일 선택 후 내용을 읽어 ViewModel에 전달
+    // 가져오기: JSON 파일 선택 후 ViewModel에 전달
     private val openDocumentLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -99,7 +99,6 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    // 설정 화면 레이아웃을 인플레이트하고 바인딩 초기화
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -109,7 +108,7 @@ class SettingsFragment : Fragment() {
         return binding.root
     }
 
-    // 뷰 생성 후 설정 항목 클릭 리스너, 테마/언어 관찰 등 UI 초기화
+    // 클릭 리스너, 앱 버전, 언어 표시, Flow 수집 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupClickListeners()
@@ -118,7 +117,6 @@ class SettingsFragment : Fragment() {
         observeViewModelFlows()
     }
 
-    // 테마, 언어, 통계, 시청 목표, 캐시 삭제, 시청기록 삭제, 내보내기, 가져오기, 로그 공유 항목 클릭 리스너 등록
     private fun setupClickListeners() {
         binding.itemTheme.setOnClickListener { showThemeDialog() }
         binding.itemLanguage.setOnClickListener { showLanguageDialog() }
@@ -141,7 +139,7 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    // 디버그 로그 파일을 FileProvider를 통해 공유한다
+    // FileProvider를 통해 로그 파일 공유
     private fun shareDebugLogs() {
         val logFile = FileLoggingTree.getLogFile(requireContext())
         if (!logFile.exists()) {
@@ -161,26 +159,23 @@ class SettingsFragment : Fragment() {
         startActivity(Intent.createChooser(intent, getString(R.string.share_debug_logs)))
     }
 
-    // 시청 통계 화면으로 이동
     private fun navigateToStats() {
         if (findNavController().currentDestination?.id == R.id.settingsFragment) {
             findNavController().navigate(R.id.action_settings_to_stats)
         }
     }
 
-    // 알림 기록 화면으로 이동
     private fun navigateToReminderHistory() {
         if (findNavController().currentDestination?.id == R.id.settingsFragment) {
             findNavController().navigate(R.id.action_settings_to_reminder_history)
         }
     }
 
-    // 앱 버전 정보 텍스트 설정
     private fun setupAppInfo() {
         binding.tvAppVersion.text = getString(R.string.settings_version, BuildConfig.VERSION_NAME)
     }
 
-    // 모든 ViewModel Flow를 단일 repeatOnLifecycle 블록에서 병렬 수집
+    // 단일 repeatOnLifecycle 블록에서 병렬 수집
     private fun observeViewModelFlows() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -235,7 +230,7 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    // TMDB 연결 상태, 인증 URL 열기, 동기화 결과/상태 Flow 수집
+    // TMDB 연결 상태·인증 URL·동기화 결과·동기화 진행 상태 수집
     private fun observeTmdbFlows(scope: CoroutineScope) {
         scope.launch {
             viewModel.tmdbAccessToken.collect { token ->
@@ -257,7 +252,15 @@ class SettingsFragment : Fragment() {
             }
         }
         scope.launch {
-            viewModel.syncResult.collect { message ->
+            viewModel.syncResult.collect { result ->
+                val message = when (result) {
+                    is SyncResult.Success -> getString(
+                        R.string.tmdb_sync_success,
+                        result.favoritesAdded,
+                        result.watchlistAdded
+                    )
+                    is SyncResult.Failed -> getString(R.string.tmdb_sync_failed, result.message)
+                }
                 Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
             }
         }
@@ -273,7 +276,7 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    // 테마 선택 다이얼로그 표시 (라이트/다크/시스템)
+    // (라이트/다크/시스템)
     private fun showThemeDialog() {
         val themes = arrayOf(
             getString(R.string.theme_light),
@@ -293,7 +296,7 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    // 언어 선택 다이얼로그 표시 (시스템/한국어/영어)
+    // (시스템/한국어/영어)
     private fun showLanguageDialog() {
         val languageLabels = arrayOf(
             getString(R.string.language_system),
@@ -323,7 +326,6 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    // 현재 설정된 앱 언어를 텍스트로 표시
     private fun updateLanguageDisplay() {
         val currentLocales = AppCompatDelegate.getApplicationLocales()
         binding.tvLanguageValue.text = if (currentLocales.isEmpty) {
@@ -337,7 +339,7 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    // 이번 달 시청 목표 편수 설정 다이얼로그 표시 (NumberPicker 0~100)
+    // NumberPicker 0~100
     private fun showWatchGoalDialog() {
         val numberPicker = android.widget.NumberPicker(requireContext()).apply {
             minValue = 0
@@ -357,7 +359,6 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    // 캐시 삭제 확인 다이얼로그 표시
     private fun showClearCacheDialog() {
         activeDialog?.dismiss()
         activeDialog = MaterialAlertDialogBuilder(requireContext())
@@ -369,7 +370,7 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    // Coil 메모리 및 디스크 이미지 캐시 삭제 (디스크 I/O는 IO 스레드에서 수행)
+    // Coil 메모리+디스크 캐시 삭제, 디스크 I/O는 IO Dispatcher에서
     private fun clearCache() {
         val imageLoader = requireContext().imageLoader
         imageLoader.memoryCache?.clear()
@@ -381,7 +382,6 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    // 시청 기록 삭제 확인 다이얼로그 표시
     private fun showClearWatchHistoryDialog() {
         activeDialog?.dismiss()
         activeDialog = MaterialAlertDialogBuilder(requireContext())
@@ -393,7 +393,6 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    // 가져오기 확인 다이얼로그 표시
     private fun showImportConfirmDialog(json: String) {
         activeDialog?.dismiss()
         activeDialog = MaterialAlertDialogBuilder(requireContext())
@@ -406,7 +405,7 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    // 다이얼로그 dismiss 및 바인딩 null 처리
+    // activeDialog dismiss + 바인딩 null
     override fun onDestroyView() {
         super.onDestroyView()
         activeDialog?.dismiss()

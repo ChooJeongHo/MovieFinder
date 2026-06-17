@@ -8,26 +8,20 @@ import com.choo.moviefinder.domain.usecase.GetTrendingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetUpcomingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
 import app.cash.turbine.test
+import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class HomeViewModelTest {
-
-    private val testDispatcher = StandardTestDispatcher()
+class HomeViewModelTest : CoroutineTestBase() {
 
     private lateinit var getNowPlayingMoviesUseCase: GetNowPlayingMoviesUseCase
     private lateinit var getPopularMoviesUseCase: GetPopularMoviesUseCase
@@ -42,7 +36,6 @@ class HomeViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         getNowPlayingMoviesUseCase = mockk()
         getPopularMoviesUseCase = mockk()
         getTrendingMoviesUseCase = mockk()
@@ -54,11 +47,6 @@ class HomeViewModelTest {
         every { getTrendingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getUpcomingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getWatchHistoryUseCase() } returns flowOf(emptyList())
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): HomeViewModel {

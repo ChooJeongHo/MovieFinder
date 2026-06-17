@@ -13,19 +13,15 @@ import com.choo.moviefinder.domain.usecase.SearchLocalMoviesUseCase
 import com.choo.moviefinder.domain.usecase.SearchMoviesUseCase
 import com.choo.moviefinder.domain.usecase.SearchPersonUseCase
 import androidx.lifecycle.SavedStateHandle
+import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -33,9 +29,7 @@ import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class SearchViewModelTest {
-
-    private val testDispatcher = StandardTestDispatcher()
+class SearchViewModelTest : CoroutineTestBase() {
 
     private lateinit var searchMoviesUseCase: SearchMoviesUseCase
     private lateinit var discoverMoviesUseCase: DiscoverMoviesUseCase
@@ -50,7 +44,6 @@ class SearchViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         searchMoviesUseCase = mockk()
         discoverMoviesUseCase = mockk()
         getGenreListUseCase = mockk()
@@ -65,11 +58,6 @@ class SearchViewModelTest {
         coEvery { getGenreListUseCase() } returns emptyList()
         coEvery { searchLocalMoviesUseCase(any()) } returns emptyList()
         every { getWatchHistoryUseCase() } returns flowOf(emptyList())
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(

@@ -1,6 +1,5 @@
 package com.choo.moviefinder.presentation.settings
 
-import android.content.Context
 import app.cash.turbine.test
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.ThemeMode
@@ -15,29 +14,21 @@ import com.choo.moviefinder.domain.usecase.RevokeTmdbAuthUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import com.choo.moviefinder.domain.usecase.SyncTmdbAccountUseCase
+import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import kotlinx.serialization.json.Json
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class SettingsViewModelTest {
-
-    private val testDispatcher = StandardTestDispatcher()
-    private val context: Context = mockk(relaxed = true)
+class SettingsViewModelTest : CoroutineTestBase() {
 
     private lateinit var getThemeModeUseCase: GetThemeModeUseCase
     private lateinit var setThemeModeUseCase: SetThemeModeUseCase
@@ -53,7 +44,6 @@ class SettingsViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         getThemeModeUseCase = mockk()
         setThemeModeUseCase = mockk()
         clearWatchHistoryUseCase = mockk()
@@ -68,20 +58,12 @@ class SettingsViewModelTest {
         every { getTmdbAccessTokenUseCase() } returns flowOf(null)
     }
 
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
-
-    private val testJson = Json { ignoreUnknownKeys = true }
-
     private fun createViewModel(
         themeFlow: kotlinx.coroutines.flow.Flow<ThemeMode> = flowOf(ThemeMode.SYSTEM)
     ): SettingsViewModel {
         every { getThemeModeUseCase() } returns themeFlow
         every { getMonthlyWatchGoalUseCase() } returns flowOf(0)
         return SettingsViewModel(
-            context,
             getThemeModeUseCase,
             setThemeModeUseCase,
             clearWatchHistoryUseCase,
@@ -89,7 +71,6 @@ class SettingsViewModelTest {
             setMonthlyWatchGoalUseCase,
             exportUserDataUseCase,
             importUserDataUseCase,
-            testJson,
             getTmdbAccessTokenUseCase,
             getTmdbRequestTokenUseCase,
             revokeTmdbAuthUseCase,
@@ -219,7 +200,6 @@ class SettingsViewModelTest {
         every { getThemeModeUseCase() } returns flowOf(ThemeMode.SYSTEM)
         every { getMonthlyWatchGoalUseCase() } returns goalFlow
         return SettingsViewModel(
-            context,
             getThemeModeUseCase,
             setThemeModeUseCase,
             clearWatchHistoryUseCase,
@@ -227,7 +207,6 @@ class SettingsViewModelTest {
             setMonthlyWatchGoalUseCase,
             exportUserDataUseCase,
             importUserDataUseCase,
-            testJson,
             getTmdbAccessTokenUseCase,
             getTmdbRequestTokenUseCase,
             revokeTmdbAuthUseCase,
@@ -282,8 +261,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `exportData emits json string on success`() = runTest {
-        val backup = com.choo.moviefinder.domain.model.UserDataBackup()
-        coEvery { exportUserDataUseCase() } returns backup
+        coEvery { exportUserDataUseCase() } returns """{"version":1}"""
         val viewModel = createViewModel()
 
         viewModel.exportedJson.test {
@@ -321,11 +299,11 @@ class SettingsViewModelTest {
 
     @Test
     fun `importData sends snackbar on error`() = runTest {
+        coEvery { importUserDataUseCase(any()) } throws kotlinx.serialization.SerializationException("parse error")
         val viewModel = createViewModel()
-        val invalidJson = "not valid json"
 
         viewModel.snackbarEvent.test {
-            viewModel.importData(invalidJson)
+            viewModel.importData("anything")
             advanceUntilIdle()
             val errorType = awaitItem()
             assert(errorType == com.choo.moviefinder.core.util.ErrorType.PARSE)

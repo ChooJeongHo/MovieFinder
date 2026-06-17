@@ -6,17 +6,13 @@ import com.choo.moviefinder.domain.model.GenreCount
 import com.choo.moviefinder.domain.model.MonthlyWatchCount
 import com.choo.moviefinder.domain.model.WatchStats
 import com.choo.moviefinder.domain.usecase.GetWatchStatsUseCase
+import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -25,9 +21,7 @@ import org.junit.Test
 import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class StatsViewModelTest {
-
-    private val testDispatcher = StandardTestDispatcher()
+class StatsViewModelTest : CoroutineTestBase() {
 
     private lateinit var getWatchStatsUseCase: GetWatchStatsUseCase
 
@@ -54,13 +48,7 @@ class StatsViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         getWatchStatsUseCase = mockk()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): StatsViewModel {

@@ -7,27 +7,21 @@ import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.PersonDetail
 import com.choo.moviefinder.domain.usecase.GetPersonCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetPersonDetailUseCase
+import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
-import kotlinx.coroutines.test.advanceUntilIdle
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class PersonDetailViewModelTest {
-
-    private val testDispatcher = StandardTestDispatcher()
+class PersonDetailViewModelTest : CoroutineTestBase() {
 
     private lateinit var getPersonDetailUseCase: GetPersonDetailUseCase
     private lateinit var getPersonCreditsUseCase: GetPersonCreditsUseCase
@@ -68,14 +62,8 @@ class PersonDetailViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         getPersonDetailUseCase = mockk()
         getPersonCreditsUseCase = mockk()
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(personId: Int = 123): PersonDetailViewModel {

@@ -21,28 +21,22 @@ import com.choo.moviefinder.domain.usecase.SetWatchlistReminderUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import com.choo.moviefinder.core.notification.WatchlistReminderScheduler
+import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class FavoriteViewModelTest {
-
-    private val testDispatcher = StandardTestDispatcher()
+class FavoriteViewModelTest : CoroutineTestBase() {
 
     private lateinit var getFavoriteMoviesUseCase: GetFavoriteMoviesUseCase
     private lateinit var getFavoritesByTagUseCase: GetFavoritesByTagUseCase
@@ -69,7 +63,6 @@ class FavoriteViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         getFavoriteMoviesUseCase = mockk()
         getFavoritesByTagUseCase = mockk()
         getWatchlistUseCase = mockk()
@@ -92,11 +85,6 @@ class FavoriteViewModelTest {
         every { getAllTagNamesUseCase() } returns flowOf(emptyList())
         every { getAllUserRatingsUseCase() } returns flowOf(emptyMap())
         every { getWatchlistRemindersUseCase() } returns flowOf(emptyList())
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): FavoriteViewModel {

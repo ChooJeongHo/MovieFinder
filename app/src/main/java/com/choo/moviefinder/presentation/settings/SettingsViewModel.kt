@@ -7,7 +7,6 @@ import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.launchWithErrorHandler
 import com.choo.moviefinder.domain.model.ThemeMode
-import com.choo.moviefinder.domain.model.UserDataBackup
 import com.choo.moviefinder.domain.usecase.ClearWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.ExportUserDataUseCase
 import com.choo.moviefinder.domain.usecase.GetMonthlyWatchGoalUseCase
@@ -19,10 +18,7 @@ import com.choo.moviefinder.domain.usecase.RevokeTmdbAuthUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import com.choo.moviefinder.domain.usecase.SyncTmdbAccountUseCase
-import android.content.Context
-import com.choo.moviefinder.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,15 +26,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import timber.log.Timber
 import javax.inject.Inject
+
+sealed class SyncResult {
+    data class Success(val favoritesAdded: Int, val watchlistAdded: Int) : SyncResult()
+    data class Failed(val message: String?) : SyncResult()
+}
 
 @HiltViewModel
 @Suppress("TooManyFunctions")
 class SettingsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     getThemeModeUseCase: GetThemeModeUseCase,
     private val setThemeModeUseCase: SetThemeModeUseCase,
     private val clearWatchHistoryUseCase: ClearWatchHistoryUseCase,
@@ -46,7 +44,6 @@ class SettingsViewModel @Inject constructor(
     private val setMonthlyWatchGoalUseCase: SetMonthlyWatchGoalUseCase,
     private val exportUserDataUseCase: ExportUserDataUseCase,
     private val importUserDataUseCase: ImportUserDataUseCase,
-    private val json: Json,
     getTmdbAccessTokenUseCase: GetTmdbAccessTokenUseCase,
     private val getTmdbRequestTokenUseCase: GetTmdbRequestTokenUseCase,
     private val revokeTmdbAuthUseCase: RevokeTmdbAuthUseCase,
@@ -56,11 +53,11 @@ class SettingsViewModel @Inject constructor(
     val currentThemeMode: StateFlow<ThemeMode> = getThemeModeUseCase()
         .stateIn(viewModelScope, WhileSubscribed5s, ThemeMode.SYSTEM)
 
-    // 이번 달 시청 목표 편수 Flow (0 = 목표 없음)
+    // 0 = 목표 없음
     val monthlyWatchGoal: StateFlow<Int> = getMonthlyWatchGoalUseCase()
         .stateIn(viewModelScope, WhileSubscribed5s, 0)
 
-    // TMDB 액세스 토큰 (null = 미연결)
+    // null = 미연결
     val tmdbAccessToken: StateFlow<String?> = getTmdbAccessTokenUseCase()
         .stateIn(viewModelScope, WhileSubscribed5s, null)
 
@@ -82,13 +79,13 @@ class SettingsViewModel @Inject constructor(
     private val _openTmdbAuth = Channel<String>(Channel.CONFLATED)
     val openTmdbAuth = _openTmdbAuth.receiveAsFlow()
 
-    private val _syncResult = Channel<String>(Channel.CONFLATED)
+    private val _syncResult = Channel<SyncResult>(Channel.CONFLATED)
     val syncResult = _syncResult.receiveAsFlow()
 
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing
 
-    // 파일 저장 런처가 실행되기 전까지 JSON을 임시 보관 (TransactionTooLargeException 방지로 SavedStateHandle 미사용)
+    // TransactionTooLargeException 방지로 SavedStateHandle 미사용
     @Volatile
     var pendingExportJson: String? = null
 
@@ -101,7 +98,7 @@ class SettingsViewModel @Inject constructor(
         pendingRequestToken = null
     }
 
-    // 테마 모드를 DataStore에 저장 (에러 시 Snackbar 피드백)
+    // DataStore에 저장
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("테마 모드를 %s로 설정 실패", mode)
@@ -111,7 +108,7 @@ class SettingsViewModel @Inject constructor(
         setThemeModeUseCase(mode)
     }
 
-    // 이번 달 시청 목표 편수 저장 (에러 시 Snackbar 피드백)
+    // DataStore에 저장
     fun setMonthlyWatchGoal(goal: Int) = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("월간 시청 목표를 %d로 설정 실패", goal)
@@ -121,25 +118,22 @@ class SettingsViewModel @Inject constructor(
         setMonthlyWatchGoalUseCase(goal)
     }
 
-    // 사용자 데이터를 JSON 문자열로 내보낸다 (성공 시 JSON 이벤트, 에러 시 Snackbar)
+    // JSON 문자열로 내보냄 (성공 시 exportedJson 이벤트)
     fun exportData() = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("사용자 데이터 내보내기 실패")
             _snackbarEvent.trySend(it)
         }
     ) {
-        val backup = exportUserDataUseCase()
-        val jsonString = json.encodeToString(backup)
-        _exportedJson.trySend(jsonString)
+        _exportedJson.trySend(exportUserDataUseCase())
     }
 
-    // JSON 문자열에서 사용자 데이터를 가져온다 (성공 시 이벤트, 에러 시 Snackbar)
+    // 성공 시 importSuccess 이벤트
     fun importData(jsonString: String) {
         viewModelScope.launch {
             _isImporting.value = true
             try {
-                val backup = json.decodeFromString<UserDataBackup>(jsonString)
-                importUserDataUseCase(backup)
+                importUserDataUseCase(jsonString)
                 _importSuccess.trySend(Unit)
             } catch (e: CancellationException) {
                 throw e
@@ -152,7 +146,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // 시청 기록 전체 삭제 (성공 시 이벤트, 에러 시 Snackbar)
+    // 성공 시 watchHistoryCleared 이벤트
     fun clearWatchHistory() = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("시청 기록 삭제 실패")
@@ -163,26 +157,21 @@ class SettingsViewModel @Inject constructor(
         _watchHistoryCleared.trySend(Unit)
     }
 
-    // TMDB v4 요청 토큰을 발급하고 Chrome Custom Tab으로 인증 URL을 연다
-    fun startTmdbAuth() {
-        viewModelScope.launch {
-            try {
-                val requestToken = getTmdbRequestTokenUseCase()
-                pendingRequestToken = requestToken
-                val authUrl = "https://www.themoviedb.org/auth/access" +
-                    "?request_token=$requestToken" +
-                    "&redirect_to=moviefinder://auth/callback"
-                _openTmdbAuth.trySend(authUrl)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "TMDB 요청 토큰 발급 실패")
-                _snackbarEvent.trySend(ErrorMessageProvider.getErrorType(e))
-            }
+    // TMDB v4 요청 토큰 발급 후 Chrome Custom Tab으로 인증 URL 오픈
+    fun startTmdbAuth() = viewModelScope.launchWithErrorHandler(
+        onError = {
+            Timber.e("TMDB 요청 토큰 발급 실패")
+            _snackbarEvent.trySend(it)
         }
+    ) {
+        val requestToken = getTmdbRequestTokenUseCase()
+        pendingRequestToken = requestToken
+        val authUrl = "https://www.themoviedb.org/auth/access" +
+            "?request_token=$requestToken" +
+            "&redirect_to=moviefinder://auth/callback"
+        _openTmdbAuth.trySend(authUrl)
     }
 
-    // TMDB 계정 연결을 해제한다
     fun disconnectTmdb() {
         val token = tmdbAccessToken.value ?: return
         viewModelScope.launchWithErrorHandler(
@@ -195,20 +184,19 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // TMDB 즐겨찾기·워치리스트를 로컬 DB에 동기화한다
+    // 즐겨찾기·워치리스트를 로컬 DB에 동기화
+    // _isSyncing finally 보장이 필요해 launchWithErrorHandler 대신 수동 try-catch 유지
     fun syncTmdbAccount() {
         viewModelScope.launch {
             _isSyncing.value = true
             try {
                 val result = syncTmdbAccountUseCase()
-                _syncResult.trySend(
-                    context.getString(R.string.tmdb_sync_success, result.favoritesAdded, result.watchlistAdded)
-                )
+                _syncResult.trySend(SyncResult.Success(result.favoritesAdded, result.watchlistAdded))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "TMDB 동기화 실패")
-                _syncResult.trySend(context.getString(R.string.tmdb_sync_failed, e.message))
+                _syncResult.trySend(SyncResult.Failed(e.message))
             } finally {
                 _isSyncing.value = false
             }
