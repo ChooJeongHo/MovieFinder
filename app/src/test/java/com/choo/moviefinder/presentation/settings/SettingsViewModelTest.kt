@@ -14,6 +14,7 @@ import com.choo.moviefinder.domain.usecase.RevokeTmdbAuthUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
 import com.choo.moviefinder.domain.usecase.SyncTmdbAccountUseCase
+import androidx.lifecycle.SavedStateHandle
 import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -64,6 +65,7 @@ class SettingsViewModelTest : CoroutineTestBase() {
         every { getThemeModeUseCase() } returns themeFlow
         every { getMonthlyWatchGoalUseCase() } returns flowOf(0)
         return SettingsViewModel(
+            SavedStateHandle(),
             getThemeModeUseCase,
             setThemeModeUseCase,
             clearWatchHistoryUseCase,
@@ -200,6 +202,7 @@ class SettingsViewModelTest : CoroutineTestBase() {
         every { getThemeModeUseCase() } returns flowOf(ThemeMode.SYSTEM)
         every { getMonthlyWatchGoalUseCase() } returns goalFlow
         return SettingsViewModel(
+            SavedStateHandle(),
             getThemeModeUseCase,
             setThemeModeUseCase,
             clearWatchHistoryUseCase,
@@ -286,7 +289,7 @@ class SettingsViewModelTest : CoroutineTestBase() {
 
     @Test
     fun `importData sends success event`() = runTest {
-        coEvery { importUserDataUseCase(any()) } returns Unit
+        coEvery { importUserDataUseCase(any()) } returns 0
         val viewModel = createViewModel()
         val validJson = """{"version":1,"exportedAt":0,"favorites":[],"watchlist":[],"ratings":[],"memos":[]}"""
 
@@ -312,7 +315,7 @@ class SettingsViewModelTest : CoroutineTestBase() {
 
     @Test
     fun `isImporting is false after successful import`() = runTest {
-        coEvery { importUserDataUseCase(any()) } returns Unit
+        coEvery { importUserDataUseCase(any()) } returns 0
         val viewModel = createViewModel()
         val validJson = """{"version":1,"exportedAt":0,"favorites":[],"watchlist":[],"ratings":[],"memos":[]}"""
 
