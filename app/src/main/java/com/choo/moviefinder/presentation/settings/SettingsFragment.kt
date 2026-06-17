@@ -211,12 +211,15 @@ class SettingsFragment : Fragment() {
                 launch {
                     viewModel.exportedJson.collect { json ->
                         viewModel.pendingExportJson = json
-                        createDocumentLauncher.launch("moviefinder_backup.json")
+                        if (viewLifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                            createDocumentLauncher.launch("moviefinder_backup.json")
+                        }
                     }
                 }
                 launch {
-                    viewModel.importSuccess.collect {
-                        Snackbar.make(binding.root, R.string.import_success, Snackbar.LENGTH_SHORT).show()
+                    viewModel.importSuccess.collect { count ->
+                        val message = if (count == 0) R.string.import_empty else R.string.import_success
+                        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
                     }
                 }
                 launch {
@@ -247,8 +250,16 @@ class SettingsFragment : Fragment() {
         }
         scope.launch {
             viewModel.openTmdbAuth.collect { url ->
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                startActivity(intent)
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                } catch (e: android.content.ActivityNotFoundException) {
+                    Snackbar.make(binding.root, R.string.tmdb_no_browser, Snackbar.LENGTH_SHORT).show()
+                }
+            }
+        }
+        scope.launch {
+            viewModel.disconnectSuccess.collect {
+                Snackbar.make(binding.root, R.string.tmdb_disconnected, Snackbar.LENGTH_SHORT).show()
             }
         }
         scope.launch {

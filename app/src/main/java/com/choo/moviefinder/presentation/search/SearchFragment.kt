@@ -293,6 +293,13 @@ class SearchFragment : Fragment() {
                 launch { viewModel.snackbarEvent.collect { showSearchSnackbar(it) } }
                 launch { viewModel.offlineResults.collect { handleOfflineResults(it) } }
                 launch {
+                    networkMonitor.isConnected.collect { connected ->
+                        if (connected) {
+                            viewModel.clearOfflineResults()
+                        }
+                    }
+                }
+                launch {
                     viewModel.watchHistory.collect { history ->
                         if (binding.rvSuggestionHistory.isVisible || binding.tvWatchHistorySuggestion.isVisible) {
                             if (history.isNotEmpty()) {

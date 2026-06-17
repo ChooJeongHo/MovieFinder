@@ -166,7 +166,9 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.selectedTab.collect { tab ->
-                    val tabView = binding.tabLayout.getTabAt(tab.ordinal)
+                    val tabView = (0 until binding.tabLayout.tabCount)
+                        .mapNotNull { binding.tabLayout.getTabAt(it) }
+                        .firstOrNull { it.tag == tab }
                     if (tabView?.isSelected == false) tabView.select()
                 }
             }

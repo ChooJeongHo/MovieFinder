@@ -264,6 +264,7 @@ class SearchViewModel @Inject constructor(
         }
         _personSearchQuery.value = ""
         _personResults.value = emptyList()
+        _isPersonSearchLoading.value = false
     }
 
     fun onPersonSearch(query: String) {

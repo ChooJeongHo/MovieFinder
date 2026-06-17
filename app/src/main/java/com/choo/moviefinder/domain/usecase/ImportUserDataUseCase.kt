@@ -11,8 +11,10 @@ class ImportUserDataUseCase @Inject constructor(
     private val repository: BackupRepository,
     private val json: Json
 ) {
-    suspend operator fun invoke(jsonString: String) {
+    suspend operator fun invoke(jsonString: String): Int {
         val backup = json.decodeFromString<UserDataBackup>(jsonString)
         repository.importUserData(backup)
+        return backup.favorites.size + backup.watchlist.size + backup.ratings.size +
+            backup.memos.size + backup.tags.size + backup.watchHistory.size
     }
 }

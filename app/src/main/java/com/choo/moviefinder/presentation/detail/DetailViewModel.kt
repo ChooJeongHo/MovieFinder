@@ -55,6 +55,7 @@ class DetailViewModel @Inject constructor(
 
     private val loadingMutex = Mutex()
     private val toggleMutex = Mutex()
+    private val ratingMutex = Mutex()
 
     val isTmdbConnected: StateFlow<Boolean> = ratingCases.getTmdbAccessToken()
         .map { it != null }
@@ -245,9 +246,16 @@ class DetailViewModel @Inject constructor(
     fun deleteMemo(memoId: Long) = memoDelegate.deleteMemo(memoId)
 
     // TMDB에 영화 평점을 제출한다 (1.0~10.0, RatingBar 0.5~5.0 × 2)
+    // ratingMutex로 인플라이트 중 재제출 방지
     fun submitTmdbRating(rating: Float) = viewModelScope.launchWithErrorHandler(
         onError = { _tmdbRatingResult.trySend(false) }
     ) {
-        _tmdbRatingResult.trySend(ratingCases.submitTmdbRating(movieId, rating))
+        if (ratingMutex.tryLock()) {
+            try {
+                _tmdbRatingResult.trySend(ratingCases.submitTmdbRating(movieId, rating))
+            } finally {
+                ratingMutex.unlock()
+            }
+        }
     }
 }

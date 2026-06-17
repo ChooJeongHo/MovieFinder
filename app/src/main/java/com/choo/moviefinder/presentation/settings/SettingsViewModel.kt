@@ -1,5 +1,6 @@
 package com.choo.moviefinder.presentation.settings
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.util.ErrorMessageProvider
@@ -37,6 +38,7 @@ sealed class SyncResult {
 @HiltViewModel
 @Suppress("TooManyFunctions")
 class SettingsViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     getThemeModeUseCase: GetThemeModeUseCase,
     private val setThemeModeUseCase: SetThemeModeUseCase,
     private val clearWatchHistoryUseCase: ClearWatchHistoryUseCase,
@@ -73,7 +75,7 @@ class SettingsViewModel @Inject constructor(
     private val _exportedJson = Channel<String>(Channel.CONFLATED)
     val exportedJson = _exportedJson.receiveAsFlow()
 
-    private val _importSuccess = Channel<Unit>(Channel.CONFLATED)
+    private val _importSuccess = Channel<Int>(Channel.CONFLATED)
     val importSuccess = _importSuccess.receiveAsFlow()
 
     private val _openTmdbAuth = Channel<String>(Channel.CONFLATED)
@@ -85,14 +87,20 @@ class SettingsViewModel @Inject constructor(
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing
 
+    private val _disconnectSuccess = Channel<Unit>(Channel.CONFLATED)
+    val disconnectSuccess = _disconnectSuccess.receiveAsFlow()
+
     // TransactionTooLargeException 방지로 SavedStateHandle 미사용
     @Volatile
     var pendingExportJson: String? = null
 
     // OAuth CSRF 방지: startTmdbAuth()에서 발급한 요청 토큰을 콜백 검증 전까지 보관
-    @Volatile
-    var pendingRequestToken: String? = null
-        private set
+    // SavedStateHandle로 프로세스 종료 후에도 복원 (짧은 문자열이라 TransactionTooLargeException 위험 없음)
+    var pendingRequestToken: String?
+        get() = savedStateHandle["pendingRequestToken"]
+        private set(value) {
+            savedStateHandle["pendingRequestToken"] = value
+        }
 
     fun clearPendingToken() {
         pendingRequestToken = null
@@ -133,8 +141,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _isImporting.value = true
             try {
-                importUserDataUseCase(jsonString)
-                _importSuccess.trySend(Unit)
+                val count = importUserDataUseCase(jsonString)
+                _importSuccess.trySend(count)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -181,6 +189,7 @@ class SettingsViewModel @Inject constructor(
             }
         ) {
             revokeTmdbAuthUseCase(token)
+            _disconnectSuccess.trySend(Unit)
         }
     }
 
