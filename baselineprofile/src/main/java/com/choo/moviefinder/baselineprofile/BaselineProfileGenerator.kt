@@ -23,6 +23,11 @@ class BaselineProfileGenerator {
     @Test
     fun generateBaselineProfile() {
         rule.collect(packageName = "com.choo.moviefinder") {
+            // 화면 켜기 + 잠금 해제 (에뮬레이터 screen-off 시 profile flush 실패 방지)
+            device.executeShellCommand("input keyevent KEYCODE_WAKEUP")
+            device.executeShellCommand("input keyevent 82")
+            device.waitForIdle(500)
+
             // 1. 콜드 스타트
             pressHome()
             startActivityAndWait()
