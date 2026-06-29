@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="stats_count_format">
+        <item quantity="one">%d movie</item>
+        <item quantity="other">%d movies</item>
+    </plurals>
+
+    <plurals name="stats_genre_item">
+        <item quantity="one">%1$d. %2$s (%3$d movie)</item>
+        <item quantity="other">%1$d. %2$s (%3$d movies)</item>
+    </plurals>
+
+    <plurals name="stats_share_total">
+        <item quantity="one">Total: %d movie</item>
+        <item quantity="other">Total: %d movies</item>
+    </plurals>
+
+    <plurals name="stats_share_monthly">
+        <item quantity="one">This month: %d movie</item>
+        <item quantity="other">This month: %d movies</item>
+    </plurals>
+
+    <plurals name="genre_count">
+        <item quantity="one">%d Genre</item>
+        <item quantity="other">%d Genres</item>
+    </plurals>
+
+    <plurals name="reminder_count">
+        <item quantity="one">%d Reminder</item>
+        <item quantity="other">%d Reminders</item>
+    </plurals>
+</resources>

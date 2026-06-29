@@ -355,7 +355,7 @@ class FavoriteFragment : Fragment() {
     private fun updateReminderChip(reminders: List<WatchlistReminder>) {
         updateReminderChipVisibility()
         if (reminders.isNotEmpty()) {
-            binding.chipReminders.text = getString(R.string.reminder_count, reminders.size)
+            binding.chipReminders.text = resources.getQuantityString(R.plurals.reminder_count, reminders.size, reminders.size)
             binding.chipReminders.setOnClickListener { showRemindersDialog(reminders) }
         }
     }

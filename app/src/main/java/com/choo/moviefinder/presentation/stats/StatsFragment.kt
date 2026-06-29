@@ -118,8 +118,8 @@ class StatsFragment : Fragment() {
         binding.contentLayout.isVisible = true
         binding.errorView.layoutError.isVisible = false
 
-        binding.tvTotalWatched.text = getString(R.string.stats_count_format, stats.totalWatched)
-        binding.tvMonthlyWatched.text = getString(R.string.stats_count_format, stats.monthlyWatched)
+        binding.tvTotalWatched.text = resources.getQuantityString(R.plurals.stats_count_format, stats.totalWatched, stats.totalWatched)
+        binding.tvMonthlyWatched.text = resources.getQuantityString(R.plurals.stats_count_format, stats.monthlyWatched, stats.monthlyWatched)
 
         bindGoalProgress(stats)
 
@@ -143,7 +143,7 @@ class StatsFragment : Fragment() {
             binding.tvGenreEmpty.isVisible = false
             stats.topGenres.forEachIndexed { index, genreCount ->
                 val textView = TextView(requireContext()).apply {
-                    text = getString(R.string.stats_genre_item, index + 1, genreCount.name, genreCount.count)
+                    text = resources.getQuantityString(R.plurals.stats_genre_item, genreCount.count, index + 1, genreCount.name, genreCount.count)
                     setTextAppearance(com.google.android.material.R.style.TextAppearance_MaterialComponents_Body1)
                 }
                 binding.genreContainer.addView(textView)
@@ -290,8 +290,8 @@ class StatsFragment : Fragment() {
         // 테마 색상과 문자열은 메인 스레드에서 미리 해석
         val colors = resolveStatsCardColors()
         val cardTitle = getString(R.string.stats_share_card_title)
-        val totalText = getString(R.string.stats_share_total, stats.totalWatched)
-        val monthlyText = getString(R.string.stats_share_monthly, stats.monthlyWatched)
+        val totalText = resources.getQuantityString(R.plurals.stats_share_total, stats.totalWatched, stats.totalWatched)
+        val monthlyText = resources.getQuantityString(R.plurals.stats_share_monthly, stats.monthlyWatched, stats.monthlyWatched)
         val ratingText = stats.averageRating?.let { getString(R.string.stats_share_rating, it) }
         val genreText = if (stats.topGenres.isNotEmpty()) {
             val names = stats.topGenres.take(3).joinToString(", ") { it.name }

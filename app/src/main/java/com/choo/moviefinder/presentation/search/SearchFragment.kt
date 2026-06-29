@@ -619,7 +619,7 @@ class SearchFragment : Fragment() {
             val chipText = if (selectedNames.size in 1..2) {
                 selectedNames.joinToString(", ") { it.name }
             } else {
-                getString(R.string.genre_count, selectedGenreIds.size)
+                resources.getQuantityString(R.plurals.genre_count, selectedGenreIds.size, selectedGenreIds.size)
             }
             binding.chipGenre.text = chipText
             binding.chipGenre.isCloseIconVisible = true

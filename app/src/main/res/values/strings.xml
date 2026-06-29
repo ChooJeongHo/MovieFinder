@@ -108,7 +108,6 @@
     <string name="offline_no_local_results">로컬 저장 목록에서 결과를 찾을 수 없습니다.</string>
 
     <!-- 알림 기록 -->
-    <string name="reminder_count">알림 %d개</string>
     <string name="reminder_history_title">예약된 알림</string>
     <string name="reminder_none">예약된 알림이 없습니다.</string>
     <string name="reminder_cancel_confirm_title">알림 취소</string>
@@ -161,7 +160,6 @@
     <string name="sort_revenue">수익순</string>
     <string name="genre_select_title">장르 선택</string>
     <string name="genre_confirm">확인</string>
-    <string name="genre_count">장르 %d개</string>
     <string name="genre_load_failed">장르 목록을 불러올 수 없습니다. 다시 시도해주세요.</string>
 
     <!-- 설정 -->
@@ -231,11 +229,9 @@
     <string name="stats_monthly_watched">이번 달 시청 편수</string>
     <string name="stats_average_rating">내 평균 별점</string>
     <string name="stats_top_genres">가장 많이 본 장르 Top 3</string>
-    <string name="stats_count_format">%d편</string>
     <string name="stats_rating_format">%.1f점</string>
     <string name="stats_no_rating">아직 평점을 매기지 않았습니다</string>
     <string name="stats_no_genre_data">장르 데이터가 없습니다</string>
-    <string name="stats_genre_item">%1$d. %2$s (%3$d편)</string>
     <string name="stats_genre_chart_title">장르별 시청 비율</string>
     <string name="stats_monthly_chart_title">월별 시청 편수</string>
     <string name="stats_no_monthly_data">월별 데이터가 없습니다</string>
@@ -338,8 +334,6 @@
     <!-- 시청 통계 공유 -->
     <string name="stats_share_title">시청 통계 공유</string>
     <string name="stats_share_card_title">MovieFinder 시청 통계</string>
-    <string name="stats_share_total">총 시청: %d편</string>
-    <string name="stats_share_monthly">이번 달: %d편</string>
     <string name="stats_share_rating">평균 별점: %.1f</string>
     <string name="stats_share_genres">선호 장르: %s</string>
 

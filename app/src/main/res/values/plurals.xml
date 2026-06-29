@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 한국어는 단수/복수 구별 없음 — all quantities use the same form -->
+    <plurals name="stats_count_format">
+        <item quantity="other">%d편</item>
+    </plurals>
+
+    <plurals name="stats_genre_item">
+        <item quantity="other">%1$d. %2$s (%3$d편)</item>
+    </plurals>
+
+    <plurals name="stats_share_total">
+        <item quantity="other">총 시청: %d편</item>
+    </plurals>
+
+    <plurals name="stats_share_monthly">
+        <item quantity="other">이번 달: %d편</item>
+    </plurals>
+
+    <plurals name="genre_count">
+        <item quantity="other">장르 %d개</item>
+    </plurals>
+
+    <plurals name="reminder_count">
+        <item quantity="other">알림 %d개</item>
+    </plurals>
+</resources>

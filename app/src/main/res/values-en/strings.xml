@@ -99,7 +99,6 @@
     <string name="offline_no_local_results">No results found in local storage.</string>
 
     <!-- Reminder History -->
-    <string name="reminder_count">%d Reminders</string>
     <string name="reminder_history_title">Scheduled Reminders</string>
     <string name="reminder_none">No scheduled reminders.</string>
     <string name="reminder_cancel_confirm_title">Cancel Reminder</string>
@@ -147,7 +146,6 @@
     <string name="sort_revenue">Revenue</string>
     <string name="genre_select_title">Select Genres</string>
     <string name="genre_confirm">OK</string>
-    <string name="genre_count">%d Genres</string>
     <string name="genre_load_failed">Failed to load genres. Please try again.</string>
 
     <!-- Settings -->
@@ -215,16 +213,14 @@
     <string name="stats_monthly_watched">This Month</string>
     <string name="stats_average_rating">My Average Rating</string>
     <string name="stats_top_genres">Top 3 Genres</string>
-    <string name="stats_count_format">%d movies</string>
     <string name="stats_rating_format">%.1f</string>
     <string name="stats_no_rating">No ratings yet</string>
     <string name="stats_no_genre_data">No genre data available</string>
-    <string name="stats_genre_item">%1$d. %2$s (%3$d movies)</string>
     <string name="stats_genre_chart_title">Genre Distribution</string>
     <string name="stats_monthly_chart_title">Monthly Watch Count</string>
     <string name="stats_no_monthly_data">No monthly data available</string>
     <string name="stats_chart_genre_percent">%1$s %2$d%%</string>
-    <string name="stats_chart_month_format">%1$d mo</string>
+    <string name="stats_chart_month_format">%1$d</string>
     <string name="stats_goal_progress">Watch Goal Progress</string>
     <string name="stats_goal_progress_format">%1$d / %2$d movies</string>
     <string name="stats_goal_achieved">Goal achieved!</string>
@@ -255,7 +251,7 @@
 
     <!-- Release Notification -->
     <string name="notification_channel_name">Release Date Alerts</string>
-    <string name="notification_channel_description">Get notified when your watchlist movies are released</string>
+    <string name="notification_channel_description">Get notified of release dates for your favorited movies</string>
     <string name="notification_release_today">Released today!</string>
 
     <!-- Charts -->
@@ -304,6 +300,7 @@
     <string name="import_confirm_message">This will merge with existing data. Continue?</string>
     <string name="export_error">Export failed</string>
     <string name="import_error">Import failed</string>
+    <string name="import_empty">No data to restore.</string>
 
     <!-- Debug -->
     <string name="share_debug_logs">Share Debug Logs</string>
@@ -331,8 +328,6 @@
     <!-- Watch Stats Share -->
     <string name="stats_share_title">Share Watch Stats</string>
     <string name="stats_share_card_title">MovieFinder Watch Stats</string>
-    <string name="stats_share_total">Total: %d movies</string>
-    <string name="stats_share_monthly">This month: %d movies</string>
     <string name="stats_share_rating">Avg rating: %.1f</string>
     <string name="stats_share_genres">Top genres: %s</string>
 
@@ -371,6 +366,8 @@
     <string name="tmdb_rating_dialog_title">TMDB Rating (0.5 ~ 5.0)</string>
     <string name="tmdb_rating_success">Rating submitted to TMDB.</string>
     <string name="tmdb_rating_failed">Failed to submit rating.</string>
+    <string name="tmdb_disconnected">TMDB account disconnected.</string>
+    <string name="tmdb_no_browser">No browser found to open TMDB authentication.</string>
 
     <!-- Favorites rating filter -->
     <string name="filter_rating_all">All</string>

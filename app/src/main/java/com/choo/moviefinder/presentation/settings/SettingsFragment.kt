@@ -193,7 +193,7 @@ class SettingsFragment : Fragment() {
                         binding.tvWatchGoalValue.text = if (goal == 0) {
                             getString(R.string.settings_watch_goal_not_set)
                         } else {
-                            getString(R.string.stats_count_format, goal)
+                            resources.getQuantityString(R.plurals.stats_count_format, goal, goal)
                         }
                     }
                 }
