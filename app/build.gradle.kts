@@ -50,6 +50,20 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 
+    signingConfigs {
+        create("release") {
+            // RELEASE_KEYSTORE_PATH 환경변수가 있을 때만 릴리즈 서명 활성화.
+            // 로컬 개발 및 CI R8 검증 빌드에서는 디버그 서명으로 대체됨.
+            val keystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("RELEASE_STORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: ""
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: ""
+            }
+        }
+    }
+
     buildTypes {
         debug {
             enableUnitTestCoverage = true
@@ -61,10 +75,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // CI 환경에서는 디버그 서명으로 R8/ProGuard 검증 빌드 수행
-            if (System.getenv("CI") != null) {
-                signingConfig = signingConfigs.getByName("debug")
-            }
+            val releaseConfig = signingConfigs.getByName("release")
+            signingConfig = if (releaseConfig.storeFile != null) releaseConfig
+                            else signingConfigs.getByName("debug")
         }
     }
 
