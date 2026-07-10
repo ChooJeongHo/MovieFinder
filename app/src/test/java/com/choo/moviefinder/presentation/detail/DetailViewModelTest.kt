@@ -17,9 +17,11 @@ import com.choo.moviefinder.domain.usecase.GetMovieRecommendationsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieReviewsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieTrailerUseCase
 import com.choo.moviefinder.domain.usecase.GetSimilarMoviesUseCase
+import com.choo.moviefinder.domain.usecase.GetTrailerWatchStatusUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchProvidersUseCase
 import com.choo.moviefinder.domain.usecase.IsFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.IsInWatchlistUseCase
+import com.choo.moviefinder.domain.usecase.MarkTrailerWatchedUseCase
 import com.choo.moviefinder.domain.usecase.SaveWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.GetTmdbAccessTokenUseCase
 import com.choo.moviefinder.domain.usecase.SubmitTmdbRatingUseCase
@@ -57,6 +59,8 @@ class DetailViewModelTest : CoroutineTestBase() {
     private lateinit var isFavoriteUseCase: IsFavoriteUseCase
     private lateinit var toggleWatchlistUseCase: ToggleWatchlistUseCase
     private lateinit var isInWatchlistUseCase: IsInWatchlistUseCase
+    private lateinit var getTrailerWatchStatusUseCase: GetTrailerWatchStatusUseCase
+    private lateinit var markTrailerWatchedUseCase: MarkTrailerWatchedUseCase
     private lateinit var saveWatchHistoryUseCase: SaveWatchHistoryUseCase
     private lateinit var getUserRatingUseCase: com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
     private lateinit var setUserRatingUseCase: com.choo.moviefinder.domain.usecase.SetUserRatingUseCase
@@ -108,6 +112,8 @@ class DetailViewModelTest : CoroutineTestBase() {
         isFavoriteUseCase = mockk()
         toggleWatchlistUseCase = mockk()
         isInWatchlistUseCase = mockk()
+        getTrailerWatchStatusUseCase = mockk()
+        markTrailerWatchedUseCase = mockk()
         saveWatchHistoryUseCase = mockk()
         getUserRatingUseCase = mockk()
         setUserRatingUseCase = mockk()
@@ -138,6 +144,9 @@ class DetailViewModelTest : CoroutineTestBase() {
 
         every { isFavoriteUseCase(any()) } returns flowOf(false)
         every { isInWatchlistUseCase(any()) } returns flowOf(false)
+
+        coEvery { getTrailerWatchStatusUseCase(any()) } returns null
+        coEvery { markTrailerWatchedUseCase(any(), any()) } returns Unit
     }
 
     private fun createViewModel(movieId: Int = 1): DetailViewModel {
@@ -156,7 +165,9 @@ class DetailViewModelTest : CoroutineTestBase() {
             toggleFavorite = toggleFavoriteUseCase,
             isFavorite = isFavoriteUseCase,
             toggleWatchlist = toggleWatchlistUseCase,
-            isInWatchlist = isInWatchlistUseCase
+            isInWatchlist = isInWatchlistUseCase,
+            getTrailerWatchStatus = getTrailerWatchStatusUseCase,
+            markTrailerWatched = markTrailerWatchedUseCase
         )
         val memo = DetailMemoUseCases(
             getMemos = getMemosUseCase,
