@@ -91,6 +91,15 @@ class DetailViewModel @Inject constructor(
 
     val userRating get() = userRatingDelegate.userRating
 
+    private val trailerWatchDelegate = TrailerWatchDelegate(
+        getTrailerWatchStatusUseCase = toggle.getTrailerWatchStatus,
+        markTrailerWatchedUseCase = toggle.markTrailerWatched,
+        movieId = movieId,
+        viewModelScope = viewModelScope
+    )
+
+    val resumeTrailerEvent get() = trailerWatchDelegate.resumeTrailerEvent
+
     init {
         loadMovieDetail()
     }
@@ -136,6 +145,7 @@ class DetailViewModel @Inject constructor(
                     launch {
                         val trailer = loadOptionalNullable("trailer") { fetch.getMovieTrailer(movieId) }
                         updateSuccess { it.copy(trailerKey = trailer) }
+                        trailer?.let { trailerWatchDelegate.checkAndPromptIfWatched(it) }
                     }
                     launch {
                         val recs = loadOptional("recommendations") { fetch.getMovieRecommendations(movieId) }
@@ -233,6 +243,9 @@ class DetailViewModel @Inject constructor(
 
     // 사용자 영화 평점을 Room DB에서 삭제
     fun deleteUserRating() = userRatingDelegate.deleteUserRating()
+
+    // 트레일러 시청 시작을 기록한다 (이어보기 확인용)
+    fun markTrailerWatched(trailerKey: String) = trailerWatchDelegate.markTrailerWatched(trailerKey)
 
     val memos get() = memoDelegate.memos
 

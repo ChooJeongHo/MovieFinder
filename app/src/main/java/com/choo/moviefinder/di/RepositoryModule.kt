@@ -10,6 +10,7 @@ import com.choo.moviefinder.data.repository.ReminderRepositoryImpl
 import com.choo.moviefinder.data.repository.SearchHistoryRepositoryImpl
 import com.choo.moviefinder.data.repository.TagRepositoryImpl
 import com.choo.moviefinder.data.repository.TmdbAuthRepositoryImpl
+import com.choo.moviefinder.data.repository.TrailerWatchRepositoryImpl
 import com.choo.moviefinder.data.repository.UserRatingRepositoryImpl
 import com.choo.moviefinder.data.repository.WatchHistoryRepositoryImpl
 import com.choo.moviefinder.data.repository.WatchlistRepositoryImpl
@@ -23,6 +24,7 @@ import com.choo.moviefinder.domain.repository.SearchHistoryRepository
 import com.choo.moviefinder.domain.repository.TagRepository
 import com.choo.moviefinder.domain.repository.TmdbAuthRepository
 import com.choo.moviefinder.domain.repository.TokenRepository
+import com.choo.moviefinder.domain.repository.TrailerWatchRepository
 import com.choo.moviefinder.domain.repository.UserRatingRepository
 import com.choo.moviefinder.domain.repository.WatchHistoryRepository
 import com.choo.moviefinder.domain.repository.WatchlistRepository
@@ -74,4 +76,7 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindTmdbAuthRepository(impl: TmdbAuthRepositoryImpl): TmdbAuthRepository
+
+    @Binds @Singleton
+    abstract fun bindTrailerWatchRepository(impl: TrailerWatchRepositoryImpl): TrailerWatchRepository
 }

@@ -375,6 +375,12 @@
     <string name="tmdb_disconnected">TMDB 계정 연결이 해제되었습니다.</string>
     <string name="tmdb_no_browser">TMDB 인증을 열 수 있는 브라우저가 없습니다.</string>
 
+    <!-- 예고편 이어보기 확인 다이얼로그 -->
+    <string name="dialog_resume_trailer_title">이어보기</string>
+    <string name="dialog_resume_trailer_message">예고편을 이어서 시청하시겠습니까?</string>
+    <string name="dialog_resume_trailer_positive">이어보기</string>
+    <string name="dialog_resume_trailer_negative">취소</string>
+
     <!-- 위젯 설정 -->
     <string name="widget_configure_title">위젯에 표시할 목록을 선택하세요</string>
     <string name="widget_configure_option_favorites">즐겨찾기 (Favorites)</string>
