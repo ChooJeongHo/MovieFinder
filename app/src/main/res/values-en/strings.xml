@@ -369,6 +369,12 @@
     <string name="tmdb_disconnected">TMDB account disconnected.</string>
     <string name="tmdb_no_browser">No browser found to open TMDB authentication.</string>
 
+    <!-- Resume trailer confirmation dialog -->
+    <string name="dialog_resume_trailer_title">Resume Trailer</string>
+    <string name="dialog_resume_trailer_message">Would you like to resume watching the trailer?</string>
+    <string name="dialog_resume_trailer_positive">Resume</string>
+    <string name="dialog_resume_trailer_negative">Cancel</string>
+
     <!-- Favorites rating filter -->
     <string name="filter_rating_all">All</string>
     <string name="filter_rating_3">3.0★+</string>
