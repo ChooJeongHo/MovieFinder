@@ -29,7 +29,7 @@ mockk = "1.14.11"
 turbine = "1.2.1"
 coroutinesTest = "1.11.0"
 profileinstaller = "1.4.1"
-benchmark = "1.5.0-alpha06"
+benchmark = "1.5.0-alpha07"
 datastore = "1.2.1"
 detekt = "2.0.0-alpha.5"
 leakcanary = "2.14"
@@ -42,7 +42,7 @@ viewpager2 = "1.1.0"
 youtubePlayer = "13.0.0"
 browser = "1.10.0"
 securityCrypto = "1.1.0"
-composeBom = "2026.06.00"
+composeBom = "2026.06.01"
 
 [libraries]
 # Core
