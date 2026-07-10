@@ -223,6 +223,39 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - GitHub Secrets: `TMDB_API_KEY` 필요
 - Dependabot: 라이브러리 자동 버전 업데이트
 
+## Claude Code 훅 / 서브에이전트 자동화
+
+> `.claude/`는 `.gitignore`로 전체 무시됨 — 아래 내용은 이 저장소를 사용하는 각자의 로컬 환경에만
+> 존재하며 git으로 공유되지 않는다. 팀원이 동일하게 쓰려면 각자 셋업 필요.
+
+### kotlin-architecture-reviewer 서브에이전트
+- 위치: `.claude/agents/kotlin-architecture-reviewer.md` (model: opus, tools: Read/Grep/Glob/Bash)
+- 스코프: Kotlin 코루틴/Flow 안전성(체크리스트 B) + Clean Architecture 레이어 규칙(체크리스트 A) +
+  Paging/RemoteMediator(C) + UI 상태 설계(D)만 리뷰. 스타일/네이밍/OWASP 보안/접근성/테스트 커버리지는
+  스코프 밖 — 관련 스킬(android-security-reviewer, accessibility-checker, testing-pyramid 등)의 몫.
+- **오탐 방지 규칙**: `@OptIn`/experimental API 관련 지적을 하려면 보고 전에 반드시
+  `./gradlew :app:compileDebugKotlin`으로 검증하고, 컴파일이 성공하면 그 지적은 보고서에서 완전히
+  제외한다 (레이어 위반·코루틴 안전성 등 컴파일과 무관한 항목엔 적용 안 됨).
+- 수동 호출: "아키텍처 리뷰", "코루틴 리뷰", "레이어 위반 확인해줘" 요청 시 자동 트리거.
+
+### PreToolUse 사전 검토 훅
+- 위치: `.claude/hooks/pre-edit-architecture-review.sh` + `.claude/hooks/lib/reconstruct_edit.py`,
+  `.claude/settings.json`의 `PreToolUse`(matcher: `Edit|Write`)에 등록.
+- 트리거 조건: `domain/*.kt` 또는 `presentation/**/*ViewModel.kt` (`src/main` 한정) 파일에 Edit/Write
+  시도 시.
+- 동작: `tool_input`(old_string/new_string 또는 content)으로 "적용 예정" 파일 내용을 임시 경로에
+  재구성 → `claude --agent kotlin-architecture-reviewer -p`로 헤드리스 호출 → 결과를
+  `hookSpecificOutput.additionalContext`로 Claude Code에 전달.
+- **비-차단 설계**: `permissionDecision`은 항상 `"allow"` — 이 훅은 어떤 경우에도 편집을 막지 않는다.
+  이유: 이 리뷰는 opus의 판단(의견)이지 `domain-android-import-guard.sh`(android/androidx import
+  차단, 결정론적 grep) 같은 100% 확정적 규칙이 아니다. 판단에는 오판 가능성이 있고, 리뷰 자체가
+  2분 이상 걸릴 수 있어 매 Edit마다 강제로 차단하면 개발 흐름이 망가진다. 결정론적·항상-참 규칙만
+  차단(`exit 2`)하고, 판단이 필요한 리뷰는 정보 제공(`allow` + `additionalContext`)으로 남긴다.
+- Bash 권한은 `--allowedTools "Read,Grep,Glob,Bash(./gradlew :app:compileDebugKotlin:*)"`로 제한 —
+  프롬프트 규칙이 깨져도 툴 레이어에서 이중으로 막도록 함.
+- **알려진 제약**: 훅은 세션 시작 시에만 로드된다. 훅 설정/스크립트를 수정하면 Claude Code를 재시작해야
+  반영된다. macOS 기본 환경엔 GNU `timeout`이 없어 순수 bash(`sleep N && kill`)로 타임아웃을 구현함.
+
 ## 주의사항
 
 ### AGP 9.x 특이사항
