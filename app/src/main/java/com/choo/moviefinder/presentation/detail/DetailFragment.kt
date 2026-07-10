@@ -310,6 +310,11 @@ class DetailFragment : Fragment() {
                         Snackbar.make(binding.root, msg, Snackbar.LENGTH_SHORT).show()
                     }
                 }
+                launch {
+                    viewModel.resumeTrailerEvent.collect { trailerKey ->
+                        showResumeTrailerDialog(trailerKey)
+                    }
+                }
             }
         }
     }
@@ -582,7 +587,22 @@ class DetailFragment : Fragment() {
             return
         }
         binding.btnTrailer.isVisible = true
-        binding.btnTrailer.setOnClickListener { openYouTubeExternal(trailerKey) }
+        binding.btnTrailer.setOnClickListener {
+            openYouTubeExternal(trailerKey)
+            viewModel.markTrailerWatched(trailerKey)
+        }
+    }
+
+    // 이전 시청 기록이 있는 트레일러 재진입 시 이어보기 여부 확인 다이얼로그 표시
+    private fun showResumeTrailerDialog(trailerKey: String) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.dialog_resume_trailer_title)
+            .setMessage(R.string.dialog_resume_trailer_message)
+            .setPositiveButton(R.string.dialog_resume_trailer_positive) { _, _ ->
+                openYouTubeExternal(trailerKey)
+            }
+            .setNegativeButton(R.string.dialog_resume_trailer_negative, null)
+            .show()
     }
 
     private fun openYouTubeExternal(trailerKey: String) {

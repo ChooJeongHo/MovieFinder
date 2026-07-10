@@ -118,8 +118,10 @@ class StatsFragment : Fragment() {
         binding.contentLayout.isVisible = true
         binding.errorView.layoutError.isVisible = false
 
-        binding.tvTotalWatched.text = resources.getQuantityString(R.plurals.stats_count_format, stats.totalWatched, stats.totalWatched)
-        binding.tvMonthlyWatched.text = resources.getQuantityString(R.plurals.stats_count_format, stats.monthlyWatched, stats.monthlyWatched)
+        binding.tvTotalWatched.text =
+            resources.getQuantityString(R.plurals.stats_count_format, stats.totalWatched, stats.totalWatched)
+        binding.tvMonthlyWatched.text =
+            resources.getQuantityString(R.plurals.stats_count_format, stats.monthlyWatched, stats.monthlyWatched)
 
         bindGoalProgress(stats)
 
@@ -143,7 +145,13 @@ class StatsFragment : Fragment() {
             binding.tvGenreEmpty.isVisible = false
             stats.topGenres.forEachIndexed { index, genreCount ->
                 val textView = TextView(requireContext()).apply {
-                    text = resources.getQuantityString(R.plurals.stats_genre_item, genreCount.count, index + 1, genreCount.name, genreCount.count)
+                    text = resources.getQuantityString(
+                        R.plurals.stats_genre_item,
+                        genreCount.count,
+                        index + 1,
+                        genreCount.name,
+                        genreCount.count,
+                    )
                     setTextAppearance(com.google.android.material.R.style.TextAppearance_MaterialComponents_Body1)
                 }
                 binding.genreContainer.addView(textView)
@@ -291,7 +299,8 @@ class StatsFragment : Fragment() {
         val colors = resolveStatsCardColors()
         val cardTitle = getString(R.string.stats_share_card_title)
         val totalText = resources.getQuantityString(R.plurals.stats_share_total, stats.totalWatched, stats.totalWatched)
-        val monthlyText = resources.getQuantityString(R.plurals.stats_share_monthly, stats.monthlyWatched, stats.monthlyWatched)
+        val monthlyText =
+            resources.getQuantityString(R.plurals.stats_share_monthly, stats.monthlyWatched, stats.monthlyWatched)
         val ratingText = stats.averageRating?.let { getString(R.string.stats_share_rating, it) }
         val genreText = if (stats.topGenres.isNotEmpty()) {
             val names = stats.topGenres.take(3).joinToString(", ") { it.name }
