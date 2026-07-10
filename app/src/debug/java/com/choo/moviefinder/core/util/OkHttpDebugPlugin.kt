@@ -6,5 +6,8 @@ import timber.log.Timber
 
 fun OkHttpClient.Builder.addDebugLogging(): OkHttpClient.Builder = addInterceptor(
     HttpLoggingInterceptor { Timber.tag("OkHttp").d(it) }
-        .apply { level = HttpLoggingInterceptor.Level.HEADERS }
+        .apply {
+            level = HttpLoggingInterceptor.Level.HEADERS
+            redactHeader("Authorization")
+        }
 )

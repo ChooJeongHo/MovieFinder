@@ -158,6 +158,7 @@ object NetworkModule {
             .apply {
                 if (!BuildConfig.DEBUG) certificatePinner(buildApiCertPinner())
             }
+            .addDebugLogging()
             .connectTimeout(30.seconds)
             .readTimeout(30.seconds)
             .build()

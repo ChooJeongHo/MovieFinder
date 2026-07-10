@@ -5,7 +5,26 @@
             <certificates src="system"/>
         </trust-anchors>
     </base-config>
-    <debug-overrides>
+
+    <!-- OS 레벨 인증서 피닝 (OkHttp 앱 레벨 피닝의 방어 심층 레이어) -->
+    <!-- expiration: 인증서 갱신 시 업데이트 필요 (cert-pin-check.yml CI 워크플로우 활용) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">themoviedb.org</domain>
+        <domain includeSubdomains="true">tmdb.org</domain>
+        <pin-set expiration="2027-06-30">
+            <!-- api.themoviedb.org leaf -->
+            <pin digest="SHA-256">QfyoR20v8hyYX7L+ikLzM/euPGSDl67gFFcor/sROMs=</pin>
+            <!-- api.themoviedb.org intermediate -->
+            <pin digest="SHA-256">G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c=</pin>
+            <!-- image.tmdb.org leaf -->
+            <pin digest="SHA-256">D9+FUQAcRTKvnv4RFbvEOfxIdAaqGJVOtOKBUZPFlak=</pin>
+            <!-- image.tmdb.org intermediate -->
+            <pin digest="SHA-256">LoMHBotttiDko50Gi13uXW71eIy7LAttI+rYT8wXF4w=</pin>
+        </pin-set>
+    </domain-config>
+
+    <!-- overridePins="true": 디버그 빌드에서 피닝 비활성화 (Charles Proxy 등 사용 가능) -->
+    <debug-overrides overridePins="true">
         <trust-anchors>
             <certificates src="user"/>
         </trust-anchors>
