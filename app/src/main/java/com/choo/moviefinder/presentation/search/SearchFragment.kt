@@ -8,10 +8,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.view.isVisible
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -19,34 +24,31 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
-import androidx.paging.LoadState
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.choo.moviefinder.R
 import androidx.paging.CombinedLoadStates
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.choo.moviefinder.R
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.core.util.RateLimiter
-import com.choo.moviefinder.domain.model.Movie
-import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.core.util.computeWindowWidthSizeClass
 import com.choo.moviefinder.core.util.toMovieGridSpanCount
 import com.choo.moviefinder.databinding.FragmentSearchBinding
+import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
 import com.choo.moviefinder.presentation.adapter.MovieAdapter
-import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
 import com.choo.moviefinder.presentation.adapter.PersonSearchAdapter
 import com.choo.moviefinder.presentation.adapter.RecentSearchAdapter
-import com.choo.moviefinder.presentation.common.createMovieGridLayoutManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import kotlin.time.Clock
+import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import javax.inject.Inject
@@ -64,12 +66,18 @@ class SearchFragment : Fragment() {
 
     private val retryRateLimiter = RateLimiter()
 
-    private lateinit var searchAdapter: MoviePagingAdapter
     private lateinit var recentSearchAdapter: RecentSearchAdapter
     private lateinit var personSearchAdapter: PersonSearchAdapter
     private lateinit var suggestionHistoryAdapter: HorizontalMovieAdapter
     private lateinit var offlineResultsAdapter: MovieAdapter
     private var activeDialog: Dialog? = null
+
+    // compose_search_input(TextField)과 compose_search_results(Paging retry/scroll)를 Fragment의
+    // 기존 XML 로직(최근 검색어 클릭, 추천 칩 클릭, FAB, 에러 재시도)과 연결하는 상태/콜백 브릿지.
+    // Compose 밖에서도 MutableState.value를 그냥 읽고 쓸 수 있다 — 리컴포지션 자동 트리거만 Composable 안에서 유효.
+    private var searchQueryState = mutableStateOf("")
+    private var retryAction: (() -> Unit)? = null
+    private var scrollToTopAction: (() -> Unit)? = null
 
     private val yearFilterItems: Array<String> by lazy {
         val currentYear = Clock.System.todayIn(TimeZone.currentSystemDefault()).year
@@ -90,7 +98,9 @@ class SearchFragment : Fragment() {
     // 뷰 생성 후 검색 입력, 필터, RecyclerView 등 전체 UI 초기화
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupSearchInput()
+        searchQueryState = mutableStateOf(viewModel.searchQuery.value)
+        setupComposeSearchInput()
+        setupComposeSearchResults()
         setupRecyclerViews()
         setupScrollToTopFab()
         setupViewModeToggle()
@@ -103,83 +113,107 @@ class SearchFragment : Fragment() {
         observeViewModelFlows()
     }
 
-    // 검색 입력 텍스트 변경 감지 및 키보드 검색 액션 리스너 설정
-    private fun setupSearchInput() {
-        binding.etSearch.doAfterTextChanged { text ->
-            val query = text?.toString() ?: ""
-            if (viewModel.searchMode.value == SearchMode.PERSON) {
-                viewModel.onPersonSearch(query)
-            } else {
-                viewModel.onSearchQueryChange(query)
-                if (query.isBlank()) {
-                    viewModel.clearOfflineResults()
-                }
-                updateVisibility(query)
-            }
-        }
-
-        binding.etSearch.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                val query = binding.etSearch.text?.toString() ?: ""
-                if (query.isNotBlank()) {
-                    if (viewModel.searchMode.value == SearchMode.PERSON) {
-                        viewModel.onPersonSearch(query)
-                    } else if (!networkMonitor.isConnected.value) {
-                        viewModel.searchOffline(query)
-                        Snackbar.make(
-                            binding.root,
-                            R.string.offline_local_search_snackbar,
-                            Snackbar.LENGTH_SHORT
-                        ).setAnchorView(R.id.bottom_nav).show()
-                    } else {
-                        viewModel.clearOfflineResults()
-                        viewModel.onSearch(query)
-                    }
-                }
-                hideKeyboard()
-                true
-            } else {
-                false
+    // XML TextInputLayout(search_input_layout) + TextInputEditText(et_search) → Compose SearchInputField
+    private fun setupComposeSearchInput() {
+        binding.composeSearchInput.setViewCompositionStrategy(
+            ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+        )
+        binding.composeSearchInput.setContent {
+            MaterialTheme {
+                SearchInputField(
+                    query = searchQueryState.value,
+                    onQueryChange = ::onSearchQueryTextChanged,
+                    onSearch = ::onSearchSubmitted,
+                )
             }
         }
     }
 
-    // 검색 결과 및 최근 검색어 RecyclerView 초기화
-    private fun setupRecyclerViews() {
-        searchAdapter = MoviePagingAdapter { movieId, posterView ->
-            if (findNavController().currentDestination?.id == R.id.searchFragment) {
-                val action = SearchFragmentDirections.actionSearchToDetail(movieId)
-                val extras = FragmentNavigatorExtras(posterView to "poster_$movieId")
-                findNavController().navigate(action, extras)
-            }
-        }
-
-        val spanCount = requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount()
-        binding.rvSearchResults.apply {
-            layoutManager = createMovieGridLayoutManager(requireContext(), spanCount) {
-                searchAdapter.itemCount
-            }
-            setHasFixedSize(true)
-            itemAnimator = null
-            adapter = searchAdapter.withLoadStateFooter(
-                footer = MovieLoadStateAdapter { searchAdapter.retry() }
-            )
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrollStateChanged(
-                    recyclerView: RecyclerView,
-                    newState: Int
-                ) {
-                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                        hideKeyboard()
-                    }
+    // 검색 결과: XML RecyclerView(rv_search_results) + MoviePagingAdapter → Compose SearchResultsList
+    // pagingItems.loadState/itemCount를 기존 handleLoadStates()로, retry/스크롤은 콜백 브릿지로 연결한다.
+    private fun setupComposeSearchResults() {
+        binding.composeSearchResults.setViewCompositionStrategy(
+            ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+        )
+        binding.composeSearchResults.setContent {
+            MaterialTheme {
+                val pagingItems = viewModel.searchResults.collectAsLazyPagingItems()
+                val viewMode by viewModel.viewMode.collectAsState()
+                val spanCount = remember {
+                    requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount()
                 }
-            })
-        }
 
+                LaunchedEffect(pagingItems.loadState, pagingItems.itemCount) {
+                    handleLoadStates(pagingItems.loadState, pagingItems.itemCount)
+                }
+                LaunchedEffect(pagingItems) {
+                    retryAction = { pagingItems.retry() }
+                }
+
+                SearchResultsList(
+                    pagingItems = pagingItems,
+                    viewMode = viewMode,
+                    spanCount = spanCount,
+                    onMovieClick = ::navigateToSearchResultDetail,
+                    onScrollStateChanged = { canScrollBack ->
+                        if (canScrollBack) binding.fabScrollTop.show() else binding.fabScrollTop.hide()
+                    },
+                    onScrollControllerReady = { scrollToTop -> scrollToTopAction = scrollToTop },
+                )
+            }
+        }
+    }
+
+    // 검색어 입력 변경 시 호출 — 모드(영화/배우)에 따라 다른 ViewModel 함수로 라우팅
+    private fun onSearchQueryTextChanged(text: String) {
+        searchQueryState.value = text
+        if (viewModel.searchMode.value == SearchMode.PERSON) {
+            viewModel.onPersonSearch(text)
+        } else {
+            viewModel.onSearchQueryChange(text)
+            if (text.isBlank()) {
+                viewModel.clearOfflineResults()
+            }
+            updateVisibility(text)
+        }
+    }
+
+    // 키보드 검색 액션(IME Search) 처리
+    private fun onSearchSubmitted() {
+        val query = searchQueryState.value
+        if (query.isNotBlank()) {
+            if (viewModel.searchMode.value == SearchMode.PERSON) {
+                viewModel.onPersonSearch(query)
+            } else if (!networkMonitor.isConnected.value) {
+                viewModel.searchOffline(query)
+                Snackbar.make(
+                    binding.root,
+                    R.string.offline_local_search_snackbar,
+                    Snackbar.LENGTH_SHORT
+                ).setAnchorView(R.id.bottom_nav).show()
+            } else {
+                viewModel.clearOfflineResults()
+                viewModel.onSearch(query)
+            }
+        }
+        hideKeyboard()
+    }
+
+    // 검색 결과 항목 클릭 시 상세 화면으로 이동
+    // 참고: Compose LazyColumn/Grid 항목은 실제 포스터 View가 없어 Shared Element Transition은 지원하지 않는다
+    // (기존 RecyclerView 기반 화면들의 포스터 전환 애니메이션은 그대로 유지됨).
+    private fun navigateToSearchResultDetail(movieId: Int) {
+        if (findNavController().currentDestination?.id == R.id.searchFragment) {
+            val action = SearchFragmentDirections.actionSearchToDetail(movieId)
+            findNavController().navigate(action)
+        }
+    }
+
+    // 최근 검색어 / 배우 검색 / 오프라인 검색 결과 RecyclerView 초기화
+    private fun setupRecyclerViews() {
         recentSearchAdapter = RecentSearchAdapter(
             onItemClick = { query ->
-                binding.etSearch.setText(query)
-                binding.etSearch.setSelection(query.length)
+                searchQueryState.value = query
                 viewModel.onSearchQueryChange(query)
                 viewModel.onSearch(query)
                 hideKeyboard()
@@ -288,8 +322,6 @@ class SearchFragment : Fragment() {
                     }
                 }
                 launch { viewModel.recentSearches.collect { handleRecentSearches(it) } }
-                launch { viewModel.searchResults.collectLatest { searchAdapter.submitData(it) } }
-                launch { searchAdapter.loadStateFlow.collectLatest { handleLoadStates(it) } }
                 launch { viewModel.snackbarEvent.collect { showSearchSnackbar(it) } }
                 launch { viewModel.offlineResults.collect { handleOfflineResults(it) } }
                 launch {
@@ -315,9 +347,7 @@ class SearchFragment : Fragment() {
     }
 
     private fun handleViewMode(mode: MoviePagingAdapter.ViewMode) {
-        searchAdapter.viewMode = mode
         updateViewModeIcon(mode)
-        applyLayoutManager(mode)
     }
 
     private fun handleSearchMode(mode: SearchMode) {
@@ -325,7 +355,7 @@ class SearchFragment : Fragment() {
         binding.chipGroupFilters.isVisible = !isPersonMode
         binding.chipDiscoverMode.isVisible = false
         binding.rvPersonResults.isVisible = false
-        binding.rvSearchResults.isVisible = false
+        binding.composeSearchResults.isVisible = false
         binding.noResultsSection.isVisible = false
         hideWatchHistorySuggestions()
         binding.shimmerView.shimmerLayout.stopShimmer()
@@ -336,20 +366,20 @@ class SearchFragment : Fragment() {
             binding.emptyInitial.ivEmptyIcon.setImageResource(R.drawable.ic_person)
             binding.emptyInitial.tvEmptyTitle.text = getString(R.string.search_person_initial_title)
             binding.emptyInitial.tvEmptyMessage.text = getString(R.string.search_person_initial_message)
-            val query = binding.etSearch.text?.toString() ?: ""
+            val query = searchQueryState.value
             if (query.isNotBlank()) viewModel.onPersonSearch(query)
         } else {
             binding.emptyInitial.ivEmptyIcon.setImageResource(R.drawable.ic_search)
             binding.emptyInitial.tvEmptyTitle.text = getString(R.string.search_initial_title)
             binding.emptyInitial.tvEmptyMessage.text = getString(R.string.search_initial_message)
-            updateVisibility(binding.etSearch.text?.toString() ?: "")
+            updateVisibility(searchQueryState.value)
         }
     }
 
     private fun handlePersonResults(results: List<PersonSearchItem>) {
         if (viewModel.searchMode.value != SearchMode.PERSON) return
         personSearchAdapter.submitList(results)
-        val query = binding.etSearch.text?.toString()?.trim() ?: ""
+        val query = searchQueryState.value.trim()
         when {
             query.isBlank() -> {
                 binding.rvPersonResults.isVisible = false
@@ -383,7 +413,7 @@ class SearchFragment : Fragment() {
     }
 
     private fun handleRecentSearches(searches: List<String>) {
-        val query = binding.etSearch.text?.toString()?.trim() ?: ""
+        val query = searchQueryState.value.trim()
         if (query.isBlank()) {
             recentSearchAdapter.submitList(searches)
             if (viewModel.selectedGenres.value.isEmpty() && searches.isNotEmpty()) {
@@ -398,7 +428,7 @@ class SearchFragment : Fragment() {
         }
     }
 
-    private fun handleLoadStates(loadStates: CombinedLoadStates) {
+    private fun handleLoadStates(loadStates: CombinedLoadStates, itemCount: Int) {
         val query = viewModel.searchQuery.value
         val hasGenreFilter = viewModel.selectedGenres.value.isNotEmpty()
         if (query.isBlank() && !hasGenreFilter) return
@@ -411,28 +441,28 @@ class SearchFragment : Fragment() {
             is LoadState.Loading -> {
                 binding.shimmerView.shimmerLayout.startShimmer()
                 binding.shimmerView.shimmerLayout.isVisible = true
-                binding.rvSearchResults.isVisible = false
+                binding.composeSearchResults.isVisible = false
                 binding.noResultsSection.isVisible = false
             }
             is LoadState.NotLoading -> {
                 binding.shimmerView.shimmerLayout.stopShimmer()
                 binding.shimmerView.shimmerLayout.isVisible = false
-                val isEmpty = searchAdapter.itemCount == 0
+                val isEmpty = itemCount == 0
                 binding.noResultsSection.isVisible = isEmpty
-                binding.rvSearchResults.isVisible = !isEmpty
+                binding.composeSearchResults.isVisible = !isEmpty
                 if (isEmpty) showWatchHistorySuggestions() else hideWatchHistorySuggestions()
             }
             is LoadState.Error -> {
                 binding.shimmerView.shimmerLayout.stopShimmer()
                 binding.shimmerView.shimmerLayout.isVisible = false
                 binding.noResultsSection.isVisible = false
-                binding.rvSearchResults.isVisible = false
+                binding.composeSearchResults.isVisible = false
                 binding.errorView.layoutError.isVisible = true
                 val errorType = ErrorMessageProvider.getErrorType(refreshState.error)
                 binding.errorView.tvErrorMessage.text =
                     ErrorMessageProvider.getMessage(requireContext(), errorType)
                 binding.errorView.btnRetry.setOnClickListener {
-                    if (retryRateLimiter.tryAcquire()) searchAdapter.retry()
+                    if (retryRateLimiter.tryAcquire()) retryAction?.invoke()
                 }
             }
         }
@@ -448,11 +478,11 @@ class SearchFragment : Fragment() {
 
     private fun handleOfflineResults(results: List<Movie>) {
         val isOffline = !networkMonitor.isConnected.value
-        val query = binding.etSearch.text?.toString()?.trim() ?: ""
+        val query = searchQueryState.value.trim()
         if (isOffline && query.isNotBlank()) {
             offlineResultsAdapter.submitList(results)
             binding.offlineResultsSection.isVisible = true
-            binding.rvSearchResults.isVisible = false
+            binding.composeSearchResults.isVisible = false
             binding.shimmerView.shimmerLayout.stopShimmer()
             binding.shimmerView.shimmerLayout.isVisible = false
             binding.noResultsSection.isVisible = false
@@ -461,18 +491,6 @@ class SearchFragment : Fragment() {
             binding.recentSearchesSection.isVisible = false
         } else {
             binding.offlineResultsSection.isVisible = false
-        }
-    }
-
-    // 보기 모드에 따라 GridLayoutManager 또는 LinearLayoutManager 적용
-    private fun applyLayoutManager(mode: MoviePagingAdapter.ViewMode) {
-        binding.rvSearchResults.layoutManager = if (mode == MoviePagingAdapter.ViewMode.LIST) {
-            LinearLayoutManager(requireContext())
-        } else {
-            val spanCount = requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount()
-            createMovieGridLayoutManager(requireContext(), spanCount) {
-                searchAdapter.itemCount
-            }
         }
     }
 
@@ -641,19 +659,10 @@ class SearchFragment : Fragment() {
     }
 
     // 스크롤 위치에 따라 맨 위로 FAB 표시/숨김 및 클릭 동작 설정
+    // FAB 표시/숨김 자체는 Compose 쪽 LazyGridState/LazyListState.canScrollBackward 콜백(onScrollStateChanged)이 담당한다.
     private fun setupScrollToTopFab() {
-        binding.rvSearchResults.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                if (!recyclerView.canScrollVertically(-1)) {
-                    binding.fabScrollTop.hide()
-                } else {
-                    binding.fabScrollTop.show()
-                }
-            }
-        })
-
         binding.fabScrollTop.setOnClickListener {
-            binding.rvSearchResults.scrollToPosition(0)
+            scrollToTopAction?.invoke()
             binding.fabScrollTop.hide()
         }
     }
@@ -680,8 +689,7 @@ class SearchFragment : Fragment() {
                 isCheckable = false
             }
             chip.setOnClickListener {
-                binding.etSearch.setText(term)
-                binding.etSearch.setSelection(term.length)
+                searchQueryState.value = term
                 viewModel.onSearchQueryChange(term)
                 viewModel.onSearch(term)
                 hideKeyboard()
@@ -716,7 +724,7 @@ class SearchFragment : Fragment() {
     private fun updateVisibility(query: String) {
         updateDiscoverModeChip()
         if (query.isBlank() && viewModel.selectedGenres.value.isEmpty()) {
-            binding.rvSearchResults.isVisible = false
+            binding.composeSearchResults.isVisible = false
             binding.shimmerView.shimmerLayout.stopShimmer()
             binding.shimmerView.shimmerLayout.isVisible = false
             binding.noResultsSection.isVisible = false
@@ -734,7 +742,7 @@ class SearchFragment : Fragment() {
     private fun showIdleState(showRecentSearches: Boolean) {
         binding.recentSearchesSection.isVisible = showRecentSearches
         binding.emptyInitial.layoutEmpty.isVisible = !showRecentSearches
-        binding.rvSearchResults.isVisible = false
+        binding.composeSearchResults.isVisible = false
         binding.noResultsSection.isVisible = false
         binding.fabScrollTop.hide()
     }
@@ -743,11 +751,10 @@ class SearchFragment : Fragment() {
 
     private fun showInitialState() = showIdleState(showRecentSearches = false)
 
-    // 소프트 키보드를 숨기고 검색 입력 포커스 해제
+    // 소프트 키보드를 숨긴다 (Compose TextField의 포커스는 내부적으로 관리되므로 별도 clearFocus 불필요)
     private fun hideKeyboard() {
         val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
-        binding.etSearch.clearFocus()
+        imm.hideSoftInputFromWindow(binding.root.windowToken, 0)
     }
 
     // 결과 없음 상태에서 최근 시청 기록 영화를 제안 섹션으로 표시
@@ -773,8 +780,9 @@ class SearchFragment : Fragment() {
         super.onDestroyView()
         activeDialog?.dismiss()
         activeDialog = null
+        retryAction = null
+        scrollToTopAction = null
         binding.shimmerView.shimmerLayout.stopShimmer()
-        binding.rvSearchResults.adapter = null
         binding.rvRecentSearches.adapter = null
         binding.rvPersonResults.adapter = null
         binding.rvSuggestionHistory.adapter = null

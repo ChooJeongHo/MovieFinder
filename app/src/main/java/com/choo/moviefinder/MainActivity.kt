@@ -143,12 +143,16 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
         val fragment = host?.childFragmentManager?.primaryNavigationFragment
         fragment?.view?.let { view ->
-            val rvIds = listOf(R.id.rv_movies, R.id.rv_favorites, R.id.rv_search_results)
+            val rvIds = listOf(R.id.rv_movies, R.id.rv_favorites)
             val rv = rvIds.firstNotNullOfOrNull { view.findViewById<RecyclerView>(it) }
-            if (rv != null) {
-                rv.scrollToPosition(0)
-            } else {
-                view.findViewById<NestedScrollView>(R.id.contentLayout)?.scrollTo(0, 0)
+            val composeSearchResults = view.findViewById<View>(R.id.compose_search_results)
+            when {
+                rv != null -> rv.scrollToPosition(0)
+                // SearchFragment의 검색 결과는 Compose LazyColumn/LazyVerticalGrid라 RecyclerView가 없다.
+                // fab_scroll_top 클릭 리스너가 이미 Compose 스크롤 상태와 연결되어 있으므로 그대로 재사용한다.
+                composeSearchResults != null ->
+                    view.findViewById<FloatingActionButton>(R.id.fab_scroll_top)?.performClick()
+                else -> view.findViewById<NestedScrollView>(R.id.contentLayout)?.scrollTo(0, 0)
             }
             view.findViewById<FloatingActionButton>(R.id.fab_scroll_top)?.hide()
         }

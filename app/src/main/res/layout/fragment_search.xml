@@ -12,26 +12,13 @@
         android:layout_height="?attr/actionBarSize"
         app:title="@string/nav_search" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/search_input_layout"
-        style="@style/Widget.MovieFinder.SearchInput"
+    <!-- XML TextInputLayout(search_input_layout) + TextInputEditText(et_search) → Compose로 이전 -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/compose_search_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/spacing_md"
-        android:layout_marginBottom="@dimen/spacing_sm"
-        android:hint="@string/search_hint"
-        app:endIconMode="clear_text"
-        app:startIconDrawable="@drawable/ic_search">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/et_search"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:imeOptions="actionSearch"
-            android:inputType="text"
-            android:maxLines="1" />
-
-    </com.google.android.material.textfield.TextInputLayout>
+        android:layout_marginBottom="@dimen/spacing_sm" />
 
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/chip_group_search_mode"
@@ -162,14 +149,11 @@
             android:layout_height="match_parent"
             android:visibility="gone" />
 
-        <!-- 검색 결과 -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_search_results"
+        <!-- 검색 결과: XML RecyclerView(rv_search_results) + MoviePagingAdapter → Compose로 이전 -->
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/compose_search_results"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:layoutAnimation="@anim/layout_animation_fall_down"
-            android:padding="@dimen/spacing_sm"
             android:visibility="gone" />
 
         <!-- 로딩 Shimmer -->
