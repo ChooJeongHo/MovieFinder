@@ -256,6 +256,23 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - **알려진 제약**: 훅은 세션 시작 시에만 로드된다. 훅 설정/스크립트를 수정하면 Claude Code를 재시작해야
   반영된다. macOS 기본 환경엔 GNU `timeout`이 없어 순수 bash(`sleep N && kill`)로 타임아웃을 구현함.
 
+### Stop 테스트 페어링 강제 훅
+- 위치: `.claude/hooks/stop-test-coverage-guard.sh` + `.claude/hooks/lib/check_test_pairing.py`,
+  `.claude/settings.json`의 `Stop`(matcher: `*`)에 등록.
+- 트리거 조건: 이번 세션 transcript에서 `domain/*.kt` 또는 `presentation/**/*ViewModel.kt` (`src/main`
+  한정) 파일을 Edit/Write/MultiEdit 했는데, 대응 테스트 파일(`app/src/test/.../XxxTest.kt`)이 같은
+  세션에서 한 번도 Edit/Write/MultiEdit 되지 않은 경우.
+- **차단 설계**: exit 2로 세션 종료를 막는다 — PreToolUse 훅과 정반대. 이유: "같은 세션에서 테스트
+  파일이 건드려졌는가"는 transcript를 기계적으로 훑는 사실 확인이라 100% 결정론적이고 오탐 가능성이
+  없다. 판단이 필요 없는 항상-참 규칙이므로 위 PreToolUse 훅의 원칙("결정론적 규칙만 차단")을 그대로
+  따르면 차단이 맞다.
+- 무한 루프 방지: 훅 입력의 `stop_hook_active`가 true면(이미 한 번 이 훅에 막혔다가 재개했다는 뜻)
+  다시 막지 않고 통과시킨다 — 한 번은 스스로 고치거나 사유를 설명할 기회를 주되 영원히 막지는 않는다.
+- **알려진 제약**: 서브에이전트(Agent 도구로 위임한 작업)가 만든 Edit/Write는 메인 세션 transcript에
+  안 잡힌다 — 서브에이전트 자신의 별도 transcript에만 기록되기 때문. 즉 이 훅은 **메인 루프가 직접
+  수정한 파일만** 감지하고, "구현자 서브에이전트에게 위임해서 만든 파일"은 놓친다. 서브에이전트가
+  주도하는 워크플로우(예: feature-implementer 파이프라인)에서는 이 한계를 감안할 것.
+
 ## 주의사항
 
 ### AGP 9.x 특이사항
