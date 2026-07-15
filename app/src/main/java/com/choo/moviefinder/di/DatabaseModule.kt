@@ -7,6 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
+import com.choo.moviefinder.data.local.dao.HelpfulReviewDao
 import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
@@ -257,13 +258,30 @@ object DatabaseModule {
         }
     }
 
+    // helpful_reviews 테이블 추가 마이그레이션 (v22 → v23)
+    val MIGRATION_22_23 = object : Migration(22, 23) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `helpful_reviews` " +
+                    "(`reviewId` TEXT NOT NULL, " +
+                    "`movieId` INTEGER NOT NULL, " +
+                    "`markedAt` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`reviewId`))"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_helpful_reviews_movieId` " +
+                    "ON `helpful_reviews` (`movieId`)"
+            )
+        }
+    }
+
     // 전체 마이그레이션 단일 출처 — Hilt DB와 위젯의 수동 DB 인스턴스가 공유한다.
     // 위젯이 마이그레이션 없이 같은 DB 파일을 열면 destructive fallback으로
     // 사용자 데이터가 전부 삭제될 수 있으므로 새 마이그레이션은 반드시 여기에 추가할 것.
     val ALL_MIGRATIONS = arrayOf(
         MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
         MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20,
-        MIGRATION_20_21, MIGRATION_21_22
+        MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23
     )
 
     // Room 데이터베이스 인스턴스를 생성하여 제공한다
@@ -355,5 +373,12 @@ object DatabaseModule {
     @Singleton
     fun provideTrailerWatchDao(database: MovieDatabase): TrailerWatchDao {
         return database.trailerWatchDao()
+    }
+
+    // 도움이 됨으로 표시한 리뷰 DAO를 제공한다
+    @Provides
+    @Singleton
+    fun provideHelpfulReviewDao(database: MovieDatabase): HelpfulReviewDao {
+        return database.helpfulReviewDao()
     }
 }

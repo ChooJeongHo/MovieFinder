@@ -10,6 +10,7 @@ import com.choo.moviefinder.domain.model.Genre
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.Review
+import com.choo.moviefinder.domain.usecase.GetHelpfulReviewIdsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
@@ -26,6 +27,7 @@ import com.choo.moviefinder.domain.usecase.SaveWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.GetTmdbAccessTokenUseCase
 import com.choo.moviefinder.domain.usecase.SubmitTmdbRatingUseCase
 import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
+import com.choo.moviefinder.domain.usecase.ToggleReviewHelpfulUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import com.choo.moviefinder.util.CoroutineTestBase
 import io.mockk.coEvery
@@ -61,6 +63,8 @@ class DetailViewModelTest : CoroutineTestBase() {
     private lateinit var isInWatchlistUseCase: IsInWatchlistUseCase
     private lateinit var getTrailerWatchStatusUseCase: GetTrailerWatchStatusUseCase
     private lateinit var markTrailerWatchedUseCase: MarkTrailerWatchedUseCase
+    private lateinit var getHelpfulReviewIdsUseCase: GetHelpfulReviewIdsUseCase
+    private lateinit var toggleReviewHelpfulUseCase: ToggleReviewHelpfulUseCase
     private lateinit var saveWatchHistoryUseCase: SaveWatchHistoryUseCase
     private lateinit var getUserRatingUseCase: com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
     private lateinit var setUserRatingUseCase: com.choo.moviefinder.domain.usecase.SetUserRatingUseCase
@@ -114,6 +118,8 @@ class DetailViewModelTest : CoroutineTestBase() {
         isInWatchlistUseCase = mockk()
         getTrailerWatchStatusUseCase = mockk()
         markTrailerWatchedUseCase = mockk()
+        getHelpfulReviewIdsUseCase = mockk()
+        toggleReviewHelpfulUseCase = mockk()
         saveWatchHistoryUseCase = mockk()
         getUserRatingUseCase = mockk()
         setUserRatingUseCase = mockk()
@@ -147,6 +153,8 @@ class DetailViewModelTest : CoroutineTestBase() {
 
         coEvery { getTrailerWatchStatusUseCase(any()) } returns null
         coEvery { markTrailerWatchedUseCase(any(), any()) } returns Unit
+        coEvery { getHelpfulReviewIdsUseCase(any()) } returns emptySet()
+        coEvery { toggleReviewHelpfulUseCase(any(), any(), any()) } returns Unit
     }
 
     private fun createViewModel(movieId: Int = 1): DetailViewModel {
@@ -159,7 +167,8 @@ class DetailViewModelTest : CoroutineTestBase() {
             getMovieCertification = getMovieCertificationUseCase,
             getMovieReviews = getMovieReviewsUseCase,
             getMovieRecommendations = getMovieRecommendationsUseCase,
-            getWatchProviders = getWatchProvidersUseCase
+            getWatchProviders = getWatchProvidersUseCase,
+            getHelpfulReviewIds = getHelpfulReviewIdsUseCase
         )
         val toggle = DetailToggleUseCases(
             toggleFavorite = toggleFavoriteUseCase,
@@ -167,7 +176,8 @@ class DetailViewModelTest : CoroutineTestBase() {
             toggleWatchlist = toggleWatchlistUseCase,
             isInWatchlist = isInWatchlistUseCase,
             getTrailerWatchStatus = getTrailerWatchStatusUseCase,
-            markTrailerWatched = markTrailerWatchedUseCase
+            markTrailerWatched = markTrailerWatchedUseCase,
+            toggleReviewHelpful = toggleReviewHelpfulUseCase
         )
         val memo = DetailMemoUseCases(
             getMemos = getMemosUseCase,
@@ -616,5 +626,140 @@ class DetailViewModelTest : CoroutineTestBase() {
         advanceUntilIdle()
 
         io.mockk.verify { releaseNotificationScheduler.cancel(1) }
+    }
+
+    // --- 리뷰 도움이 됨 ---
+
+    @Test
+    fun `reviews marked helpful are moved to top preserving relative order (stable partition)`() = runTest {
+        val testReviews = listOf(
+            Review("r1", "Author1", null, 8.0, "First", "2024-01-01"),
+            Review("r2", "Author2", null, 7.0, "Second", "2024-01-02"),
+            Review("r3", "Author3", null, 6.0, "Third", "2024-01-03"),
+            Review("r4", "Author4", null, 5.0, "Fourth", "2024-01-04")
+        )
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { getMovieReviewsUseCase(1) } returns testReviews
+        coEvery { getHelpfulReviewIdsUseCase(1) } returns setOf("r3", "r1")
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        // helpful(r1, r3)이 원래 상대순서(r1 -> r3)를 유지한 채 상단으로, 나머지(r2, r4)도 원래 순서 유지
+        assertEquals(listOf("r1", "r3", "r2", "r4"), state.reviews!!.map { it.id })
+        assertEquals(setOf("r1", "r3"), state.helpfulReviewIds)
+    }
+
+    @Test
+    fun `helpfulReviewIds load failure still shows reviews in original order`() = runTest {
+        val testReviews = listOf(
+            Review("r1", "Author1", null, 8.0, "First", "2024-01-01"),
+            Review("r2", "Author2", null, 7.0, "Second", "2024-01-02")
+        )
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { getMovieReviewsUseCase(1) } returns testReviews
+        coEvery { getHelpfulReviewIdsUseCase(1) } throws RuntimeException("helpful ids failed")
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertEquals(listOf("r1", "r2"), state.reviews!!.map { it.id })
+        assertTrue(state.helpfulReviewIds.isEmpty())
+    }
+
+    @Test
+    fun `toggleReviewHelpful marks review helpful without reordering current list`() = runTest {
+        val testReviews = listOf(
+            Review("r1", "Author1", null, 8.0, "First", "2024-01-01"),
+            Review("r2", "Author2", null, 7.0, "Second", "2024-01-02")
+        )
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { getMovieReviewsUseCase(1) } returns testReviews
+        coEvery { getHelpfulReviewIdsUseCase(1) } returns emptySet()
+        coEvery { toggleReviewHelpfulUseCase(1, "r2", true) } returns Unit
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleReviewHelpful("r2")
+        advanceUntilIdle()
+
+        coVerify { toggleReviewHelpfulUseCase(1, "r2", true) }
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        // 세션 내 토글은 아이콘 상태(helpfulReviewIds)만 갱신 — 리스트 순서는 그대로 유지
+        assertEquals(setOf("r2"), state.helpfulReviewIds)
+        assertEquals(listOf("r1", "r2"), state.reviews!!.map { it.id })
+    }
+
+    @Test
+    fun `toggleReviewHelpful unmarks an already helpful review`() = runTest {
+        val testReviews = listOf(Review("r1", "Author1", null, 8.0, "First", "2024-01-01"))
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { getMovieReviewsUseCase(1) } returns testReviews
+        coEvery { getHelpfulReviewIdsUseCase(1) } returns setOf("r1")
+        coEvery { toggleReviewHelpfulUseCase(1, "r1", false) } returns Unit
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleReviewHelpful("r1")
+        advanceUntilIdle()
+
+        coVerify { toggleReviewHelpfulUseCase(1, "r1", false) }
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertTrue(state.helpfulReviewIds.isEmpty())
+    }
+
+    @Test
+    fun `toggleReviewHelpful failure does not change helpfulReviewIds`() = runTest {
+        val testReviews = listOf(Review("r1", "Author1", null, 8.0, "First", "2024-01-01"))
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { getMovieReviewsUseCase(1) } returns testReviews
+        coEvery { getHelpfulReviewIdsUseCase(1) } returns emptySet()
+        coEvery { toggleReviewHelpfulUseCase(1, "r1", true) } throws RuntimeException("DB error")
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleReviewHelpful("r1")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertTrue(state.helpfulReviewIds.isEmpty())
+    }
+
+    @Test
+    fun `toggleReviewHelpful does nothing when state is not Success`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } throws RuntimeException("fail")
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleReviewHelpful("r1")
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { toggleReviewHelpfulUseCase(any(), any(), any()) }
     }
 }

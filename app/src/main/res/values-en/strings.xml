@@ -80,6 +80,8 @@
     <string name="cd_review_collapse">Collapse review</string>
     <string name="cd_review_item">Review by %1$s%2$s, %3$s. Tap to expand</string>
     <string name="cd_review_rating">, rating %.1f</string>
+    <string name="cd_review_helpful_on">Marked as helpful. Tap to unmark</string>
+    <string name="cd_review_helpful_off">Mark as helpful</string>
     <string name="cd_recent_search_item">Search again for %s</string>
     <string name="cd_remove_tag">Remove tag %s</string>
     <string name="cd_cast_item">%1$s, as %2$s</string>

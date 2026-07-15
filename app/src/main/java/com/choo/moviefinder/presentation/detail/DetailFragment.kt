@@ -220,7 +220,9 @@ class DetailFragment : Fragment() {
         recommendationAdapter = HorizontalMovieAdapter(onMovieClick = onDetailSelfNavigate)
         binding.rvRecommendations.setupHorizontal(recommendationAdapter)
 
-        reviewAdapter = ReviewAdapter()
+        reviewAdapter = ReviewAdapter(
+            onHelpfulClick = { review -> viewModel.toggleReviewHelpful(review.id) }
+        )
         binding.rvReviews.apply {
             layoutManager = LinearLayoutManager(requireContext())
             itemAnimator = null
@@ -409,8 +411,9 @@ class DetailFragment : Fragment() {
             !state.recommendations.isNullOrEmpty(), binding.tvRecommendationsLabel, binding.rvRecommendations
         )
 
-        // 리뷰
+        // 리뷰 (도움이 됨으로 표시한 리뷰는 상단 고정 — ViewModel이 순서를 결정, 어댑터는 아이콘 상태만 주입받는다)
         reviewAdapter.submitList(state.reviews.orEmpty())
+        reviewAdapter.setHelpfulIds(state.helpfulReviewIds)
         bindOptionalSection(!state.reviews.isNullOrEmpty(), binding.tvReviewsLabel, binding.rvReviews)
 
         // 등급 배지

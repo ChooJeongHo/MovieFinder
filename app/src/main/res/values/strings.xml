@@ -90,6 +90,8 @@
     <string name="cd_review_collapse">리뷰 접기</string>
     <string name="cd_review_item">%1$s님의 리뷰%2$s, %3$s. 탭하여 펼치기</string>
     <string name="cd_review_rating">, 평점 %.1f</string>
+    <string name="cd_review_helpful_on">도움이 됨으로 표시함. 탭하여 취소</string>
+    <string name="cd_review_helpful_off">도움이 됨으로 표시</string>
     <string name="cd_recent_search_item">%s 재검색</string>
     <string name="cd_remove_tag">%s 태그 삭제</string>
     <string name="cd_widget_refresh">위젯 새로고침</string>

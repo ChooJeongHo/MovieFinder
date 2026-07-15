@@ -56,6 +56,7 @@ class DetailViewModel @Inject constructor(
     private val loadingMutex = Mutex()
     private val toggleMutex = Mutex()
     private val ratingMutex = Mutex()
+    private val helpfulMutex = Mutex()
 
     val isTmdbConnected: StateFlow<Boolean> = ratingCases.getTmdbAccessToken()
         .map { it != null }
@@ -140,7 +141,12 @@ class DetailViewModel @Inject constructor(
                     }
                     launch {
                         val reviews = loadOptional("reviews") { fetch.getMovieReviews(movieId) }
-                        updateSuccess { it.copy(reviews = reviews) }
+                        val helpfulIds = loadOptionalNullable("helpfulReviewIds") {
+                            fetch.getHelpfulReviewIds(movieId)
+                        } ?: emptySet()
+                        // 도움이 됨으로 표시한 리뷰를 상단으로 모으되, 각 그룹 내 원래 상대순서는 유지 (stable sort)
+                        val ordered = reviews.sortedBy { it.id !in helpfulIds }
+                        updateSuccess { it.copy(reviews = ordered, helpfulReviewIds = helpfulIds) }
                     }
                     launch {
                         val trailer = loadOptionalNullable("trailer") { fetch.getMovieTrailer(movieId) }
@@ -246,6 +252,32 @@ class DetailViewModel @Inject constructor(
 
     // 트레일러 시청 시작을 기록한다 (이어보기 확인용)
     fun markTrailerWatched(trailerKey: String) = trailerWatchDelegate.markTrailerWatched(trailerKey)
+
+    // 리뷰의 도움이 됨 표시를 토글한다. 세션 내에는 아이콘만 즉시 반영하고
+    // 목록 재정렬은 다음 로드(loadMovieDetail) 시점에만 적용한다.
+    fun toggleReviewHelpful(reviewId: String) {
+        viewModelScope.launch {
+            helpfulMutex.withLock {
+                val state = _uiState.value
+                if (state !is DetailUiState.Success) return@withLock
+                val targetHelpful = reviewId !in state.helpfulReviewIds
+                suspendRunCatching { toggle.toggleReviewHelpful(movieId, reviewId, targetHelpful) }
+                    .onSuccess {
+                        updateSuccess { current ->
+                            val updatedIds = if (targetHelpful) {
+                                current.helpfulReviewIds + reviewId
+                            } else {
+                                current.helpfulReviewIds - reviewId
+                            }
+                            current.copy(helpfulReviewIds = updatedIds)
+                        }
+                    }
+                    .onFailure {
+                        Timber.w(it, "리뷰 %s 도움이 됨 저장 실패 (movieId=%d)", reviewId, movieId)
+                    }
+            }
+        }
+    }
 
     val memos get() = memoDelegate.memos
 

@@ -17,7 +17,8 @@ sealed class DetailUiState {
         val certification: String? = null,
         val reviews: List<Review>? = null,
         val recommendations: List<Movie>? = null,
-        val watchProviders: List<WatchProvider>? = null
+        val watchProviders: List<WatchProvider>? = null,
+        val helpfulReviewIds: Set<String> = emptySet()
     ) : DetailUiState()
     data class Error(val errorType: ErrorType) : DetailUiState()
 }

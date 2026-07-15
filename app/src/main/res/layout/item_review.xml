@@ -47,6 +47,18 @@
                 tools:text="★ 8.0"
                 tools:visibility="visible" />
 
+            <ImageButton
+                android:id="@+id/btn_helpful"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="@dimen/spacing_sm"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="8dp"
+                android:src="@drawable/ic_thumb_up_outline"
+                tools:contentDescription="@string/cd_review_helpful_off" />
+
         </LinearLayout>
 
         <TextView
