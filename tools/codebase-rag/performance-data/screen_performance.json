@@ -1,0 +1,78 @@
+{
+  "capturedAt": "2026-07-22",
+  "device": "SM-S926N 실기기, debug 빌드(R8/Baseline Profile 미적용, installDebug) - Pixel_10 에뮬레이터 측정치를 대체",
+  "scrollCount": 5,
+  "targetFrameTimeMs": 16,
+  "screens": [
+    {
+      "screen": "HomeFragment",
+      "sourceFile": "app/src/main/java/com/choo/moviefinder/presentation/home/HomeFragment.kt",
+      "totalFrames": 598,
+      "jankyFrames": 7,
+      "jankyPercent": 1.17,
+      "p50Ms": 10,
+      "p90Ms": 16,
+      "p95Ms": 17,
+      "p99Ms": 26,
+      "slowUiThread": 5,
+      "missedVsync": 0,
+      "frameDeadlineMissed": 7
+    },
+    {
+      "screen": "SearchFragment",
+      "sourceFile": "app/src/main/java/com/choo/moviefinder/presentation/search/SearchFragment.kt",
+      "totalFrames": 431,
+      "jankyFrames": 4,
+      "jankyPercent": 0.93,
+      "p50Ms": 5,
+      "p90Ms": 9,
+      "p95Ms": 9,
+      "p99Ms": 9,
+      "slowUiThread": 2,
+      "missedVsync": 0,
+      "frameDeadlineMissed": 4
+    },
+    {
+      "screen": "FavoriteFragment",
+      "sourceFile": "app/src/main/java/com/choo/moviefinder/presentation/favorite/FavoriteFragment.kt",
+      "totalFrames": 434,
+      "jankyFrames": 1,
+      "jankyPercent": 0.23,
+      "p50Ms": 5,
+      "p90Ms": 6,
+      "p95Ms": 6,
+      "p99Ms": 7,
+      "slowUiThread": 1,
+      "missedVsync": 0,
+      "frameDeadlineMissed": 1
+    },
+    {
+      "screen": "SettingsFragment",
+      "sourceFile": "app/src/main/java/com/choo/moviefinder/presentation/settings/SettingsFragment.kt",
+      "totalFrames": 428,
+      "jankyFrames": 1,
+      "jankyPercent": 0.23,
+      "p50Ms": 5,
+      "p90Ms": 5,
+      "p95Ms": 5,
+      "p99Ms": 5,
+      "slowUiThread": 1,
+      "missedVsync": 0,
+      "frameDeadlineMissed": 1
+    },
+    {
+      "screen": "DetailFragment",
+      "sourceFile": "app/src/main/java/com/choo/moviefinder/presentation/detail/DetailFragment.kt",
+      "totalFrames": 473,
+      "jankyFrames": 2,
+      "jankyPercent": 0.42,
+      "p50Ms": 5,
+      "p90Ms": 16,
+      "p95Ms": 16,
+      "p99Ms": 17,
+      "slowUiThread": 1,
+      "missedVsync": 0,
+      "frameDeadlineMissed": 2
+    }
+  ]
+}

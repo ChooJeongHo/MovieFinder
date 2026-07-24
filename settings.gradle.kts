@@ -25,4 +25,5 @@ dependencyResolutionManagement {
 rootProject.name = "MovieFinder"
 include(":app")
 include(":baselineprofile")
+include(":tools:codebase-rag")
  

@@ -14,3 +14,4 @@ local.properties
 .claude/
 node_modules/
 screenshot_test/
+/.rag/

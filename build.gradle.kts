@@ -9,4 +9,5 @@ plugins {
     alias(libs.plugins.android.test) apply false
     alias(libs.plugins.baseline.profile) apply false
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
 }
