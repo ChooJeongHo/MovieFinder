@@ -6,8 +6,8 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ## 기술 스택
 
 ### 빌드 환경
-- **AGP**: 9.2.1 (Android Gradle Plugin, Kotlin 2.3.21 내장)
-- **Gradle**: 9.3.1
+- **AGP**: 9.3.1 (Android Gradle Plugin, Kotlin 2.3.21 내장)
+- **Gradle**: 9.6.1
 - **compileSdk**: 36 (Android 15)
 - **minSdk**: 24 / **targetSdk**: 36
 - **KSP**: 2.3.9 (Kotlin Symbol Processing)
