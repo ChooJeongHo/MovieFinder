@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -21,6 +22,7 @@ import com.choo.moviefinder.core.util.RateLimiter
 import com.choo.moviefinder.core.util.computeWindowWidthSizeClass
 import com.choo.moviefinder.core.util.toMovieGridSpanCount
 import com.choo.moviefinder.databinding.FragmentHomeBinding
+import com.choo.moviefinder.presentation.adapter.BoxOfficeAdapter
 import com.choo.moviefinder.presentation.adapter.MovieLoadStateAdapter
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
@@ -42,6 +44,7 @@ class HomeFragment : Fragment() {
 
     private lateinit var movieAdapter: MoviePagingAdapter
     private lateinit var watchHistoryAdapter: HorizontalMovieAdapter
+    private lateinit var boxOfficeAdapter: BoxOfficeAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,11 +59,13 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
         setupWatchHistory()
+        setupBoxOffice()
         setupSwipeRefresh()
         setupScrollToTopFab()
         setupTabs()
         observeLoadStates()
         observeWatchHistory()
+        observeBoxOffice()
         observeSelectedTab()
         collectCurrentMovies()
     }
@@ -102,12 +107,58 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun setupBoxOffice() {
+        boxOfficeAdapter = BoxOfficeAdapter { item ->
+            val movieId = item.matchedMovie?.id
+            if (movieId != null) {
+                if (findNavController().currentDestination?.id == R.id.homeFragment) {
+                    val action = HomeFragmentDirections.actionHomeToDetail(movieId)
+                    findNavController().navigate(action)
+                }
+            } else {
+                Toast.makeText(requireContext(), R.string.box_office_no_match_message, Toast.LENGTH_SHORT).show()
+            }
+        }
+        binding.rvBoxOffice.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = boxOfficeAdapter
+        }
+    }
+
+    private fun observeBoxOffice() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.boxOfficeUiState.collect { state ->
+                    when (state) {
+                        is BoxOfficeUiState.Loading -> {
+                            binding.boxOfficeSection.isVisible = false
+                        }
+                        is BoxOfficeUiState.Success -> {
+                            binding.boxOfficeSection.isVisible = state.items.isNotEmpty()
+                            binding.rvBoxOffice.isVisible = true
+                            binding.tvBoxOfficeError.isVisible = false
+                            boxOfficeAdapter.submitList(state.items)
+                        }
+                        is BoxOfficeUiState.Error -> {
+                            binding.boxOfficeSection.isVisible = true
+                            binding.rvBoxOffice.isVisible = false
+                            binding.tvBoxOfficeError.isVisible = true
+                            binding.tvBoxOfficeError.text =
+                                ErrorMessageProvider.getMessage(requireContext(), state.errorType)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.setColorSchemeColors(
             requireContext().getColor(R.color.colorPrimary)
         )
         binding.swipeRefresh.setOnRefreshListener {
             movieAdapter.refresh()
+            viewModel.retryBoxOffice()
         }
     }
 
@@ -235,6 +286,7 @@ class HomeFragment : Fragment() {
         binding.shimmerView.shimmerLayout.stopShimmer()
         binding.rvMovies.adapter = null
         binding.rvWatchHistory.adapter = null
+        binding.rvBoxOffice.adapter = null
         _binding = null
     }
 

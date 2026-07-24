@@ -5,6 +5,7 @@ import com.choo.moviefinder.BuildConfig
 import com.choo.moviefinder.core.util.DebugEventListener
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.core.util.addDebugLogging
+import com.choo.moviefinder.data.remote.api.KoficApiService
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.api.TmdbAuthApiService
 import com.choo.moviefinder.data.remote.api.TmdbV3SessionApiService
@@ -36,6 +37,14 @@ annotation class TmdbV4OkHttpClient
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class TmdbV4Retrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class KoficOkHttpClient
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class KoficRetrofit
 
 @Suppress("TooManyFunctions")
 @Module
@@ -188,6 +197,43 @@ object NetworkModule {
     @Singleton
     fun provideTmdbV3SessionApiService(retrofit: Retrofit): TmdbV3SessionApiService {
         return retrofit.create(TmdbV3SessionApiService::class.java)
+    }
+
+    // KOFIC용 OkHttpClient (key 쿼리 파라미터 자동 주입)
+    @Provides
+    @Singleton
+    @KoficOkHttpClient
+    fun provideKoficOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val original = chain.request()
+                val url = original.url.newBuilder()
+                    .addQueryParameter("key", BuildConfig.KOFIC_API_KEY)
+                    .build()
+                chain.proceed(original.newBuilder().url(url).build())
+            }
+            .addDebugLogging()
+            .applyCommonConfig()
+            .build()
+    }
+
+    // KOFIC Retrofit
+    @Provides
+    @Singleton
+    @KoficRetrofit
+    fun provideKoficRetrofit(json: Json, @KoficOkHttpClient client: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.KOFIC_BASE_URL)
+            .client(client)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+    }
+
+    // KoficApiService 제공
+    @Provides
+    @Singleton
+    fun provideKoficApiService(@KoficRetrofit retrofit: Retrofit): KoficApiService {
+        return retrofit.create(KoficApiService::class.java)
     }
 
     // 엔드포인트 경로에 따른 Cache-Control 헤더 값 반환

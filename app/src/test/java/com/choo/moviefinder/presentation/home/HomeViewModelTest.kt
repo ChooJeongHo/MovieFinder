@@ -1,7 +1,10 @@
 package com.choo.moviefinder.presentation.home
 
 import androidx.paging.PagingData
+import com.choo.moviefinder.domain.model.BoxOffice
+import com.choo.moviefinder.domain.model.BoxOfficeMovie
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.usecase.GetDailyBoxOfficeWithTmdbMatchUseCase
 import com.choo.moviefinder.domain.usecase.GetNowPlayingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetPopularMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetTrendingMoviesUseCase
@@ -9,11 +12,14 @@ import com.choo.moviefinder.domain.usecase.GetUpcomingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
 import app.cash.turbine.test
 import com.choo.moviefinder.util.CoroutineTestBase
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -28,6 +34,7 @@ class HomeViewModelTest : CoroutineTestBase() {
     private lateinit var getTrendingMoviesUseCase: GetTrendingMoviesUseCase
     private lateinit var getUpcomingMoviesUseCase: GetUpcomingMoviesUseCase
     private lateinit var getWatchHistoryUseCase: GetWatchHistoryUseCase
+    private lateinit var getDailyBoxOfficeWithTmdbMatchUseCase: GetDailyBoxOfficeWithTmdbMatchUseCase
 
     private val testMovies = listOf(
         Movie(1, "Movie 1", "/p1.jpg", "/b1.jpg", "Overview 1", "2024-01-01", 8.0, 100),
@@ -41,12 +48,14 @@ class HomeViewModelTest : CoroutineTestBase() {
         getTrendingMoviesUseCase = mockk()
         getUpcomingMoviesUseCase = mockk()
         getWatchHistoryUseCase = mockk()
+        getDailyBoxOfficeWithTmdbMatchUseCase = mockk()
 
         every { getNowPlayingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getPopularMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getTrendingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getUpcomingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getWatchHistoryUseCase() } returns flowOf(emptyList())
+        coEvery { getDailyBoxOfficeWithTmdbMatchUseCase() } returns emptyList()
     }
 
     private fun createViewModel(): HomeViewModel {
@@ -55,7 +64,8 @@ class HomeViewModelTest : CoroutineTestBase() {
             getPopularMoviesUseCase = getPopularMoviesUseCase,
             getTrendingMoviesUseCase = getTrendingMoviesUseCase,
             getUpcomingMoviesUseCase = getUpcomingMoviesUseCase,
-            getWatchHistoryUseCase = getWatchHistoryUseCase
+            getWatchHistoryUseCase = getWatchHistoryUseCase,
+            getDailyBoxOfficeWithTmdbMatchUseCase = getDailyBoxOfficeWithTmdbMatchUseCase
         )
     }
 
@@ -150,5 +160,42 @@ class HomeViewModelTest : CoroutineTestBase() {
 
         viewModel.onTabSelected(HomeTab.TRENDING)
         assertEquals(HomeTab.TRENDING, viewModel.selectedTab.value)
+    }
+
+    @Test
+    fun `boxOfficeUiState emits Success with items from use case on init`() = runTest {
+        val boxOfficeMovies = listOf(
+            BoxOfficeMovie(
+                boxOffice = BoxOffice(1, 0, false, "20240001", "영화 1", "2024-01-01", 1000L, 5000L, 10_000_000L, 100),
+                matchedMovie = testMovies[0]
+            )
+        )
+        coEvery { getDailyBoxOfficeWithTmdbMatchUseCase() } returns boxOfficeMovies
+        val viewModel = createViewModel()
+
+        advanceUntilIdle()
+
+        assertEquals(BoxOfficeUiState.Success(boxOfficeMovies), viewModel.boxOfficeUiState.value)
+    }
+
+    @Test
+    fun `boxOfficeUiState emits Error when use case throws`() = runTest {
+        coEvery { getDailyBoxOfficeWithTmdbMatchUseCase() } throws java.io.IOException("network down")
+        val viewModel = createViewModel()
+
+        advanceUntilIdle()
+
+        assertTrue(viewModel.boxOfficeUiState.value is BoxOfficeUiState.Error)
+    }
+
+    @Test
+    fun `retryBoxOffice re-invokes use case`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.retryBoxOffice()
+        advanceUntilIdle()
+
+        coVerify(exactly = 2) { getDailyBoxOfficeWithTmdbMatchUseCase() }
     }
 }

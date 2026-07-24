@@ -11,6 +11,18 @@
     <string name="tab_popular">Popular</string>
     <string name="tab_trending">Trending</string>
 
+    <!-- Box Office Section -->
+    <string name="box_office_title">Today\'s Korea Box Office TOP 10</string>
+    <string name="box_office_error">Failed to load box office data</string>
+    <string name="box_office_audience_format">%1$s admissions</string>
+    <string name="box_office_rank_up">▲%1$d</string>
+    <string name="box_office_rank_down">▼%1$d</string>
+    <string name="box_office_rank_same">-</string>
+    <string name="box_office_rank_new">NEW</string>
+    <string name="cd_box_office_item">Rank %1$d, %2$s, %3$s admissions today</string>
+    <string name="cd_box_office_poster">Box office rank %1$d poster</string>
+    <string name="box_office_no_match_message">Couldn\'t find details for this movie on TMDB</string>
+
     <!-- Search Screen -->
     <string name="search_hint">Search movies</string>
     <string name="recent_searches">Recent Searches</string>

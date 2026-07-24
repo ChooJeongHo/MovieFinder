@@ -38,6 +38,8 @@ android {
         buildConfigField("String", "TMDB_IMAGE_BASE_URL", "\"https://image.tmdb.org/t/p/\"")
         buildConfigField("String", "TMDB_READ_ACCESS_TOKEN", "\"${localProperties.getProperty("TMDB_READ_ACCESS_TOKEN", "")}\"")
         buildConfigField("String", "TMDB_V4_BASE_URL", "\"https://api.themoviedb.org/4/\"")
+        buildConfigField("String", "KOFIC_API_KEY", "\"${localProperties.getProperty("KOFIC_API_KEY", "")}\"")
+        buildConfigField("String", "KOFIC_BASE_URL", "\"https://www.kobis.or.kr/kobisopenapi/webservice/rest/\"")
 
         resourceConfigurations += setOf("ko", "en")
 

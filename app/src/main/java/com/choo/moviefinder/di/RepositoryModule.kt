@@ -3,6 +3,7 @@ package com.choo.moviefinder.di
 import com.choo.moviefinder.data.local.PreferencesRepositoryImpl
 import com.choo.moviefinder.data.local.TokenRepositoryImpl
 import com.choo.moviefinder.data.repository.BackupRepositoryImpl
+import com.choo.moviefinder.data.repository.BoxOfficeRepositoryImpl
 import com.choo.moviefinder.data.repository.FavoriteRepositoryImpl
 import com.choo.moviefinder.data.repository.MemoRepositoryImpl
 import com.choo.moviefinder.data.repository.PersonRepositoryImpl
@@ -16,6 +17,7 @@ import com.choo.moviefinder.data.repository.UserRatingRepositoryImpl
 import com.choo.moviefinder.data.repository.WatchHistoryRepositoryImpl
 import com.choo.moviefinder.data.repository.WatchlistRepositoryImpl
 import com.choo.moviefinder.domain.repository.BackupRepository
+import com.choo.moviefinder.domain.repository.BoxOfficeRepository
 import com.choo.moviefinder.domain.repository.FavoriteRepository
 import com.choo.moviefinder.domain.repository.MemoRepository
 import com.choo.moviefinder.domain.repository.PersonRepository
@@ -36,6 +38,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+@Suppress("TooManyFunctions")
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
@@ -84,4 +87,7 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindReviewFeedbackRepository(impl: ReviewFeedbackRepositoryImpl): ReviewFeedbackRepository
+
+    @Binds @Singleton
+    abstract fun bindBoxOfficeRepository(impl: BoxOfficeRepositoryImpl): BoxOfficeRepository
 }

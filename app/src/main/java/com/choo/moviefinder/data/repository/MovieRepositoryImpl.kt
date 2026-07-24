@@ -97,6 +97,14 @@ class MovieRepositoryImpl @Inject constructor(
         ).flow
     }
 
+    // 검색어로 영화를 1페이지만 즉시 조회한다 (박스오피스-TMDB 매칭 등 단발성 조회용)
+    override suspend fun searchMoviesOnce(query: String): List<Movie> {
+        require(query.isNotBlank()) { "Search query must not be blank" }
+        return safeApiCall {
+            apiService.searchMovies(query = query, page = 1).results.map { it.toDomain() }
+        }
+    }
+
     // 장르와 정렬 기준으로 영화를 탐색 (Discover API)
     override fun discoverMovies(
         genres: Set<Int>,

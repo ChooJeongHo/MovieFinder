@@ -3,6 +3,8 @@ package com.choo.moviefinder.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
+import com.choo.moviefinder.core.util.launchWithErrorHandler
+import com.choo.moviefinder.domain.usecase.GetDailyBoxOfficeWithTmdbMatchUseCase
 import com.choo.moviefinder.domain.usecase.GetNowPlayingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetPopularMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetTrendingMoviesUseCase
@@ -24,8 +26,12 @@ class HomeViewModel @Inject constructor(
     getPopularMoviesUseCase: GetPopularMoviesUseCase,
     getTrendingMoviesUseCase: GetTrendingMoviesUseCase,
     getUpcomingMoviesUseCase: GetUpcomingMoviesUseCase,
-    getWatchHistoryUseCase: GetWatchHistoryUseCase
+    getWatchHistoryUseCase: GetWatchHistoryUseCase,
+    private val getDailyBoxOfficeWithTmdbMatchUseCase: GetDailyBoxOfficeWithTmdbMatchUseCase
 ) : ViewModel() {
+
+    private val _boxOfficeUiState = MutableStateFlow<BoxOfficeUiState>(BoxOfficeUiState.Loading)
+    val boxOfficeUiState: StateFlow<BoxOfficeUiState> = _boxOfficeUiState.asStateFlow()
 
     private val _selectedTab = MutableStateFlow(HomeTab.NOW_PLAYING)
     val selectedTab: StateFlow<HomeTab> = _selectedTab.asStateFlow()
@@ -59,7 +65,25 @@ class HomeViewModel @Inject constructor(
         .map { it.take(20) }
         .stateIn(viewModelScope, WhileSubscribed5s, emptyList())
 
+    init {
+        loadBoxOffice()
+    }
+
     fun onTabSelected(tab: HomeTab) {
         _selectedTab.value = tab
+    }
+
+    fun retryBoxOffice() {
+        loadBoxOffice()
+    }
+
+    private fun loadBoxOffice() {
+        _boxOfficeUiState.value = BoxOfficeUiState.Loading
+        viewModelScope.launchWithErrorHandler(
+            onError = { errorType -> _boxOfficeUiState.value = BoxOfficeUiState.Error(errorType) }
+        ) {
+            val items = getDailyBoxOfficeWithTmdbMatchUseCase()
+            _boxOfficeUiState.value = BoxOfficeUiState.Success(items)
+        }
     }
 }

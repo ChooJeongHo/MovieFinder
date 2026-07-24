@@ -22,6 +22,9 @@ interface MovieQueryRepository {
     // 검색어와 연도 필터로 영화를 검색하여 페이징 데이터로 반환한다
     fun searchMovies(query: String, year: Int? = null): Flow<PagingData<Movie>>
 
+    // 검색어로 영화를 1페이지만 즉시 조회한다 (박스오피스-TMDB 매칭 등 단발성 조회용)
+    suspend fun searchMoviesOnce(query: String): List<Movie>
+
     // 장르, 정렬, 연도 필터로 영화를 탐색하여 페이징 데이터로 반환한다
     fun discoverMovies(
         genres: Set<Int> = emptySet(),

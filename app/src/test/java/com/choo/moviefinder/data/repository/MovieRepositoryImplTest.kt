@@ -400,6 +400,35 @@ class MovieRepositoryImplTest {
         assertNotNull(flow)
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `searchMoviesOnce with blank query throws IllegalArgumentException`() = runTest {
+        repository.searchMoviesOnce("   ")
+    }
+
+    @Test
+    fun `searchMoviesOnce returns mapped domain movies from first page`() = runTest {
+        coEvery { apiService.searchMovies(query = "탑건", page = 1) } returns MovieListResponse(
+            page = 1, results = testMovieDtos, totalPages = 3, totalResults = 50
+        )
+
+        val result = repository.searchMoviesOnce("탑건")
+
+        assertEquals(2, result.size)
+        assertEquals(10, result[0].id)
+        assertEquals("Similar 1", result[0].title)
+    }
+
+    @Test
+    fun `searchMoviesOnce returns empty list when no results found`() = runTest {
+        coEvery { apiService.searchMovies(query = "존재하지않는영화", page = 1) } returns MovieListResponse(
+            page = 1, results = emptyList(), totalPages = 0, totalResults = 0
+        )
+
+        val result = repository.searchMoviesOnce("존재하지않는영화")
+
+        assertTrue(result.isEmpty())
+    }
+
     @Test
     fun `discoverMovies with empty genres returns non-null PagingData flow`() {
         val flow: Flow<PagingData<Movie>> = repository.discoverMovies(

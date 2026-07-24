@@ -12,6 +12,18 @@
     <string name="tab_trending">트렌딩</string>
     <string name="tab_upcoming">개봉 예정</string>
 
+    <!-- 박스오피스 섹션 -->
+    <string name="box_office_title">오늘의 박스오피스 TOP 10</string>
+    <string name="box_office_error">박스오피스 정보를 불러오지 못했습니다</string>
+    <string name="box_office_audience_format">%1$s명</string>
+    <string name="box_office_rank_up">▲%1$d</string>
+    <string name="box_office_rank_down">▼%1$d</string>
+    <string name="box_office_rank_same">-</string>
+    <string name="box_office_rank_new">NEW</string>
+    <string name="cd_box_office_item">%1$d위, %2$s, 오늘 관객 %3$s명</string>
+    <string name="cd_box_office_poster">박스오피스 %1$d위 포스터</string>
+    <string name="box_office_no_match_message">TMDB에서 이 영화의 상세 정보를 찾지 못했습니다</string>
+
     <!-- 검색 화면 -->
     <string name="search_hint">영화 검색</string>
     <string name="recent_searches">최근 검색어</string>
