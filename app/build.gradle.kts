@@ -41,8 +41,6 @@ android {
         buildConfigField("String", "KOFIC_API_KEY", "\"${localProperties.getProperty("KOFIC_API_KEY", "")}\"")
         buildConfigField("String", "KOFIC_BASE_URL", "\"https://www.kobis.or.kr/kobisopenapi/webservice/rest/\"")
 
-        resourceConfigurations += setOf("ko", "en")
-
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -92,6 +90,10 @@ android {
         viewBinding = true
         buildConfig = true
         compose = true
+    }
+
+    androidResources {
+        localeFilters += setOf("ko", "en")
     }
 }
 
@@ -216,8 +218,8 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
     }
 }
 
-// Hilt 2.59.2의 kotlin-metadata-jvm이 Kotlin 메타데이터 2.3.0까지만 지원하므로,
-// AGP 9.2.1이 강제하는 kotlin-stdlib:2.4.0 승격을 차단한다.
+// Hilt의 kotlin-metadata-jvm이 Kotlin 메타데이터 2.3.0까지만 지원하므로,
+// AGP 9.x가 강제하는 kotlin-stdlib:2.4.0 승격을 차단한다. (AGP 9.3.1에서도 여전히 발생 확인됨)
 configurations.all {
     resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.3.21")
 }

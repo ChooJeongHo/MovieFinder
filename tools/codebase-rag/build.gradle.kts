@@ -11,7 +11,7 @@ kotlin {
     jvm()
 
     sourceSets {
-        val jvmMain by getting {
+        getByName("jvmMain") {
             dependencies {
                 implementation(libs.androidx.room.runtime)
                 implementation(libs.androidx.sqlite.bundled)
@@ -30,7 +30,7 @@ room {
     schemaDirectory("$projectDir/schemas")
 }
 
-val ragIndex by tasks.registering(JavaExec::class) {
+tasks.register<JavaExec>("ragIndex") {
     group = "codebase-rag"
     description = "domain/presentation/data .kt 파일 + JaCoCo 커버리지 + gfxinfo 성능 측정 결과를 청크 분할 " +
         "+ 임베딩 후 Room(SQLite)에 인덱싱한다. " +
@@ -47,7 +47,7 @@ val ragIndex by tasks.registering(JavaExec::class) {
         ?: emptyList()
 }
 
-val ragIndexPerf by tasks.registering(JavaExec::class) {
+tasks.register<JavaExec>("ragIndexPerf") {
     group = "codebase-rag"
     description = "performance-data/screen_performance.json(gfxinfo 측정 결과)만 다시 읽어 PERFORMANCE_METRIC " +
         "청크만 갱신한다 - 전체 재인덱싱(ragIndex) 없이 성능 데이터만 최신화할 때 사용."
@@ -59,7 +59,7 @@ val ragIndexPerf by tasks.registering(JavaExec::class) {
     workingDir = rootProject.projectDir
 }
 
-val ragAsk by tasks.registering(JavaExec::class) {
+tasks.register<JavaExec>("ragAsk") {
     group = "codebase-rag"
     description = "자연어 질문을 임베딩 -> 코사인 유사도 검색 -> Claude API 답변까지 실행한다. " +
         "-Pquestion=\"...\" 으로 질문 전달, -Ptypes=\"CLASS,FUNCTION\" 으로 청크 타입 필터링(기본은 전체 타입)."
