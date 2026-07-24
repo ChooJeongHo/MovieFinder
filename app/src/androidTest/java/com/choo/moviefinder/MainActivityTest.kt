@@ -41,7 +41,7 @@ class MainActivityTest {
     @Test
     fun navigateToSearch_showsSearchInput() {
         onView(withId(R.id.searchFragment)).perform(click())
-        onView(withId(R.id.et_search))
+        onView(withId(R.id.compose_search_input))
             .check(matches(isDisplayed()))
     }
 

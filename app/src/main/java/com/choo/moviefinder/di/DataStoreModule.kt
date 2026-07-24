@@ -15,7 +15,9 @@ import dagger.hilt.components.SingletonComponent
 import java.io.File
 import javax.inject.Singleton
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+// androidTest의 TestDataStoreModule에서 동일 인스턴스를 재사용해야 하므로 public으로 유지한다
+// (private이면 같은 파일을 가리키는 별도 DataStore 인스턴스가 생겨 DataStore 자체 안전장치와 충돌한다)
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 @Module
 @InstallIn(SingletonComponent::class)

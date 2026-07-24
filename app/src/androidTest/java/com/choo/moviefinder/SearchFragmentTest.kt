@@ -30,13 +30,7 @@ class SearchFragmentTest {
 
     @Test
     fun searchScreen_displaysSearchInput() {
-        onView(withId(R.id.et_search))
-            .check(matches(isDisplayed()))
-    }
-
-    @Test
-    fun searchScreen_displaysSearchInputLayout() {
-        onView(withId(R.id.search_input_layout))
+        onView(withId(R.id.compose_search_input))
             .check(matches(isDisplayed()))
     }
 
