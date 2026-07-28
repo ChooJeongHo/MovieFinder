@@ -14,6 +14,10 @@ interface CachedMovieDao {
     @Query("SELECT * FROM cached_movies WHERE category = :category ORDER BY page ASC, cachedAt ASC")
     fun getMoviesByCategory(category: String): PagingSource<Int, CachedMovieEntity>
 
+    // 지정된 카테고리들에 캐시된 영화 전체를 스냅샷으로 즉시 조회 (네트워크 호출 없이 로컬 우선 매칭용)
+    @Query("SELECT * FROM cached_movies WHERE category IN (:categories)")
+    suspend fun getAllByCategories(categories: List<String>): List<CachedMovieEntity>
+
     // 캐시 영화 목록 일괄 삽입 (중복 시 교체)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(movies: List<CachedMovieEntity>)

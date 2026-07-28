@@ -25,6 +25,10 @@ interface MovieQueryRepository {
     // 검색어로 영화를 1페이지만 즉시 조회한다 (박스오피스-TMDB 매칭 등 단발성 조회용)
     suspend fun searchMoviesOnce(query: String): List<Movie>
 
+    // 로컬에 캐싱된 현재 상영작/인기 영화 전체를 네트워크 호출 없이 스냅샷으로 조회한다
+    // (박스오피스-TMDB 매칭 시 로컬 우선 조회로 반복적인 네트워크 검색을 피하기 위한 용도)
+    suspend fun getCachedMoviesSnapshot(): List<Movie>
+
     // 장르, 정렬, 연도 필터로 영화를 탐색하여 페이징 데이터로 반환한다
     fun discoverMovies(
         genres: Set<Int> = emptySet(),

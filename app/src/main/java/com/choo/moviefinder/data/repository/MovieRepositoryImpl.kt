@@ -105,6 +105,12 @@ class MovieRepositoryImpl @Inject constructor(
         }
     }
 
+    // 로컬에 캐싱된 현재 상영작/인기 영화 전체를 네트워크 호출 없이 스냅샷으로 조회
+    override suspend fun getCachedMoviesSnapshot(): List<Movie> =
+        cachedMovieDao.getAllByCategories(
+            listOf(MovieRemoteMediator.CATEGORY_NOW_PLAYING, MovieRemoteMediator.CATEGORY_POPULAR)
+        ).map { it.toDomain() }
+
     // 장르와 정렬 기준으로 영화를 탐색 (Discover API)
     override fun discoverMovies(
         genres: Set<Int>,

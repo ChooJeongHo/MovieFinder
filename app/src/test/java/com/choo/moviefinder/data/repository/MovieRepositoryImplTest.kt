@@ -4,6 +4,8 @@ import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
+import com.choo.moviefinder.data.local.entity.CachedMovieEntity
+import com.choo.moviefinder.data.paging.MovieRemoteMediator
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.CastDto
 import com.choo.moviefinder.data.remote.dto.CreditsResponse
@@ -425,6 +427,42 @@ class MovieRepositoryImplTest {
         )
 
         val result = repository.searchMoviesOnce("존재하지않는영화")
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `getCachedMoviesSnapshot returns mapped domain movies from now playing and popular categories`() = runTest {
+        val cachedEntity = CachedMovieEntity(
+            id = 20,
+            category = MovieRemoteMediator.CATEGORY_NOW_PLAYING,
+            title = "캐시된 영화",
+            posterPath = "/p.jpg",
+            backdropPath = "/b.jpg",
+            overview = "overview",
+            releaseDate = "2024-01-01",
+            voteAverage = 8.0,
+            voteCount = 200,
+            page = 1
+        )
+        coEvery {
+            cachedMovieDao.getAllByCategories(
+                listOf(MovieRemoteMediator.CATEGORY_NOW_PLAYING, MovieRemoteMediator.CATEGORY_POPULAR)
+            )
+        } returns listOf(cachedEntity)
+
+        val result = repository.getCachedMoviesSnapshot()
+
+        assertEquals(1, result.size)
+        assertEquals(20, result[0].id)
+        assertEquals("캐시된 영화", result[0].title)
+    }
+
+    @Test
+    fun `getCachedMoviesSnapshot returns empty list when no movies are cached`() = runTest {
+        coEvery { cachedMovieDao.getAllByCategories(any()) } returns emptyList()
+
+        val result = repository.getCachedMoviesSnapshot()
 
         assertTrue(result.isEmpty())
     }
