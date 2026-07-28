@@ -20,7 +20,10 @@
     <string name="box_office_rank_down">▼%1$d</string>
     <string name="box_office_rank_same">-</string>
     <string name="box_office_rank_new">NEW</string>
-    <string name="cd_box_office_item">%1$d위, %2$s, 오늘 관객 %3$s명</string>
+    <string name="box_office_title_weekly">주간 박스오피스 TOP 10</string>
+    <string name="box_office_period_daily">일별</string>
+    <string name="box_office_period_weekly">주간</string>
+    <string name="cd_box_office_item">%1$d위, %2$s, 관객 %3$s명</string>
     <string name="cd_box_office_poster">박스오피스 %1$d위 포스터</string>
     <string name="box_office_no_match_message">TMDB에서 이 영화의 상세 정보를 찾지 못했습니다</string>
 

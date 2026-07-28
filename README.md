@@ -88,7 +88,7 @@ app/src/main/java/com/choo/moviefinder/
 
 | 화면 | 주요 기능 |
 |------|-----------|
-| 홈 | 현재 상영작 / 인기 영화 / 트렌딩 탭, Paging 3 무한 스크롤, 오프라인 캐시 (RemoteMediator), 최근 본 영화 |
+| 홈 | 현재 상영작 / 인기 영화 / 트렌딩 탭, Paging 3 무한 스크롤, 오프라인 캐시 (RemoteMediator), 최근 본 영화, KOFIC 일별 박스오피스 TOP 10 (TMDB 매칭) |
 | 검색 | 실시간 검색 (debounce), 연도 / 장르 / 정렬 필터, Discover 모드, 그리드 ↔ 리스트 전환, 배우 검색 |
 | 영화 상세 | 출연진 / 추천 영화 / 리뷰 / 예고편 (YouTube 연결), 즐겨찾기 / 워치리스트, 내 평점, 메모, 스트리밍 정보, Shared Element Transition |
 | 배우 상세 | 프로필, 바이오그래피, 필모그래피 |

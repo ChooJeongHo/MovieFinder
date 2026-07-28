@@ -173,9 +173,21 @@ TMDB_API_KEY=여기에_API_키_입력
 - CertificatePinner: `api.themoviedb.org` + `image.tmdb.org` leaf + intermediate SHA-256 핀
 - HTTP 응답 캐시: OkHttp Cache 10MB
 
+### KOFIC 박스오피스 API
+`local.properties`에 `KOFIC_API_KEY` 추가 필요 (영화진흥위원회 Open API, TMDB와 별개 발급).
+
+| 엔드포인트 | 용도 |
+|---|---|
+| GET boxoffice/searchDailyBoxOfficeList.json | 일별 박스오피스 TOP 10 (`targetDt`, `itemPerPage`) |
+| GET boxoffice/searchWeeklyBoxOfficeList.json | 주간 박스오피스 TOP 10 (`targetDt`, `weekGb`(0=주간/1=주말/2=주중), `itemPerPage`) — 개별 아이템 필드는 일별과 100% 동일, `KoficBoxOfficeItemDto` 공용 |
+
+- TMDB와 완전히 분리된 `@KoficOkHttpClient`/`@KoficRetrofit`/`KoficApiService` (`NetworkModule.kt`) — 별도 baseUrl(`BuildConfig.KOFIC_BASE_URL`), 인증 키를 헤더가 아닌 쿼리 파라미터(`key`)로 주입, TMDB `CertificatePinner` 미적용
+- `MatchBoxOfficeWithTmdbUseCase`: KOFIC `movieName`을 TMDB와 제목 문자열 매칭(ID 체계가 달라 직접 연결 불가) — 매 항목마다 TMDB 검색을 날리면 N+1이 되므로, 로컬 캐시(`MovieQueryRepository.getCachedMoviesSnapshot()`, now_playing+popular 스냅샷)를 요청당 1회만 조회해 우선 매칭하고 캐시 미스만 `searchMoviesOnce()` 네트워크 폴백 (TOP 50 기준 실측 약 1.6s → 0.3s, `MatchBoxOfficeWithTmdbPerformanceTest`) — `GetDailyBoxOfficeWithTmdbMatchUseCase`/`GetWeeklyBoxOfficeWithTmdbMatchUseCase`가 이 매처를 공유(협력자 추출, "가져오기"와 "매칭"의 관심사 분리)
+- 홈 화면 박스오피스 섹션은 ChipGroup(일별/주간)으로 기간 전환, 선택은 `SavedStateHandle`에 보존, 전환 시 이전 `Job` 취소로 늦게 도착한 응답이 최신 상태를 덮지 않음 (`HomeViewModel.loadBoxOffice()`)
+
 ## 테스트
 
-### 유닛 테스트 (638개)
+### 유닛 테스트 (721개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -220,7 +232,8 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - Pre-commit Hook: Detekt + 컴파일 체크 (`.githooks/pre-commit`)
 - Pre-push Hook: 유닛 테스트 전체 실행 (`.githooks/pre-push`)
 - Hooks 활성화: `git config core.hooksPath .githooks`
-- GitHub Secrets: `TMDB_API_KEY` 필요
+- GitHub Secrets: `TMDB_API_KEY` 필요 — `KOFIC_API_KEY`는 CI에 미주입(로컬 전용); 없어도 빌드/유닛 테스트는
+  통과하지만 실기기 박스오피스 API는 인증 오류 (`ONBOARDING.md` 참고)
 - Dependabot: 라이브러리 자동 버전 업데이트
 
 ## Claude Code 훅 / 서브에이전트 자동화

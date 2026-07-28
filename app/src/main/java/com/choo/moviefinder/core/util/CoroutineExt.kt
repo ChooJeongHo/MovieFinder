@@ -2,18 +2,20 @@ package com.choo.moviefinder.core.util
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 
 // 공유 WhileSubscribed 인스턴스 — 5초 타임아웃 (magic number 제거)
 val WhileSubscribed5s = SharingStarted.WhileSubscribed(5_000)
 
-// 코루틴 실행 후 예외 발생 시 ErrorType으로 변환하여 에러 핸들러를 호출한다
+// 코루틴 실행 후 예외 발생 시 ErrorType으로 변환하여 에러 핸들러를 호출한다.
+// 반환된 Job으로 호출부에서 이전 작업을 취소할 수 있다(예: 탭/기간 전환 시 직전 로딩 취소).
 fun CoroutineScope.launchWithErrorHandler(
     onError: suspend (ErrorType) -> Unit,
     block: suspend () -> Unit
-) {
-    launch {
+): Job {
+    return launch {
         try {
             block()
         } catch (e: CancellationException) {

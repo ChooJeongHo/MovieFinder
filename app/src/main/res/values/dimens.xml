@@ -62,6 +62,9 @@
     <dimen name="histogram_height">280dp</dimen>
     <dimen name="heatmap_height">160dp</dimen>
 
+    <!-- 박스오피스 -->
+    <dimen name="box_office_progress_size">16dp</dimen>
+
     <!-- 다이얼로그 -->
     <dimen name="dialog_padding_horizontal">20dp</dimen>
     <dimen name="dialog_padding_vertical">10dp</dimen>

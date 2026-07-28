@@ -20,7 +20,7 @@ import kotlin.system.measureTimeMillis
 // 네트워크 지연(150ms)과 OkHttp의 host당 동시 연결 제한(기본 5개, NetworkModule 참고)을
 // Semaphore(5)로 흉내내어, 동시 요청이 5개를 넘으면 실제 앱에서처럼 대기열이 생기도록 했다.
 // 이 대기열 효과 때문에 Before 방식은 TOP 10 → TOP 50으로 갈수록 소요 시간이 계단식으로 늘어난다.
-class GetDailyBoxOfficeWithTmdbMatchPerformanceTest {
+class MatchBoxOfficeWithTmdbPerformanceTest {
 
     private fun boxOfficeList(count: Int) = (1..count).map {
         BoxOffice(it, 0, false, "cd$it", "영화$it", "2024-01-01", 1000L, 5000L, 10_000_000L, 100)
@@ -51,14 +51,13 @@ class GetDailyBoxOfficeWithTmdbMatchPerformanceTest {
             delay(5) // 로컬 Room 조회 근사치
             (1..cacheHitCount).map { movie(it, "영화$it") }
         }
-        val getDailyBoxOfficeUseCase = mockk<GetDailyBoxOfficeUseCase>()
-        coEvery { getDailyBoxOfficeUseCase() } returns boxOfficeList(topN)
-        val useCase = GetDailyBoxOfficeWithTmdbMatchUseCase(getDailyBoxOfficeUseCase, repository)
+        val useCase = MatchBoxOfficeWithTmdbUseCase(repository)
+        val input = boxOfficeList(topN)
 
         var matchedCount = 0
         val elapsedMs = measureTimeMillis {
             runBlocking {
-                matchedCount = useCase().count { it.matchedMovie != null }
+                matchedCount = useCase(input).count { it.matchedMovie != null }
             }
         }
         return BenchmarkResult(topN, cacheHitRatio, elapsedMs, networkCallCount.get(), matchedCount)

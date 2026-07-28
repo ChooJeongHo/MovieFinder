@@ -12,9 +12,12 @@ data class KoficBoxOfficeResponse(
     @SerialName("faultInfo") val faultInfo: KoficFaultInfo? = null
 )
 
+// 일별/주간 응답은 배열 키만 다르고(dailyBoxOfficeList vs weeklyBoxOfficeList) 아이템 구조가 동일하다.
+// 두 필드 모두 기본값 emptyList()로 두어야 상대 엔드포인트 응답(해당 키 없음)도 예외 없이 파싱된다.
 @Serializable
 data class KoficBoxOfficeResult(
-    @SerialName("dailyBoxOfficeList") val dailyBoxOfficeList: List<KoficDailyBoxOfficeDto> = emptyList()
+    @SerialName("dailyBoxOfficeList") val dailyBoxOfficeList: List<KoficBoxOfficeItemDto> = emptyList(),
+    @SerialName("weeklyBoxOfficeList") val weeklyBoxOfficeList: List<KoficBoxOfficeItemDto> = emptyList()
 )
 
 @Serializable
@@ -24,8 +27,9 @@ data class KoficFaultInfo(
 )
 
 // KOFIC은 모든 필드를 문자열로 반환한다 (숫자 필드도 예외 아님)
+// 일별/주간 아이템의 필드 구조가 완전히 동일해 하나의 DTO를 공유한다.
 @Serializable
-data class KoficDailyBoxOfficeDto(
+data class KoficBoxOfficeItemDto(
     @SerialName("rank") val rank: String,
     @SerialName("rankInten") val rankInten: String = "0",
     @SerialName("rankOldAndNew") val rankOldAndNew: String = "OLD",
@@ -39,7 +43,7 @@ data class KoficDailyBoxOfficeDto(
 )
 
 // KOFIC DTO를 도메인 BoxOffice 모델로 변환 (모든 수치 필드는 문자열 → Long/Int 파싱)
-fun KoficDailyBoxOfficeDto.toDomain() = BoxOffice(
+fun KoficBoxOfficeItemDto.toDomain() = BoxOffice(
     rank = rank.toIntOrNull() ?: 0,
     rankChange = rankInten.toIntOrNull() ?: 0,
     isNewEntry = rankOldAndNew == "NEW",

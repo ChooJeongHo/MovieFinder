@@ -60,6 +60,7 @@ class HomeFragment : Fragment() {
         setupRecyclerView()
         setupWatchHistory()
         setupBoxOffice()
+        setupBoxOfficePeriodToggle()
         setupSwipeRefresh()
         setupScrollToTopFab()
         setupTabs()
@@ -125,28 +126,57 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // 박스오피스 기간 전환 칩 그룹 설정 (일별/주간).
+    // R.id when 분기 대신 chip.tag에 enum을 실어 인덱스/ID 의존을 없앤다 (TabLayout tab.tag 관례와 동일).
+    private fun setupBoxOfficePeriodToggle() {
+        binding.chipBoxOfficeDaily.tag = BoxOfficePeriod.DAILY
+        binding.chipBoxOfficeWeekly.tag = BoxOfficePeriod.WEEKLY
+
+        binding.chipGroupBoxOfficePeriod.setOnCheckedStateChangeListener { group, checkedIds ->
+            val checkedId = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener
+            val period = group.findViewById<View>(checkedId)?.tag as? BoxOfficePeriod
+                ?: return@setOnCheckedStateChangeListener
+            viewModel.onBoxOfficePeriodSelected(period)
+        }
+    }
+
     private fun observeBoxOffice() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                var lastPeriod: BoxOfficePeriod? = null
                 viewModel.boxOfficeUiState.collect { state ->
-                    when (state) {
-                        is BoxOfficeUiState.Loading -> {
-                            binding.boxOfficeSection.isVisible = false
+                    val hasError = state.errorType != null
+                    binding.boxOfficeSection.isVisible = state.isLoading || state.items.isNotEmpty() || hasError
+                    binding.progressBoxOffice.isVisible = state.isLoading
+                    binding.rvBoxOffice.isVisible = !hasError
+                    binding.tvBoxOfficeError.isVisible = hasError
+                    binding.tvBoxOfficeLabel.setText(
+                        when (state.period) {
+                            BoxOfficePeriod.DAILY -> R.string.box_office_title
+                            BoxOfficePeriod.WEEKLY -> R.string.box_office_title_weekly
                         }
-                        is BoxOfficeUiState.Success -> {
-                            binding.boxOfficeSection.isVisible = state.items.isNotEmpty()
-                            binding.rvBoxOffice.isVisible = true
-                            binding.tvBoxOfficeError.isVisible = false
-                            boxOfficeAdapter.submitList(state.items)
-                        }
-                        is BoxOfficeUiState.Error -> {
-                            binding.boxOfficeSection.isVisible = true
-                            binding.rvBoxOffice.isVisible = false
-                            binding.tvBoxOfficeError.isVisible = true
-                            binding.tvBoxOfficeError.text =
-                                ErrorMessageProvider.getMessage(requireContext(), state.errorType)
-                        }
+                    )
+
+                    state.errorType?.let { errorType ->
+                        binding.tvBoxOfficeError.text =
+                            ErrorMessageProvider.getMessage(requireContext(), errorType)
                     }
+                    boxOfficeAdapter.submitList(state.items)
+
+                    // 상태 복원(프로세스 종료 후 등)으로 ViewModel과 칩 선택이 어긋나면 UI를 역동기화한다.
+                    // 이미 체크된 칩이면 건드리지 않는다 — check() 재호출로 리스너 루프가 생기지 않도록.
+                    val targetChip = when (state.period) {
+                        BoxOfficePeriod.DAILY -> binding.chipBoxOfficeDaily
+                        BoxOfficePeriod.WEEKLY -> binding.chipBoxOfficeWeekly
+                    }
+                    if (!targetChip.isChecked) {
+                        binding.chipGroupBoxOfficePeriod.check(targetChip.id)
+                    }
+
+                    if (lastPeriod != null && lastPeriod != state.period) {
+                        binding.rvBoxOffice.scrollToPosition(0)
+                    }
+                    lastPeriod = state.period
                 }
             }
         }

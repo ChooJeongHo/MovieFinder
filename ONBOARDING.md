@@ -50,10 +50,17 @@ sdk.dir=/Users/<your-username>/Library/Android/sdk
 # TMDB API 키 (https://www.themoviedb.org/settings/api 에서 발급)
 TMDB_API_KEY=여기에_v3_API_키_입력
 TMDB_READ_ACCESS_TOKEN=여기에_v4_Read_Access_Token_입력
+
+# KOFIC(영화진흥위원회) Open API 키 (https://www.kobis.or.kr/kobisopenapi 에서 발급, 홈 화면 박스오피스용)
+KOFIC_API_KEY=여기에_KOFIC_API_키_입력
 ```
 
 > **팀 리드에게 키를 요청하세요.** CI에서는 GitHub Secret `TMDB_API_KEY`가 자동 주입됩니다.  
 > 키가 없으면 빌드는 성공하지만 앱 실행 시 API 인증 오류가 발생합니다.
+>
+> ⚠️ **`KOFIC_API_KEY`는 현재 CI 워크플로우(`android-ci.yml`/`pr-coverage.yml`/`release.yml`)에 GitHub
+> Secret으로 주입되지 않습니다** — 없어도 `BuildConfig` 필드가 빈 문자열로 채워져 빌드/유닛 테스트는
+> 통과하지만, 실기기에서 박스오피스 API가 인증 오류를 냅니다. 로컬 개발에는 위 키만 있으면 충분합니다.
 
 ---
 

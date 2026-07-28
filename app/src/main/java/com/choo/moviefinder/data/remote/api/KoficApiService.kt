@@ -12,4 +12,13 @@ interface KoficApiService {
         @Query("targetDt") targetDt: String,
         @Query("itemPerPage") itemPerPage: Int = 10
     ): KoficBoxOfficeResponse
+
+    // 주간/주말/주중 박스오피스 TOP 10 조회.
+    // weekGb는 KOFIC이 기본값을 보장하지 않고 잘못된 값에 faultInfo(320105)를 반환하므로 필수 인자로 둔다.
+    @GET("boxoffice/searchWeeklyBoxOfficeList.json")
+    suspend fun getWeeklyBoxOffice(
+        @Query("targetDt") targetDt: String,
+        @Query("weekGb") weekGb: String,
+        @Query("itemPerPage") itemPerPage: Int = 10
+    ): KoficBoxOfficeResponse
 }

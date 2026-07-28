@@ -19,7 +19,10 @@
     <string name="box_office_rank_down">▼%1$d</string>
     <string name="box_office_rank_same">-</string>
     <string name="box_office_rank_new">NEW</string>
-    <string name="cd_box_office_item">Rank %1$d, %2$s, %3$s admissions today</string>
+    <string name="box_office_title_weekly">Weekly Korea Box Office TOP 10</string>
+    <string name="box_office_period_daily">Daily</string>
+    <string name="box_office_period_weekly">Weekly</string>
+    <string name="cd_box_office_item">Rank %1$d, %2$s, %3$s admissions</string>
     <string name="cd_box_office_poster">Box office rank %1$d poster</string>
     <string name="box_office_no_match_message">Couldn\'t find details for this movie on TMDB</string>
 
