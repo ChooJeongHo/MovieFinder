@@ -280,7 +280,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `android.disallowKotlinSourceSets=false` 필요 (KSP 호환)
 - `Theme.MaterialComponents.DayNight.NoActionBar` 사용
 - Hilt 2.59.2 이상 필요 (2.59.2 기준 Kotlin 2.4.0 미지원 — kotlin-metadata-jvm max 2.3.0)
-- **Dependabot 호환성**: core-ktx 1.19.0은 compileSdk 37 요구; Kotlin 2.4.0은 Hilt 호환 이슈로 보류
+- **Dependabot 호환성**: core-ktx 1.19.0은 compileSdk 37 요구; Kotlin 2.4.0은 Hilt 호환 이슈로 보류; Kotlin 2.4.x(2.4.10 포함)는 현재 AGP/Lint에서도 `Can't initialize detector com.android.tools.lint.checks.InferredThreadDetector` 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패함 (PR #92, #110에서 확인, 2026-07-27) — Hilt 이슈와 별개로 이 조합 자체가 보류 대상
 
 ### Navigation
 - `nav_graph.xml`에 destination + argument + deepLink 정의
