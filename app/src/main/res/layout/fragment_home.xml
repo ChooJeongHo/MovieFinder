@@ -58,6 +58,7 @@
                 android:layout_width="@dimen/box_office_progress_size"
                 android:layout_height="@dimen/box_office_progress_size"
                 android:layout_marginStart="@dimen/spacing_sm"
+                android:contentDescription="@string/cd_box_office_loading"
                 android:visibility="gone" />
 
         </LinearLayout>

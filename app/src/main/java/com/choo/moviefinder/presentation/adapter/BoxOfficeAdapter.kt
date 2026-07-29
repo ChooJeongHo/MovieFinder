@@ -1,5 +1,6 @@
 package com.choo.moviefinder.presentation.adapter
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.view.isVisible
@@ -9,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import coil3.dispose
 import com.choo.moviefinder.R
 import com.choo.moviefinder.databinding.ItemBoxOfficeBinding
+import com.choo.moviefinder.domain.model.BoxOffice
 import com.choo.moviefinder.domain.model.BoxOfficeMovie
 import java.text.NumberFormat
 import java.util.Locale
@@ -62,7 +64,8 @@ class BoxOfficeAdapter(
                 R.string.cd_box_office_item,
                 boxOffice.rank,
                 boxOffice.movieName,
-                NumberFormat.getNumberInstance(Locale.KOREA).format(boxOffice.audienceCount)
+                NumberFormat.getNumberInstance(Locale.KOREA).format(boxOffice.audienceCount),
+                rankChangeDescription(context, boxOffice)
             )
             binding.cardBoxOffice.setOnClickListener { onItemClick(item) }
         }
@@ -75,4 +78,13 @@ class BoxOfficeAdapter(
         override fun areContentsTheSame(oldItem: BoxOfficeMovie, newItem: BoxOfficeMovie): Boolean =
             oldItem == newItem
     }
+}
+
+// tv_rank_change 배지(▲▼NEW)는 importantForAccessibility="no"라 TalkBack이 직접 읽지 않으므로,
+// 같은 정보를 cardBoxOffice의 contentDescription에 자연어 문장으로 포함시킨다.
+private fun rankChangeDescription(context: Context, boxOffice: BoxOffice): String = when {
+    boxOffice.isNewEntry -> context.getString(R.string.cd_box_office_rank_new)
+    boxOffice.rankChange > 0 -> context.getString(R.string.cd_box_office_rank_up, boxOffice.rankChange)
+    boxOffice.rankChange < 0 -> context.getString(R.string.cd_box_office_rank_down, -boxOffice.rankChange)
+    else -> context.getString(R.string.cd_box_office_rank_same)
 }

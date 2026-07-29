@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -124,6 +125,13 @@ class HomeFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = boxOfficeAdapter
         }
+
+        // 일별/주간 라벨 텍스트가 바뀔 때 TalkBack이 자동으로 발화하도록 LiveRegion 지정
+        // (기존 접근성 감사 M-3 권고 패턴 재사용 — announceForAccessibility 수동 호출 대신 LiveRegion)
+        ViewCompat.setAccessibilityLiveRegion(
+            binding.tvBoxOfficeLabel,
+            ViewCompat.ACCESSIBILITY_LIVE_REGION_POLITE
+        )
     }
 
     // 박스오피스 기간 전환 칩 그룹 설정 (일별/주간).
