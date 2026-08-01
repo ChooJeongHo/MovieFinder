@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 0  # 태그 annotation 추출을 위해 전체 히스토리 필요
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5.6.0
         with:
           java-version: '21'
           distribution: 'temurin'
