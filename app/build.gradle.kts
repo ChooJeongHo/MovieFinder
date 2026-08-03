@@ -327,6 +327,9 @@ dependencies {
     implementation(libs.coil.compose)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
+    // Glance (박스오피스 위젯 — AppWidget 전용 Compose)
+    implementation(libs.androidx.glance.appwidget)
+
     // LeakCanary (debug only)
     debugImplementation(libs.leakcanary)
 

@@ -127,6 +127,22 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
+# Box office widget snapshot serialization (Glance state에 JSON으로 저장)
+-keep,includedescriptorclasses class com.choo.moviefinder.presentation.widget.BoxOfficeWidgetSnapshot$$serializer { *; }
+-keep,includedescriptorclasses class com.choo.moviefinder.presentation.widget.BoxOfficeWidgetItem$$serializer { *; }
+-keepclassmembers class com.choo.moviefinder.presentation.widget.BoxOfficeWidgetSnapshot {
+    *** Companion;
+}
+-keepclassmembers class com.choo.moviefinder.presentation.widget.BoxOfficeWidgetItem {
+    *** Companion;
+}
+-keepclasseswithmembers class com.choo.moviefinder.presentation.widget.BoxOfficeWidgetSnapshot {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclasseswithmembers class com.choo.moviefinder.presentation.widget.BoxOfficeWidgetItem {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
 # Room
 -keep class * extends androidx.room.RoomDatabase
 -dontwarn androidx.room.paging.**

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    2x2 셀 크기 = 70dp * 2 - 30dp = 110dp (런처 셀 계산 공식).
+
+    updatePeriodMillis="0"은 의도적이다.
+    데이터 fetch(KOFIC + TMDB 매칭)는 전적으로 BoxOfficeWidgetWorker(WorkManager, 6시간 주기 +
+    네트워크 연결 제약)가 담당하고, Glance는 저장된 스냅샷을 렌더링만 한다.
+    AppWidget 자체 주기 갱신을 켜면 네트워크 제약 없이 깨어나 중복 갱신/배터리 낭비가 발생하므로 끈다.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_box_office_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minHeight="110dp"
+    android:minResizeHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minWidth="110dp"
+    android:previewLayout="@layout/widget_box_office_preview"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="2"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

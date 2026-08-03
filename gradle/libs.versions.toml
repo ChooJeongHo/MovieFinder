@@ -45,6 +45,7 @@ youtubePlayer = "13.0.0"
 browser = "1.10.0"
 securityCrypto = "1.1.0"
 composeBom = "2026.06.01"
+glance = "1.1.1"
 
 [libraries]
 # Core
@@ -178,6 +179,9 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+
+# Glance (AppWidget 전용 Compose)
+androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 
 [bundles]
 lifecycle = ["androidx-lifecycle-runtime-ktx", "androidx-lifecycle-viewmodel-ktx", "androidx-lifecycle-process"]

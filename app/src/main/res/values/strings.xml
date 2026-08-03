@@ -219,6 +219,10 @@
     <string name="widget_goal_title">시청 목표</string>
     <string name="widget_goal_this_month">이번 달 시청</string>
     <string name="widget_goal_progress">%1$d / %2$d편</string>
+    <string name="widget_box_office_name">MovieFinder 박스오피스</string>
+    <string name="widget_box_office_description">오늘의 박스오피스 상위 3편을 홈 화면에 표시합니다</string>
+    <string name="widget_box_office_title">오늘의 박스오피스 TOP 3</string>
+    <string name="widget_box_office_rank_format">%1$d위</string>
 
     <!-- 스크롤 -->
     <string name="cd_scroll_to_top">맨 위로 스크롤</string>

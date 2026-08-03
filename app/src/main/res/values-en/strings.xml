@@ -205,6 +205,10 @@
     <string name="widget_goal_title">Watch Goal</string>
     <string name="widget_goal_this_month">This month</string>
     <string name="widget_goal_progress">%1$d / %2$d</string>
+    <string name="widget_box_office_name">MovieFinder Box Office</string>
+    <string name="widget_box_office_description">Shows today\'s top 3 box office movies on the home screen</string>
+    <string name="widget_box_office_title">Today\'s Box Office TOP 3</string>
+    <string name="widget_box_office_rank_format">#%1$d</string>
 
     <!-- Scroll -->
     <string name="cd_scroll_to_top">Scroll to top</string>
