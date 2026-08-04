@@ -310,6 +310,33 @@ class HomeViewModelTest : CoroutineTestBase() {
         assertTrue(!state.isLoading)
     }
 
+    // 083일차 아키텍처 리뷰에서 발견된 회귀 버그의 테스트: 기간 전환 시작 시점에 이전 기간의
+    // items가 새 기간 라벨과 함께 잠깐 보이면 안 된다 — loadBoxOffice()가 로딩 시작과 동시에
+    // items를 비우는지(HomeViewModel.kt의 `items = emptyList()`) 직접 검증한다.
+    @Test
+    fun `switching period clears stale items immediately before new data arrives`() = runTest {
+        coEvery { getWeeklyBoxOfficeWithTmdbMatchUseCase() } coAnswers {
+            delay(1000)
+            weeklyItems
+        }
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        assertEquals(dailyItems, viewModel.boxOfficeUiState.value.items)
+
+        viewModel.onBoxOfficePeriodSelected(BoxOfficePeriod.WEEKLY)
+
+        // advanceUntilIdle() 호출 전 스냅샷 — weekly 응답(delay 1000ms)이 아직 도착하기 전이다.
+        // _boxOfficeUiState.update{}는 loadBoxOffice()에서 코루틴 launch 이전에 동기 실행되므로
+        // 여기서 이미 반영돼 있어야 한다.
+        val loadingState = viewModel.boxOfficeUiState.value
+        assertEquals(BoxOfficePeriod.WEEKLY, loadingState.period)
+        assertTrue(loadingState.isLoading)
+        assertTrue(loadingState.items.isEmpty())
+
+        advanceUntilIdle()
+        assertEquals(weeklyItems, viewModel.boxOfficeUiState.value.items)
+    }
+
     @Test
     fun `saved WEEKLY period is restored and drives the initial load`() = runTest {
         val viewModel = createViewModel(SavedStateHandle(mapOf("boxOfficePeriod" to "WEEKLY")))
