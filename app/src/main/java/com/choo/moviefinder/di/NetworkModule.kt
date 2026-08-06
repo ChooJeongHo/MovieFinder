@@ -252,6 +252,8 @@ object NetworkModule {
         connectTimeout(15.seconds)
         readTimeout(15.seconds)
         writeTimeout(15.seconds)
+        // 리다이렉트 + 429 재시도까지 포함한 요청 전체 상한 (개별 타임아웃과 별개)
+        callTimeout(25.seconds)
     }
 
     private const val HTTP_CACHE_SIZE = 10L * 1024 * 1024 // 10MB
