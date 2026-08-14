@@ -8,18 +8,28 @@
 
     <!-- OS 레벨 인증서 피닝 (OkHttp 앱 레벨 피닝의 방어 심층 레이어) -->
     <!-- expiration: 인증서 갱신 시 업데이트 필요 (cert-pin-check.yml CI 워크플로우 활용) -->
+    <!-- api.themoviedb.org는 Amazon(ACM)이 발급 — 리프/중간 모두 장기간 안정적으로 관측됨 -->
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">themoviedb.org</domain>
         <domain includeSubdomains="true">tmdb.org</domain>
         <pin-set expiration="2027-06-30">
             <!-- api.themoviedb.org leaf -->
             <pin digest="SHA-256">QfyoR20v8hyYX7L+ikLzM/euPGSDl67gFFcor/sROMs=</pin>
-            <!-- api.themoviedb.org intermediate -->
+            <!-- api.themoviedb.org intermediate: Amazon RSA 2048 M04 -->
             <pin digest="SHA-256">G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c=</pin>
+        </pin-set>
+    </domain-config>
+
+    <!-- image.tmdb.org는 Let's Encrypt가 발급 — 리프/중간 인증서가 90일 이하 주기로 로테이션되므로
+         themoviedb.org(Amazon)와 별도 도메인/만료일로 분리. 067일차 최초 핀은 이 로테이션으로 인해
+         무효화되었음(2026-08-10 발견, NETWORK_SECURITY_REPORT.md "2026-08-10 인증서 핀 불일치" 절 참고). -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">image.tmdb.org</domain>
+        <pin-set expiration="2026-11-10">
             <!-- image.tmdb.org leaf -->
-            <pin digest="SHA-256">D9+FUQAcRTKvnv4RFbvEOfxIdAaqGJVOtOKBUZPFlak=</pin>
-            <!-- image.tmdb.org intermediate -->
-            <pin digest="SHA-256">LoMHBotttiDko50Gi13uXW71eIy7LAttI+rYT8wXF4w=</pin>
+            <pin digest="SHA-256">ev7y32IIBYuHsfRofMyLOE2lRz/O49x1HjkJ2Ea/9Y4=</pin>
+            <!-- image.tmdb.org intermediate: Let's Encrypt YR2 -->
+            <pin digest="SHA-256">nWN7PSep5XDQdge5zK24CnCRXHr3KvzhKEGxsdqCX9E=</pin>
         </pin-set>
     </domain-config>
 

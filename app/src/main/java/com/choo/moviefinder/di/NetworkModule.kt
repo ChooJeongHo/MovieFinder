@@ -23,6 +23,7 @@ import java.io.File
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import javax.inject.Qualifier
+import javax.net.ssl.SSLException
 import kotlin.time.Duration.Companion.seconds
 import javax.inject.Singleton
 
@@ -72,6 +73,7 @@ object NetworkModule {
                 // 디버그 빌드(에뮬레이터)에서는 인증서 피닝 비활성화
                 if (!BuildConfig.DEBUG) certificatePinner(buildApiCertPinner())
             }
+            .addSslRetryInterceptor()
             .addDebugLogging()
             // User-Agent: TMDB 측 로그 식별 및 API 정책 준수
             .addInterceptor { chain ->
@@ -140,6 +142,7 @@ object NetworkModule {
             .apply {
                 if (!BuildConfig.DEBUG) certificatePinner(buildImageCertPinner())
             }
+            .addSslRetryInterceptor()
             .applyCommonConfig()
             .build()
     }
@@ -247,6 +250,25 @@ object NetworkModule {
         return if (ttl > 0) "public, max-age=$ttl" else "no-store"
     }
 
+    // TLS 핸드셰이크/인증서 핀 검증 실패(SSLException) 시 최대 SSL_RETRY_COUNT회 재시도한다.
+    // CDN 엣지 서버 간 인증서 롤아웃이 아직 전파 중이거나 일시적 TLS 오류일 때만 의미가 있고,
+    // 핀 값 자체가 서버 체인과 완전히 불일치하는 경우(예: 091일차 케이스)는 재시도해도 동일하게
+    // 실패한다 — 근본 원인 해결이 아니라 일시적 실패에 대한 안전장치임.
+    private fun OkHttpClient.Builder.addSslRetryInterceptor(
+        maxRetries: Int = SSL_RETRY_COUNT
+    ): OkHttpClient.Builder = addInterceptor { chain ->
+        var lastError: SSLException? = null
+        for (attempt in 0..maxRetries) {
+            try {
+                return@addInterceptor chain.proceed(chain.request())
+            } catch (e: SSLException) {
+                lastError = e
+                if (attempt < maxRetries) Thread.sleep(SSL_RETRY_DELAY_MS * (attempt + 1))
+            }
+        }
+        throw lastError ?: IllegalStateException("SSL retry exhausted with no exception")
+    }
+
     private fun OkHttpClient.Builder.applyCommonConfig(): OkHttpClient.Builder = apply {
         if (BuildConfig.DEBUG) eventListener(DebugEventListener())
         connectTimeout(15.seconds)
@@ -258,10 +280,17 @@ object NetworkModule {
 
     private const val HTTP_CACHE_SIZE = 10L * 1024 * 1024 // 10MB
 
+    private const val SSL_RETRY_COUNT = 2
+    private const val SSL_RETRY_DELAY_MS = 300L
+
     private const val PIN_API_LEAF = "sha256/QfyoR20v8hyYX7L+ikLzM/euPGSDl67gFFcor/sROMs="
     private const val PIN_API_INTER = "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
-    private const val PIN_IMAGE_LEAF = "sha256/D9+FUQAcRTKvnv4RFbvEOfxIdAaqGJVOtOKBUZPFlak="
-    private const val PIN_IMAGE_INTER = "sha256/LoMHBotttiDko50Gi13uXW71eIy7LAttI+rYT8wXF4w="
+
+    // image.tmdb.org는 Let's Encrypt 발급(리프 90일 이하 주기 로테이션) — api.themoviedb.org(Amazon)보다
+    // 훨씬 자주 갱신되므로 cert-pin-check.yml 알림 시 이 두 값을 우선 확인할 것 (2026-08-10 로테이션으로
+    // 기존 067일차 핀 무효화 확인, NETWORK_SECURITY_REPORT.md "2026-08-10 인증서 핀 불일치" 절 참고)
+    private const val PIN_IMAGE_LEAF = "sha256/ev7y32IIBYuHsfRofMyLOE2lRz/O49x1HjkJ2Ea/9Y4="
+    private const val PIN_IMAGE_INTER = "sha256/nWN7PSep5XDQdge5zK24CnCRXHr3KvzhKEGxsdqCX9E="
 
     private fun buildApiCertPinner() = CertificatePinner.Builder()
         .add("api.themoviedb.org", PIN_API_LEAF, PIN_API_INTER)

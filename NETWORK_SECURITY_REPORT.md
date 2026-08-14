@@ -139,6 +139,101 @@ echo | openssl s_client -connect image.tmdb.org:443 2>/dev/null \
 
 ---
 
+---
+
+## 2026-08-10 인증서 핀 불일치 조사 (091일차 부수 이슈)
+
+### 증상
+
+material3-design-validator 작업 중 실기기 테스트에서 캐스트/리뷰 아바타·포스터 이미지가 전부 회색
+플레이스홀더로 표시되고, `DebugHealthCheck` 토스트가 `Image FAIL`을 보고. Logcat에
+`DebugEventListener`가 다음을 대량(단일 화면 스크롤 1회에 수백 건) 기록:
+
+```
+javax.net.ssl.SSLHandshakeException: Pin verification failed
+Caused by: java.security.cert.CertificateException: Pin verification failed
+  at okhttp3.internal.connection.ConnectPlan.connectTls(ConnectPlan.kt:352)
+```
+
+처음엔 "간헐적"으로 보였음 — 같은 화면을 다시 열면 이미지가 로드되기도 했기 때문. 하지만 실제로는
+**디버그 빌드임에도 실패가 발생**한 것 자체가 단서였음: `NetworkModule.kt`의 OkHttp
+`CertificatePinner`는 `if (!BuildConfig.DEBUG)`로 디버그 빌드에서 비활성화되지만,
+`network_security_config.xml`의 `<pin-set>`은 **OS/TLS 레벨**에서 별도로 평가되며,
+`<debug-overrides overridePins="true">`는 "사용자 설치 CA(MITM 프록시 등)로 체인이 검증될 때만"
+핀을 무시한다 — 실제 TMDB 서버(시스템 신뢰 앵커로 검증됨)와의 정상 연결에는 디버그 빌드에서도
+`<pin-set>`이 그대로 적용된다. 즉 이 증상은 디버그/릴리스 무관하게 실사용자에게도 이미 발생 중이었음.
+
+### 조사
+
+`adb logcat`에서 실패 로그의 호스트명을 전수 확인(`🔴 연결 실패: <host>` 라인, 총 699건):
+
+```bash
+adb logcat -d | grep "연결 실패\|호출 실패" | sort -u
+```
+
+→ **100% `image.tmdb.org`, `api.themoviedb.org`는 0건.** "간헐적으로 보인" 이유는 화면 내 여러
+이미지가 각각 비동기 로드되고 JSON 데이터(api.themoviedb.org, 정상)는 항상 성공해 텍스트는 뜨는데
+포스터/아바타(image.tmdb.org)만 매번 실패했기 때문 — 실제로는 100% 재현되는 하드 실패였음.
+
+두 도메인의 실제 서빙 인증서 체인을 직접 비교(`openssl s_client -showcerts`, api.themoviedb.org는
+6회 재연결 + DNS로 얻은 IP 4개 전부에서 리프/중간 100% 동일 확인):
+
+| 도메인 | 저장된 핀(067일차) | 실제 서빙 체인 (2026-08-10 측정) | 일치 |
+|---|---|---|---|
+| `api.themoviedb.org` | leaf `Qfyo...`, inter `G9LN...` (Amazon RSA 2048 M04) | leaf `Qfyo...`, inter `G9LN...` (Amazon RSA 2048 M04) | ✅ 완전 일치 |
+| `image.tmdb.org` | leaf `D9+F...`, inter `LoMH...` | leaf `ev7y32IIBYuHsfRofMyLOE2lRz/O49x1HjkJ2Ea/9Y4=` (CN=image.tmdb.org), inter `nWN7PSep5XDQdge5zK24CnCRXHr3KvzhKEGxsdqCX9E=` (**Let's Encrypt YR2**), root ISRG Root X1 | ❌ **완전 불일치** |
+
+**결론**: `image.tmdb.org`가 067일차 핀 설정 이후 발급 CA를 (추정컨대 Amazon 계열에서) **Let's
+Encrypt로 이전**했음. 리프/중간 인증서 값이 통째로 바뀌어 저장된 핀과 아예 다른 체인 — 타이밍/로테이션
+경합이 아니라 100% 재현되는 확정 불일치였음. `api.themoviedb.org`(Amazon 발급)는 문제 없음.
+
+### 수정
+
+- `NetworkModule.kt`: `PIN_IMAGE_LEAF`/`PIN_IMAGE_INTER`를 실측값으로 교체.
+- `network_security_config.xml`: `image.tmdb.org`를 `themoviedb.org`/`tmdb.org`와 분리된
+  `<domain-config>`로 이동, 별도 `<pin-set expiration="2026-11-10">` 부여(Amazon 블록은 기존
+  `2027-06-30` 유지). Let's Encrypt 리프는 90일 이하 주기로 갱신되므로 Amazon보다 짧은 만료일을
+  명시해, 다음 로테이션 때 갱신을 놓치더라도 Android가 만료된 pin-set을 조용히 비활성화(fail-open)
+  하도록 함 — 무기한 고정된 오래된 핀으로 인한 재발을 방지.
+- `PopularMoviesRemoteViewsFactory.kt`(위젯 OkHttpClient)는 `api.themoviedb.org`만 피닝하고
+  있어 이번 이슈의 영향을 받지 않음 — 수정 불필요, 값도 이미 최신.
+
+### 재발 방지 참고
+
+`image.tmdb.org`는 Let's Encrypt 발급 특성상 `api.themoviedb.org`(Amazon)보다 핀이 훨씬 자주
+깨진다. `cert-pin-check.yml` 주간 CI 알림에서 두 도메인 중 하나만 언급되면 대개
+`image.tmdb.org` 쪽일 가능성이 높다.
+
+---
+
+---
+
+## 2026-08-14 간헐적 핀 실패 재점검 (기기 재현 없이 코드 리뷰만)
+
+091일차 조사(위 절)는 이미 원인을 특정하고 수정까지 마쳤지만, 그 결론("100% 재현되는 확정 불일치였다")
+자체를 이번 세션에서 재검증하지는 않았다 — 그대로 인용한 것. 재현 없이 코드만으로 추가 확인 가능한
+것과 불가능한 것을 구분해 아래만 처리:
+
+- **백업(롤오버) 핀은 여전히 없음.** leaf+intermediate 2개는 같은 시점에 관측한 단일 체인의 상하위
+  단계일 뿐, 다음 CA 로테이션에 대비한 독립 예비 핀이 아니다. 정확한 백업 값(예: 루트 CA 핀)을 넣으려면
+  실서버 TLS 체인을 라이브로 조회해야 하는데, 이 개발 환경은 외부 네트워크가 차단되어 있어
+  `openssl s_client`조차 접속 실패함(직접 확인). 검증 안 된 핀 값을 넣는 건 다음 로테이션 때 "백업이
+  있으니 안전하다"는 착각만 주고 조용히 무력화될 위험이 있어 값 자체는 추가하지 않았다 — 필요 시
+  네트워크 되는 환경에서 위 "인증서 핀 갱신 절차" 명령을 `-showcerts`로 확장해 루트까지 추출해야 함.
+- **SSL/TLS 실패에 대한 재시도가 전혀 없었음** (기존 `withExponentialBackoff()`는 `MovieRemoteMediator`
+  페이징 호출에만 적용, 이미지/일반 API 클라이언트는 미적용). `NetworkModule.kt`에
+  `addSslRetryInterceptor()`를 추가해 `provideOkHttpClient`/`provideImageOkHttpClient` 양쪽에 적용 —
+  `SSLException` 발생 시 최대 2회, 300ms/600ms 지연 후 재시도. 핀 값 자체가 서버 체인과 완전히
+  불일치하는 경우(091일차 케이스)는 재시도해도 동일하게 실패하므로 근본 해결책이 아니라 CDN 엣지 간
+  인증서 전파 지연 등 일시적 실패에 대한 안전장치일 뿐.
+
+**결론**: "간헐적으로 보였다"는 현상의 정확한 메커니즘(CDN 엣지별 신/구 인증서 혼재 서빙인지, 단순
+비동기 이미지 로딩 때문에 그렇게 보인 것인지)은 실제 트래픽 캡처나 기기 재현 없이 단정할 수 없다.
+위 두 항목은 재현 여부와 무관하게 코드 검토만으로 확인·개선 가능했던 것이고, 원인 자체를 밝히는 조치는
+아니다.
+
+---
+
 ## 잔여 고려 사항
 
 | 항목 | 내용 | 우선순위 |
