@@ -30,8 +30,7 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:textAppearance="?attr/textAppearanceBody2"
-                android:textSize="14sp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textStyle="bold"
                 tools:text="John Doe" />
 
@@ -41,8 +40,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/spacing_sm"
                 android:importantForAccessibility="no"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
                 android:textColor="@color/rating_star_color"
-                android:textSize="12sp"
                 android:visibility="gone"
                 tools:text="★ 8.0"
                 tools:visibility="visible" />
@@ -68,8 +67,7 @@
             android:layout_marginTop="@dimen/spacing_sm"
             android:ellipsize="end"
             android:maxLines="4"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textSize="14sp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
             tools:text="This is a really great movie with outstanding performances..." />
 
         <TextView
@@ -79,7 +77,7 @@
             android:layout_marginTop="@dimen/spacing_sm"
             android:alpha="0.6"
             android:importantForAccessibility="no"
-            android:textSize="12sp"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
             tools:text="2024-01-15" />
 
     </LinearLayout>
