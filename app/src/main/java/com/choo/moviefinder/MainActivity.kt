@@ -72,7 +72,13 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setupWithNavController(navController)
 
         // 온보딩 완료 여부 확인 후 완료 시 홈 화면으로 이동
-        if (savedInstanceState == null) {
+        // 딥링크 Intent가 NavHostFragment 생성 시점에 먼저 처리되어 시작 destination이
+        // onboardingFragment가 아닌 다른 화면(예: detailFragment)으로 바뀌어 있을 수 있다.
+        // action_onboarding_to_home은 onboardingFragment에서만 정의된 액션이므로,
+        // 현재 destination이 onboardingFragment일 때만 navigate해야 크래시를 피할 수 있다.
+        if (savedInstanceState == null &&
+            navController.currentDestination?.id == R.id.onboardingFragment
+        ) {
             val onboardingCompleted = runBlocking {
                 userSettingsDataStore.data.first().onboardingCompleted
             }
