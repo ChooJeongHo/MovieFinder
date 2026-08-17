@@ -3,6 +3,7 @@ package com.choo.moviefinder.data.util
 import com.choo.moviefinder.domain.model.DomainException
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
+import org.xml.sax.SAXException
 import retrofit2.HttpException
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -21,6 +22,7 @@ internal fun Exception.toDomainException(): DomainException = when (this) {
     is SSLException -> DomainException.SslError(this)
     is UnknownHostException, is IOException -> DomainException.NetworkError(this)
     is SerializationException -> DomainException.ParseError(this)
+    is SAXException -> DomainException.ParseError(this)
     else -> DomainException.Unknown(this)
 }
 

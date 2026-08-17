@@ -93,6 +93,8 @@
     <string name="cd_loading">Loading</string>
     <string name="cd_movie_item">%1$s, released %3$s, rating %2$.1f</string>
     <string name="cd_certification">Rated %s</string>
+    <string name="korean_rating_chip_label">KMRB %s</string>
+    <string name="cd_korean_rating">KMRB rating %s</string>
     <string name="cd_review_collapsed">Tap to expand</string>
     <string name="cd_review_expanded">Tap to collapse</string>
     <string name="cd_review_expand">Expand review</string>

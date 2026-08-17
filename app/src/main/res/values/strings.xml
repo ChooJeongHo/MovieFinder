@@ -103,6 +103,8 @@
     <string name="cd_loading">로딩 중</string>
     <string name="cd_movie_item">%1$s, 개봉일 %3$s, 평점 %2$.1f</string>
     <string name="cd_certification">등급 %s</string>
+    <string name="korean_rating_chip_label">영등위 %s</string>
+    <string name="cd_korean_rating">영상물등급위원회 등급 %s</string>
     <string name="cd_review_collapsed">탭하여 펼치기</string>
     <string name="cd_review_expanded">탭하여 접기</string>
     <string name="cd_review_expand">리뷰 펼치기</string>

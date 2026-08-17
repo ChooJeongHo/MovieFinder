@@ -137,6 +137,18 @@
 
             </LinearLayout>
 
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_korean_rating"
+                style="@style/Widget.MaterialComponents.Chip.Action"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:layout_gravity="start"
+                android:clickable="false"
+                android:checkable="false"
+                android:visibility="gone"
+                tools:text="영등위 15세이상관람가" />
+
             <!-- 장르 -->
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chip_group_genres"

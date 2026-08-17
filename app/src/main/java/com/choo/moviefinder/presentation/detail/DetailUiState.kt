@@ -2,6 +2,7 @@ package com.choo.moviefinder.presentation.detail
 
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Credits
+import com.choo.moviefinder.domain.model.KoreanRating
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.Review
@@ -18,6 +19,7 @@ sealed class DetailUiState {
         val reviews: List<Review>? = null,
         val recommendations: List<Movie>? = null,
         val watchProviders: List<WatchProvider>? = null,
+        val koreanRating: KoreanRating? = null,
         val helpfulReviewIds: Set<String> = emptySet()
     ) : DetailUiState()
     data class Error(val errorType: ErrorType) : DetailUiState()

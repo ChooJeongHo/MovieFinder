@@ -5,6 +5,7 @@ import com.choo.moviefinder.data.local.TokenRepositoryImpl
 import com.choo.moviefinder.data.repository.BackupRepositoryImpl
 import com.choo.moviefinder.data.repository.BoxOfficeRepositoryImpl
 import com.choo.moviefinder.data.repository.FavoriteRepositoryImpl
+import com.choo.moviefinder.data.repository.KoreanRatingRepositoryImpl
 import com.choo.moviefinder.data.repository.MemoRepositoryImpl
 import com.choo.moviefinder.data.repository.PersonRepositoryImpl
 import com.choo.moviefinder.data.repository.ReminderRepositoryImpl
@@ -19,6 +20,7 @@ import com.choo.moviefinder.data.repository.WatchlistRepositoryImpl
 import com.choo.moviefinder.domain.repository.BackupRepository
 import com.choo.moviefinder.domain.repository.BoxOfficeRepository
 import com.choo.moviefinder.domain.repository.FavoriteRepository
+import com.choo.moviefinder.domain.repository.KoreanRatingRepository
 import com.choo.moviefinder.domain.repository.MemoRepository
 import com.choo.moviefinder.domain.repository.PersonRepository
 import com.choo.moviefinder.domain.repository.PreferencesRepository
@@ -90,4 +92,7 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindBoxOfficeRepository(impl: BoxOfficeRepositoryImpl): BoxOfficeRepository
+
+    @Binds @Singleton
+    abstract fun bindKoreanRatingRepository(impl: KoreanRatingRepositoryImpl): KoreanRatingRepository
 }

@@ -41,6 +41,10 @@ android {
         buildConfigField("String", "KOFIC_API_KEY", "\"${localProperties.getProperty("KOFIC_API_KEY", "")}\"")
         buildConfigField("String", "KOFIC_BASE_URL", "\"https://www.kobis.or.kr/kobisopenapi/webservice/rest/\"")
 
+        // KMRB(영상물등급위원회) API — local.properties 키 이름은 KOFB_API_KEY 그대로 유지, BuildConfig 필드명만 KMRB_API_KEY로 명확화
+        buildConfigField("String", "KMRB_API_KEY", "\"${localProperties.getProperty("KOFB_API_KEY", "")}\"")
+        buildConfigField("String", "KMRB_BASE_URL", "\"https://apis.data.go.kr/B551008/\"")
+
         vectorDrawables {
             useSupportLibrary = true
         }

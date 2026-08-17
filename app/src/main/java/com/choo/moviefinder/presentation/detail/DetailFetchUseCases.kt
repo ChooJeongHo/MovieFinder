@@ -1,6 +1,7 @@
 package com.choo.moviefinder.presentation.detail
 
 import com.choo.moviefinder.domain.usecase.GetHelpfulReviewIdsUseCase
+import com.choo.moviefinder.domain.usecase.GetKoreanRatingUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
@@ -22,5 +23,6 @@ class DetailFetchUseCases @Inject constructor(
     val getMovieReviews: GetMovieReviewsUseCase,
     val getMovieRecommendations: GetMovieRecommendationsUseCase,
     val getWatchProviders: GetWatchProvidersUseCase,
-    val getHelpfulReviewIds: GetHelpfulReviewIdsUseCase
+    val getHelpfulReviewIds: GetHelpfulReviewIdsUseCase,
+    val getKoreanRating: GetKoreanRatingUseCase
 )

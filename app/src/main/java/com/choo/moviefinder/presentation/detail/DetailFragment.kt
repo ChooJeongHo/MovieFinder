@@ -42,6 +42,7 @@ import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.ImageUrlProvider
 import com.choo.moviefinder.core.util.RateLimiter
 import com.choo.moviefinder.databinding.FragmentDetailBinding
+import com.choo.moviefinder.domain.model.KoreanRating
 import com.choo.moviefinder.domain.model.MemoConstants
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.presentation.adapter.CastAdapter
@@ -418,6 +419,7 @@ class DetailFragment : Fragment() {
 
         // 등급 배지
         bindCertification(state.certification)
+        bindKoreanRating(state.koreanRating)
     }
 
     // 영화 기본 정보 (제목, 배경, 평점, 개봉일, 장르 칩 등) 바인딩
@@ -579,6 +581,18 @@ class DetailFragment : Fragment() {
             binding.chipCertification.text = certification
             binding.chipCertification.contentDescription =
                 getString(R.string.cd_certification, certification)
+        }
+    }
+
+    // 영등위(KMRB) 등급 배지 칩 표시
+    private fun bindKoreanRating(koreanRating: KoreanRating?) {
+        val gradeName = koreanRating?.gradeName
+        val hasRating = !gradeName.isNullOrBlank()
+        binding.chipKoreanRating.isVisible = hasRating
+        if (hasRating) {
+            binding.chipKoreanRating.text = getString(R.string.korean_rating_chip_label, gradeName)
+            binding.chipKoreanRating.contentDescription =
+                getString(R.string.cd_korean_rating, gradeName)
         }
     }
 

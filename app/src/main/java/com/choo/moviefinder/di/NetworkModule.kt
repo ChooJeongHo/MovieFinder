@@ -5,6 +5,7 @@ import com.choo.moviefinder.BuildConfig
 import com.choo.moviefinder.core.util.DebugEventListener
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.core.util.addDebugLogging
+import com.choo.moviefinder.data.remote.api.KmrbApiService
 import com.choo.moviefinder.data.remote.api.KoficApiService
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.api.TmdbAuthApiService
@@ -46,6 +47,14 @@ annotation class KoficOkHttpClient
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class KoficRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class KmrbOkHttpClient
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class KmrbRetrofit
 
 @Suppress("TooManyFunctions")
 @Module
@@ -237,6 +246,42 @@ object NetworkModule {
     @Singleton
     fun provideKoficApiService(@KoficRetrofit retrofit: Retrofit): KoficApiService {
         return retrofit.create(KoficApiService::class.java)
+    }
+
+    // KMRB용 OkHttpClient (serviceKey 쿼리 파라미터 자동 주입)
+    @Provides
+    @Singleton
+    @KmrbOkHttpClient
+    fun provideKmrbOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val original = chain.request()
+                val url = original.url.newBuilder()
+                    .addQueryParameter("serviceKey", BuildConfig.KMRB_API_KEY)
+                    .build()
+                chain.proceed(original.newBuilder().url(url).build())
+            }
+            .addDebugLogging()
+            .applyCommonConfig()
+            .build()
+    }
+
+    // KMRB Retrofit — XML 응답을 ResponseBody로 그대로 받으므로 컨버터 팩토리 없음(KOFIC과 다른 유일한 지점)
+    @Provides
+    @Singleton
+    @KmrbRetrofit
+    fun provideKmrbRetrofit(@KmrbOkHttpClient client: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.KMRB_BASE_URL)
+            .client(client)
+            .build()
+    }
+
+    // KmrbApiService 제공
+    @Provides
+    @Singleton
+    fun provideKmrbApiService(@KmrbRetrofit retrofit: Retrofit): KmrbApiService {
+        return retrofit.create(KmrbApiService::class.java)
     }
 
     // 엔드포인트 경로에 따른 Cache-Control 헤더 값 반환

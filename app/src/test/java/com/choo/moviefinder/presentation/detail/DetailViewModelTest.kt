@@ -11,6 +11,7 @@ import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.Review
 import com.choo.moviefinder.domain.usecase.GetHelpfulReviewIdsUseCase
+import com.choo.moviefinder.domain.usecase.GetKoreanRatingUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
@@ -35,6 +36,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -46,6 +48,9 @@ import org.junit.Test
 import java.net.UnknownHostException
 import androidx.lifecycle.SavedStateHandle
 
+// DetailViewModel은 이 프로젝트에서 가장 많은 협력자(19개→13개로 줄였음에도 여전히 최다)를 갖는
+// ViewModel이라 대응 테스트도 자연히 커진다 — 파일을 쪼개기보다 케이스별 커버리지를 유지한다.
+@Suppress("LargeClass")
 @OptIn(ExperimentalCoroutinesApi::class)
 class DetailViewModelTest : CoroutineTestBase() {
 
@@ -64,6 +69,7 @@ class DetailViewModelTest : CoroutineTestBase() {
     private lateinit var getTrailerWatchStatusUseCase: GetTrailerWatchStatusUseCase
     private lateinit var markTrailerWatchedUseCase: MarkTrailerWatchedUseCase
     private lateinit var getHelpfulReviewIdsUseCase: GetHelpfulReviewIdsUseCase
+    private lateinit var getKoreanRatingUseCase: GetKoreanRatingUseCase
     private lateinit var toggleReviewHelpfulUseCase: ToggleReviewHelpfulUseCase
     private lateinit var saveWatchHistoryUseCase: SaveWatchHistoryUseCase
     private lateinit var getUserRatingUseCase: com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
@@ -119,6 +125,7 @@ class DetailViewModelTest : CoroutineTestBase() {
         getTrailerWatchStatusUseCase = mockk()
         markTrailerWatchedUseCase = mockk()
         getHelpfulReviewIdsUseCase = mockk()
+        getKoreanRatingUseCase = mockk()
         toggleReviewHelpfulUseCase = mockk()
         saveWatchHistoryUseCase = mockk()
         getUserRatingUseCase = mockk()
@@ -154,6 +161,7 @@ class DetailViewModelTest : CoroutineTestBase() {
         coEvery { getTrailerWatchStatusUseCase(any()) } returns null
         coEvery { markTrailerWatchedUseCase(any(), any()) } returns Unit
         coEvery { getHelpfulReviewIdsUseCase(any()) } returns emptySet()
+        coEvery { getKoreanRatingUseCase(any()) } returns null
         coEvery { toggleReviewHelpfulUseCase(any(), any(), any()) } returns Unit
     }
 
@@ -168,7 +176,8 @@ class DetailViewModelTest : CoroutineTestBase() {
             getMovieReviews = getMovieReviewsUseCase,
             getMovieRecommendations = getMovieRecommendationsUseCase,
             getWatchProviders = getWatchProvidersUseCase,
-            getHelpfulReviewIds = getHelpfulReviewIdsUseCase
+            getHelpfulReviewIds = getHelpfulReviewIdsUseCase,
+            getKoreanRating = getKoreanRatingUseCase
         )
         val toggle = DetailToggleUseCases(
             toggleFavorite = toggleFavoriteUseCase,
@@ -219,6 +228,19 @@ class DetailViewModelTest : CoroutineTestBase() {
         assertEquals(testMovieDetail, state.movieDetail)
         assertEquals(testCredits, state.credits)
         assertEquals(testSimilarMovies, state.similarMovies)
+    }
+
+    @Test
+    fun `watch history is saved even when secondary data loading never completes`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        // 보조 데이터(2단계, 영등위 등급 조회 포함) 중 하나가 끝나지 않는 상황을 시뮬레이션한다.
+        // saveWatchHistory가 2단계 완료를 기다리지 않고 즉시 실행되는지(회귀 방지) 검증한다.
+        coEvery { getMovieCreditsUseCase(1) } coAnswers { awaitCancellation() }
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { saveWatchHistoryUseCase(any(), any()) }
     }
 
     @Test

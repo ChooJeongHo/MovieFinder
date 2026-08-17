@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
+@Suppress("TooManyFunctions")
 @HiltViewModel
 class DetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
@@ -129,41 +130,17 @@ class DetailViewModel @Inject constructor(
                     certification = certification
                 )
 
-                // 2단계: 보조 데이터 병렬 로드, 각각 완료 시 점진적 업데이트
-                coroutineScope {
-                    launch {
-                        val credits = loadOptionalNullable("credits") { fetch.getMovieCredits(movieId) }
-                        updateSuccess { it.copy(credits = credits) }
-                    }
-                    launch {
-                        val similar = loadOptional("similar") { fetch.getSimilarMovies(movieId) }
-                        updateSuccess { it.copy(similarMovies = similar) }
-                    }
-                    launch {
-                        val reviews = loadOptional("reviews") { fetch.getMovieReviews(movieId) }
-                        val helpfulIds = loadOptionalNullable("helpfulReviewIds") {
-                            fetch.getHelpfulReviewIds(movieId)
-                        } ?: emptySet()
-                        // 도움이 됨으로 표시한 리뷰를 상단으로 모으되, 각 그룹 내 원래 상대순서는 유지 (stable sort)
-                        val ordered = reviews.sortedBy { it.id !in helpfulIds }
-                        updateSuccess { it.copy(reviews = ordered, helpfulReviewIds = helpfulIds) }
-                    }
-                    launch {
-                        val trailer = loadOptionalNullable("trailer") { fetch.getMovieTrailer(movieId) }
-                        updateSuccess { it.copy(trailerKey = trailer) }
-                        trailer?.let { trailerWatchDelegate.checkAndPromptIfWatched(it) }
-                    }
-                    launch {
-                        val recs = loadOptional("recommendations") { fetch.getMovieRecommendations(movieId) }
-                        updateSuccess { it.copy(recommendations = recs) }
-                    }
-                    launch {
-                        val providers = loadOptional("watchProviders") { fetch.getWatchProviders(movieId) }
-                        updateSuccess { it.copy(watchProviders = providers) }
-                    }
-                }
+                // 시청 기록 저장은 보조 데이터 로딩(2단계, 영등위 등급 조회 포함)과 무관하게 지연 없이
+                // 시작한다. 순차 실행 시 외부 API 지연(최대 callTimeout 25초)만큼 저장이 늦어졌던 문제를
+                // 없앤다. viewModelScope의 독립된 자식으로 launchWithErrorHandler를 써서 바깥 try/catch·
+                // loadingMutex 수명과 결합되지 않게 한다(이 launch가 바깥 try 안의 자식이면 예외가 바깥
+                // catch로 안 잡히고 Job 계층으로 새며, finally의 unlock이 이 작업보다 먼저 실행될 수 있음).
+                viewModelScope.launchWithErrorHandler(
+                    onError = { Timber.w("영화 %d 시청 기록 저장 실패: %s", movieId, it) }
+                ) { saveWatchHistory(detail) }
 
-                saveWatchHistory(detail)
+                // 2단계: 보조 데이터 병렬 로드, 각각 완료 시 점진적 업데이트
+                loadSecondaryData(detail)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -171,6 +148,46 @@ class DetailViewModel @Inject constructor(
             } finally {
                 loadingMutex.unlock()
             }
+        }
+    }
+
+    // 2단계: 보조 데이터(출연진/비슷한 영화/리뷰/예고편/추천/시청 가능 서비스/영등위 등급) 병렬 로드,
+    // 각각 완료되는 대로 Success 상태를 점진적으로 갱신한다. 구조적 동시성 유지를 위해 coroutineScope
+    // 경계는 loadMovieDetail() 안에 있던 것과 동일하게 유지한다.
+    private suspend fun loadSecondaryData(detail: MovieDetail) = coroutineScope {
+        launch {
+            val credits = loadOptionalNullable("credits") { fetch.getMovieCredits(movieId) }
+            updateSuccess { it.copy(credits = credits) }
+        }
+        launch {
+            val similar = loadOptional("similar") { fetch.getSimilarMovies(movieId) }
+            updateSuccess { it.copy(similarMovies = similar) }
+        }
+        launch {
+            val reviews = loadOptional("reviews") { fetch.getMovieReviews(movieId) }
+            val helpfulIds = loadOptionalNullable("helpfulReviewIds") {
+                fetch.getHelpfulReviewIds(movieId)
+            } ?: emptySet()
+            // 도움이 됨으로 표시한 리뷰를 상단으로 모으되, 각 그룹 내 원래 상대순서는 유지 (stable sort)
+            val ordered = reviews.sortedBy { it.id !in helpfulIds }
+            updateSuccess { it.copy(reviews = ordered, helpfulReviewIds = helpfulIds) }
+        }
+        launch {
+            val trailer = loadOptionalNullable("trailer") { fetch.getMovieTrailer(movieId) }
+            updateSuccess { it.copy(trailerKey = trailer) }
+            trailer?.let { trailerWatchDelegate.checkAndPromptIfWatched(it) }
+        }
+        launch {
+            val recs = loadOptional("recommendations") { fetch.getMovieRecommendations(movieId) }
+            updateSuccess { it.copy(recommendations = recs) }
+        }
+        launch {
+            val providers = loadOptional("watchProviders") { fetch.getWatchProviders(movieId) }
+            updateSuccess { it.copy(watchProviders = providers) }
+        }
+        launch {
+            val koreanRating = loadOptionalNullable("koreanRating") { fetch.getKoreanRating(detail.title) }
+            updateSuccess { it.copy(koreanRating = koreanRating) }
         }
     }
 
@@ -222,11 +239,9 @@ class DetailViewModel @Inject constructor(
         toggleMutex.withLock {
             val state = _uiState.value
             if (state is DetailUiState.Success) {
-                // NOTE: WhileSubscribed(5s) — stale read possible if upstream went cold.
-                // IsInWatchlistUseCase only exposes a Flow (no one-shot getOnce()),
-                // so we read the cached StateFlow value. The race window is narrow:
-                // the UI must be off-screen for >5s AND another actor must concurrently
-                // toggle the same movie. Acceptable for a low-priority notification side-effect.
+                // IsInWatchlistUseCase에 one-shot 조회가 없어 콜드 Flow를 first()로 직접 수집한다 —
+                // WhileSubscribed(5s)로 캐시된 StateFlow.value를 읽는 게 아니라 DB 최신값을 읽으므로
+                // stale read 위험이 없다.
                 val wasInWatchlist = toggle.isInWatchlist(movieId).first()
                 val movie = state.movieDetail.toMovie()
                 toggle.toggleWatchlist(movie)
