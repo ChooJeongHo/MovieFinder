@@ -4,3 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 
 internal inline fun <reified T : Enum<T>> SavedStateHandle.getEnum(key: String, default: T): T =
     get<String>(key)?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: default
+
+internal inline fun <reified T : Enum<T>> SavedStateHandle.getEnumOrNull(key: String): T? =
+    get<String>(key)?.let { runCatching { enumValueOf<T>(it) }.getOrNull() }

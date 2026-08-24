@@ -1,5 +1,7 @@
 package com.choo.moviefinder.data.repository
 
+import com.choo.moviefinder.data.local.dao.KoreanRatingCacheDao
+import com.choo.moviefinder.data.local.entity.KoreanRatingCacheEntity
 import com.choo.moviefinder.data.remote.api.KmrbApiService
 import com.choo.moviefinder.data.remote.parser.KmrbRatingXmlParser
 import com.choo.moviefinder.domain.model.DomainException
@@ -14,6 +16,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -26,6 +29,7 @@ import java.io.IOException
 class KoreanRatingRepositoryImplTest {
 
     private lateinit var apiService: KmrbApiService
+    private lateinit var cacheDao: KoreanRatingCacheDao
     private lateinit var repository: KoreanRatingRepositoryImpl
 
     private val singleItemXml = """
@@ -47,8 +51,9 @@ class KoreanRatingRepositoryImplTest {
     @Before
     fun setUp() {
         apiService = mockk()
+        cacheDao = mockk()
         // 파서는 실물 인스턴스를 사용해 파싱 통합까지 검증한다 (예외 케이스만 개별적으로 mock 파서 사용)
-        repository = KoreanRatingRepositoryImpl(apiService, KmrbRatingXmlParser())
+        repository = KoreanRatingRepositoryImpl(apiService, KmrbRatingXmlParser(), cacheDao)
     }
 
     @Test
@@ -88,13 +93,18 @@ class KoreanRatingRepositoryImplTest {
     }
 
     @Test
-    fun `searchRatings returns empty list without throwing on unknown error code`() = runTest {
+    fun `searchRatings throws Unknown on unrecognized error code instead of returning empty`() = runTest {
+        // "등급 없음"(정상)과 "알 수 없는 에러"를 구분하지 않고 emptyList()로 뭉개면
+        // getRatingForMovie()가 일시적 서버 오류를 영구 negative 캐싱하게 된다.
         val xml = "<response><body><resultCode>99</resultCode><resultMsg>UNKNOWN</resultMsg></body></response>"
         coEvery { apiService.searchMovieRating("에러 영화", 1, 10) } returns xmlResponseBody(xml)
 
-        val result = repository.searchRatings("에러 영화")
-
-        assertTrue(result.isEmpty())
+        try {
+            repository.searchRatings("에러 영화")
+            fail("Expected DomainException.Unknown")
+        } catch (e: DomainException.Unknown) {
+            assertTrue(e.cause?.message?.contains("99") == true)
+        }
     }
 
     @Test
@@ -145,7 +155,7 @@ class KoreanRatingRepositoryImplTest {
     @Test
     fun `searchRatings wraps SAXException from parser as ParseError`() = runTest {
         val mockParser: KmrbRatingXmlParser = mockk()
-        val repoWithMockParser = KoreanRatingRepositoryImpl(apiService, mockParser)
+        val repoWithMockParser = KoreanRatingRepositoryImpl(apiService, mockParser, cacheDao)
         coEvery { apiService.searchMovieRating("파싱실패", 1, 10) } returns xmlResponseBody(singleItemXml)
         every { mockParser.parse(any()) } throws SAXException("malformed xml")
 
@@ -228,5 +238,134 @@ class KoreanRatingRepositoryImplTest {
         val real = xmlResponseBody(xml)
         val spy = io.mockk.spyk(real)
         return spy
+    }
+
+    // --- getRatingForMovie (캐시 우선 조회) ---
+
+    @Test
+    fun `getRatingForMovie returns cached rating and never calls api on cache hit with found=true`() = runTest {
+        val cached = KoreanRatingCacheEntity(
+            movieTitle = "캐시된 영화",
+            found = true,
+            gradeName = "15세이상관람가",
+            matchedTitle = "캐시된 영화",
+            productionCompany = "제작사",
+            directorName = "감독",
+            productionYear = "2024",
+            ratingReason = "사유",
+            cachedAt = 1000L
+        )
+        coEvery { cacheDao.find("캐시된 영화") } returns cached
+
+        val result = repository.getRatingForMovie("캐시된 영화")
+
+        assertEquals("15세이상관람가", result?.gradeName)
+        coVerify(exactly = 0) { apiService.searchMovieRating(any(), any(), any()) }
+    }
+
+    @Test
+    fun `getRatingForMovie returns null and never calls api on fresh cache hit with found=false`() = runTest {
+        val cached = KoreanRatingCacheEntity(
+            movieTitle = "없는 영화",
+            found = false,
+            gradeName = null,
+            matchedTitle = null,
+            productionCompany = null,
+            directorName = null,
+            productionYear = null,
+            ratingReason = null,
+            cachedAt = System.currentTimeMillis()
+        )
+        coEvery { cacheDao.find("없는 영화") } returns cached
+
+        val result = repository.getRatingForMovie("없는 영화")
+
+        assertNull(result)
+        coVerify(exactly = 0) { apiService.searchMovieRating(any(), any(), any()) }
+    }
+
+    @Test
+    fun `getRatingForMovie re-queries network when found=false cache entry is older than TTL`() = runTest {
+        // KMRB에 아직 미등록(개봉 전 등)일 수 있어 negative 캐시는 24시간 후 만료돼야 한다.
+        val staleCached = KoreanRatingCacheEntity(
+            movieTitle = "개봉예정작",
+            found = false,
+            gradeName = null,
+            matchedTitle = null,
+            productionCompany = null,
+            directorName = null,
+            productionYear = null,
+            ratingReason = null,
+            cachedAt = System.currentTimeMillis() - java.util.concurrent.TimeUnit.HOURS.toMillis(25)
+        )
+        coEvery { cacheDao.find("개봉예정작") } returns staleCached
+        coEvery { apiService.searchMovieRating("개봉예정작", 1, 10) } returns xmlResponseBody(singleItemXml)
+        coEvery { cacheDao.upsert(any()) } returns Unit
+
+        val result = repository.getRatingForMovie("개봉예정작")
+
+        coVerify(exactly = 1) { apiService.searchMovieRating("개봉예정작", 1, 10) }
+        assertNull(result) // singleItemXml의 title("테스트 영화")이 "개봉예정작"과 일치하지 않아 미매치
+    }
+
+    @Test
+    fun `getRatingForMovie calls network and caches found=true on cache miss with match`() = runTest {
+        coEvery { cacheDao.find("테스트 영화") } returns null
+        coEvery { apiService.searchMovieRating("테스트 영화", 1, 10) } returns xmlResponseBody(singleItemXml)
+        coEvery { cacheDao.upsert(any()) } returns Unit
+
+        val result = repository.getRatingForMovie("테스트 영화")
+
+        assertEquals("15세이상관람가", result?.gradeName)
+        coVerify(exactly = 1) {
+            cacheDao.upsert(
+                match { entity -> entity.movieTitle == "테스트 영화" && entity.found }
+            )
+        }
+    }
+
+    @Test
+    fun `getRatingForMovie caches found=false on cache miss with no matching candidate`() = runTest {
+        coEvery { cacheDao.find("일치안함") } returns null
+        val xml = """
+            <response><body><items>
+                <item><useTitle>전혀 다른 제목</useTitle></item>
+            </items></body></response>
+        """.trimIndent()
+        coEvery { apiService.searchMovieRating("일치안함", 1, 10) } returns xmlResponseBody(xml)
+        coEvery { cacheDao.upsert(any()) } returns Unit
+
+        val result = repository.getRatingForMovie("일치안함")
+
+        assertNull(result)
+        coVerify(exactly = 1) {
+            cacheDao.upsert(
+                match { entity -> entity.movieTitle == "일치안함" && !entity.found }
+            )
+        }
+    }
+
+    @Test
+    fun `getRatingForMovie does not call dao or api for blank title`() = runTest {
+        val result = repository.getRatingForMovie("   ")
+
+        assertNull(result)
+        coVerify(exactly = 0) { cacheDao.find(any()) }
+        coVerify(exactly = 0) { apiService.searchMovieRating(any(), any(), any()) }
+    }
+
+    @Test
+    fun `getRatingForMovie does not cache when network call throws`() = runTest {
+        coEvery { cacheDao.find("네트워크실패") } returns null
+        coEvery { apiService.searchMovieRating("네트워크실패", 1, 10) } throws IOException("no connection")
+
+        try {
+            repository.getRatingForMovie("네트워크실패")
+            fail("Expected DomainException.NetworkError")
+        } catch (e: DomainException.NetworkError) {
+            assertTrue(e.cause is IOException)
+        }
+
+        coVerify(exactly = 0) { cacheDao.upsert(any()) }
     }
 }

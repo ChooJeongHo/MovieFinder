@@ -9,13 +9,16 @@ import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.WhileSubscribed5s
 import com.choo.moviefinder.core.util.getEnum
+import com.choo.moviefinder.core.util.getEnumOrNull
 import com.choo.moviefinder.core.util.suspendRunCatching
 import com.choo.moviefinder.domain.model.Genre
+import com.choo.moviefinder.domain.model.KoreanRatingGrade
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.domain.usecase.ClearSearchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.DiscoverMoviesUseCase
+import com.choo.moviefinder.domain.usecase.FilterMoviesByKoreanRatingUseCase
 import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
@@ -61,6 +64,7 @@ class SearchViewModel @Inject constructor(
     private val clearSearchHistoryUseCase: ClearSearchHistoryUseCase,
     private val searchPersonUseCase: SearchPersonUseCase,
     private val searchLocalMoviesUseCase: SearchLocalMoviesUseCase,
+    private val filterMoviesByKoreanRatingUseCase: FilterMoviesByKoreanRatingUseCase,
     getWatchHistoryUseCase: GetWatchHistoryUseCase
 ) : ViewModel() {
 
@@ -80,6 +84,10 @@ class SearchViewModel @Inject constructor(
 
     private val _viewMode = MutableStateFlow(savedStateHandle.getEnum(KEY_VIEW_MODE, ViewMode.GRID))
     val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
+
+    private val _selectedRatingGrade =
+        MutableStateFlow(savedStateHandle.getEnumOrNull<KoreanRatingGrade>(KEY_RATING_GRADE))
+    val selectedRatingGrade: StateFlow<KoreanRatingGrade?> = _selectedRatingGrade.asStateFlow()
 
     private val _genres = MutableStateFlow<List<Genre>>(emptyList())
     val genres: StateFlow<List<Genre>> = _genres.asStateFlow()
@@ -116,7 +124,7 @@ class SearchViewModel @Inject constructor(
     // 타이핑 중 자동 검색: 300ms debounce
     // 명시적 검색 액션: 즉시 실행 (merge)
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-    val searchResults: Flow<PagingData<Movie>> = merge(
+    private val baseSearchResults: Flow<PagingData<Movie>> = merge(
         combine(_searchQuery, _selectedYear, _selectedGenres, _sortBy) { query, year, genres, sort ->
             SearchParams(query, year, genres, sort)
         }.debounce(SEARCH_DEBOUNCE_MS).distinctUntilChanged(),
@@ -131,6 +139,13 @@ class SearchViewModel @Inject constructor(
             }
         }
         .cachedIn(viewModelScope)
+
+    // 등급 필터는 서버 쿼리가 아닌 결과 후처리이므로 cachedIn 이후에 결합한다 — 등급 변경 시
+    // TMDB 재검색 없이 캐시된 PagingData에 필터만 재적용된다.
+    val searchResults: Flow<PagingData<Movie>> =
+        combine(baseSearchResults, _selectedRatingGrade) { pagingData, grade ->
+            filterMoviesByKoreanRatingUseCase(pagingData, grade)
+        }
 
     init {
         loadGenres()
@@ -221,6 +236,11 @@ class SearchViewModel @Inject constructor(
         savedStateHandle[KEY_SORT] = sort.name
     }
 
+    fun onRatingGradeSelected(grade: KoreanRatingGrade?) {
+        _selectedRatingGrade.value = grade
+        savedStateHandle[KEY_RATING_GRADE] = grade?.name
+    }
+
     fun onSearch(query: String) {
         val trimmed = query.trim()
         if (trimmed.isBlank()) return
@@ -305,6 +325,7 @@ class SearchViewModel @Inject constructor(
         private const val KEY_GENRES = "selected_genres"
         private const val KEY_SORT = "selected_sort"
         private const val KEY_VIEW_MODE = "view_mode"
+        private const val KEY_RATING_GRADE = "selected_rating_grade"
         private const val SEARCH_DEBOUNCE_MS = 300L
         private const val WATCH_HISTORY_SUGGESTION_LIMIT = 3
     }

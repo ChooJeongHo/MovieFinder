@@ -170,6 +170,11 @@
     <string name="genre_select_title">Select Genres</string>
     <string name="genre_confirm">OK</string>
     <string name="genre_load_failed">Failed to load genres. Please try again.</string>
+    <string name="filter_rating_any">All</string>
+    <string name="filter_rating_all_ages">All ages</string>
+    <string name="filter_rating_12">12+</string>
+    <string name="filter_rating_15">15+</string>
+    <string name="filter_rating_restricted">18+</string>
 
     <!-- Settings -->
     <string name="nav_settings">Settings</string>

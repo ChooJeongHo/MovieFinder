@@ -1,6 +1,7 @@
 package com.choo.moviefinder.domain.usecase
 
 import com.choo.moviefinder.core.util.suspendRunCatching
+import com.choo.moviefinder.core.util.titleMatches
 import com.choo.moviefinder.domain.model.BoxOffice
 import com.choo.moviefinder.domain.model.BoxOfficeMovie
 import com.choo.moviefinder.domain.model.Movie
@@ -43,15 +44,4 @@ class MatchBoxOfficeWithTmdbUseCase @Inject constructor(
             .onFailure { Timber.w(it, "박스오피스 '%s' TMDB 검색 실패", movieName) }
             .getOrElse { emptyList() }
             .firstOrNull { candidate -> titleMatches(candidate.title, movieName) }
-
-    private fun titleMatches(candidateTitle: String, movieName: String): Boolean =
-        normalizeTitle(candidateTitle) == normalizeTitle(movieName)
-
-    // 공백/구두점/대소문자 차이로 인한 오탐지를 줄이기 위한 제목 정규화
-    private fun normalizeTitle(title: String): String =
-        title.lowercase().filterNot { it.isWhitespace() || it in IGNORED_PUNCTUATION }
-
-    companion object {
-        private val IGNORED_PUNCTUATION = setOf(':', '-', '!', '?', '.', ',', '·', '\'', '"', '(', ')')
-    }
 }

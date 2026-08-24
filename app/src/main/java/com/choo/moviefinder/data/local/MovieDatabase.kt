@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.HelpfulReviewDao
+import com.choo.moviefinder.data.local.dao.KoreanRatingCacheDao
 import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
@@ -17,6 +18,7 @@ import com.choo.moviefinder.data.local.dao.WatchlistDao
 import com.choo.moviefinder.data.local.entity.CachedMovieEntity
 import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.HelpfulReviewEntity
+import com.choo.moviefinder.data.local.entity.KoreanRatingCacheEntity
 import com.choo.moviefinder.data.local.entity.MemoEntity
 import com.choo.moviefinder.data.local.entity.MovieTagEntity
 import com.choo.moviefinder.data.local.entity.RecentSearchEntity
@@ -42,9 +44,10 @@ import com.choo.moviefinder.data.local.entity.WatchlistEntity
         MovieTagEntity::class,
         ScheduledReminderEntity::class,
         TrailerWatchEntity::class,
-        HelpfulReviewEntity::class
+        HelpfulReviewEntity::class,
+        KoreanRatingCacheEntity::class
     ],
-    version = 23,
+    version = 24,
     exportSchema = true
 )
 abstract class MovieDatabase : RoomDatabase() {
@@ -83,4 +86,7 @@ abstract class MovieDatabase : RoomDatabase() {
 
     // 도움이 됨으로 표시한 리뷰 DAO 제공
     abstract fun helpfulReviewDao(): HelpfulReviewDao
+
+    // KMRB 관람등급 캐시 DAO 제공
+    abstract fun koreanRatingCacheDao(): KoreanRatingCacheDao
 }

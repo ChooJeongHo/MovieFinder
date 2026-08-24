@@ -36,6 +36,7 @@ import com.choo.moviefinder.core.util.RateLimiter
 import com.choo.moviefinder.core.util.computeWindowWidthSizeClass
 import com.choo.moviefinder.core.util.toMovieGridSpanCount
 import com.choo.moviefinder.databinding.FragmentSearchBinding
+import com.choo.moviefinder.domain.model.KoreanRatingGrade
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.model.PersonSearchItem
 import com.choo.moviefinder.presentation.adapter.HorizontalMovieAdapter
@@ -108,6 +109,7 @@ class SearchFragment : Fragment() {
         setupYearFilter()
         setupGenreFilter()
         setupSortFilter()
+        setupRatingFilter()
         setupEmptyStates()
         setupSuggestionChips()
         observeViewModelFlows()
@@ -353,6 +355,7 @@ class SearchFragment : Fragment() {
     private fun handleSearchMode(mode: SearchMode) {
         val isPersonMode = mode == SearchMode.PERSON
         binding.chipGroupFilters.isVisible = !isPersonMode
+        binding.ratingFilterScroll.isVisible = !isPersonMode
         binding.chipDiscoverMode.isVisible = false
         binding.rvPersonResults.isVisible = false
         binding.composeSearchResults.isVisible = false
@@ -530,6 +533,28 @@ class SearchFragment : Fragment() {
             viewModel.onGenresSelected(emptySet())
             updateGenreChip(emptySet())
             updateDiscoverModeChip()
+        }
+    }
+
+    // 등급 필터 칩 그룹 초기 체크 상태 복원 후 리스너 등록 (순서 반대 시 프로그래매틱 체크가
+    // 리스너를 깨워 불필요한 재필터를 유발한다)
+    private fun setupRatingFilter() {
+        when (viewModel.selectedRatingGrade.value) {
+            null -> binding.chipGroupRating.check(R.id.chip_rating_all)
+            KoreanRatingGrade.ALL_AGES -> binding.chipGroupRating.check(R.id.chip_rating_all_ages)
+            KoreanRatingGrade.TWELVE_AND_UP -> binding.chipGroupRating.check(R.id.chip_rating_12)
+            KoreanRatingGrade.FIFTEEN_AND_UP -> binding.chipGroupRating.check(R.id.chip_rating_15)
+            KoreanRatingGrade.RESTRICTED -> binding.chipGroupRating.check(R.id.chip_rating_restricted)
+        }
+        binding.chipGroupRating.setOnCheckedStateChangeListener { _, checkedIds ->
+            val grade = when (checkedIds.firstOrNull()) {
+                R.id.chip_rating_all_ages -> KoreanRatingGrade.ALL_AGES
+                R.id.chip_rating_12 -> KoreanRatingGrade.TWELVE_AND_UP
+                R.id.chip_rating_15 -> KoreanRatingGrade.FIFTEEN_AND_UP
+                R.id.chip_rating_restricted -> KoreanRatingGrade.RESTRICTED
+                else -> null
+            }
+            viewModel.onRatingGradeSelected(grade)
         }
     }
 

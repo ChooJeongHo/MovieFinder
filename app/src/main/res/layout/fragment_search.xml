@@ -84,6 +84,63 @@
 
     </com.google.android.material.chip.ChipGroup>
 
+    <HorizontalScrollView
+        android:id="@+id/rating_filter_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:paddingStart="@dimen/spacing_sm"
+        android:paddingEnd="@dimen/spacing_sm"
+        android:paddingBottom="@dimen/spacing_xs">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group_rating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleLine="true"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_rating_all"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_rating_any"
+                android:checked="true" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_rating_all_ages"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_rating_all_ages" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_rating_12"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_rating_12" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_rating_15"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_rating_15" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_rating_restricted"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_rating_restricted" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+    </HorizontalScrollView>
+
     <com.google.android.material.chip.Chip
         android:id="@+id/chip_discover_mode"
         style="@style/Widget.MaterialComponents.Chip.Action"

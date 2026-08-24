@@ -1,10 +1,14 @@
 package com.choo.moviefinder.presentation.search
 
+import androidx.paging.PagingData
 import app.cash.turbine.test
 import com.choo.moviefinder.domain.model.Genre
+import com.choo.moviefinder.domain.model.KoreanRatingGrade
+import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.domain.usecase.ClearSearchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.DiscoverMoviesUseCase
+import com.choo.moviefinder.domain.usecase.FilterMoviesByKoreanRatingUseCase
 import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
@@ -21,6 +25,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter.ViewMode
 import org.junit.Assert.assertEquals
@@ -40,6 +45,7 @@ class SearchViewModelTest : CoroutineTestBase() {
     private lateinit var clearSearchHistoryUseCase: ClearSearchHistoryUseCase
     private lateinit var searchPersonUseCase: SearchPersonUseCase
     private lateinit var searchLocalMoviesUseCase: SearchLocalMoviesUseCase
+    private lateinit var filterMoviesByKoreanRatingUseCase: FilterMoviesByKoreanRatingUseCase
     private lateinit var getWatchHistoryUseCase: GetWatchHistoryUseCase
 
     @Before
@@ -53,10 +59,12 @@ class SearchViewModelTest : CoroutineTestBase() {
         clearSearchHistoryUseCase = mockk()
         searchPersonUseCase = mockk()
         searchLocalMoviesUseCase = mockk()
+        filterMoviesByKoreanRatingUseCase = mockk()
         getWatchHistoryUseCase = mockk()
 
         coEvery { getGenreListUseCase() } returns emptyList()
         coEvery { searchLocalMoviesUseCase(any()) } returns emptyList()
+        coEvery { filterMoviesByKoreanRatingUseCase(any(), any()) } answers { firstArg() }
         every { getWatchHistoryUseCase() } returns flowOf(emptyList())
     }
 
@@ -76,6 +84,7 @@ class SearchViewModelTest : CoroutineTestBase() {
             clearSearchHistoryUseCase = clearSearchHistoryUseCase,
             searchPersonUseCase = searchPersonUseCase,
             searchLocalMoviesUseCase = searchLocalMoviesUseCase,
+            filterMoviesByKoreanRatingUseCase = filterMoviesByKoreanRatingUseCase,
             getWatchHistoryUseCase = getWatchHistoryUseCase
         )
     }
@@ -366,5 +375,81 @@ class SearchViewModelTest : CoroutineTestBase() {
 
         // init에서 1번만 호출, retryLoadGenres는 genreLoadFailed=false이므로 재호출 안됨
         coVerify(exactly = 1) { getGenreListUseCase() }
+    }
+
+    // --- Rating Grade Filter ---
+
+    @Test
+    fun `initial selectedRatingGrade is null`() = runTest {
+        val viewModel = createViewModel()
+
+        assertEquals(null, viewModel.selectedRatingGrade.value)
+    }
+
+    @Test
+    fun `onRatingGradeSelected updates selectedRatingGrade`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.onRatingGradeSelected(KoreanRatingGrade.FIFTEEN_AND_UP)
+
+        assertEquals(KoreanRatingGrade.FIFTEEN_AND_UP, viewModel.selectedRatingGrade.value)
+    }
+
+    @Test
+    fun `onRatingGradeSelected saves to savedStateHandle`() = runTest {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.onRatingGradeSelected(KoreanRatingGrade.FIFTEEN_AND_UP)
+
+        assertEquals("FIFTEEN_AND_UP", handle.get<String>("selected_rating_grade"))
+    }
+
+    @Test
+    fun `onRatingGradeSelected with null clears savedStateHandle value`() = runTest {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.onRatingGradeSelected(KoreanRatingGrade.FIFTEEN_AND_UP)
+        viewModel.onRatingGradeSelected(null)
+
+        assertEquals(null, viewModel.selectedRatingGrade.value)
+        assertEquals(null, handle.get<String>("selected_rating_grade"))
+    }
+
+    @Test
+    fun `savedStateHandle restores selectedRatingGrade`() = runTest {
+        val handle = SavedStateHandle(mapOf("selected_rating_grade" to "FIFTEEN_AND_UP"))
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        assertEquals(KoreanRatingGrade.FIFTEEN_AND_UP, viewModel.selectedRatingGrade.value)
+    }
+
+    // 회귀 방지 핵심: 등급 필터만 변경해도 TMDB 재검색이 발생하면 안 된다 (cachedIn 이후 결합 검증)
+    @Test
+    fun `changing rating grade after search does not trigger a new TMDB search`() = runTest {
+        val movies = listOf(Movie(1, "테스트 영화", null, null, "overview", "2024-01-01", 7.5, 100))
+        coEvery { saveSearchQueryUseCase(any()) } returns Unit
+        coEvery { searchMoviesUseCase("avengers", null) } returns flowOf(PagingData.from(movies))
+
+        val viewModel = createViewModel()
+
+        viewModel.searchResults.test {
+            // 컬렉터가 실제로 구독을 마칠 때까지 스케줄러를 먼저 비운다 — 그렇지 않으면
+            // onSearch()의 _immediateSearch.tryEmit()이 구독 이전에 발생해 유실된다
+            // (replay=0 SharedFlow).
+            runCurrent()
+            viewModel.onSearch("avengers")
+            advanceUntilIdle()
+            awaitItem()
+
+            viewModel.onRatingGradeSelected(KoreanRatingGrade.FIFTEEN_AND_UP)
+            advanceUntilIdle()
+            awaitItem()
+
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 1) { searchMoviesUseCase(any(), any()) }
     }
 }
