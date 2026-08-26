@@ -57,6 +57,24 @@
             app:layout_constraintTop_toTopOf="@id/iv_poster"
             tools:text="▲1" />
 
+        <TextView
+            android:id="@+id/tv_korean_rating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/spacing_xs"
+            android:background="@drawable/bg_rank_change_badge"
+            android:importantForAccessibility="no"
+            android:paddingHorizontal="@dimen/spacing_xs"
+            android:paddingVertical="@dimen/spacing_xxs"
+            android:textAppearance="?attr/textAppearanceCaption"
+            android:textColor="@android:color/white"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/iv_poster"
+            app:layout_constraintEnd_toEndOf="@id/iv_poster"
+            tools:text="15" />
+
         <com.choo.moviefinder.presentation.common.CircularRatingView
             android:id="@+id/rating_view"
             android:layout_width="@dimen/rating_view_size"

@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
 import com.choo.moviefinder.core.util.launchWithErrorHandler
+import com.choo.moviefinder.core.util.suspendRunCatching
+import com.choo.moviefinder.domain.usecase.AttachKoreanRatingToBoxOfficeUseCase
 import com.choo.moviefinder.domain.usecase.GetDailyBoxOfficeWithTmdbMatchUseCase
 import com.choo.moviefinder.domain.usecase.GetNowPlayingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetPopularMoviesUseCase
@@ -33,6 +35,7 @@ class HomeViewModel @Inject constructor(
     getWatchHistoryUseCase: GetWatchHistoryUseCase,
     private val getDailyBoxOfficeWithTmdbMatchUseCase: GetDailyBoxOfficeWithTmdbMatchUseCase,
     private val getWeeklyBoxOfficeWithTmdbMatchUseCase: GetWeeklyBoxOfficeWithTmdbMatchUseCase,
+    private val attachKoreanRatingToBoxOfficeUseCase: AttachKoreanRatingToBoxOfficeUseCase,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -47,6 +50,11 @@ class HomeViewModel @Inject constructor(
 
     // 기간 전환 시 직전 로딩을 취소해 늦게 도착한 응답이 최신 상태를 덮어쓰지 않도록 한다
     private var boxOfficeJob: Job? = null
+
+    // cancel()은 협조적이라 취소 요청 후에도 다음 suspend 지점까지는 실행이 이어질 수 있다.
+    // period 값만으로는 동일 기간 재진입(retry, A→B→A 왕복) 시 취소된 옛 응답을 걸러내지 못하므로,
+    // 요청마다 증가하는 토큰으로 "지금 emit하려는 게 가장 최근 요청인지"를 확인한다.
+    private var boxOfficeRequestId = 0
 
     private val _selectedTab = MutableStateFlow(HomeTab.NOW_PLAYING)
     val selectedTab: StateFlow<HomeTab> = _selectedTab.asStateFlow()
@@ -102,19 +110,33 @@ class HomeViewModel @Inject constructor(
 
     private fun loadBoxOffice(period: BoxOfficePeriod) {
         boxOfficeJob?.cancel()
+        val requestId = ++boxOfficeRequestId
         _boxOfficeUiState.update {
             it.copy(period = period, isLoading = true, items = emptyList(), errorType = null)
         }
         boxOfficeJob = viewModelScope.launchWithErrorHandler(
             onError = { errorType ->
+                if (requestId != boxOfficeRequestId) return@launchWithErrorHandler
                 _boxOfficeUiState.update { it.copy(isLoading = false, items = emptyList(), errorType = errorType) }
             }
         ) {
-            val items = when (period) {
+            val matched = when (period) {
                 BoxOfficePeriod.DAILY -> getDailyBoxOfficeWithTmdbMatchUseCase()
                 BoxOfficePeriod.WEEKLY -> getWeeklyBoxOfficeWithTmdbMatchUseCase()
             }
-            _boxOfficeUiState.update { it.copy(isLoading = false, items = items, errorType = null) }
+            // 순위/포스터/평점은 이미 준비됐으므로 KMRB 등급 조회를 기다리지 않고 먼저 보여준다.
+            // cancel()은 협조적이라 직전 suspend 지점 이후 코드가 그대로 실행될 수 있으므로, 세 곳의
+            // 상태 쓰기(성공 1차/2차, 실패) 모두 requestId로 "가장 최근 요청인지"를 확인해 취소된
+            // 요청의 응답이 최신 상태를 덮지 않도록 가드한다 (period 값 비교는 동일 기간 재진입을
+            // 걸러내지 못해 토큰 방식으로 대체).
+            if (requestId != boxOfficeRequestId) return@launchWithErrorHandler
+            _boxOfficeUiState.update { it.copy(isLoading = false, items = matched, errorType = null) }
+
+            // 등급 조회 실패가 이미 표시된 핵심 목록까지 지우지 않도록 별도로 흡수한다
+            val withRating = suspendRunCatching { attachKoreanRatingToBoxOfficeUseCase(matched) }.getOrNull()
+            if (withRating != null && requestId == boxOfficeRequestId) {
+                _boxOfficeUiState.update { it.copy(items = withRating) }
+            }
         }
     }
 

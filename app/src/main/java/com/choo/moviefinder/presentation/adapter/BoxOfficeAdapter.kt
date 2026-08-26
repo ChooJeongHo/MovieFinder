@@ -12,6 +12,8 @@ import com.choo.moviefinder.R
 import com.choo.moviefinder.databinding.ItemBoxOfficeBinding
 import com.choo.moviefinder.domain.model.BoxOffice
 import com.choo.moviefinder.domain.model.BoxOfficeMovie
+import com.choo.moviefinder.domain.model.KoreanRating
+import com.choo.moviefinder.domain.model.KoreanRatingGrade
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -60,13 +62,20 @@ class BoxOfficeAdapter(
             binding.ratingView.isVisible = movie != null
             movie?.let { binding.ratingView.setRating(it.voteAverage) }
 
-            binding.cardBoxOffice.contentDescription = context.getString(
-                R.string.cd_box_office_item,
-                boxOffice.rank,
-                boxOffice.movieName,
-                NumberFormat.getNumberInstance(Locale.KOREA).format(boxOffice.audienceCount),
-                rankChangeDescription(context, boxOffice)
-            )
+            val koreanRating = item.koreanRating
+            binding.tvKoreanRating.isVisible = koreanRating != null
+            koreanRating?.let { binding.tvKoreanRating.text = ratingBadgeLabel(context, it) }
+
+            binding.cardBoxOffice.contentDescription = listOfNotNull(
+                context.getString(
+                    R.string.cd_box_office_item,
+                    boxOffice.rank,
+                    boxOffice.movieName,
+                    NumberFormat.getNumberInstance(Locale.KOREA).format(boxOffice.audienceCount),
+                    rankChangeDescription(context, boxOffice)
+                ),
+                koreanRating?.let { context.getString(R.string.cd_korean_rating, it.gradeName) }
+            ).joinToString(", ")
             binding.cardBoxOffice.setOnClickListener { onItemClick(item) }
         }
     }
@@ -88,3 +97,14 @@ private fun rankChangeDescription(context: Context, boxOffice: BoxOffice): Strin
     boxOffice.rankChange < 0 -> context.getString(R.string.cd_box_office_rank_down, -boxOffice.rankChange)
     else -> context.getString(R.string.cd_box_office_rank_same)
 }
+
+// 좁은 카드(movie_card_horizontal_width)에 맞는 축약 배지 라벨. 알려진 4종 외 등급(매핑 실패)은
+// KMRB 원문 gradeName으로 폴백해 정보 손실 없이 표시한다.
+private fun ratingBadgeLabel(context: Context, koreanRating: KoreanRating): String =
+    when (KoreanRatingGrade.fromApiGradeName(koreanRating.gradeName)) {
+        KoreanRatingGrade.ALL_AGES -> context.getString(R.string.box_office_rating_badge_all_ages)
+        KoreanRatingGrade.TWELVE_AND_UP -> context.getString(R.string.box_office_rating_badge_12)
+        KoreanRatingGrade.FIFTEEN_AND_UP -> context.getString(R.string.box_office_rating_badge_15)
+        KoreanRatingGrade.RESTRICTED -> context.getString(R.string.box_office_rating_badge_restricted)
+        null -> koreanRating.gradeName
+    }

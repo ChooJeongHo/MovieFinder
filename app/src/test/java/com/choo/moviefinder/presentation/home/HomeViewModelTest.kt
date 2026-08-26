@@ -4,7 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.paging.PagingData
 import com.choo.moviefinder.domain.model.BoxOffice
 import com.choo.moviefinder.domain.model.BoxOfficeMovie
+import com.choo.moviefinder.domain.model.KoreanRating
 import com.choo.moviefinder.domain.model.Movie
+import com.choo.moviefinder.domain.usecase.AttachKoreanRatingToBoxOfficeUseCase
 import com.choo.moviefinder.domain.usecase.GetDailyBoxOfficeWithTmdbMatchUseCase
 import com.choo.moviefinder.domain.usecase.GetNowPlayingMoviesUseCase
 import com.choo.moviefinder.domain.usecase.GetPopularMoviesUseCase
@@ -22,6 +24,7 @@ import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -41,6 +44,7 @@ class HomeViewModelTest : CoroutineTestBase() {
     private lateinit var getWatchHistoryUseCase: GetWatchHistoryUseCase
     private lateinit var getDailyBoxOfficeWithTmdbMatchUseCase: GetDailyBoxOfficeWithTmdbMatchUseCase
     private lateinit var getWeeklyBoxOfficeWithTmdbMatchUseCase: GetWeeklyBoxOfficeWithTmdbMatchUseCase
+    private lateinit var attachKoreanRatingToBoxOfficeUseCase: AttachKoreanRatingToBoxOfficeUseCase
 
     private val testMovies = listOf(
         Movie(1, "Movie 1", "/p1.jpg", "/b1.jpg", "Overview 1", "2024-01-01", 8.0, 100),
@@ -55,6 +59,15 @@ class HomeViewModelTest : CoroutineTestBase() {
     private val dailyItems = listOf(boxOfficeMovie(1, "일별 영화"))
     private val weeklyItems = listOf(boxOfficeMovie(1, "주간 영화"))
 
+    // AttachKoreanRatingToBoxOfficeUseCase가 실제로 값을 반영하는지 구분해 검증하기 위해
+    // 매칭 결과와 다른(등급이 붙은) 별도 리스트를 둔다.
+    private val dailyItemsWithRating = dailyItems.map {
+        it.copy(koreanRating = KoreanRating("15세이상관람가", it.boxOffice.movieName, "제작사", "감독", "2024", "사유"))
+    }
+    private val weeklyItemsWithRating = weeklyItems.map {
+        it.copy(koreanRating = KoreanRating("전체관람가", it.boxOffice.movieName, "제작사", "감독", "2024", "사유"))
+    }
+
     @Before
     fun setup() {
         getNowPlayingMoviesUseCase = mockk()
@@ -64,6 +77,7 @@ class HomeViewModelTest : CoroutineTestBase() {
         getWatchHistoryUseCase = mockk()
         getDailyBoxOfficeWithTmdbMatchUseCase = mockk()
         getWeeklyBoxOfficeWithTmdbMatchUseCase = mockk()
+        attachKoreanRatingToBoxOfficeUseCase = mockk()
 
         every { getNowPlayingMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
         every { getPopularMoviesUseCase() } returns flowOf(PagingData.from(testMovies))
@@ -74,6 +88,8 @@ class HomeViewModelTest : CoroutineTestBase() {
         // MockK 예외가 아니라 조용한 통과로 숨겨질 수 있다
         coEvery { getDailyBoxOfficeWithTmdbMatchUseCase() } returns dailyItems
         coEvery { getWeeklyBoxOfficeWithTmdbMatchUseCase() } returns weeklyItems
+        coEvery { attachKoreanRatingToBoxOfficeUseCase(dailyItems) } returns dailyItemsWithRating
+        coEvery { attachKoreanRatingToBoxOfficeUseCase(weeklyItems) } returns weeklyItemsWithRating
     }
 
     private fun createViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()): HomeViewModel {
@@ -85,6 +101,7 @@ class HomeViewModelTest : CoroutineTestBase() {
             getWatchHistoryUseCase = getWatchHistoryUseCase,
             getDailyBoxOfficeWithTmdbMatchUseCase = getDailyBoxOfficeWithTmdbMatchUseCase,
             getWeeklyBoxOfficeWithTmdbMatchUseCase = getWeeklyBoxOfficeWithTmdbMatchUseCase,
+            attachKoreanRatingToBoxOfficeUseCase = attachKoreanRatingToBoxOfficeUseCase,
             savedStateHandle = savedStateHandle
         )
     }
@@ -192,11 +209,46 @@ class HomeViewModelTest : CoroutineTestBase() {
 
         val state = viewModel.boxOfficeUiState.value
         assertEquals(BoxOfficePeriod.DAILY, state.period)
-        assertEquals(dailyItems, state.items)
+        assertEquals(dailyItemsWithRating, state.items)
         assertTrue(!state.isLoading)
         assertNull(state.errorType)
         coVerify(exactly = 1) { getDailyBoxOfficeWithTmdbMatchUseCase() }
         coVerify(exactly = 0) { getWeeklyBoxOfficeWithTmdbMatchUseCase() }
+    }
+
+    // AttachKoreanRatingToBoxOfficeUseCase가 실제로 최종 UI 상태에 반영되는지 명시적으로 검증한다
+    // (조합 지점: HomeViewModel.loadBoxOffice()가 매칭 결과를 그대로 emit하지 않고 등급 부착 단계를
+    // 거쳐야 한다는 회귀 방지 테스트).
+    @Test
+    fun `boxOfficeUiState items carry koreanRating attached by AttachKoreanRatingToBoxOfficeUseCase`() = runTest {
+        val viewModel = createViewModel()
+
+        advanceUntilIdle()
+
+        val state = viewModel.boxOfficeUiState.value
+        assertEquals("15세이상관람가", state.items.first().koreanRating?.gradeName)
+        coVerify(exactly = 1) { attachKoreanRatingToBoxOfficeUseCase(dailyItems) }
+    }
+
+    // 084일차 아키텍처 리뷰에서 발견된 회귀 버그의 테스트: 순위/포스터/평점(matched)은 이미 준비돼
+    // 있는데도 느린 KMRB 등급 조회가 끝날 때까지 화면에 아무것도 안 뜨면 안 된다 — 등급이 붙기 전
+    // matched 상태가 먼저 emit되고, 이후 등급이 반영되는 2단계 emit인지 직접 검증한다.
+    @Test
+    fun `boxOfficeUiState shows matched items before rating attachment resolves`() = runTest {
+        coEvery { attachKoreanRatingToBoxOfficeUseCase(dailyItems) } coAnswers {
+            delay(500)
+            dailyItemsWithRating
+        }
+        val viewModel = createViewModel()
+
+        advanceTimeBy(100)
+        val midState = viewModel.boxOfficeUiState.value
+        assertTrue(!midState.isLoading)
+        assertEquals(dailyItems, midState.items)
+        assertNull(midState.items.first().koreanRating)
+
+        advanceUntilIdle()
+        assertEquals(dailyItemsWithRating, viewModel.boxOfficeUiState.value.items)
     }
 
     @Test
@@ -216,7 +268,7 @@ class HomeViewModelTest : CoroutineTestBase() {
 
         val state = viewModel.boxOfficeUiState.value
         assertEquals(BoxOfficePeriod.WEEKLY, state.period)
-        assertEquals(weeklyItems, state.items)
+        assertEquals(weeklyItemsWithRating, state.items)
         coVerify(exactly = 1) { getWeeklyBoxOfficeWithTmdbMatchUseCase() }
         coVerify(exactly = 1) { getDailyBoxOfficeWithTmdbMatchUseCase() }
     }
@@ -287,7 +339,7 @@ class HomeViewModelTest : CoroutineTestBase() {
 
         coVerify(exactly = 2) { getWeeklyBoxOfficeWithTmdbMatchUseCase() }
         coVerify(exactly = 1) { getDailyBoxOfficeWithTmdbMatchUseCase() }
-        assertEquals(weeklyItems, viewModel.boxOfficeUiState.value.items)
+        assertEquals(weeklyItemsWithRating, viewModel.boxOfficeUiState.value.items)
     }
 
     // 빠른 연속 토글: 느린 weekly 응답이 나중에 도착해도 최신 선택(DAILY) 결과를 덮어쓰면 안 된다
@@ -306,7 +358,7 @@ class HomeViewModelTest : CoroutineTestBase() {
 
         val state = viewModel.boxOfficeUiState.value
         assertEquals(BoxOfficePeriod.DAILY, state.period)
-        assertEquals(dailyItems, state.items)
+        assertEquals(dailyItemsWithRating, state.items)
         assertTrue(!state.isLoading)
     }
 
@@ -321,7 +373,7 @@ class HomeViewModelTest : CoroutineTestBase() {
         }
         val viewModel = createViewModel()
         advanceUntilIdle()
-        assertEquals(dailyItems, viewModel.boxOfficeUiState.value.items)
+        assertEquals(dailyItemsWithRating, viewModel.boxOfficeUiState.value.items)
 
         viewModel.onBoxOfficePeriodSelected(BoxOfficePeriod.WEEKLY)
 
@@ -334,7 +386,7 @@ class HomeViewModelTest : CoroutineTestBase() {
         assertTrue(loadingState.items.isEmpty())
 
         advanceUntilIdle()
-        assertEquals(weeklyItems, viewModel.boxOfficeUiState.value.items)
+        assertEquals(weeklyItemsWithRating, viewModel.boxOfficeUiState.value.items)
     }
 
     @Test
@@ -345,7 +397,7 @@ class HomeViewModelTest : CoroutineTestBase() {
 
         val state = viewModel.boxOfficeUiState.value
         assertEquals(BoxOfficePeriod.WEEKLY, state.period)
-        assertEquals(weeklyItems, state.items)
+        assertEquals(weeklyItemsWithRating, state.items)
         coVerify(exactly = 1) { getWeeklyBoxOfficeWithTmdbMatchUseCase() }
         coVerify(exactly = 0) { getDailyBoxOfficeWithTmdbMatchUseCase() }
     }

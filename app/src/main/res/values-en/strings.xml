@@ -29,6 +29,10 @@
     <string name="cd_box_office_rank_new">New entry</string>
     <string name="cd_box_office_loading">Loading box office</string>
     <string name="box_office_no_match_message">Couldn\'t find details for this movie on TMDB</string>
+    <string name="box_office_rating_badge_all_ages">ALL</string>
+    <string name="box_office_rating_badge_12">12+</string>
+    <string name="box_office_rating_badge_15">15+</string>
+    <string name="box_office_rating_badge_restricted">18+</string>
 
     <!-- Search Screen -->
     <string name="search_hint">Search movies</string>

@@ -30,6 +30,10 @@
     <string name="cd_box_office_rank_new">신규 진입</string>
     <string name="cd_box_office_loading">박스오피스 불러오는 중</string>
     <string name="box_office_no_match_message">TMDB에서 이 영화의 상세 정보를 찾지 못했습니다</string>
+    <string name="box_office_rating_badge_all_ages">전체</string>
+    <string name="box_office_rating_badge_12">12</string>
+    <string name="box_office_rating_badge_15">15</string>
+    <string name="box_office_rating_badge_restricted">청불</string>
 
     <!-- 검색 화면 -->
     <string name="search_hint">영화 검색</string>
