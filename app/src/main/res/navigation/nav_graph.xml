@@ -38,10 +38,10 @@
         <action
             android:id="@+id/action_search_to_person_detail"
             app:destination="@id/personDetailFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/fade_out"
-            app:popEnterAnim="@anim/fade_in"
-            app:popExitAnim="@anim/slide_out_right" />
+            app:enterAnim="@animator/slide_in_right"
+            app:exitAnim="@animator/fade_out"
+            app:popEnterAnim="@animator/fade_in"
+            app:popExitAnim="@animator/slide_out_right" />
     </fragment>
 
     <fragment
@@ -62,17 +62,17 @@
         <action
             android:id="@+id/action_settings_to_stats"
             app:destination="@id/statsFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/fade_out"
-            app:popEnterAnim="@anim/fade_in"
-            app:popExitAnim="@anim/slide_out_right" />
+            app:enterAnim="@animator/slide_in_right"
+            app:exitAnim="@animator/fade_out"
+            app:popEnterAnim="@animator/fade_in"
+            app:popExitAnim="@animator/slide_out_right" />
         <action
             android:id="@+id/action_settings_to_reminder_history"
             app:destination="@id/reminderHistoryFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/fade_out"
-            app:popEnterAnim="@anim/fade_in"
-            app:popExitAnim="@anim/slide_out_right" />
+            app:enterAnim="@animator/slide_in_right"
+            app:exitAnim="@animator/fade_out"
+            app:popEnterAnim="@animator/fade_in"
+            app:popExitAnim="@animator/slide_out_right" />
     </fragment>
 
     <fragment
@@ -102,24 +102,24 @@
             android:id="@+id/action_detailFragment_self"
             app:destination="@id/detailFragment"
             app:launchSingleTop="true"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/fade_out"
-            app:popEnterAnim="@anim/fade_in"
-            app:popExitAnim="@anim/slide_out_right" />
+            app:enterAnim="@animator/slide_in_right"
+            app:exitAnim="@animator/fade_out"
+            app:popEnterAnim="@animator/fade_in"
+            app:popExitAnim="@animator/slide_out_right" />
         <action
             android:id="@+id/action_detailFragment_to_personDetailFragment"
             app:destination="@id/personDetailFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/fade_out"
-            app:popEnterAnim="@anim/fade_in"
-            app:popExitAnim="@anim/slide_out_right" />
+            app:enterAnim="@animator/slide_in_right"
+            app:exitAnim="@animator/fade_out"
+            app:popEnterAnim="@animator/fade_in"
+            app:popExitAnim="@animator/slide_out_right" />
         <action
             android:id="@+id/action_detailFragment_to_collectionFragment"
             app:destination="@id/collectionFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/fade_out"
-            app:popEnterAnim="@anim/fade_in"
-            app:popExitAnim="@anim/slide_out_right" />
+            app:enterAnim="@animator/slide_in_right"
+            app:exitAnim="@animator/fade_out"
+            app:popEnterAnim="@animator/fade_in"
+            app:popExitAnim="@animator/slide_out_right" />
     </fragment>
 
     <fragment
@@ -134,10 +134,10 @@
         <action
             android:id="@+id/action_personDetailFragment_to_detailFragment"
             app:destination="@id/detailFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/fade_out"
-            app:popEnterAnim="@anim/fade_in"
-            app:popExitAnim="@anim/slide_out_right" />
+            app:enterAnim="@animator/slide_in_right"
+            app:exitAnim="@animator/fade_out"
+            app:popEnterAnim="@animator/fade_in"
+            app:popExitAnim="@animator/slide_out_right" />
     </fragment>
 
     <fragment
@@ -151,10 +151,10 @@
         <action
             android:id="@+id/action_collectionFragment_to_detailFragment"
             app:destination="@id/detailFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/fade_out"
-            app:popEnterAnim="@anim/fade_in"
-            app:popExitAnim="@anim/slide_out_right" />
+            app:enterAnim="@animator/slide_in_right"
+            app:exitAnim="@animator/fade_out"
+            app:popEnterAnim="@animator/fade_in"
+            app:popExitAnim="@animator/slide_out_right" />
     </fragment>
 
 </navigation>
