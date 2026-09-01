@@ -1,6 +1,7 @@
 package com.choo.moviefinder
 
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Espresso.pressBack
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -80,5 +81,16 @@ class SettingsFragmentTest {
     fun settingsScreen_displaysStatsNavigation() {
         onView(withId(R.id.item_stats))
             .check(matches(isDisplayed()))
+    }
+
+    // action_settings_to_stats의 Animator 기반 전환(Predictive Back 전환용) 왕복 회귀 테스트
+    @Test
+    fun settingsScreen_navigateToStats_backReturnsToSettings() {
+        onView(withId(R.id.item_stats)).perform(click())
+        onView(withId(R.id.toolbar)).check(matches(isDisplayed()))
+
+        pressBack()
+
+        onView(withId(R.id.item_stats)).check(matches(isDisplayed()))
     }
 }

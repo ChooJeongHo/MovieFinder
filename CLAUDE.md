@@ -193,7 +193,7 @@ TMDB_API_KEY=여기에_API_키_입력
 ```
 주요 커버: ViewModel 5종, Repository 9종, UseCase 5종, PagingSource 3종, 유틸/워커 다수.
 
-### Espresso UI 테스트 (23개)
+### Espresso UI 테스트 (24개)
 ```bash
 ./gradlew connectedDebugAndroidTest
 ```
@@ -302,6 +302,21 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `NavigationUI.setupWithNavController()` + Detail에서 BottomNav 자동 숨김
 - Detail self-navigation: `launchSingleTop="true"` (백스택 중복 방지)
 - 딥링크: `moviefinder://movie/{id}`, `moviefinder://person/{id}`, `moviefinder://stats`
+- **Predictive Back Gesture**: `enableOnBackInvokedCallback="true"` + targetSdk 36 + Fragment
+  1.9.0/Navigation 2.9.8로 플러밍은 이미 갖춰져 있음. 앱 종료(홈으로 나가기)는 OS 레벨이라 자동으로
+  스크러빙 애니메이션이 나오지만, **인앱 Fragment 전환은 `nav_graph.xml` 액션에 걸린 애니메이션
+  리소스가 `res/animator/`(Animator, seek 가능)여야만 스와이프 진행률에 맞춰 미리보기가 나온다** —
+  `res/anim/`(레거시 View Animation, `<translate>`/`<alpha>`)는 손을 뗄 때까지 아무 변화 없다가
+  순간이동하는 것처럼 보임(2026-09-01 실기기 SM-S926N 검증으로 확인, 커스텀 `OnBackPressedCallback`
+  코드 없이도 이 차이만으로 재현됨). `slide_in_right`/`slide_out_right`/`fade_in`/`fade_out` 4개를
+  `res/animator/`로 전환 완료, translationX 값은 런타임 화면 너비를 알 수 없어
+  `@dimen/nav_transition_slide_distance`(480dp) 고정 근사치 사용. **DetailFragment의 공유 요소
+  전환(`ChangeBounds`+`ChangeTransform`+`ChangeImageTransform`, `android.transition.TransitionSet`)은
+  레거시 플랫폼 Transition이라 predictive back 미리보기가 여전히 안 됨** — androidx.transition으로
+  마이그레이션하면 가능하지만 500ms `postponeEnterTransition` + Coil 리스너 흐름을 건드려야 해서
+  리스크 대비 보류 중.
+- MaterialAlertDialogBuilder 다이얼로그도 predictive back 스와이프로 닫히긴 하나 진행률 미리보기는
+  없음(실기기 검증, 원인 미조사) — 다이얼로그 predictive back 애니메이션이 필요하면 별도 조사 필요.
 
 ### Room DB
 - 버전: 23, 이름: `movie_finder_db`, 스키마: `app/schemas/`

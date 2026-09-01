@@ -68,4 +68,8 @@
     <!-- 다이얼로그 -->
     <dimen name="dialog_padding_horizontal">20dp</dimen>
     <dimen name="dialog_padding_vertical">10dp</dimen>
+
+    <!-- 내비게이션 전환 (Animator XML은 런타임 화면 너비를 알 수 없어 대부분 폰 화면보다
+         넉넉히 큰 dp 고정값으로 근사) -->
+    <dimen name="nav_transition_slide_distance">480dp</dimen>
 </resources>
