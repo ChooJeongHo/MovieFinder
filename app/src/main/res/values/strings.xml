@@ -35,6 +35,12 @@
     <string name="box_office_rating_badge_15">15</string>
     <string name="box_office_rating_badge_restricted">청불</string>
 
+    <!-- 앱 단축키 (App Shortcuts) -->
+    <string name="shortcut_search_short">검색</string>
+    <string name="shortcut_search_long">영화 검색</string>
+    <string name="shortcut_favorite_short">즐겨찾기</string>
+    <string name="shortcut_favorite_long">즐겨찾기 목록</string>
+
     <!-- 검색 화면 -->
     <string name="search_hint">영화 검색</string>
     <string name="recent_searches">최근 검색어</string>

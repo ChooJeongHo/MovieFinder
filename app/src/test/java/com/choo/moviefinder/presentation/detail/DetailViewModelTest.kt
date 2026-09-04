@@ -3,6 +3,7 @@ package com.choo.moviefinder.presentation.detail
 import app.cash.turbine.test
 import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
 import com.choo.moviefinder.core.notification.WatchGoalNotificationHelper
+import com.choo.moviefinder.core.shortcut.AppShortcutManager
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.domain.model.Cast
 import com.choo.moviefinder.domain.model.Credits
@@ -31,9 +32,11 @@ import com.choo.moviefinder.domain.usecase.ToggleFavoriteUseCase
 import com.choo.moviefinder.domain.usecase.ToggleReviewHelpfulUseCase
 import com.choo.moviefinder.domain.usecase.ToggleWatchlistUseCase
 import com.choo.moviefinder.util.CoroutineTestBase
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
@@ -81,6 +84,7 @@ class DetailViewModelTest : CoroutineTestBase() {
     private lateinit var deleteMemoUseCase: com.choo.moviefinder.domain.usecase.DeleteMemoUseCase
     private lateinit var releaseNotificationScheduler: ReleaseNotificationScheduler
     private lateinit var watchGoalNotificationHelper: WatchGoalNotificationHelper
+    private lateinit var appShortcutManager: AppShortcutManager
     private lateinit var getTmdbAccessTokenUseCase: GetTmdbAccessTokenUseCase
     private lateinit var submitTmdbRatingUseCase: SubmitTmdbRatingUseCase
 
@@ -137,6 +141,8 @@ class DetailViewModelTest : CoroutineTestBase() {
         deleteMemoUseCase = mockk()
         releaseNotificationScheduler = mockk(relaxed = true)
         watchGoalNotificationHelper = mockk(relaxed = true)
+        appShortcutManager = mockk(relaxed = true)
+        coEvery { appShortcutManager.refreshRecentMovieShortcuts() } just Runs
         getTmdbAccessTokenUseCase = mockk()
         submitTmdbRatingUseCase = mockk()
         every { getTmdbAccessTokenUseCase() } returns flowOf(null)
@@ -209,7 +215,8 @@ class DetailViewModelTest : CoroutineTestBase() {
             ratingCases = ratingCases,
             saveWatchHistoryUseCase = saveWatchHistoryUseCase,
             releaseNotificationScheduler = releaseNotificationScheduler,
-            watchGoalNotificationHelper = watchGoalNotificationHelper
+            watchGoalNotificationHelper = watchGoalNotificationHelper,
+            appShortcutManager = appShortcutManager
         )
     }
 
@@ -783,5 +790,25 @@ class DetailViewModelTest : CoroutineTestBase() {
         advanceUntilIdle()
 
         coVerify(exactly = 0) { toggleReviewHelpfulUseCase(any(), any(), any()) }
+    }
+
+    // --- 앱 단축키 ---
+
+    @Test
+    fun `shortcut refresh failure does not affect uiState or snackbar events`() = runTest {
+        coEvery { getMovieDetailUseCase(1) } returns testMovieDetail
+        coEvery { getMovieCreditsUseCase(1) } returns testCredits
+        coEvery { getSimilarMoviesUseCase(1) } returns testSimilarMovies
+        coEvery { appShortcutManager.refreshRecentMovieShortcuts() } throws RuntimeException("shortcut error")
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is DetailUiState.Success)
+        state as DetailUiState.Success
+        assertEquals(testMovieDetail, state.movieDetail)
+        // saveWatchHistory 흐름 자체(시청 기록 저장)는 단축키 갱신 실패와 무관하게 계속 진행된다
+        coVerify(exactly = 1) { saveWatchHistoryUseCase(any(), any()) }
     }
 }
