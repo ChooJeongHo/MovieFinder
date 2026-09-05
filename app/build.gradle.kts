@@ -225,7 +225,7 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
 // Hilt의 kotlin-metadata-jvm이 Kotlin 메타데이터 2.3.0까지만 지원하므로,
 // AGP 9.x가 강제하는 kotlin-stdlib:2.4.0 승격을 차단한다. (AGP 9.3.1에서도 여전히 발생 확인됨)
 configurations.all {
-    resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.3.21")
+    resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.10")
 }
 
 dependencies {
