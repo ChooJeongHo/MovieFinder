@@ -34,6 +34,12 @@
     <string name="box_office_rating_badge_15">15+</string>
     <string name="box_office_rating_badge_restricted">18+</string>
 
+    <!-- App Shortcuts -->
+    <string name="shortcut_search_short">Search</string>
+    <string name="shortcut_search_long">Search Movies</string>
+    <string name="shortcut_favorite_short">Favorites</string>
+    <string name="shortcut_favorite_long">Favorite List</string>
+
     <!-- Search Screen -->
     <string name="search_hint">Search movies</string>
     <string name="recent_searches">Recent Searches</string>

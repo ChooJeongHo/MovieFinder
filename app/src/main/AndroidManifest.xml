@@ -111,6 +111,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
             <nav-graph android:value="@navigation/nav_graph" />
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />

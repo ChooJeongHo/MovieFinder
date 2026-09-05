@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.choo.moviefinder.core.notification.ReleaseNotificationScheduler
 import com.choo.moviefinder.core.notification.WatchGoalNotificationHelper
+import com.choo.moviefinder.core.shortcut.AppShortcutManager
 import com.choo.moviefinder.core.util.ErrorMessageProvider
 import com.choo.moviefinder.core.util.ErrorType
 import com.choo.moviefinder.core.util.WhileSubscribed5s
@@ -41,7 +42,8 @@ class DetailViewModel @Inject constructor(
     private val ratingCases: DetailRatingUseCases,
     private val saveWatchHistoryUseCase: SaveWatchHistoryUseCase,
     private val releaseNotificationScheduler: ReleaseNotificationScheduler,
-    private val watchGoalNotificationHelper: WatchGoalNotificationHelper
+    private val watchGoalNotificationHelper: WatchGoalNotificationHelper,
+    private val appShortcutManager: AppShortcutManager
 ) : ViewModel() {
 
     private val movieId: Int = requireNotNull(savedStateHandle.get<Int>("movieId")) {
@@ -218,6 +220,8 @@ class DetailViewModel @Inject constructor(
             .onFailure { Timber.w(it, "영화 %d 시청 기록 저장 실패", movieId) }
         suspendRunCatching { watchGoalNotificationHelper.checkAndNotifyGoalAchieved() }
             .onFailure { Timber.w(it, "영화 %d 시청 목표 확인 실패", movieId) }
+        suspendRunCatching { appShortcutManager.refreshRecentMovieShortcuts() }
+            .onFailure { Timber.w(it, "영화 %d 단축키 갱신 실패", movieId) }
     }
 
     // 즐겨찾기 상태 토글 (에러 시 Snackbar 이벤트 전송)

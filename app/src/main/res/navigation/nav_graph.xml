@@ -32,6 +32,7 @@
         android:name="com.choo.moviefinder.presentation.search.SearchFragment"
         android:label="@string/nav_search"
         tools:layout="@layout/fragment_search">
+        <deepLink app:uri="moviefinder://search" />
         <action
             android:id="@+id/action_search_to_detail"
             app:destination="@id/detailFragment" />
@@ -49,6 +50,7 @@
         android:name="com.choo.moviefinder.presentation.favorite.FavoriteFragment"
         android:label="@string/nav_favorite"
         tools:layout="@layout/fragment_favorite">
+        <deepLink app:uri="moviefinder://favorite" />
         <action
             android:id="@+id/action_favorite_to_detail"
             app:destination="@id/detailFragment" />

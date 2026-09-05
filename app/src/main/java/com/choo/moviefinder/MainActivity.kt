@@ -20,7 +20,9 @@ import androidx.datastore.core.DataStore
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.navOptions
 import androidx.navigation.ui.setupWithNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -87,6 +89,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        normalizeShortcutEntryBackStack(navController, savedInstanceState)
+
         binding.bottomNav.setOnItemReselectedListener { scrollCurrentTabToTop() }
 
         // 하단 내비게이션 시스템 바 인셋 처리
@@ -141,6 +145,29 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    // 단축키(딥링크) 진입 시 합성 백스택에 온보딩이 깔리는 것을 방지 — 뒤로가기 시 앱 종료가 되도록 정리.
+    // popBackStack(onboardingFragment, inclusive=true)는 "현재 목적지부터 onboardingFragment까지 전부"
+    // 제거하므로 방금 도착한 target(search/favorite)까지 함께 사라져 스택이 완전히 비고 그래프 시작
+    // 목적지(onboarding)로 되돌아가는 버그가 있었다 — target으로 다시 navigate하면서 popUpTo로
+    // onboarding만 걷어내는 방식으로 교체.
+    private fun normalizeShortcutEntryBackStack(navController: NavController, savedInstanceState: Bundle?) {
+        val targetId = navController.currentDestination?.id
+        val enteredViaShortcut = targetId == R.id.searchFragment || targetId == R.id.favoriteFragment
+        val cameFromOnboarding =
+            navController.previousBackStackEntry?.destination?.id == R.id.onboardingFragment
+
+        if (savedInstanceState == null && enteredViaShortcut && cameFromOnboarding) {
+            navController.navigate(
+                requireNotNull(targetId),
+                null,
+                navOptions {
+                    launchSingleTop = true
+                    popUpTo(R.id.onboardingFragment) { inclusive = true }
+                }
+            )
         }
     }
 
