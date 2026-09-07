@@ -148,21 +148,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 단축키(딥링크) 진입 시 합성 백스택에 온보딩이 깔리는 것을 방지 — 뒤로가기 시 앱 종료가 되도록 정리.
+    // 단축키/딥링크(검색·즐겨찾기 단축키, 영화·통계 딥링크 — 알림/위젯/동적 단축키 공통 경로) 진입 시
+    // 합성 백스택에 온보딩이 깔리는 것을 방지 — 뒤로가기 시 앱 종료가 되도록 정리.
     // popBackStack(onboardingFragment, inclusive=true)는 "현재 목적지부터 onboardingFragment까지 전부"
-    // 제거하므로 방금 도착한 target(search/favorite)까지 함께 사라져 스택이 완전히 비고 그래프 시작
+    // 제거하므로 방금 도착한 target까지 함께 사라져 스택이 완전히 비고 그래프 시작
     // 목적지(onboarding)로 되돌아가는 버그가 있었다 — target으로 다시 navigate하면서 popUpTo로
     // onboarding만 걷어내는 방식으로 교체.
+    // detailFragment는 movieId가 필수 argument라 args=null로 재호출하면 크래시하므로
+    // currentBackStackEntry의 arguments(딥링크가 채워둔 movieId 포함)를 그대로 넘겨준다.
     private fun normalizeShortcutEntryBackStack(navController: NavController, savedInstanceState: Bundle?) {
         val targetId = navController.currentDestination?.id
-        val enteredViaShortcut = targetId == R.id.searchFragment || targetId == R.id.favoriteFragment
+        val enteredViaShortcut = targetId == R.id.searchFragment ||
+            targetId == R.id.favoriteFragment ||
+            targetId == R.id.detailFragment ||
+            targetId == R.id.statsFragment
         val cameFromOnboarding =
             navController.previousBackStackEntry?.destination?.id == R.id.onboardingFragment
 
         if (savedInstanceState == null && enteredViaShortcut && cameFromOnboarding) {
+            val currentArgs = navController.currentBackStackEntry?.arguments
             navController.navigate(
                 requireNotNull(targetId),
-                null,
+                currentArgs,
                 navOptions {
                     launchSingleTop = true
                     popUpTo(R.id.onboardingFragment) { inclusive = true }
