@@ -7,6 +7,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.pressBack
+import androidx.test.espresso.NoActivityResumedException
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Assert.assertEquals
@@ -36,6 +37,17 @@ class MainActivityDeepLinkBackStackTest {
         MainActivity::class.java
     )
 
+    // 뒤로가기로 앱이 완전히 종료되면(런처로 복귀, resumed activity 없음) Espresso의 pressBack()이
+    // NoActivityResumedException을 던진다 — 이 테스트들이 검증하려는 "앱 종료"가 정상적으로 일어났다는
+    // 신호이지 실패가 아니므로 흡수한다. 실제 종료 여부는 이어지는 scenario.state == DESTROYED로 검증한다.
+    private fun pressBackExpectingAppExit() {
+        try {
+            pressBack()
+        } catch (e: NoActivityResumedException) {
+            // 앱이 런처로 나가 resumed activity가 없는 정상 상태 — 무시
+        }
+    }
+
     private fun currentDestinationId(scenario: ActivityScenario<MainActivity>): Int? {
         var destinationId: Int? = null
         scenario.onActivity { activity ->
@@ -51,7 +63,7 @@ class MainActivityDeepLinkBackStackTest {
         ActivityScenario.launch<MainActivity>(deepLinkIntent("moviefinder://movie/550")).use { scenario ->
             assertEquals(R.id.detailFragment, currentDestinationId(scenario))
 
-            pressBack()
+            pressBackExpectingAppExit()
 
             assertEquals(Lifecycle.State.DESTROYED, scenario.state)
         }
@@ -62,7 +74,7 @@ class MainActivityDeepLinkBackStackTest {
         ActivityScenario.launch<MainActivity>(deepLinkIntent("moviefinder://stats")).use { scenario ->
             assertEquals(R.id.statsFragment, currentDestinationId(scenario))
 
-            pressBack()
+            pressBackExpectingAppExit()
 
             assertEquals(Lifecycle.State.DESTROYED, scenario.state)
         }
@@ -73,7 +85,7 @@ class MainActivityDeepLinkBackStackTest {
         ActivityScenario.launch<MainActivity>(deepLinkIntent("moviefinder://search")).use { scenario ->
             assertEquals(R.id.searchFragment, currentDestinationId(scenario))
 
-            pressBack()
+            pressBackExpectingAppExit()
 
             assertEquals(Lifecycle.State.DESTROYED, scenario.state)
         }
@@ -84,7 +96,7 @@ class MainActivityDeepLinkBackStackTest {
         ActivityScenario.launch<MainActivity>(deepLinkIntent("moviefinder://favorite")).use { scenario ->
             assertEquals(R.id.favoriteFragment, currentDestinationId(scenario))
 
-            pressBack()
+            pressBackExpectingAppExit()
 
             assertEquals(Lifecycle.State.DESTROYED, scenario.state)
         }
