@@ -1,5 +1,6 @@
 package com.choo.moviefinder.rag.embedding
 
+import java.io.IOException
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -59,17 +60,8 @@ class VoyageEmbeddingProvider(
         var attempt = 0
         while (true) {
             enforceMinInterval()
-            val response = sendRequest(texts, inputType)
-            lastCallAtMs = System.currentTimeMillis()
-
-            if (response.statusCode() == 429 && attempt < MAX_RETRIES) {
-                val waitMs = response.headers().firstValue("Retry-After")
-                    .map { it.toLongOrNull()?.times(1000) }
-                    .orElse(null) ?: DEFAULT_BACKOFF_MS
-                System.err.println(
-                    "Voyage API 429(rate limit), ${waitMs}ms 대기 후 재시도 (${attempt + 1}/$MAX_RETRIES)",
-                )
-                Thread.sleep(waitMs)
+            val response = attemptRequest(texts, inputType, attempt)
+            if (response == null) {
                 attempt++
                 continue
             }
@@ -79,6 +71,35 @@ class VoyageEmbeddingProvider(
             apiCallCount.incrementAndGet()
             return parseEmbeddings(response.body())
         }
+    }
+
+    /** 네트워크 예외 또는 429(rate limit)면 대기 후 null(재시도 신호)을 반환, 그 외엔 응답을 그대로 반환한다. */
+    private fun attemptRequest(texts: List<String>, inputType: String, attempt: Int): HttpResponse<String>? {
+        val response = try {
+            sendRequest(texts, inputType)
+        } catch (e: IOException) {
+            lastCallAtMs = System.currentTimeMillis()
+            if (attempt >= MAX_RETRIES) throw e
+            System.err.println(
+                "Voyage API 네트워크 오류(${e.javaClass.simpleName}: ${e.message}), " +
+                    "${DEFAULT_BACKOFF_MS}ms 대기 후 재시도 (${attempt + 1}/$MAX_RETRIES)",
+            )
+            Thread.sleep(DEFAULT_BACKOFF_MS)
+            return null
+        }
+        lastCallAtMs = System.currentTimeMillis()
+
+        if (response.statusCode() == 429 && attempt < MAX_RETRIES) {
+            val waitMs = response.headers().firstValue("Retry-After")
+                .map { it.toLongOrNull()?.times(1000) }
+                .orElse(null) ?: DEFAULT_BACKOFF_MS
+            System.err.println(
+                "Voyage API 429(rate limit), ${waitMs}ms 대기 후 재시도 (${attempt + 1}/$MAX_RETRIES)",
+            )
+            Thread.sleep(waitMs)
+            return null
+        }
+        return response
     }
 
     private fun enforceMinInterval() {

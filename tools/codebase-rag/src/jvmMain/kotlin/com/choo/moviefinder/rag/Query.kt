@@ -22,8 +22,7 @@ fun main(args: Array<String>) = runBlocking {
     val dao = db.codeChunkDao()
 
     val embedder = EmbeddingProviderFactory.create()
-    val answerProvider: AnswerProvider = System.getenv("ANTHROPIC_API_KEY")
-        ?.takeIf { it.isNotBlank() }
+    val answerProvider: AnswerProvider = ProjectConfig.get("ANTHROPIC_API_KEY")
         ?.let { ClaudeAnswerProvider(apiKey = it) }
         ?: OfflineAnswerProvider()
 
