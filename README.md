@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![minSdk](https://img.shields.io/badge/minSdk-24-brightgreen.svg)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF.svg?logo=kotlin&logoColor=white)
-![AGP](https://img.shields.io/badge/AGP-9.2.0-green.svg)
+![AGP](https://img.shields.io/badge/AGP-9.4.0-green.svg)
 
 Clean Architecture + MVVM 패턴 기반으로, 오프라인 캐시, 다크 모드, 페이징, 딥링크 등 실무 수준의 기능을 구현했습니다.
 
@@ -20,8 +20,8 @@ Clean Architecture + MVVM 패턴 기반으로, 오프라인 캐시, 다크 모�
 |---|---|---|---|
 | 시청 통계 기능 전체 설계 및 구현 | Claude Code | 기능 없음 | UseCase 49개, Repository 11개 인터페이스 |
 | PR 코드 리뷰 자동화 | GitHub Actions + Claude API | 수동 리뷰 | PR 생성 시 자동 리뷰 코멘트 게시 |
-| 테스트 커버리지 개선 | Claude Code + JaCoCo | 미측정 (0%) | Line **68%** / Branch **62%** 달성 |
-| 유닛 테스트 작성 | Claude Code | 0개 | **509개** 자동 작성 |
+| 테스트 커버리지 개선 | Claude Code + JaCoCo | 미측정 (0%) | Line **75%** / Branch **70%** 달성 |
+| 유닛 테스트 작성 | Claude Code | 0개 | **856개** 자동 작성 |
 | 라이브러리 보안 취약점 분석 | Exa MCP | 미점검 | 실시간 웹 검색으로 실제 버그 발견 |
 | think / ultra think 프롬프트 비교 | Claude Code | 단일 분석 | 4에이전트 병렬, **30개+ 이슈** 자동 발견 |
 
@@ -41,28 +41,28 @@ Clean Architecture + MVVM 패턴 기반으로, 오프라인 캐시, 다크 모�
 | Category | Stack |
 |----------|-------|
 | Language | Kotlin 2.3.21 |
-| Build | AGP 9.2.0, Gradle 9.3.1, KSP 2.3.6 |
-| UI | XML Layouts, ViewBinding, Material Components 1.13.0 |
+| Build | AGP 9.4.0, Gradle 9.7.1, KSP 2.3.12 |
+| UI | XML Layouts + ViewBinding (대부분 화면), Jetpack Compose(검색 결과 화면 일부 + 온보딩 화면), Jetpack Glance(박스오피스 위젯), Material Components 1.14.0 |
 | Architecture | Clean Architecture, MVVM |
-| DI | Hilt 2.59.2 |
-| Network | Retrofit 3.0.0, OkHttp 5.3.2, kotlinx.serialization 1.11.0 |
-| Database | Room 2.8.4, Typed DataStore 1.2.1 |
+| DI | Hilt 2.60.1 |
+| Network | Retrofit 3.0.0, OkHttp 5.5.0, kotlinx.serialization 1.11.0 |
+| Database | Room 2.8.5, Typed DataStore 1.2.1 |
 | Async | Coroutines, Flow, StateFlow, Channel |
-| Paging | Paging 3.4.2, RemoteMediator |
-| Image | Coil 3.4.0 |
-| Navigation | Navigation Component 2.9.8, Safe Args |
+| Paging | Paging 3.5.1, RemoteMediator |
+| Image | Coil 3.6.2 |
+| Navigation | Navigation Component 2.10.1, Safe Args |
 | Security | Certificate Pinning (OkHttp), EncryptedSharedPreferences |
 | Background | WorkManager 2.11.2 |
-| Test | JUnit 4, MockK 1.14.9, Turbine 1.2.1 (509개 유닛 + 23개 Espresso) |
-| CI/CD | GitHub Actions (Build / Test / Coverage / Cert Pinning) |
-| Static Analysis | Detekt 2.0.0-alpha.2 + KtLint |
+| Test | JUnit 4, MockK 1.14.11, Turbine 1.2.1 (856개 유닛 + 29개 Espresso) |
+| CI/CD | GitHub Actions (Build / Test / Coverage / Cert Pinning / Claude 자동 리뷰 / Auto-merge) |
+| Static Analysis | Detekt 2.0.0-alpha.6 + KtLint |
 
 ---
 
 ## Architecture
 
 ```
-API/DB  →  Repository  →  UseCase  →  ViewModel  →  Fragment (XML UI)
+API/DB  →  Repository  →  UseCase  →  ViewModel  →  Fragment (XML UI, 검색 결과는 Compose)
 ```
 
 ```
@@ -88,9 +88,9 @@ app/src/main/java/com/choo/moviefinder/
 
 | 화면 | 주요 기능 |
 |------|-----------|
-| 홈 | 현재 상영작 / 인기 영화 / 트렌딩 탭, Paging 3 무한 스크롤, 오프라인 캐시 (RemoteMediator), 최근 본 영화, KOFIC 일별 박스오피스 TOP 10 (TMDB 매칭) |
-| 검색 | 실시간 검색 (debounce), 연도 / 장르 / 정렬 필터, Discover 모드, 그리드 ↔ 리스트 전환, 배우 검색 |
-| 영화 상세 | 출연진 / 추천 영화 / 리뷰 / 예고편 (YouTube 연결), 즐겨찾기 / 워치리스트, 내 평점, 메모, 스트리밍 정보, Shared Element Transition |
+| 홈 | 현재 상영작 / 인기 영화 / 트렌딩 탭, Paging 3 무한 스크롤, 오프라인 캐시 (RemoteMediator), 최근 본 영화, KOFIC 일별·주간 박스오피스 TOP 10 (TMDB 매칭, KMRB 관람등급 배지) |
+| 검색 | 실시간 검색 (debounce), 연도 / 장르 / 정렬 / KMRB 관람등급 필터, Discover 모드, 그리드 ↔ 리스트 전환, 배우 검색 |
+| 영화 상세 | 출연진 / 추천 영화 / 리뷰 / 예고편 (YouTube 연결), 즐겨찾기 / 워치리스트, 내 평점, 메모, 스트리밍 정보, KMRB 국내 관람등급, Shared Element Transition |
 | 배우 상세 | 프로필, 바이오그래피, 필모그래피 |
 | 시리즈 | 영화 컬렉션 (시리즈) 조회 |
 | 즐겨찾기 | 즐겨찾기 / 워치리스트 탭, 스와이프 삭제 + Undo, 정렬, 태그, 워치리스트 개봉일 알림 |
@@ -100,17 +100,19 @@ app/src/main/java/com/choo/moviefinder/
 | 알림 이력 | 예약된 개봉일 알림 목록 조회 및 취소 |
 
 **기타**
-- 홈 화면 위젯 (인기 영화 Top 10, 1시간 자동 갱신)
+- 홈 화면 위젯 2종: 인기 영화 Top 10(RemoteViewsService, 1시간 자동 갱신), 박스오피스(Jetpack Glance)
+- App Shortcuts: 검색 / 즐겨찾기 정적 단축키 + 최근 시청 영화 동적 단축키
 - 개봉일 알림 / 시청 목표 달성 알림 (WorkManager)
 - 딥링크: `moviefinder://movie/{id}`, `moviefinder://person/{id}`, `moviefinder://stats`
 - 한국어 + 영어 다국어 지원 (Per-App Language)
-- Baseline Profiles (19,760 rules)
+- Baseline Profiles
+- Predictive Back Gesture (Fragment 전환 스크러빙 미리보기)
 
 ---
 
 ## Testing
 
-유닛 테스트 **509개** + Espresso UI 테스트 **23개** | Line Coverage **68%** | Branch Coverage **62%**
+유닛 테스트 **856개** + Espresso UI 테스트 **29개** | Line Coverage **75%** | Branch Coverage **70%**
 
 ```bash
 # 유닛 테스트
@@ -132,6 +134,10 @@ app/src/main/java/com/choo/moviefinder/
 | `android-ci.yml` | push / PR → main | Detekt → Lint → Build → Test → JaCoCo |
 | `cert-pin-check.yml` | 매주 월요일 | 인증서 핀 검증, 불일치 시 Issue 생성 |
 | `pr-coverage.yml` | PR → main | 커버리지 리포트 PR 코멘트 자동 게시 |
+| `claude-code-review.yml` / `claude-pr-review.yml` | PR open/synchronize | Claude 기반 자동 코드 리뷰 코멘트 |
+| `claude.yml` | 이슈/PR 코멘트 | `@claude` 멘션 시 Claude Code 응답 |
+| `auto-merge.yml` | PR | 조건 충족 시 자동 병합 |
+| `release.yml` | `v*.*.*` 태그 push | 릴리즈 자동화 |
 | Pre-commit Hook | git commit | Detekt + 컴파일 체크 |
 | Pre-push Hook | git push | 유닛 테스트 전체 실행 |
 
@@ -141,13 +147,19 @@ app/src/main/java/com/choo/moviefinder/
 
 ### 1. API Key 발급
 
-[TMDB](https://www.themoviedb.org/settings/api)에서 API 키를 발급받습니다.
+- [TMDB](https://www.themoviedb.org/settings/api) — 필수, 앱 전체 기능에 필요
+- [KOFIC 영화진흥위원회 Open API](https://www.kobis.or.kr/kobisopenapi/) — 선택, 홈 화면 박스오피스 기능에 필요
+- [KMRB 영상물등급위원회 Open API](https://www.data.go.kr/data/15057639/openapi.do) — 선택, 국내 관람등급 표시/필터 기능에 필요
 
 ### 2. local.properties 설정
 
 ```properties
-TMDB_API_KEY=your_api_key_here
+TMDB_API_KEY=your_tmdb_api_key
+KOFIC_API_KEY=your_kofic_api_key       # 선택 - 박스오피스 기능
+KOFB_API_KEY=your_kmrb_api_key         # 선택 - KMRB 관람등급 기능 (키 이름은 KOFB_API_KEY)
 ```
+
+> `tools/codebase-rag`(개발용 RAG 검색 도구)는 `ANTHROPIC_API_KEY`/`VOYAGE_API_KEY`를 별도로 사용하지만, 앱 빌드에는 영향 없음.
 
 ### 3. 빌드
 
@@ -169,9 +181,9 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 
 ## Requirements
 
-- Android Studio (AGP 9.2.0+)
+- Android Studio (AGP 9.4.0+)
 - JDK 21+
-- minSdk 24 / targetSdk 36
+- compileSdk 37 / minSdk 24 / targetSdk 36
 
 ## License
 

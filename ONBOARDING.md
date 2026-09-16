@@ -23,8 +23,8 @@
 |------|------|------|
 | **Android Studio** | Meerkat 이상 권장 | |
 | **JDK** | **21** (필수) | AGP 9.x는 JDK 17로는 빌드 안 됨 |
-| **Gradle** | 9.3.1 | Wrapper로 자동 설치됨 |
-| **AGP** | 9.2.1 | Kotlin 2.3.21 내장 |
+| **Gradle** | 9.7.1 | Wrapper로 자동 설치됨 |
+| **AGP** | 9.4.0 | Kotlin 2.3.21 내장 |
 
 > Android Studio → Settings → Build → Gradle JDK 를 **JDK 21**로 설정하세요.
 
@@ -53,14 +53,21 @@ TMDB_READ_ACCESS_TOKEN=여기에_v4_Read_Access_Token_입력
 
 # KOFIC(영화진흥위원회) Open API 키 (https://www.kobis.or.kr/kobisopenapi 에서 발급, 홈 화면 박스오피스용)
 KOFIC_API_KEY=여기에_KOFIC_API_키_입력
+
+# KMRB(영상물등급위원회) Open API 키 (https://www.data.go.kr/data/15057639/openapi.do 에서 발급, 국내 관람등급 표시/필터용)
+# 주의: local.properties 키 이름은 KOFB_API_KEY (BuildConfig 필드명만 KMRB_API_KEY로 명확화됨, app/build.gradle.kts 참고)
+KOFB_API_KEY=여기에_KMRB_API_키_입력
 ```
 
 > **팀 리드에게 키를 요청하세요.** CI에서는 GitHub Secret `TMDB_API_KEY`가 자동 주입됩니다.  
 > 키가 없으면 빌드는 성공하지만 앱 실행 시 API 인증 오류가 발생합니다.
 >
-> ⚠️ **`KOFIC_API_KEY`는 현재 CI 워크플로우(`android-ci.yml`/`pr-coverage.yml`/`release.yml`)에 GitHub
-> Secret으로 주입되지 않습니다** — 없어도 `BuildConfig` 필드가 빈 문자열로 채워져 빌드/유닛 테스트는
-> 통과하지만, 실기기에서 박스오피스 API가 인증 오류를 냅니다. 로컬 개발에는 위 키만 있으면 충분합니다.
+> ⚠️ **`KOFIC_API_KEY`/`KOFB_API_KEY`는 현재 CI 워크플로우(`android-ci.yml`/`pr-coverage.yml`/`release.yml`)에
+> GitHub Secret으로 주입되지 않습니다** — 없어도 `BuildConfig` 필드가 빈 문자열로 채워져 빌드/유닛 테스트는
+> 통과하지만, 실기기에서 박스오피스·관람등급 API가 인증 오류를 냅니다. 로컬 개발에는 위 키만 있으면 충분합니다.
+>
+> `tools/codebase-rag`(개발용 RAG 도구)를 쓰려면 `ANTHROPIC_API_KEY`(필수)와 `VOYAGE_API_KEY`(선택, 없으면
+> 오프라인 해싱 임베딩으로 폴백)를 추가로 같은 `local.properties`에 넣으면 됩니다 — 앱 빌드에는 영향 없음.
 
 ---
 
@@ -567,4 +574,4 @@ override suspend fun load(...): MediatorResult {
 
 ---
 
-*최종 업데이트: 2026-05-27 | 프로젝트 기준 버전: Room v21, AGP 9.2.1*
+*최종 업데이트: 2026-09-16 | 프로젝트 기준 버전: Room DB v24, AGP 9.4.0*

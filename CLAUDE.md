@@ -6,11 +6,11 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ## 기술 스택
 
 ### 빌드 환경
-- **AGP**: 9.3.1 (Android Gradle Plugin, Kotlin 2.3.21 내장)
-- **Gradle**: 9.6.1
-- **compileSdk**: 36 (Android 15)
+- **AGP**: 9.4.0 (Android Gradle Plugin, Kotlin 2.3.21 내장)
+- **Gradle**: 9.7.1
+- **compileSdk**: 37 (Android 17)
 - **minSdk**: 24 / **targetSdk**: 36
-- **KSP**: 2.3.9 (Kotlin Symbol Processing)
+- **KSP**: 2.3.12 (Kotlin Symbol Processing)
 
 ### 핵심 라이브러리
 | 라이브러리 | 용도 |
@@ -43,6 +43,8 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | kotlinx-datetime | 멀티플랫폼 날짜/시간 API |
 | Window | 윈도우 레이아웃 API |
 | android-youtube-player | YouTube 예고편 외부 연결 (임베드 제한으로 인해 앱 외부 실행) |
+| Jetpack Compose (부분 도입) | 검색 결과 화면(`SearchComposables.kt`, XML Fragment 안에 `ComposeView` 2곳 임베드)과 온보딩 화면(`OnboardingFragment.kt`, Fragment 전체가 `ComposeView`) — 이 두 곳 외 나머지 화면은 여전히 XML/ViewBinding |
+| Jetpack Glance | 홈 화면 위젯 `BoxOfficeWidget`(2x2, 박스오피스 TOP3) — 기존 `PopularMoviesWidget`(RemoteViewsService/Factory)과 별개로, 위젯 2종이 서로 다른 기술(RemoteViews vs Glance)로 공존함 |
 
 ### 개발/디버그 도구
 | 도구 | 용도 |
@@ -90,37 +92,38 @@ app/src/main/java/com/choo/moviefinder/
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 ├── data/                  # 데이터 레이어
 │   ├── local/
-│   │   ├── MovieDatabase.kt       # Room DB (version 23)
-│   │   ├── dao/                   # DAO 8개 (FavoriteMovieDao, WatchlistDao: abstract class)
-│   │   └── entity/                # Room Entity 11개
+│   │   ├── MovieDatabase.kt       # Room DB (version 24)
+│   │   ├── dao/                   # DAO 15개 (FavoriteMovieDao, WatchlistDao: abstract class)
+│   │   └── entity/                # Room Entity 14개
 │   ├── paging/
 │   │   ├── MoviePagingSource.kt
 │   │   ├── DiscoverPagingSource.kt
 │   │   ├── TrendingPagingSource.kt
 │   │   └── MovieRemoteMediator.kt
 │   ├── remote/            # Retrofit API (Service, DTO)
-│   ├── repository/        # Repository 구현체 (9개 도메인별 분리)
+│   ├── repository/        # Repository 구현체 (16개, ISP 기반 도메인별 분리)
 │   └── util/              # 상수 (PAGE_SIZE, DEFAULT_PAGING_CONFIG 등)
 ├── di/                    # Hilt DI 모듈
 │   ├── DatabaseModule.kt  # Room DB + DAO (destructive migration fallback)
 │   ├── DataStoreModule.kt # Typed DataStore<UserSettings>
 │   ├── NetworkModule.kt   # Retrofit/OkHttp (API key interceptor, CertificatePinner, Cache 10MB, @ImageOkHttpClient)
-│   └── RepositoryModule.kt # 9개 도메인 @Binds + Preferences
+│   └── RepositoryModule.kt # 17개 도메인 @Binds + Preferences
 ├── domain/                # 도메인 레이어 (순수 Kotlin)
 │   ├── model/             # 도메인 모델
-│   ├── repository/        # Repository 인터페이스 11개
-│   └── usecase/           # UseCase 49개
+│   ├── repository/        # Repository 인터페이스 20개
+│   └── usecase/           # UseCase 75개
 ├── presentation/          # 프레젠테이션 레이어
-│   ├── adapter/           # RecyclerView 어댑터 8개 + MovieGridViewHolder + MovieListViewHolder
+│   ├── adapter/           # RecyclerView 어댑터 10개 + MovieGridViewHolder + MovieListViewHolder
 │   ├── common/            # CircularRatingView, PieChartView, BarChartView, HistogramView, CalendarHeatmapView
 │   ├── detail/            # DetailFragment, DetailViewModel, MemoDelegate, UserRatingDelegate
 │   ├── favorite/          # FavoriteFragment, FavoriteViewModel (탭, 정렬, 태그 필터)
 │   ├── home/              # HomeFragment, HomeViewModel (3탭, RemoteMediator)
+│   ├── onboarding/        # OnboardingFragment(전체 Compose, ComposeView) + OnboardingScreen/OnboardingPage
 │   ├── person/            # PersonDetailFragment, PersonDetailViewModel
-│   ├── search/            # SearchFragment, SearchViewModel (필터, SavedStateHandle)
-│   ├── settings/          # SettingsFragment, SettingsViewModel (테마/캐시/목표/백업)
+│   ├── search/            # SearchFragment(XML+ComposeView 2곳), SearchViewModel (필터, SavedStateHandle), SearchComposables.kt
+│   ├── settings/          # SettingsFragment, SettingsViewModel (테마/캐시/목표/백업/TMDB 계정 연동)
 │   ├── stats/             # StatsFragment, StatsViewModel (통계 카드 9개)
-│   └── widget/            # PopularMoviesWidget, RemoteViewsService/Factory
+│   └── widget/            # PopularMoviesWidget(RemoteViewsService/Factory) + BoxOfficeWidget(Glance, 2x2) — 위젯 2종이 서로 다른 기술 스택
 ├── MainActivity.kt        # NavHostFragment + 딥링크 처리 + 네트워크 Snackbar
 └── MovieFinderApp.kt      # @HiltAndroidApp, Coil 캐시, CertificatePinner, NotificationChannel 2개
 ```
@@ -128,13 +131,13 @@ app/src/main/java/com/choo/moviefinder/
 ### 레이어 규칙
 - **Core**: 공유 유틸리티, 모든 레이어에서 접근 가능
 - **Domain**: 순수 Kotlin, Android 프레임워크 의존성 없음 (Paging 예외)
-- **Repository 인터페이스**: ISP 기반 9개 도메인별 분리 + Preferences
+- **Repository 인터페이스**: ISP 기반 20개 도메인별 분리 + Preferences
 - **Data**: API 통신, DB 접근, Repository 구현
 - **Presentation**: Domain UseCase + Core에만 의존, Data 레이어 직접 참조 금지
 
 ### 데이터 흐름
 ```
-API/DB → Repository → UseCase → ViewModel → Fragment (XML UI)
+API/DB → Repository → UseCase → ViewModel → Fragment (XML UI, 일부 Compose)
 ```
 - 홈 (오프라인): API → RemoteMediator → Room DB → PagingSource → PagingDataAdapter
 - 검색 (네트워크 전용): API → MoviePagingSource → PagingDataAdapter
@@ -187,13 +190,13 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (721개)
+### 유닛 테스트 (856개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
 주요 커버: ViewModel 5종, Repository 9종, UseCase 5종, PagingSource 3종, 유틸/워커 다수.
 
-### Espresso UI 테스트 (24개)
+### Espresso UI 테스트 (29개)
 ```bash
 ./gradlew connectedDebugAndroidTest
 ```
@@ -293,7 +296,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `android.disallowKotlinSourceSets=false` 필요 (KSP 호환)
 - `Theme.MaterialComponents.DayNight.NoActionBar` 사용
 - Hilt 2.59.2 이상 필요 (2.59.2 기준 Kotlin 2.4.0 미지원 — kotlin-metadata-jvm max 2.3.0)
-- **Dependabot 호환성**: core-ktx 1.19.0은 compileSdk 37 요구; Kotlin 2.4.0은 Hilt 호환 이슈로 보류; Kotlin 2.4.x(2.4.10 포함)는 현재 AGP/Lint에서도 `Can't initialize detector com.android.tools.lint.checks.InferredThreadDetector` 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패함 (PR #92, #110에서 확인, 2026-07-27) — Hilt 이슈와 별개로 이 조합 자체가 보류 대상
+- **Dependabot 호환성**: core-ktx 1.19.0은 compileSdk 37을 요구했고 compileSdk가 37로 올라가면서 해소되어 현재 적용 중; Kotlin 2.4.0은 Hilt 호환 이슈로 여전히 보류; Kotlin 2.4.x(2.4.10 포함)는 현재 AGP/Lint에서도 `Can't initialize detector com.android.tools.lint.checks.InferredThreadDetector` 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패함 (PR #92, #110에서 확인, 2026-07-27) — Hilt 이슈와 별개로 이 조합 자체가 보류 대상. 이후 재확인 필요 시 실제 lintAnalyzeDebug 재실행으로 검증할 것(이 오류가 AGP 9.4.0에서도 재현되는지는 미확인)
 
 ### Navigation
 - `nav_graph.xml`에 destination + argument + deepLink 정의
@@ -319,8 +322,8 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   없음(실기기 검증, 원인 미조사) — 다이얼로그 predictive back 애니메이션이 필요하면 별도 조사 필요.
 
 ### Room DB
-- 버전: 23, 이름: `movie_finder_db`, 스키마: `app/schemas/`
-- Entity 11개: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity, MemoEntity, ScheduledReminderEntity 외
+- 버전: 24, 이름: `movie_finder_db`, 스키마: `app/schemas/`
+- Entity 14개: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity, MemoEntity, ScheduledReminderEntity 외
 - `FavoriteMovieDao`, `WatchlistDao`, `WatchHistoryDao`: `abstract class` — `@Transaction` wrapper 메서드 (toggleFavorite/toggleWatchlist, insertWithGenres/clearAllWithGenres)
 - Destructive migration fallback 적용 (개발 환경)
 - Room의 `withTransaction`은 MockK로 모킹 어려움 → `@Transaction` on abstract DAO 사용
@@ -333,7 +336,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 
 ### 다크 모드
 - `values-night/colors.xml`: `icon_default`, `backdrop_overlay`
-- 11개 아이콘 drawable: `android:fillColor="@color/icon_default"`
+- 29개 아이콘 drawable: `android:fillColor="@color/icon_default"`
 
 ### Shared Element Transition
 - `FragmentNavigatorExtras(posterView to "poster_$movieId")`
@@ -344,6 +347,10 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 ### Fragment ViewBinding 패턴
 - `_binding` nullable + `binding` non-null getter
 - `onDestroyView()`: `_binding = null` + Shimmer `stopShimmer()`
+
+### Compose 부분 도입 & Glance 위젯
+- 앱 전체는 여전히 XML/ViewBinding 기반이며, Compose는 두 곳에만 국한: `OnboardingFragment`(Fragment 전체를 `ComposeView`로 대체)와 `SearchFragment`(XML 레이아웃 안에 `composeSearchInput`/`composeSearchResults` 2개 `ComposeView`만 임베드하는 하이브리드) — 새 화면을 Compose로 만들지 XML로 만들지는 케이스 바이 케이스이므로 임의로 전체 마이그레이션 시도 금지
+- `BoxOfficeWidget`(Glance, 2x2)은 `PopularMoviesWidget`(RemoteViews)과 기술 스택이 다름 — Glance의 `provideGlance()`는 재구성마다 호출될 수 있어 여기서 네트워크/DB I/O를 하면 안 됨(호출 반복 위험). 데이터 획득은 전적으로 `BoxOfficeWidgetWorker`가 맡고, `provideGlance()`는 `PreferencesGlanceStateDefinition`에 저장된 스냅샷을 읽어 그리기만 함
 
 ### DataStore
 - Typed `DataStore<UserSettings>` (kotlinx.serialization JSON)
@@ -387,9 +394,9 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 ### 기타 주의사항
 - **POST_NOTIFICATIONS 권한**: Android 13+ (TIRAMISU) 런타임 권한 필요 — `MainActivity.onCreate()`에서 `ActivityCompat.requestPermissions()` 호출 (시스템이 자동 팝업 불가)
 - **PersonDetailFragment 로딩**: `layout_shimmer_person_detail.xml` Shimmer 레이아웃 `<include>` — ViewBinding에서 `binding.shimmerView.shimmerLayout`으로 접근 (중첩 바인딩 생성)
-- **Widget 에러 상태**: `loadFailed` 플래그로 제어 — 에러 시 `getCount()=1`, `getViewAt()`에서 `R.string.widget_empty` 오류 행 반환
+- **PopularMoviesWidget 에러 상태**: `loadFailed` 플래그로 제어 — 에러 시 `getCount()=1`, `getViewAt()`에서 `R.string.widget_empty` 오류 행 반환
 - **FavoriteSortOrder 문자열 매핑**: 도메인 모델 순수성 유지 — `FavoriteFragment.kt` 파일 레벨 private 확장함수 `labelRes()` / `subtitleRes()`로 `@StringRes` 변환 (Domain 레이어에 Android 의존성 미추가)
-- **Widget**: OkHttp 싱글턴 + kotlinx.serialization 직접 호출, `response.use {}` 패턴
+- **PopularMoviesWidget**: OkHttp 싱글턴 + kotlinx.serialization 직접 호출, `response.use {}` 패턴 (RemoteViews 방식 — Glance 기반 `BoxOfficeWidget`은 위 "Compose 부분 도입 & Glance 위젯" 절 참고)
 - **WatchGoalNotificationHelper**: `Mutex.withLock()` 원자적 달성 체크, `lastGoalNotifiedMonth`로 월 1회 제한
 - **BackupRepository**: `UserDataBackup` @Serializable — favorites/watchlist/ratings/memos/tags/watchHistory 6종; `WatchHistoryDao.getAllHistoryOnce()` 백업용 일회성 쿼리; `restoreWatchHistory()`에서 `watchedAt.toYearMonth()` (kotlinx-datetime) 재계산
 - **StrictMode**: `src/debug/java/` 소스셋 분리 — release 빌드에 클래스 자체 미포함, debug manifest에 meta-data 등록

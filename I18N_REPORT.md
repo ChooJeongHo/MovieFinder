@@ -1,8 +1,9 @@
 # MovieFinder i18n 감사 보고서
 
-**감사 일시:** 2026-06-26  
+**감사 일시:** 2026-06-26 (최종 재검증: 2026-09-16)  
 **대상:** `values/strings.xml` (KO, 기준) ↔ `values-en/strings.xml` (EN)  
-**총 키:** KO 301개 / EN 301개 (감사 후 완전 일치)
+**총 키:** KO 336개 / EN 336개 (2026-09-16 재계산, 완전 일치 — 06-26 이후 박스오피스/KMRB 등급 등
+신규 기능 문자열 35개가 양쪽 로케일에 함께 추가됨. 누락 키 0건)
 
 ---
 
@@ -125,3 +126,20 @@
 
 **수정 전:** EN 298키 (KO 대비 3개 누락)  
 **수정 후:** EN 301키 = KO 301키 (완전 일치)
+
+---
+
+## 2026-09-16 재검증
+
+`grep -c`로 키 개수, 키 이름 diff(`comm`)로 양방향 누락 여부를 다시 계산했다.
+
+- **문자열 키**: KO 336개 / EN 336개 — 이름까지 완전 일치(양방향 diff 0건). 06-26 이후 박스오피스
+  (`box_office_*`, `cd_box_office_*`)와 KMRB 등급(`box_office_rating_badge_*` 등) 관련 신규 키가
+  양쪽 로케일에 누락 없이 함께 추가됐다.
+- **복수형(plurals.xml)**: `values/plurals.xml` ↔ `values-en/plurals.xml` 6개 키
+  (`genre_count`, `reminder_count`, `stats_count_format`, `stats_genre_item`,
+  `stats_share_monthly`, `stats_share_total`) 모두 양쪽에 동일하게 존재 — R-1 항목이 이후에도
+  퇴행 없이 유지됨.
+- `locales_config.xml`: `ko`/`en` 2개 로케일 등록 그대로, Per-App Language 설정과 일치.
+- R-2(`person_known_for_format` 중복 영어 표현)와 R-3(`filter_year_value` 단위 표시 없음)는
+  둘 다 "선택적 개선/허용 범위" 권고였고 실제로 미적용 상태 그대로 — 회귀는 아님.

@@ -1,6 +1,6 @@
 # Network Security Report — MovieFinder
 
-> Generated: 2026-06-30
+> Generated: 2026-06-30 (최종 갱신: 2026-09-16 — 아래 "2026-09-16" 절 참고)
 
 ---
 
@@ -234,6 +234,33 @@ Encrypt로 이전**했음. 리프/중간 인증서 값이 통째로 바뀌어 �
 
 ---
 
+## 2026-09-16 정기 재검증 (실측)
+
+이 개발 환경에서 처음으로 외부 네트워크 접속이 가능해져(091/094일차 당시엔 차단되어 있었음),
+`openssl s_client -showcerts`로 두 도메인의 실제 서빙 체인을 직접 재측정했다.
+
+| 도메인 | 저장된 핀(코드 기준) | 실측 체인 (2026-09-16) | 일치 |
+|---|---|---|---|
+| `api.themoviedb.org` leaf | `Qfyo...` | `Qfyo...` (CN=`*.themoviedb.org`) | ✅ 일치 |
+| `api.themoviedb.org` inter | `G9LN...` (Amazon RSA 2048 M04) | `G9LN...` (Amazon RSA 2048 M04) | ✅ 일치 |
+| `image.tmdb.org` leaf | `ev7y...` (091일차 갱신값) | `x9aA...` (CN=`image.tmdb.org`) | ❌ **불일치(로테이션됨)** |
+| `image.tmdb.org` inter | `nWN7...` (Let's Encrypt YR2) | `nWN7...` (Let's Encrypt YR2) | ✅ 일치 |
+
+**결론**: 091일차 예측대로 `image.tmdb.org`의 leaf 인증서가 다시 로테이션됐다(Let's Encrypt 90일
+주기). 하지만 이번엔 **장애로 이어지지 않았다** — `CertificatePinner.add()`/`<pin-set>` 둘 다
+"핀셋 중 하나라도 체인과 일치하면 통과"이고, intermediate(YR2)는 그대로라 leaf만 바뀌어도 정상
+연결된다. **leaf+intermediate 동시 피닝 전략(091일차 수정)이 실전에서 처음으로 검증된 사례.**
+leaf만 피닝했다면 이번에도 091일차와 동일한 전면 이미지 로드 실패가 재발했을 것이다.
+
+다만 저장된 `PIN_IMAGE_LEAF` 값(`ev7y...`) 자체는 이제 stale하다. 당장 깨지진 않지만, 다음
+로테이션에서 Let's Encrypt가 intermediate CA(YR2)까지 교체하면(수년 주기로 발생 가능) leaf/inter
+둘 다 불일치해 091일차와 같은 장애가 재발한다. `image.tmdb.org`의 `<pin-set expiration>`도
+2026-11-10으로 2달 이내 만료 예정이므로, 다음 인증서 핀 갱신 절차(위 "인증서 핀 갱신 절차" 참고)
+때 leaf 값도 함께 최신화하는 것을 권장 — 이번 재검증 자체가 코드를 수정하지는 않았음(문서 갱신
+세션 범위, 실측만 진행).
+
+---
+
 ## 잔여 고려 사항
 
 | 항목 | 내용 | 우선순위 |
@@ -241,3 +268,5 @@ Encrypt로 이전**했음. 리프/중간 인증서 값이 통째로 바뀌어 �
 | 위젯 핀 상수 중복 | `PopularMoviesRemoteViewsFactory`의 핀이 `NetworkModule` 상수와 별도 관리 | 낮음 (기능 영향 없음) |
 | API 키 query param 로그 | debug HEADERS 레벨에서 URL에 `api_key=xxx` 노출 (debug 전용, READ_LOGS 권한 필요) | 낮음 |
 | `TMDB_READ_ACCESS_TOKEN` ProGuard | BuildConfig 필드로 release APK에 포함 — 서버 측 rate limiting으로 대응 권장 | 정보 |
+| `image.tmdb.org` leaf 핀 stale | 2026-09-16 재검증에서 leaf 로테이션 확인(위 절), intermediate 덕에 무중단이나 값 자체는 갱신 필요 | 낮음(정보성, 안 깨짐) |
+| `image.tmdb.org` pin-set 만료 임박 | `expiration="2026-11-10"` — 약 2달 남음, 다음 인증서 핀 갱신 시 같이 연장 필요 | 중간(만료 시 OS 레벨 핀만 fail-open, 앱 레벨은 별개) |

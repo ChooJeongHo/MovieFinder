@@ -1,8 +1,13 @@
 # MovieFinder 접근성 감사 보고서
 
-**감사 일시:** 2026-06-24  
+**감사 일시:** 2026-06-24 (최초) / 2026-09-16 재검증  
 **대상:** app/src/main/res/layout/ (35개 XML), app/src/main/java/ (프레젠테이션 레이어 전체)  
 **기준:** WCAG 2.1 AA, Android Accessibility Guidelines, Google Material Design Accessibility
+
+> **2026-09-16 재검증 방식**: 이 세션에는 실기기/에뮬레이터가 연결되어 있지 않아(`adb devices` 결과 없음)
+> TalkBack 실제 음성 낭독이나 실제 터치 판정 같은 런타임 검증은 이번에도 수행하지 못했다. 아래 갱신
+> 내용은 XML/Kotlin 소스 코드에 대한 **정적 재확인**(grep/Read)만 반영한 것이며, 런타임 검증이 필요한
+> 항목은 기존과 동일하게 "실기기 재검증 필요"로 남겨둔다.
 
 ---
 
@@ -15,7 +20,7 @@
 | MINOR | 5 |
 | INFO | 3 |
 
-전반적으로 contentDescription 처리와 shimmer 레이아웃의 `importantForAccessibility="noHideDescendants"` 설정 등 기본기는 잘 갖춰져 있습니다. 그러나 **색상 대비 2건**, **LiveRegion 미사용**, **알파 텍스트 대비** 등 4개 MAJOR 이슈가 발견되었습니다.
+전반적으로 contentDescription 처리와 shimmer 레이아웃의 `importantForAccessibility="noHideDescendants"` 설정 등 기본기는 잘 갖춰져 있습니다. 최초 감사(2026-06-24) 시점에 **색상 대비 2건**, **LiveRegion 미사용**, **알파 텍스트 대비** 등 4개 MAJOR 이슈가 발견되었고, 2026-09-16 재검증 결과 M-3(LiveRegion)이 HomeFragment 한 곳에 한해 부분 해결됐을 뿐 나머지 3건(M-1, M-2, M-4)과 M-3의 나머지 범위는 모두 그대로 남아있습니다. MINOR/INFO 항목도 전부 미해결 상태입니다.
 
 ---
 
@@ -63,21 +68,25 @@
 
 ---
 
-### M-3 · LiveRegion / announceForAccessibility 전면 미사용
+### M-3 · LiveRegion / announceForAccessibility 부분 미사용 (2026-09-16 부분 해결 확인)
 
 **위치:** `app/src/main/java/com/choo/moviefinder/presentation/` 전체
 
-`announceForAccessibility`, `accessibilityLiveRegion`, `ViewCompat.setAccessibilityLiveRegion()` 호출이 코드베이스 전체에 **0건**입니다.
+> **부분 해결됨**: `HomeFragment.kt:130-131`에 `ViewCompat.setAccessibilityLiveRegion()`이 추가되어
+> 박스오피스 일별/주간 라벨 전환 시 TalkBack이 자동 발화하도록 처리됐다(코드 주석이 이 보고서의
+> M-3 권고를 직접 인용하고 있음). 다만 이 패턴이 적용된 곳은 **이 한 곳뿐**이며, `announceForAccessibility`
+> 실제 호출은 여전히 코드베이스 전체에 0건이다. 아래 표의 나머지 상황은 여전히 미해결.
 
 **영향 범위:**
 
-| 상황 | TalkBack 사용자 경험 |
-|------|---------------------|
-| 에러 뷰 표시 (`layout_error.xml`) | 에러 발생을 인지 불가 |
-| 검색 결과 로딩 완료 | 결과가 나타났는지 알 수 없음 |
-| FAB 상태 변경 (즐겨찾기 추가/제거) | contentDescription은 변경되나 변경 사실이 발화되지 않음 |
-| Snackbar 표시 | 스낵바 메시지 발화 안 됨 |
-| 빈 상태/오류 → 정상 전환 | 전환 사실 미인지 |
+| 상황 | TalkBack 사용자 경험 | 상태 |
+|------|---------------------|------|
+| 박스오피스 일별/주간 라벨 전환 (`HomeFragment`) | 전환 사실 발화됨 | ✅ 해결됨 (2026-09) |
+| 에러 뷰 표시 (`layout_error.xml`) | 에러 발생을 인지 불가 | 미해결 |
+| 검색 결과 로딩 완료 | 결과가 나타났는지 알 수 없음 | 미해결 |
+| FAB 상태 변경 (즐겨찾기 추가/제거) | contentDescription은 변경되나(`DetailFragment.kt:345,354`) 변경 사실이 발화되지 않음 | 미해결 |
+| Snackbar 표시 | 스낵바 메시지 발화 안 됨 | 미해결 |
+| 빈 상태/오류 → 정상 전환 | 전환 사실 미인지 | 미해결 |
 
 **수정 방안:**
 ```kotlin
@@ -102,7 +111,7 @@ ViewCompat.setAccessibilityLiveRegion(
 
 | 항목 | 값 |
 |------|-----|
-| 위치 | `item_person_search.xml:56` — `tv_known_for_titles` |
+| 위치 | `item_person_search.xml:58` — `tv_known_for_titles` (2026-06-24 당시 56행에서 58행으로 이동, 내용 동일) |
 | 설정 | `android:alpha="0.5"` |
 | 유효 대비 비율 | **~3.95:1** (흰 배경 기준) |
 | WCAG AA 기준 | 4.5:1 (일반 크기 텍스트) |
@@ -148,7 +157,7 @@ ViewCompat.setAccessibilityLiveRegion(
 
 ### N-2 · `fab_watchlist` — Mini FAB 시각적 크기 ~40dp
 
-| 위치 | `fragment_detail.xml:509` |
+| 위치 | `fragment_detail.xml:521` (2026-06-24 당시 509행, 이후 라인 이동·내용 동일) |
 |------|--------------------------|
 | 설정 | `app:fabSize="mini"` |
 | 시각적 크기 | ~40dp (기준 48dp 미달) |
@@ -295,7 +304,7 @@ TalkBack은 RecyclerView 컨테이너가 아닌 개별 아이템을 탐색하므
 
 | 순위 | 이슈 | 파일 |
 |------|------|------|
-| 1 | M-3 LiveRegion / announceForAccessibility | DetailFragment, SearchFragment, HomeFragment |
+| 1 | M-3 LiveRegion / announceForAccessibility (HomeFragment 박스오피스 라벨만 해결, 나머지 미해결) | DetailFragment, SearchFragment |
 | 2 | M-1 colorSecondary 대비 | values/themes.xml, 관련 레이아웃 |
 | 3 | M-2 다크 모드 colorPrimaryDark 대비 | values-night/colors.xml |
 | 4 | M-4 alpha="0.5" 텍스트 | item_person_search.xml |
