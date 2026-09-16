@@ -13,7 +13,7 @@ import androidx.core.content.FileProvider
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -41,7 +41,10 @@ class SettingsFragment : Fragment() {
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: SettingsViewModel by viewModels()
+    // MainActivity와 동일한 인스턴스를 공유해야 함 — OAuth pendingRequestToken을 MainActivity의
+    // handleTmdbAuthCallback()이 읽고 지우는데, Fragment 스코프(by viewModels())였다면 서로 다른
+    // 인스턴스가 되어 MainActivity 쪽에서는 항상 null로 보인다 (109일차 실기기 검증으로 발견)
+    private val viewModel: SettingsViewModel by activityViewModels()
     private var activeDialog: Dialog? = null
 
     // 내보내기: JSON 파일 저장 위치 선택 후 내용 기록

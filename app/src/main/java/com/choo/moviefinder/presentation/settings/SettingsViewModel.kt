@@ -90,6 +90,11 @@ class SettingsViewModel @Inject constructor(
     private val _disconnectSuccess = Channel<Unit>(Channel.CONFLATED)
     val disconnectSuccess = _disconnectSuccess.receiveAsFlow()
 
+    companion object {
+        // MainActivity의 intent-filter(scheme=moviefinder, host=auth, path=/callback)와 일치해야 함
+        const val TMDB_AUTH_REDIRECT_URI = "moviefinder://auth/callback"
+    }
+
     // TransactionTooLargeException 방지로 SavedStateHandle 미사용
     @Volatile
     var pendingExportJson: String? = null
@@ -166,17 +171,17 @@ class SettingsViewModel @Inject constructor(
     }
 
     // TMDB v4 요청 토큰 발급 후 Chrome Custom Tab으로 인증 URL 오픈
+    // redirect_to는 승인 URL의 쿼리가 아니라 요청 토큰 발급 시점(body)에 등록해야
+    // TMDB가 승인 후 실제로 그 URI로 리다이렉트한다 — 승인 URL에는 request_token만 필요
     fun startTmdbAuth() = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("TMDB 요청 토큰 발급 실패")
             _snackbarEvent.trySend(it)
         }
     ) {
-        val requestToken = getTmdbRequestTokenUseCase()
+        val requestToken = getTmdbRequestTokenUseCase(TMDB_AUTH_REDIRECT_URI)
         pendingRequestToken = requestToken
-        val authUrl = "https://www.themoviedb.org/auth/access" +
-            "?request_token=$requestToken" +
-            "&redirect_to=moviefinder://auth/callback"
+        val authUrl = "https://www.themoviedb.org/auth/access?request_token=$requestToken"
         _openTmdbAuth.trySend(authUrl)
     }
 

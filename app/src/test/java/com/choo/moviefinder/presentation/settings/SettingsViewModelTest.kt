@@ -336,4 +336,50 @@ class SettingsViewModelTest : CoroutineTestBase() {
 
         assertEquals(false, viewModel.isImporting.value)
     }
+
+    @Test
+    fun `startTmdbAuth requests token with redirect uri registered at issuance`() = runTest {
+        coEvery { getTmdbRequestTokenUseCase(any()) } returns "req_token_abc"
+        val viewModel = createViewModel()
+
+        viewModel.startTmdbAuth()
+        advanceUntilIdle()
+
+        // redirect_to는 승인 URL 쿼리가 아니라 토큰 발급 시점(body)에 등록해야
+        // TMDB가 실제로 리다이렉트한다 — SettingsViewModel.kt 주석 참고
+        coVerify(exactly = 1) {
+            getTmdbRequestTokenUseCase(SettingsViewModel.TMDB_AUTH_REDIRECT_URI)
+        }
+    }
+
+    @Test
+    fun `startTmdbAuth stores pending token and emits auth url without redirect_to query`() = runTest {
+        coEvery { getTmdbRequestTokenUseCase(any()) } returns "req_token_abc"
+        val viewModel = createViewModel()
+
+        viewModel.openTmdbAuth.test {
+            viewModel.startTmdbAuth()
+            advanceUntilIdle()
+            val url = awaitItem()
+
+            assert(url.contains("request_token=req_token_abc")) { "발급받은 요청 토큰이 승인 URL에 포함돼야 함: $url" }
+            assert(!url.contains("redirect_to")) {
+                "redirect_to는 request_token 발급 body로 옮겨졌으므로 승인 URL 쿼리에는 없어야 함: $url"
+            }
+        }
+        assertEquals("req_token_abc", viewModel.pendingRequestToken)
+    }
+
+    @Test
+    fun `startTmdbAuth sends snackbar on error and does not store pending token`() = runTest {
+        coEvery { getTmdbRequestTokenUseCase(any()) } throws RuntimeException("network error")
+        val viewModel = createViewModel()
+
+        viewModel.snackbarEvent.test {
+            viewModel.startTmdbAuth()
+            advanceUntilIdle()
+            awaitItem()
+        }
+        assertEquals(null, viewModel.pendingRequestToken)
+    }
 }

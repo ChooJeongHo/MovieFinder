@@ -126,6 +126,13 @@ class MainActivity : AppCompatActivity() {
             handleTmdbDeepLink(intent)
         }
 
+        // TMDB OAuth 콜백 처리 — singleTask 액티비티이므로 살아있는 인스턴스가 있으면
+        // onNewIntent()로 전달되지만, 브라우저 왕복 중 프로세스가 죽었다면 시스템이
+        // 태스크를 재사용해 액티비티를 새로 만들면서 이 인텐트를 onCreate()로 전달한다
+        // (이때 savedInstanceState는 non-null이라 위 handleTmdbDeepLink 분기와 달리 항상 검사해야 함).
+        // pendingRequestToken이 없으면 조용히 무시하므로 회전 등으로 인한 재호출도 안전하다.
+        handleTmdbAuthCallback(intent)
+
         observeNetworkState()
     }
 
@@ -202,40 +209,7 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
-        // TMDB OAuth 콜백 처리 (moviefinder://auth/callback)
-        val uri = intent.data ?: return
-        val isTmdbCallback = uri.scheme == "moviefinder" && uri.host == "auth" && uri.path == "/callback"
-        if (isTmdbCallback) {
-            val requestToken = uri.getQueryParameter("request_token")
-            if (requestToken != null) {
-                val pendingToken = settingsViewModel.pendingRequestToken
-                if (pendingToken == null || requestToken != pendingToken) {
-                    Timber.w("OAuth 콜백 토큰 불일치 — 요청 무시 (CSRF 방지)")
-                    return
-                }
-                settingsViewModel.clearPendingToken()
-                lifecycleScope.launch {
-                    try {
-                        exchangeTmdbTokenUseCase(requestToken)
-                        Snackbar.make(
-                            binding.root,
-                            getString(R.string.tmdb_auth_success),
-                            Snackbar.LENGTH_SHORT
-                        ).show()
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Timber.e(e, "TMDB 인증 실패")
-                        Snackbar.make(
-                            binding.root,
-                            getString(R.string.tmdb_auth_failed),
-                            Snackbar.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-                return
-            }
-        }
+        if (handleTmdbAuthCallback(intent)) return
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -246,6 +220,44 @@ class MainActivity : AppCompatActivity() {
             // TMDB 웹 URL은 수동 파싱 필요
             handleTmdbDeepLink(intent)
         }
+    }
+
+    // TMDB OAuth 콜백(moviefinder://auth/callback)을 처리한다. 이 인텐트를 소비했으면 true를 반환한다.
+    // onNewIntent(살아있는 인스턴스)와 onCreate(프로세스 킬 후 singleTask 재생성) 양쪽에서 호출된다.
+    // 실기기 검증 결과 TMDB v4는 리다이렉트 시 request_token 등 쿼리 파라미터를 전혀 붙이지 않는다
+    // (moviefinder://auth/callback만 옴) — 앱이 요청 시점에 보관해둔 pendingRequestToken을 그대로
+    // 사용해야 하며, 승인 여부 자체는 이후 access_token 교환 API 호출이 성공/실패하는 것으로 판가름난다.
+    private fun handleTmdbAuthCallback(intent: Intent): Boolean {
+        val uri = intent.data ?: return false
+        val isTmdbCallback = uri.scheme == "moviefinder" && uri.host == "auth" && uri.path == "/callback"
+        if (!isTmdbCallback) return false
+
+        val requestToken = settingsViewModel.pendingRequestToken
+        if (requestToken == null) {
+            Timber.w("OAuth 콜백 수신했지만 대기 중인 요청 토큰이 없음 — 요청 무시")
+            return true
+        }
+        settingsViewModel.clearPendingToken()
+        lifecycleScope.launch {
+            try {
+                exchangeTmdbTokenUseCase(requestToken)
+                Snackbar.make(
+                    binding.root,
+                    getString(R.string.tmdb_auth_success),
+                    Snackbar.LENGTH_SHORT
+                ).show()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "TMDB 인증 실패")
+                Snackbar.make(
+                    binding.root,
+                    getString(R.string.tmdb_auth_failed),
+                    Snackbar.LENGTH_SHORT
+                ).show()
+            }
+        }
+        return true
     }
 
     // TMDB 웹 URL 딥링크를 파싱하여 영화 상세 화면으로 이동한다

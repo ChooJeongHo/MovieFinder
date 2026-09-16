@@ -16,8 +16,10 @@ class TmdbAuthRepositoryImpl @Inject constructor(
     private val sessionApiService: TmdbV3SessionApiService
 ) : TmdbAuthRepository {
 
-    override suspend fun getRequestToken(): String =
-        safeApiCall { authApiService.getRequestToken().requestToken }
+    override suspend fun getRequestToken(redirectTo: String): String =
+        safeApiCall {
+            authApiService.getRequestToken(mapOf("redirect_to" to redirectTo)).requestToken
+        }
 
     override suspend fun exchangeAccessToken(requestToken: String): Triple<String, String, String> =
         safeApiCall {

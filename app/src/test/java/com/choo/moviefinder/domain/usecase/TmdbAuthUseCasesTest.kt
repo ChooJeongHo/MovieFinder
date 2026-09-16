@@ -54,14 +54,14 @@ class TmdbAuthUseCasesTest {
     // --- GetTmdbRequestTokenUseCase ---
 
     @Test
-    fun `GetTmdbRequestTokenUseCase delegates to TmdbAuthRepository`() = runTest {
-        coEvery { tmdbAuthRepository.getRequestToken() } returns "req_token_abc"
+    fun `GetTmdbRequestTokenUseCase delegates to TmdbAuthRepository with redirectTo`() = runTest {
+        coEvery { tmdbAuthRepository.getRequestToken(any()) } returns "req_token_abc"
         val useCase = GetTmdbRequestTokenUseCase(tmdbAuthRepository)
 
-        val result = useCase()
+        val result = useCase("moviefinder://auth/callback")
 
         assertEquals("req_token_abc", result)
-        coVerify(exactly = 1) { tmdbAuthRepository.getRequestToken() }
+        coVerify(exactly = 1) { tmdbAuthRepository.getRequestToken("moviefinder://auth/callback") }
     }
 
     // --- ExchangeTmdbTokenUseCase ---

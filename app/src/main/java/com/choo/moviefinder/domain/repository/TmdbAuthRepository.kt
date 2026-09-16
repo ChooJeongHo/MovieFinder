@@ -4,8 +4,9 @@ import com.choo.moviefinder.domain.model.Movie
 
 interface TmdbAuthRepository {
 
-    // v4 요청 토큰을 발급하고 토큰 문자열을 반환한다
-    suspend fun getRequestToken(): String
+    // v4 요청 토큰을 발급하고 토큰 문자열을 반환한다. redirectTo는 승인 후 TMDB가
+    // 리다이렉트할 커스텀 스킴 URI (예: moviefinder://auth/callback)
+    suspend fun getRequestToken(redirectTo: String): String
 
     // 승인된 요청 토큰을 액세스 토큰으로 교환하고 Triple(accessToken, accountId, sessionId)을 반환한다
     suspend fun exchangeAccessToken(requestToken: String): Triple<String, String, String>

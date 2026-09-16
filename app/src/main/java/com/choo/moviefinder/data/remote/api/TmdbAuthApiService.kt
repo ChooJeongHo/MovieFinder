@@ -14,9 +14,10 @@ import retrofit2.http.Query
 
 interface TmdbAuthApiService {
 
-    // v4 요청 토큰 발급
+    // v4 요청 토큰 발급 — redirect_to는 승인 후 리다이렉트될 URI, 요청 시점에 등록해야
+    // TMDB가 승인 화면에서 실제로 그 URI로 리다이렉트한다 (승인 URL의 쿼리 파라미터로는 전달 불가)
     @POST("auth/request_token")
-    suspend fun getRequestToken(): RequestTokenResponse
+    suspend fun getRequestToken(@Body body: Map<String, String>): RequestTokenResponse
 
     // v4 요청 토큰을 사용자 액세스 토큰으로 교환
     @POST("auth/access_token")

@@ -20,7 +20,7 @@ class GetTmdbRequestTokenUseCase @Inject constructor(
     private val tmdbAuthRepository: TmdbAuthRepository
 ) {
     // v4 요청 토큰을 발급하고 토큰 문자열을 반환한다
-    suspend operator fun invoke(): String = tmdbAuthRepository.getRequestToken()
+    suspend operator fun invoke(redirectTo: String): String = tmdbAuthRepository.getRequestToken(redirectTo)
 }
 
 @Reusable

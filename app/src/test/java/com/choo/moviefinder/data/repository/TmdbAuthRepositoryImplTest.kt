@@ -31,19 +31,33 @@ class TmdbAuthRepositoryImplTest {
 
     @Test
     fun `getRequestToken returns token from api`() = runTest {
-        coEvery { authApiService.getRequestToken() } returns
+        coEvery { authApiService.getRequestToken(any()) } returns
             RequestTokenResponse(requestToken = "req_abc", success = true)
 
-        val result = repository.getRequestToken()
+        val result = repository.getRequestToken("moviefinder://auth/callback")
 
         assertEquals("req_abc", result)
     }
 
     @Test
-    fun `getRequestToken wraps api error in DomainException`() = runTest {
-        coEvery { authApiService.getRequestToken() } throws java.io.IOException("network error")
+    fun `getRequestToken sends redirect_to in request body`() = runTest {
+        coEvery { authApiService.getRequestToken(any()) } returns
+            RequestTokenResponse(requestToken = "req_abc", success = true)
 
-        val thrown = runCatching { repository.getRequestToken() }.exceptionOrNull()
+        repository.getRequestToken("moviefinder://auth/callback")
+
+        coVerify(exactly = 1) {
+            authApiService.getRequestToken(mapOf("redirect_to" to "moviefinder://auth/callback"))
+        }
+    }
+
+    @Test
+    fun `getRequestToken wraps api error in DomainException`() = runTest {
+        coEvery { authApiService.getRequestToken(any()) } throws java.io.IOException("network error")
+
+        val thrown = runCatching {
+            repository.getRequestToken("moviefinder://auth/callback")
+        }.exceptionOrNull()
 
         assertTrue(thrown is DomainException.NetworkError)
     }
