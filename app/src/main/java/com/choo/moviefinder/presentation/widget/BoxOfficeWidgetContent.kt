@@ -32,6 +32,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.choo.moviefinder.MainActivity
 import com.choo.moviefinder.R
+import com.choo.moviefinder.presentation.home.BoxOfficePeriod
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -44,11 +45,13 @@ private val widgetAccentColor = ColorProvider(day = Color(0xFF01B4E4), night = C
 /**
  * 박스오피스 위젯 본문.
  *
- * @param snapshot Glance state에 저장된 마지막 스냅샷. null이면 아직 한 번도 갱신되지 않은 상태.
+ * @param period 현재 선택된 기간(일별/주간). 헤더 배지 탭으로 전환한다.
+ * @param snapshot Glance state에 저장된 [period]의 마지막 스냅샷. null이면 해당 기간을 아직 갱신한 적이 없는 상태.
  * @param hasError 마지막 갱신이 실패했는지 여부. snapshot이 살아 있으면 (오래된) 데이터를 계속 보여준다.
  */
 @Composable
 internal fun BoxOfficeWidgetBody(
+    period: BoxOfficePeriod,
     snapshot: BoxOfficeWidgetSnapshot?,
     hasError: Boolean,
     modifier: GlanceModifier = GlanceModifier
@@ -59,7 +62,11 @@ internal fun BoxOfficeWidgetBody(
             .background(ImageProvider(R.drawable.widget_background))
             .padding(8.dp)
     ) {
-        BoxOfficeWidgetHeader(onRefresh = actionRunCallback<BoxOfficeRefreshAction>())
+        BoxOfficeWidgetHeader(
+            period = period,
+            onRefresh = actionRunCallback<BoxOfficeRefreshAction>(),
+            onTogglePeriod = actionRunCallback<BoxOfficePeriodToggleAction>()
+        )
 
         when {
             snapshot == null && hasError -> BoxOfficeWidgetMessage(R.string.box_office_error)
@@ -71,13 +78,17 @@ internal fun BoxOfficeWidgetBody(
 }
 
 @Composable
-private fun BoxOfficeWidgetHeader(onRefresh: Action) {
+private fun BoxOfficeWidgetHeader(period: BoxOfficePeriod, onRefresh: Action, onTogglePeriod: Action) {
+    val titleRes = when (period) {
+        BoxOfficePeriod.DAILY -> R.string.widget_box_office_title
+        BoxOfficePeriod.WEEKLY -> R.string.widget_box_office_title_weekly
+    }
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = LocalContext.current.getString(R.string.widget_box_office_title),
+            text = LocalContext.current.getString(titleRes),
             style = TextStyle(
                 color = widgetTextColor,
                 fontSize = 13.sp,
@@ -88,6 +99,8 @@ private fun BoxOfficeWidgetHeader(onRefresh: Action) {
                 .defaultWeight()
                 .clickable(actionStartActivity<MainActivity>())
         )
+        BoxOfficePeriodBadge(period = period, onToggle = onTogglePeriod)
+        Spacer(modifier = GlanceModifier.width(4.dp))
         Image(
             provider = ImageProvider(R.drawable.ic_refresh),
             contentDescription = LocalContext.current.getString(R.string.cd_widget_refresh),
@@ -96,6 +109,33 @@ private fun BoxOfficeWidgetHeader(onRefresh: Action) {
                 .clickable(onRefresh)
         )
     }
+}
+
+/**
+ * 일별/주간 전환 배지. 좁은 2x2 위젯 공간 제약상 새 아이콘 리소스 대신 기존 기간 라벨 문자열
+ * ([R.string.box_office_period_daily]/[R.string.box_office_period_weekly], 홈 화면 ChipGroup과 동일 문구)을
+ * 그대로 재사용한 텍스트 배지로 구현한다. 탭하면 [onToggle]로 기간이 전환된다.
+ */
+@Composable
+private fun BoxOfficePeriodBadge(period: BoxOfficePeriod, onToggle: Action) {
+    val context = LocalContext.current
+    val labelRes = when (period) {
+        BoxOfficePeriod.DAILY -> R.string.box_office_period_daily
+        BoxOfficePeriod.WEEKLY -> R.string.box_office_period_weekly
+    }
+    Text(
+        text = context.getString(labelRes),
+        style = TextStyle(
+            color = widgetAccentColor,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold
+        ),
+        maxLines = 1,
+        modifier = GlanceModifier
+            .background(ImageProvider(R.drawable.widget_period_badge_background))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .clickable(onToggle)
+    )
 }
 
 @Composable

@@ -1,8 +1,11 @@
 package com.choo.moviefinder.presentation.widget
 
 import android.content.Context
+import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.updateAll
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -14,6 +17,8 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.choo.moviefinder.domain.usecase.GetDailyBoxOfficeWithTmdbMatchUseCase
+import com.choo.moviefinder.domain.usecase.GetWeeklyBoxOfficeWithTmdbMatchUseCase
+import com.choo.moviefinder.presentation.home.BoxOfficePeriod
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -39,6 +44,7 @@ class BoxOfficeWidgetWorker(
     @InstallIn(SingletonComponent::class)
     interface BoxOfficeWidgetEntryPoint {
         fun getDailyBoxOfficeWithTmdbMatchUseCase(): GetDailyBoxOfficeWithTmdbMatchUseCase
+        fun getWeeklyBoxOfficeWithTmdbMatchUseCase(): GetWeeklyBoxOfficeWithTmdbMatchUseCase
     }
 
     override suspend fun doWork(): Result {
@@ -51,32 +57,50 @@ class BoxOfficeWidgetWorker(
             return Result.success()
         }
 
-        return try {
-            val entryPoint = EntryPointAccessors.fromApplication(
-                applicationContext,
-                BoxOfficeWidgetEntryPoint::class.java
-            )
+        val entryPoint = EntryPointAccessors.fromApplication(
+            applicationContext,
+            BoxOfficeWidgetEntryPoint::class.java
+        )
+
+        // 위젯 인스턴스마다 선택된 기간이 다를 수 있어(헤더 배지 토글), 각자 자신의 기간만 갱신한다.
+        // 인스턴스 하나가 실패해도 나머지는 계속 갱신하되, 하나라도 실패하면 WorkManager 재시도를 유도한다.
+        val anyFailure = glanceIds.map { glanceId ->
+            val period = getAppWidgetState(applicationContext, PreferencesGlanceStateDefinition, glanceId)
+                .readPeriod()
+            refreshGlanceId(glanceId, period, entryPoint)
+        }.any { succeeded -> !succeeded }
+
+        BoxOfficeWidget().updateAll(applicationContext)
+        return when {
+            !anyFailure -> Result.success()
+            runAttemptCount < MAX_RUN_ATTEMPTS -> Result.retry()
+            else -> Result.failure()
+        }
+    }
+
+    /** @return 갱신 성공 여부. */
+    private suspend fun refreshGlanceId(
+        glanceId: GlanceId,
+        period: BoxOfficePeriod,
+        entryPoint: BoxOfficeWidgetEntryPoint
+    ): Boolean {
+        try {
             val snapshot = buildSnapshot(
-                useCase = entryPoint.getDailyBoxOfficeWithTmdbMatchUseCase(),
+                period = period,
+                dailyUseCase = entryPoint.getDailyBoxOfficeWithTmdbMatchUseCase(),
+                weeklyUseCase = entryPoint.getWeeklyBoxOfficeWithTmdbMatchUseCase(),
                 nowMillis = System.currentTimeMillis()
             )
-
             // 빈 리스트는 에러가 아니다(집계 전 시간대 등) — 빈 스냅샷을 그대로 저장한다.
-            glanceIds.forEach { glanceId ->
-                writeWidgetState(applicationContext, glanceId, snapshot, hasError = false)
-            }
-            BoxOfficeWidget().updateAll(applicationContext)
-            Result.success()
+            writeWidgetState(applicationContext, glanceId, period, snapshot, hasError = false)
+            return true
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Timber.w(e, "위젯: 박스오피스 갱신 실패")
+            Timber.w(e, "위젯: 박스오피스 갱신 실패 (period=$period)")
             // 기존 스냅샷은 지우지 않는다 — 갱신 실패해도 마지막 성공 데이터를 계속 보여준다.
-            glanceIds.forEach { glanceId ->
-                writeWidgetState(applicationContext, glanceId, snapshot = null, hasError = true)
-            }
-            BoxOfficeWidget().updateAll(applicationContext)
-            if (runAttemptCount < MAX_RUN_ATTEMPTS) Result.retry() else Result.failure()
+            writeWidgetState(applicationContext, glanceId, period, snapshot = null, hasError = true)
+            return false
         }
     }
 
@@ -109,6 +133,13 @@ class BoxOfficeWidgetWorker(
             )
         }
 
+        /**
+         * REPLACE 필수: 새로고침 버튼/기간 토글은 모두 "지금 당장 새로 받아오라"는 명시적 사용자 의도다.
+         * KOFIC 응답 지연 등으로 이전 시도가 지수 백오프 대기 중일 때 KEEP을 쓰면, 그 대기(최대 수십 분)가
+         * 끝날 때까지 새 시도가 아예 예약되지 않아 버튼을 눌러도 실기기에서 아무 반응이 없는 것처럼 보인다
+         * (2026-09-17 실기기 SM-S926N 검증에서 발견: 설치 직후 타임아웃 → 이후 토글을 눌러도 dumpsys
+         * jobscheduler상 다음 실행이 +6분 뒤로 밀려 있었다). REPLACE는 그 대기를 취소하고 즉시 새 시도를 건다.
+         */
         fun enqueueOneTimeRefresh(context: Context) {
             val request = OneTimeWorkRequestBuilder<BoxOfficeWidgetWorker>()
                 .setConstraints(networkConstraints)
@@ -117,7 +148,7 @@ class BoxOfficeWidgetWorker(
 
             WorkManager.getInstance(context).enqueueUniqueWork(
                 ONE_TIME_WORK_NAME,
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.REPLACE,
                 request
             )
         }
@@ -133,8 +164,16 @@ class BoxOfficeWidgetWorker(
          * Android static API에 묶이지 않아 JVM 유닛 테스트로 성공/빈 리스트/예외 전파를 검증할 수 있다.
          */
         internal suspend fun buildSnapshot(
-            useCase: GetDailyBoxOfficeWithTmdbMatchUseCase,
+            period: BoxOfficePeriod,
+            dailyUseCase: GetDailyBoxOfficeWithTmdbMatchUseCase,
+            weeklyUseCase: GetWeeklyBoxOfficeWithTmdbMatchUseCase,
             nowMillis: Long
-        ): BoxOfficeWidgetSnapshot = useCase(targetDate = null).toWidgetSnapshot(nowMillis)
+        ): BoxOfficeWidgetSnapshot {
+            val boxOfficeMovies = when (period) {
+                BoxOfficePeriod.DAILY -> dailyUseCase(targetDate = null)
+                BoxOfficePeriod.WEEKLY -> weeklyUseCase(targetDate = null)
+            }
+            return boxOfficeMovies.toWidgetSnapshot(nowMillis)
+        }
     }
 }
