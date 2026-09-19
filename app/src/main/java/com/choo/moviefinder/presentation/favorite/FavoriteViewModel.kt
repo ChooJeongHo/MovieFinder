@@ -62,7 +62,7 @@ class FavoriteViewModel @Inject constructor(
     private val clearWatchlistReminderUseCase: ClearWatchlistReminderUseCase,
     private val getWatchlistRemindersUseCase: GetWatchlistRemindersUseCase,
     private val watchlistReminderScheduler: WatchlistReminderScheduler,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _selectedTab = MutableStateFlow(
