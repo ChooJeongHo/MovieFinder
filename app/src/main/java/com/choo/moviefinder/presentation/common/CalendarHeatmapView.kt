@@ -17,6 +17,7 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
@@ -97,9 +98,9 @@ class CalendarHeatmapView @JvmOverloads constructor(
         var col = 0
         var lastMonth = -1
         while (current <= today) {
-            if (current.monthNumber != lastMonth && current >= startDate) {
-                monthLabels.add(col to cachedShortMonths[current.monthNumber - 1])
-                lastMonth = current.monthNumber
+            if (current.month.number != lastMonth && current >= startDate) {
+                monthLabels.add(col to cachedShortMonths[current.month.number - 1])
+                lastMonth = current.month.number
             }
             val count = countMap[current.toString()]?.count ?: 0
             if (current >= startDate) {

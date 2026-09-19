@@ -17,6 +17,7 @@ import com.choo.moviefinder.domain.usecase.GetWeeklyBoxOfficeWithTmdbMatchUseCas
 import com.choo.moviefinder.core.util.WhileSubscribed5s
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -75,6 +76,7 @@ class HomeViewModel @Inject constructor(
         getUpcomingMoviesUseCase().cachedIn(viewModelScope)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val currentMovies = _selectedTab.flatMapLatest { tab ->
         when (tab) {
             HomeTab.NOW_PLAYING -> nowPlayingMovies

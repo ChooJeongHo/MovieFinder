@@ -48,8 +48,8 @@ class PopularMoviesRemoteViewsFactory(
                     // Rate limited — keep existing data, don't set loadFailed
                     return
                 }
-                val body = response.body?.string()
-                if (response.isSuccessful && body != null) {
+                val body = response.body.string()
+                if (response.isSuccessful) {
                     val movieResponse = json.decodeFromString<WidgetMovieListResponse>(body)
                     movies.clear()
                     movies.addAll(movieResponse.results.take(MAX_MOVIES))
