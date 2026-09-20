@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.choo.moviefinder.data.local.MovieDatabase
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.MemoDao
@@ -171,5 +172,5 @@ class BackupRepositoryImpl @Inject constructor(
 private fun Long.toYearMonth(): String {
     val date = Instant.fromEpochMilliseconds(this)
         .toLocalDateTime(TimeZone.currentSystemDefault()).date
-    return "${date.year}-${date.monthNumber.toString().padStart(2, '0')}"
+    return "${date.year}-${date.month.number.toString().padStart(2, '0')}"
 }

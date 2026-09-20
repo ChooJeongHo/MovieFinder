@@ -7,6 +7,7 @@ import com.choo.moviefinder.domain.model.Movie
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
@@ -99,6 +100,7 @@ class AttachKoreanRatingToBoxOfficeUseCaseTest {
     }
 
     // ⑥ 병렬성: 5개 항목이 순차(500ms)가 아니라 병렬(~100ms)로 끝나야 한다
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `invoke fetches ratings in parallel not sequentially`() = runTest {
         val input = (1..5).map { BoxOfficeMovie(boxOffice(rank = it, movieName = "영화$it"), matchedMovie = null) }

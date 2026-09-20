@@ -73,7 +73,7 @@ class ReleaseNotificationScheduler @Inject constructor(
     private fun parseReleaseDate(releaseDate: String): Long? {
         return try {
             val date = LocalDate.parse(releaseDate)
-            val notificationTime = LocalDateTime(date.year, date.month, date.dayOfMonth, 9, 0, 0)
+            val notificationTime = LocalDateTime(date.year, date.month, date.day, 9, 0, 0)
             notificationTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         } catch (e: Exception) {
             null

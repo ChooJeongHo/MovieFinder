@@ -5,6 +5,7 @@ package com.choo.moviefinder.core.util
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -31,8 +32,8 @@ class DateUtilsTest {
         val resultDate = Instant.fromEpochMilliseconds(result).toLocalDateTime(TimeZone.UTC)
 
         assertEquals(2024, resultDate.year)
-        assertEquals(6, resultDate.monthNumber)
-        assertEquals(1, resultDate.dayOfMonth)
+        assertEquals(6, resultDate.month.number)
+        assertEquals(1, resultDate.day)
         assertEquals(0, resultDate.hour)
         assertEquals(0, resultDate.minute)
         assertEquals(0, resultDate.second)
@@ -49,8 +50,8 @@ class DateUtilsTest {
         val result = currentMonthStartMillis(fixedClock(januaryInstant), TimeZone.UTC)
         val resultDate = Instant.fromEpochMilliseconds(result).toLocalDateTime(TimeZone.UTC)
 
-        assertEquals(1, resultDate.monthNumber)
-        assertEquals(1, resultDate.dayOfMonth)
+        assertEquals(1, resultDate.month.number)
+        assertEquals(1, resultDate.day)
     }
 
     @Test
@@ -125,7 +126,7 @@ class DateUtilsTest {
         listOf(juneInstant, januaryInstant, decemberInstant).forEach { instant ->
             val weekly = koficDefaultWeeklyTargetDate(fixedClock(instant), TimeZone.UTC)
             val today = instant.toLocalDateTime(TimeZone.UTC).date
-            val todayString = "%04d%02d%02d".format(today.year, today.monthNumber, today.day)
+            val todayString = "%04d%02d%02d".format(today.year, today.month.number, today.day)
             assertTrue("weekly=$weekly today=$todayString", weekly < todayString)
         }
     }

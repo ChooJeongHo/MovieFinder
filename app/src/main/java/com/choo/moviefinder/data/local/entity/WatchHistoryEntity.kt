@@ -9,6 +9,7 @@ import com.choo.moviefinder.domain.model.Movie
 import kotlin.time.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 
 @Entity(
@@ -51,7 +52,7 @@ fun Movie.toWatchHistoryEntity(genres: String = ""): WatchHistoryEntity {
     val now = Clock.System.now().toEpochMilliseconds()
     val localDate = Instant.fromEpochMilliseconds(now)
         .toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val yearMonth = "${localDate.year}-${localDate.monthNumber.toString().padStart(2, '0')}"
+    val yearMonth = "${localDate.year}-${localDate.month.number.toString().padStart(2, '0')}"
     return WatchHistoryEntity(
         rowId = 0,
         movieId = id,
