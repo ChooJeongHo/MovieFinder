@@ -39,8 +39,8 @@ class HomeFragmentTest {
 
     @Test
     fun homeScreen_displaysRecyclerView() {
-        onView(withId(R.id.rv_movies))
-            .check(matches(isDisplayed()))
+        // rv_movies는 Paging 데이터가 도착해야 보인다(로딩 중에는 Shimmer). 콜드 캐시에서도 통과하도록 기다린다.
+        waitUntilDisplayed(R.id.rv_movies)
     }
 
     @Test
