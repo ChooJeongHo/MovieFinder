@@ -12,6 +12,7 @@ import com.choo.moviefinder.databinding.ItemMemoBinding
 import com.choo.moviefinder.domain.model.Memo
 import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 
 class MemoAdapter(
@@ -46,7 +47,7 @@ class MemoAdapter(
             val instant = Instant.fromEpochMilliseconds(timestamp)
             val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
             return "%04d.%02d.%02d %02d:%02d".format(
-                dateTime.year, dateTime.monthNumber, dateTime.dayOfMonth,
+                dateTime.year, dateTime.month.number, dateTime.day,
                 dateTime.hour, dateTime.minute
             )
         }

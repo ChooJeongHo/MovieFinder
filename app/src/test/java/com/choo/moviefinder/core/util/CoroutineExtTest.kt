@@ -2,6 +2,7 @@ package com.choo.moviefinder.core.util
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -106,8 +107,7 @@ class CoroutineExtTest {
 
     @Test
     fun `WhileSubscribed5s uses 5 second timeout`() {
-        // Verifies the shared SharingStarted instance is initialised without error
-        assertTrue(WhileSubscribed5s != null)
+        assertEquals(SharingStarted.WhileSubscribed(5_000), WhileSubscribed5s)
     }
 
 }

@@ -508,7 +508,7 @@ class DetailViewModelTest : CoroutineTestBase() {
         assertTrue(state is DetailUiState.Success)
         state as DetailUiState.Success
         assertEquals(2, state.reviews!!.size)
-        assertEquals("Author1", state.reviews!![0].author)
+        assertEquals("Author1", state.reviews[0].author)
     }
 
     @Test
