@@ -2,7 +2,7 @@ package com.choo.moviefinder.data.repository
 
 import androidx.room.withTransaction
 import com.choo.moviefinder.data.local.MovieDatabase
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
