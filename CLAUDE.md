@@ -406,4 +406,9 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - **Edge-to-Edge**: `enableEdgeToEdge()` (Android 15 필수)
 - **buildSrc**: `AndroidConfig` 객체로 compileSdk/minSdk/targetSdk/VERSION 공유
 - **Per-App Language**: `locales_config.xml` + `AppCompatDelegate.setApplicationLocales()`
+  - **알려진 한계(API 24~32)**: `AppLocalesMetadataHolderService`(`autoStoreLocales`)를 의도적으로 추가하지 않음 →
+    API 33 미만에서는 프로세스 종료 시 언어 선택이 유지되지 않을 수 있음(API 36 실기기로만 검증, 24~32 미검증).
+    추가하면 API 33+에서 이미 고른 언어가 업데이트 후 첫 실행에 `[]`로 초기화되는 회귀를 실기기(SM-S926N)에서
+    재현·확인함(2026-09-21, 서비스 유무 통제 실험). 해결하려면 33+ 초기화를 피하는 방법(예: 저장소 값 사전 시딩)을 별도 검토.
+  - TMDB `language` 파라미터는 `ko-KR` 고정 — 앱 언어를 English로 바꿔도 영화 제목/줄거리는 한국어(UI 문구만 바뀜)
 - **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)
