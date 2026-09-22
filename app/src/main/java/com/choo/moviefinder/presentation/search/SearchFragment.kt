@@ -9,7 +9,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,6 +43,7 @@ import com.choo.moviefinder.presentation.adapter.MovieAdapter
 import com.choo.moviefinder.presentation.adapter.MoviePagingAdapter
 import com.choo.moviefinder.presentation.adapter.PersonSearchAdapter
 import com.choo.moviefinder.presentation.adapter.RecentSearchAdapter
+import com.choo.moviefinder.presentation.common.MovieFinderTheme
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -121,7 +121,7 @@ class SearchFragment : Fragment() {
             ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
         )
         binding.composeSearchInput.setContent {
-            MaterialTheme {
+            MovieFinderTheme {
                 SearchInputField(
                     query = searchQueryState.value,
                     onQueryChange = ::onSearchQueryTextChanged,
@@ -138,7 +138,7 @@ class SearchFragment : Fragment() {
             ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
         )
         binding.composeSearchResults.setContent {
-            MaterialTheme {
+            MovieFinderTheme {
                 val pagingItems = viewModel.searchResults.collectAsLazyPagingItems()
                 val viewMode by viewModel.viewMode.collectAsState()
                 val spanCount = remember {
