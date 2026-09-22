@@ -32,6 +32,7 @@ import com.choo.moviefinder.databinding.ActivityMainBinding
 import com.choo.moviefinder.domain.usecase.ExchangeTmdbTokenUseCase
 import com.choo.moviefinder.presentation.detail.DetailFragmentArgs
 import com.choo.moviefinder.presentation.settings.SettingsViewModel
+import com.google.android.material.color.DynamicColors
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
@@ -63,6 +64,14 @@ class MainActivity : AppCompatActivity() {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // super.onCreate() 이전(Application의 onActivityPreCreated)에 적용하면
+        // AppCompatActivity.super.onCreate()가 베이스 테마를 재적용하면서 오버레이를 덮어써버린다 —
+        // 반드시 super.onCreate() 이후에 적용해야 한다 (113일차 실기기/에뮬레이터 검증 완료)
+        DynamicColors.applyIfAvailable(
+            this,
+            com.google.android.material.R.style.ThemeOverlay_Material3_DynamicColors_DayNight,
+        )
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

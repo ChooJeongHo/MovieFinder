@@ -50,6 +50,9 @@ class MovieFinderApp : Application(), SingletonImageLoader.Factory {
     // 앱 초기화 시 알림 채널 생성 및 테마를 적용한다. 디버그 빌드에서는 자가 점검 도구도 시작한다
     override fun onCreate() {
         super.onCreate()
+        // Material You 동적 색상은 MainActivity.onCreate()의 super.onCreate() 이후에 적용한다 —
+        // 이 시점(Application 레벨, Activity.onCreate() 이전)에 적용하면 AppCompatActivity의
+        // super.onCreate()가 베이스 테마를 재적용하면서 오버레이를 덮어써버린다
         createNotificationChannel()
         applyTheme()
         if (BuildConfig.DEBUG) {
