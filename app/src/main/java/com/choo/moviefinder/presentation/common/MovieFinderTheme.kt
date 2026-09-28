@@ -2,6 +2,7 @@ package com.choo.moviefinder.presentation.common
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -16,11 +17,25 @@ import androidx.compose.ui.platform.LocalContext
 fun MovieFinderTheme(content: @Composable () -> Unit) {
     val darkTheme = isSystemInDarkTheme()
     val context = LocalContext.current
-    val colorScheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && darkTheme -> dynamicDarkColorScheme(context)
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> dynamicLightColorScheme(context)
-        darkTheme -> darkColorScheme()
-        else -> lightColorScheme()
-    }
+    val colorScheme = resolveColorScheme(
+        sdkInt = Build.VERSION.SDK_INT,
+        darkTheme = darkTheme,
+        dynamicDark = { dynamicDarkColorScheme(context) },
+        dynamicLight = { dynamicLightColorScheme(context) },
+    )
     MaterialTheme(colorScheme = colorScheme, content = content)
+}
+
+// dynamicDark/dynamicLight를 람다로 주입받아, Context의 시스템 리소스를 실제로 건드리지 않고도
+// 분기 로직만 순수 JVM 유닛 테스트로 검증할 수 있게 분리했다.
+internal fun resolveColorScheme(
+    sdkInt: Int,
+    darkTheme: Boolean,
+    dynamicDark: () -> ColorScheme,
+    dynamicLight: () -> ColorScheme,
+): ColorScheme = when {
+    sdkInt >= Build.VERSION_CODES.S && darkTheme -> dynamicDark()
+    sdkInt >= Build.VERSION_CODES.S -> dynamicLight()
+    darkTheme -> darkColorScheme()
+    else -> lightColorScheme()
 }
