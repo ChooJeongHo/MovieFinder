@@ -20,6 +20,7 @@ import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.DiscoverMoviesUseCase
 import com.choo.moviefinder.domain.usecase.FilterMoviesByKoreanRatingUseCase
 import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
+import com.choo.moviefinder.domain.usecase.GetLocalizedTitleUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
@@ -65,6 +66,7 @@ class SearchViewModel @Inject constructor(
     private val searchPersonUseCase: SearchPersonUseCase,
     private val searchLocalMoviesUseCase: SearchLocalMoviesUseCase,
     private val filterMoviesByKoreanRatingUseCase: FilterMoviesByKoreanRatingUseCase,
+    private val getLocalizedTitleUseCase: GetLocalizedTitleUseCase,
     getWatchHistoryUseCase: GetWatchHistoryUseCase
 ) : ViewModel() {
 
@@ -151,6 +153,12 @@ class SearchViewModel @Inject constructor(
         loadGenres()
         collectPersonSearchQuery()
     }
+
+    // 검색 결과 목록(title)은 KMRB 필터 매칭 때문에 ko-KR로 고정이라, 앱 언어가 다르면 화면에 컴포즈된
+    // 카드만 표시 제목을 지연 조회한다. 필터 경로는 전혀 건드리지 않아 필터 지연에 영향이 없다.
+    fun peekDisplayTitle(movie: Movie): String = getLocalizedTitleUseCase.peek(movie.id, movie.title)
+
+    suspend fun resolveDisplayTitle(movie: Movie): String = getLocalizedTitleUseCase(movie.id, movie.title)
 
     // 배우 검색 쿼리를 300ms debounce 후 API 호출 (flatMapLatest로 새 쿼리가 인플라이트 호출을 취소)
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)

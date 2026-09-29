@@ -144,6 +144,12 @@ class SearchFragment : Fragment() {
                 val spanCount = remember {
                     requireActivity().computeWindowWidthSizeClass().toMovieGridSpanCount()
                 }
+                val titleResolver = remember {
+                    DisplayTitleResolver(
+                        peek = viewModel::peekDisplayTitle,
+                        resolve = viewModel::resolveDisplayTitle,
+                    )
+                }
 
                 LaunchedEffect(pagingItems.loadState, pagingItems.itemCount) {
                     handleLoadStates(pagingItems.loadState, pagingItems.itemCount)
@@ -156,6 +162,7 @@ class SearchFragment : Fragment() {
                     pagingItems = pagingItems,
                     viewMode = viewMode,
                     spanCount = spanCount,
+                    titleResolver = titleResolver,
                     onMovieClick = ::navigateToSearchResultDetail,
                     onScrollStateChanged = { canScrollBack ->
                         if (canScrollBack) binding.fabScrollTop.show() else binding.fabScrollTop.hide()

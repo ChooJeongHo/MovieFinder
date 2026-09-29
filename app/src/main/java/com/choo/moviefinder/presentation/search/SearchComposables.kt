@@ -25,7 +25,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -88,11 +91,28 @@ fun SearchInputField(
 // XML: fab_scroll_top의 RecyclerView.addOnScrollListener → RecyclerView가 사라졌으므로
 //      LazyGridState/LazyListState.canScrollBackward를 콜백으로 Fragment에 전달하는 방식으로 재구현.
 //      onScrollControllerReady는 "맨 위로 스크롤" 동작 자체를 람다로 등록해두는 콜백 브릿지.
+// 검색 결과 카드의 표시 제목 해석기. 목록 데이터(title)는 KMRB 필터용 ko-KR로 고정이라 앱 언어가 다르면
+// 화면에 컴포즈된 카드에서만 표시 제목을 지연 조회한다 — 필터 판정과 달리 표시 문자열은 목록 멤버십에 영향이 없어
+// "보이는 항목만" 처리가 가능하다. peek은 캐시된 값을 동기로(깜빡임 방지), resolve는 비동기 조회를 담당한다.
+@Immutable
+class DisplayTitleResolver(
+    val peek: (Movie) -> String,
+    val resolve: suspend (Movie) -> String,
+)
+
+// 카드가 컴포지션을 벗어나면(스크롤로 화면 밖) produceState 코루틴이 취소되어 진행 중이던 조회도 함께 취소된다.
+@Composable
+private fun rememberDisplayTitle(movie: Movie, resolver: DisplayTitleResolver): String {
+    val initial = remember(movie.id) { resolver.peek(movie) }
+    return produceState(initial, movie.id) { value = resolver.resolve(movie) }.value
+}
+
 @Composable
 fun SearchResultsList(
     pagingItems: LazyPagingItems<Movie>,
     viewMode: ViewMode,
     spanCount: Int,
+    titleResolver: DisplayTitleResolver,
     onMovieClick: (Int) -> Unit,
     onScrollStateChanged: (canScrollBack: Boolean) -> Unit,
     onScrollControllerReady: (scrollToTop: () -> Unit) -> Unit,
@@ -121,7 +141,11 @@ fun SearchResultsList(
                     key = pagingItems.itemKey { it.id },
                 ) { index ->
                     pagingItems[index]?.let { movie ->
-                        MoviePosterCard(movie = movie, onClick = { onMovieClick(movie.id) })
+                        MoviePosterCard(
+                            movie = movie,
+                            titleResolver = titleResolver,
+                            onClick = { onMovieClick(movie.id) },
+                        )
                     }
                 }
             }
@@ -147,7 +171,11 @@ fun SearchResultsList(
                     key = pagingItems.itemKey { it.id },
                 ) { index ->
                     pagingItems[index]?.let { movie ->
-                        MovieListRow(movie = movie, onClick = { onMovieClick(movie.id) })
+                        MovieListRow(
+                            movie = movie,
+                            titleResolver = titleResolver,
+                            onClick = { onMovieClick(movie.id) },
+                        )
                     }
                 }
             }
@@ -159,11 +187,17 @@ fun SearchResultsList(
 // Compose 단순화: 원형 평점 뷰(CircularRatingView)는 핵심 마이그레이션 범위 밖이라
 //                "★ 7.2" 형태의 텍스트로 단순화했다 (추후 별도 컴포저블로 이식 가능).
 @Composable
-private fun MoviePosterCard(movie: Movie, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun MoviePosterCard(
+    movie: Movie,
+    titleResolver: DisplayTitleResolver,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val title = rememberDisplayTitle(movie, titleResolver)
     Column(modifier = modifier.clickable(onClick = onClick)) {
         AsyncImage(
             model = ImageUrlProvider.posterUrl(movie.posterPath),
-            contentDescription = movie.title,
+            contentDescription = title,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(2f / 3f)
@@ -171,7 +205,7 @@ private fun MoviePosterCard(movie: Movie, onClick: () -> Unit, modifier: Modifie
             contentScale = ContentScale.Crop,
         )
         Text(
-            text = movie.title,
+            text = title,
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -181,7 +215,13 @@ private fun MoviePosterCard(movie: Movie, onClick: () -> Unit, modifier: Modifie
 }
 
 @Composable
-private fun MovieListRow(movie: Movie, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun MovieListRow(
+    movie: Movie,
+    titleResolver: DisplayTitleResolver,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val title = rememberDisplayTitle(movie, titleResolver)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -191,7 +231,7 @@ private fun MovieListRow(movie: Movie, onClick: () -> Unit, modifier: Modifier =
     ) {
         AsyncImage(
             model = ImageUrlProvider.posterUrl(movie.posterPath),
-            contentDescription = movie.title,
+            contentDescription = title,
             modifier = Modifier
                 .width(72.dp)
                 .aspectRatio(2f / 3f)
@@ -204,7 +244,7 @@ private fun MovieListRow(movie: Movie, onClick: () -> Unit, modifier: Modifier =
                 .weight(1f),
         ) {
             Text(
-                text = movie.title,
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

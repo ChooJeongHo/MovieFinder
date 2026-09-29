@@ -101,7 +101,7 @@ app/src/main/java/com/choo/moviefinder/
 │   │   ├── TrendingPagingSource.kt
 │   │   └── MovieRemoteMediator.kt
 │   ├── remote/            # Retrofit API (Service, DTO)
-│   ├── repository/        # Repository 구현체 (16개, ISP 기반 도메인별 분리)
+│   ├── repository/        # Repository 구현체 (17개, ISP 기반 도메인별 분리)
 │   └── util/              # 상수 (PAGE_SIZE, DEFAULT_PAGING_CONFIG 등)
 ├── di/                    # Hilt DI 모듈
 │   ├── DatabaseModule.kt  # Room DB + DAO (destructive migration fallback)
@@ -110,8 +110,8 @@ app/src/main/java/com/choo/moviefinder/
 │   └── RepositoryModule.kt # 17개 도메인 @Binds + Preferences
 ├── domain/                # 도메인 레이어 (순수 Kotlin)
 │   ├── model/             # 도메인 모델
-│   ├── repository/        # Repository 인터페이스 20개
-│   └── usecase/           # UseCase 75개
+│   ├── repository/        # Repository 인터페이스 21개
+│   └── usecase/           # UseCase 78개
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 10개 + MovieGridViewHolder + MovieListViewHolder
 │   ├── common/            # CircularRatingView, PieChartView, BarChartView, HistogramView, CalendarHeatmapView
@@ -190,7 +190,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (856개)
+### 유닛 테스트 (916개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -413,12 +413,25 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   - **TMDB 언어 연동(2026-09-28, 실기기 SM-S926N 검증 완료)**: `AppLanguageProvider`(core/util)가 앱 언어를
     TMDB `language` 코드로 변환해 제공. 상세/배우/트렌딩/discover/개봉예정/홈(현재상영작·인기) 목록은 앱 언어를
     따르도록 전환 완료 — 영어 모드에서 제목/줄거리가 영어로 표시됨.
-    - **검색 결과는 여전히 ko-KR 고정** (원래 한계 유지, 의도적 롤백): 검색 화면도 앱 언어를 따르게 구현했었으나,
-      KMRB 등급 필터(`FilterMoviesByKoreanRatingUseCase`)가 `movie.title`로 직접 매칭하는 구조라 title이
-      영어가 되면 매칭이 깨짐 → movieId 기준 한국어 제목을 추가 조회하는 방식(`GetKoreanTitleUseCase`, Room
-      영구 캐시)으로 우회했으나, 필터를 처음 켤 때(캐시 없음, 초기 60개 항목) 항목당 요청이 2배가 되어 약
-      68초가 걸림을 실기기에서 확인, 되돌림. `GetKoreanTitleUseCase` 자체는 상세 화면의 KMRB 매칭용으로는
-      계속 사용 중(영화당 1회 조회라 부담 적음).
+    - **검색 결과 데이터는 ko-KR 고정, 표시 제목만 앱 언어를 따름** (2026-09-29, 실기기 SM-S926N 검증): KMRB
+      등급 필터(`FilterMoviesByKoreanRatingUseCase`)가 `movie.title`로 직접 매칭하므로 `MoviePagingSource`/
+      discover는 ko-KR을 유지한다. 앱 언어가 영어일 때만 **화면에 컴포즈된 카드의 제목**을 `GetLocalizedTitleUseCase`
+      → `LocalizedTitleRepositoryImpl`(메모리 LRU 500 + OkHttp HTTP 캐시, 동시 4개, 150ms 디바운스)로
+      `/movie/{id}?language=en-US` 지연 조회한다(`SearchComposables.kt`의 `rememberDisplayTitle`).
+      **왜 이 방향인가**: 필터 판정은 목록 멤버십을 결정해 전체 항목의 결과가 필요하므로 "보이는 항목만"으로 지연할 수
+      없다(보이려면 통과해야 하는데 통과 여부를 알려면 조회해야 하는 순환). 표시 문자열은 멤버십과 무관해 지연 가능.
+      이전(115일차) 방식(필터 안에서 `GetKoreanTitleUseCase`로 항목마다 제목 추가 조회)은 필터 경로가 항목당 2배 호출이라
+      약 68초(60건 ≈ 1.13초/건) → 롤백. 이번 방식은 필터 경로에 추가 호출이 0건이다.
+      실측: 영어 모드 첫 화면 4카드=조회 4건(평균 247ms), 62개 항목을 플링해 지나가는 동안 조회 25건(스쳐간 구간은
+      조회 없음, 중복 0), ko-KR 제목 조회 0건. `GetKoreanTitleUseCase`는 상세 화면 KMRB 매칭용으로만 사용.
+      한계: 표시 제목이 한국어→영어로 약 0.5초 뒤 교체됨, 포스터는 ko-KR 기준, 검색 매칭/정렬은 ko-KR 기준.
+    - **KMRB 필터 자체의 한계(언어와 무관, 미해결)**: 항목당 순차 호출(콜드 0.4~0.55초/건)이고 `PagingData.filter`가
+      페이지 단위로 원자적이라 첫 결과까지 한 페이지(20건) 분량이 걸린다(약 10~11초). 통과 항목이 적은 조합은 Paging이
+      페이지를 연쇄 로드한다(실측: knight + 15+ → 15페이지·307건·138초). 반대로 통과 0건이면 UI가 접근할 항목이 없어
+      다음 페이지가 로드되지 않는다(`dragon`+12세이상, `night`+전체관람가에서 "검색 결과 없음", 뒤 페이지 미조회 —
+      095일차 "페이지 기아"가 실제 재현됨). 근본 해결은 필터를 PagingSource 레벨(작은 청크 + 목표 매칭 수 충족까지
+      로드)로 옮기는 별도 리팩터이며 아직 하지 않았다. 참고: `initialLoadSize=60`은 `BaseMoviePagingSource.load()`가
+      `params.loadSize`를 무시하므로 실제 첫 로드는 TMDB 1페이지(20건)이다("60건"은 연쇄 로드 결과).
     - 박스오피스 매칭(`MatchBoxOfficeWithTmdbUseCase`)의 TMDB 폴백 검색(`searchMoviesOnce`)은 앱 언어와
       무관하게 항상 ko-KR 고정 — KOFIC 영화명(한국어)과의 매칭 정확도 유지 목적. 홈 캐시(`cached_movies`)가
       영어로 바뀌면 박스오피스의 로컬 캐시 우선 매칭(082일차 최적화)이 캐시 미스로 네트워크 폴백에 더 자주

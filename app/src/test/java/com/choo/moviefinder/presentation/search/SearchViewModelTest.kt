@@ -10,6 +10,7 @@ import com.choo.moviefinder.domain.usecase.DeleteSearchQueryUseCase
 import com.choo.moviefinder.domain.usecase.DiscoverMoviesUseCase
 import com.choo.moviefinder.domain.usecase.FilterMoviesByKoreanRatingUseCase
 import com.choo.moviefinder.domain.usecase.GetGenreListUseCase
+import com.choo.moviefinder.domain.usecase.GetLocalizedTitleUseCase
 import com.choo.moviefinder.domain.usecase.GetRecentSearchesUseCase
 import com.choo.moviefinder.domain.usecase.GetWatchHistoryUseCase
 import com.choo.moviefinder.domain.usecase.SaveSearchQueryUseCase
@@ -46,6 +47,7 @@ class SearchViewModelTest : CoroutineTestBase() {
     private lateinit var searchPersonUseCase: SearchPersonUseCase
     private lateinit var searchLocalMoviesUseCase: SearchLocalMoviesUseCase
     private lateinit var filterMoviesByKoreanRatingUseCase: FilterMoviesByKoreanRatingUseCase
+    private lateinit var getLocalizedTitleUseCase: GetLocalizedTitleUseCase
     private lateinit var getWatchHistoryUseCase: GetWatchHistoryUseCase
 
     @Before
@@ -60,6 +62,7 @@ class SearchViewModelTest : CoroutineTestBase() {
         searchPersonUseCase = mockk()
         searchLocalMoviesUseCase = mockk()
         filterMoviesByKoreanRatingUseCase = mockk()
+        getLocalizedTitleUseCase = mockk()
         getWatchHistoryUseCase = mockk()
 
         coEvery { getGenreListUseCase() } returns emptyList()
@@ -85,6 +88,7 @@ class SearchViewModelTest : CoroutineTestBase() {
             searchPersonUseCase = searchPersonUseCase,
             searchLocalMoviesUseCase = searchLocalMoviesUseCase,
             filterMoviesByKoreanRatingUseCase = filterMoviesByKoreanRatingUseCase,
+            getLocalizedTitleUseCase = getLocalizedTitleUseCase,
             getWatchHistoryUseCase = getWatchHistoryUseCase
         )
     }
@@ -451,5 +455,26 @@ class SearchViewModelTest : CoroutineTestBase() {
         }
 
         coVerify(exactly = 1) { searchMoviesUseCase(any(), any()) }
+    }
+
+    // 표시 제목은 목록(ko-KR title)이 아닌 UseCase 결과를 그대로 노출해야 한다 — 필터는 ko-KR title에 의존하므로
+    // ViewModel이 목록의 title 자체를 바꾸면 안 되고, 이 두 함수만 화면 표시용 문자열을 제공한다
+    @Test
+    fun `peekDisplayTitle delegates to use case with movie id and korean title`() = runTest {
+        val movie = Movie(1, "배트맨", null, null, "overview", "2024-01-01", 7.5, 100)
+        every { getLocalizedTitleUseCase.peek(1, "배트맨") } returns "The Batman"
+        val viewModel = createViewModel()
+
+        assertEquals("The Batman", viewModel.peekDisplayTitle(movie))
+    }
+
+    @Test
+    fun `resolveDisplayTitle delegates to use case with movie id and korean title`() = runTest {
+        val movie = Movie(1, "배트맨", null, null, "overview", "2024-01-01", 7.5, 100)
+        coEvery { getLocalizedTitleUseCase(1, "배트맨") } returns "The Batman"
+        val viewModel = createViewModel()
+
+        assertEquals("The Batman", viewModel.resolveDisplayTitle(movie))
+        coVerify(exactly = 1) { getLocalizedTitleUseCase(1, "배트맨") }
     }
 }
