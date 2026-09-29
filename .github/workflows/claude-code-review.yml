@@ -12,6 +12,12 @@ on:
 
 jobs:
   claude-review:
+    # Dependabot PR은 제외한다. claude-code-action은 봇이 시작한 워크플로우를 기본 거부해
+    # ("Workflow initiated by non-human actor: dependabot") Dependabot PR마다 10/10 실패했다.
+    # Dependabot PR은 claude-pr-review.yml(Claude PR Code Review)이 이미 리뷰하므로 중복이기도 하다.
+    # allowed_bots로 허용하면 같은 PR을 두 번 리뷰해 토큰만 이중으로 쓴다.
+    if: github.actor != 'dependabot[bot]'
+
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||

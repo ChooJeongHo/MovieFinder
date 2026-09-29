@@ -233,8 +233,13 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 | `pr-coverage.yml` | PR → main | JaCoCo 커버리지 PR 코멘트 자동 게시 |
 
 - Pre-commit Hook: Detekt + 컴파일 체크 (`.githooks/pre-commit`)
-- Pre-push Hook: 유닛 테스트 전체 실행 (`.githooks/pre-push`)
-- Hooks 활성화: `git config core.hooksPath .githooks`
+- Pre-push Hook: 유닛 테스트 전체 + `:app:lintDebug` (`.githooks/pre-push`) — Lint는 원래 CI에서만 돌아 push 후에야
+  실패가 드러났다 (159a0dc/184f5f5 NewApi로 main CI 연속 실패, 2026-09-29에 push 전 검사로 이동)
+- Hooks 활성화: `git config core.hooksPath .githooks` — **클론마다 필요하고 조용히 풀릴 수 있다.** 2026-09-29에
+  `core.hooksPath`가 `.git/hooks`(샘플뿐)로 잡혀 있어 pre-commit/pre-push가 전혀 안 돌던 것을 발견했다. 훅이
+  돈다고 가정하지 말고 `git config core.hooksPath`로 확인할 것
+- `Claude Code Review`(claude-code-review.yml)는 Dependabot PR을 제외한다 (`allowed_bots` 미설정이라 봇이 시작한
+  워크플로우가 항상 실패했고, Dependabot PR은 `claude-pr-review.yml`이 이미 리뷰함)
 - GitHub Secrets: `TMDB_API_KEY` 필요 — `KOFIC_API_KEY`는 CI에 미주입(로컬 전용); 없어도 빌드/유닛 테스트는
   통과하지만 실기기 박스오피스 API는 인증 오류 (`ONBOARDING.md` 참고)
 - Dependabot: 라이브러리 자동 버전 업데이트

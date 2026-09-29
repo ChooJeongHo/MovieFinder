@@ -10,4 +10,14 @@ if [ $? -ne 0 ]; then
 fi
 echo "Unit tests passed"
 
+# Lint는 CI(android-ci.yml)에서만 돌던 검사라 push 후에야 실패가 드러났다
+# (159a0dc/184f5f5: NewApi 에러로 main CI 연속 실패). CI와 같은 lintDebug를 push 전에 돌린다.
+echo "Running Lint..."
+./gradlew :app:lintDebug --daemon --quiet 2>&1
+if [ $? -ne 0 ]; then
+    echo "Lint failed. Fix lint errors before pushing (report: app/build/reports/lint-results-debug.html)."
+    exit 1
+fi
+echo "Lint passed"
+
 echo "All pre-push checks passed!"
