@@ -7,6 +7,7 @@ import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.HelpfulReviewDao
 import com.choo.moviefinder.data.local.dao.KoreanRatingCacheDao
 import com.choo.moviefinder.data.local.dao.MemoDao
+import com.choo.moviefinder.data.local.dao.MovieKoreanTitleCacheDao
 import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
@@ -20,6 +21,7 @@ import com.choo.moviefinder.data.local.entity.FavoriteMovieEntity
 import com.choo.moviefinder.data.local.entity.HelpfulReviewEntity
 import com.choo.moviefinder.data.local.entity.KoreanRatingCacheEntity
 import com.choo.moviefinder.data.local.entity.MemoEntity
+import com.choo.moviefinder.data.local.entity.MovieKoreanTitleCacheEntity
 import com.choo.moviefinder.data.local.entity.MovieTagEntity
 import com.choo.moviefinder.data.local.entity.RecentSearchEntity
 import com.choo.moviefinder.data.local.entity.RemoteKeyEntity
@@ -45,9 +47,10 @@ import com.choo.moviefinder.data.local.entity.WatchlistEntity
         ScheduledReminderEntity::class,
         TrailerWatchEntity::class,
         HelpfulReviewEntity::class,
-        KoreanRatingCacheEntity::class
+        KoreanRatingCacheEntity::class,
+        MovieKoreanTitleCacheEntity::class
     ],
-    version = 24,
+    version = 25,
     exportSchema = true
 )
 abstract class MovieDatabase : RoomDatabase() {
@@ -89,4 +92,7 @@ abstract class MovieDatabase : RoomDatabase() {
 
     // KMRB 관람등급 캐시 DAO 제공
     abstract fun koreanRatingCacheDao(): KoreanRatingCacheDao
+
+    // KMRB 매칭용 한국어 제목 캐시 DAO 제공
+    abstract fun movieKoreanTitleCacheDao(): MovieKoreanTitleCacheDao
 }

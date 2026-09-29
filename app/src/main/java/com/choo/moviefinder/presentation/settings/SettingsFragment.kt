@@ -335,6 +335,7 @@ class SettingsFragment : Fragment() {
                     LocaleListCompat.forLanguageTags(tag)
                 }
                 AppCompatDelegate.setApplicationLocales(localeList)
+                viewModel.onLanguageChanged()
                 dialog.dismiss()
             }
             .show()

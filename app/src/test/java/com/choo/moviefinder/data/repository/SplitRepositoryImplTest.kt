@@ -1,6 +1,7 @@
 package com.choo.moviefinder.data.repository
 
 import app.cash.turbine.test
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.MemoDao
@@ -113,7 +114,10 @@ class SplitRepositoryImplTest {
         watchHistoryRepo = WatchHistoryRepositoryImpl(watchHistoryDao)
         userRatingRepo = UserRatingRepositoryImpl(userRatingDao)
         memoRepo = MemoRepositoryImpl(memoDao)
-        personRepo = PersonRepositoryImpl(apiService)
+        personRepo = PersonRepositoryImpl(
+            apiService,
+            mockk<AppLanguageProvider> { every { currentApiLanguage() } returns "ko-KR" }
+        )
         backupRepo = BackupRepositoryImpl(
             database, favoriteMovieDao, watchlistDao, userRatingDao, memoDao, movieTagDao, watchHistoryDao
         )

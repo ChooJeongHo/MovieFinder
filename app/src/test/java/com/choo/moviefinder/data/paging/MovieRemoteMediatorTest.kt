@@ -10,6 +10,7 @@ import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
 import com.choo.moviefinder.data.local.entity.CachedMovieEntity
 import com.choo.moviefinder.data.local.entity.RemoteKeyEntity
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.MovieDto
@@ -36,6 +37,7 @@ class MovieRemoteMediatorTest {
     private lateinit var cachedMovieDao: CachedMovieDao
     private lateinit var remoteKeyDao: RemoteKeyDao
     private lateinit var networkMonitor: NetworkMonitor
+    private lateinit var appLanguageProvider: AppLanguageProvider
 
     private val testMovieDto = MovieDto(
         id = 1,
@@ -57,10 +59,15 @@ class MovieRemoteMediatorTest {
         networkMonitor = mockk {
             every { isConnected } returns MutableStateFlow(true)
         }
+        appLanguageProvider = mockk {
+            every { currentApiLanguage() } returns "ko-KR"
+        }
     }
 
     private fun createMediator(category: String = MovieRemoteMediator.CATEGORY_NOW_PLAYING) =
-        MovieRemoteMediator(apiService, database, cachedMovieDao, remoteKeyDao, category, networkMonitor)
+        MovieRemoteMediator(
+            apiService, database, cachedMovieDao, remoteKeyDao, category, networkMonitor, appLanguageProvider
+        )
 
     private fun createEmptyPagingState() = PagingState<Int, CachedMovieEntity>(
         pages = emptyList(),
@@ -169,7 +176,7 @@ class MovieRemoteMediatorTest {
         }
         val mediator = MovieRemoteMediator(
             apiService, database, cachedMovieDao, remoteKeyDao,
-            MovieRemoteMediator.CATEGORY_NOW_PLAYING, offlineMonitor
+            MovieRemoteMediator.CATEGORY_NOW_PLAYING, offlineMonitor, appLanguageProvider
         )
 
         val result = mediator.load(LoadType.REFRESH, createEmptyPagingState())

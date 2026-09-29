@@ -1,5 +1,6 @@
 package com.choo.moviefinder.data.repository
 
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.KnownForMovie
 import com.choo.moviefinder.data.remote.dto.MovieDto
@@ -9,6 +10,7 @@ import com.choo.moviefinder.data.remote.dto.PersonSearchResponse
 import com.choo.moviefinder.data.remote.dto.PersonSearchResult
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -60,7 +62,10 @@ class PersonRepositoryImplTest {
     @Before
     fun setup() {
         apiService = mockk()
-        repository = PersonRepositoryImpl(apiService)
+        val appLanguageProvider = mockk<AppLanguageProvider> {
+            every { currentApiLanguage() } returns "ko-KR"
+        }
+        repository = PersonRepositoryImpl(apiService, appLanguageProvider)
     }
 
     @Test

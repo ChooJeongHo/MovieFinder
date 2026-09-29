@@ -1,6 +1,7 @@
 package com.choo.moviefinder.data.repository
 
 import androidx.paging.PagingData
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.CollectionDto
@@ -61,12 +62,17 @@ class MovieRepositoryImplCollectionTest {
         val networkMonitor = mockk<NetworkMonitor> {
             every { isConnected } returns MutableStateFlow(true)
         }
+        val appLanguageProvider = mockk<AppLanguageProvider> {
+            every { currentApiLanguage() } returns "ko-KR"
+        }
         repository = MovieRepositoryImpl(
             apiService = apiService,
             database = mockk(),
             cachedMovieDao = mockk(),
             remoteKeyDao = mockk(),
-            networkMonitor = networkMonitor
+            movieKoreanTitleCacheDao = mockk(),
+            networkMonitor = networkMonitor,
+            appLanguageProvider = appLanguageProvider
         )
     }
 

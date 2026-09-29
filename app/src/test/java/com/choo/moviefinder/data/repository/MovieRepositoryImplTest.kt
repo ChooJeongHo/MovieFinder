@@ -1,8 +1,10 @@
 package com.choo.moviefinder.data.repository
 
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.data.local.MovieDatabase
 import com.choo.moviefinder.data.local.dao.CachedMovieDao
+import com.choo.moviefinder.data.local.dao.MovieKoreanTitleCacheDao
 import com.choo.moviefinder.data.local.dao.RemoteKeyDao
 import com.choo.moviefinder.data.local.entity.CachedMovieEntity
 import com.choo.moviefinder.data.paging.MovieRemoteMediator
@@ -27,12 +29,16 @@ import com.choo.moviefinder.data.remote.dto.WatchProviderDto
 import com.choo.moviefinder.data.remote.dto.WatchProviderRegionResult
 import com.choo.moviefinder.data.remote.dto.WatchProviderResponse
 import androidx.paging.PagingData
+import androidx.room.withTransaction
 import com.choo.moviefinder.domain.model.DomainException
 import com.choo.moviefinder.domain.model.Movie
 import com.choo.moviefinder.presentation.search.SortOption
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,7 +57,9 @@ class MovieRepositoryImplTest {
     private lateinit var database: MovieDatabase
     private lateinit var cachedMovieDao: CachedMovieDao
     private lateinit var remoteKeyDao: RemoteKeyDao
+    private lateinit var movieKoreanTitleCacheDao: MovieKoreanTitleCacheDao
     private lateinit var networkMonitor: NetworkMonitor
+    private lateinit var appLanguageProvider: AppLanguageProvider
 
     private lateinit var repository: MovieRepositoryImpl
 
@@ -93,8 +101,12 @@ class MovieRepositoryImplTest {
         database = mockk()
         cachedMovieDao = mockk()
         remoteKeyDao = mockk()
+        movieKoreanTitleCacheDao = mockk()
         networkMonitor = mockk {
             every { isConnected } returns MutableStateFlow(true)
+        }
+        appLanguageProvider = mockk {
+            every { currentApiLanguage() } returns "ko-KR"
         }
 
         repository = MovieRepositoryImpl(
@@ -102,7 +114,9 @@ class MovieRepositoryImplTest {
             database = database,
             cachedMovieDao = cachedMovieDao,
             remoteKeyDao = remoteKeyDao,
-            networkMonitor = networkMonitor
+            movieKoreanTitleCacheDao = movieKoreanTitleCacheDao,
+            networkMonitor = networkMonitor,
+            appLanguageProvider = appLanguageProvider
         )
     }
 
@@ -429,6 +443,72 @@ class MovieRepositoryImplTest {
         val result = repository.searchMoviesOnce("존재하지않는영화")
 
         assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `searchMoviesOnce always uses ko-KR even when app language is en-US`() = runTest {
+        every { appLanguageProvider.currentApiLanguage() } returns "en-US"
+        coEvery { apiService.searchMovies(query = "탑건", page = 1, language = "ko-KR") } returns MovieListResponse(
+            page = 1, results = testMovieDtos, totalPages = 1, totalResults = 2
+        )
+
+        val result = repository.searchMoviesOnce("탑건")
+
+        assertEquals(2, result.size)
+        coVerify { apiService.searchMovies(query = "탑건", page = 1, language = "ko-KR") }
+    }
+
+    // --- getKoreanTitle ---
+
+    @Test
+    fun `getKoreanTitle returns cached title without calling API when cache hit`() = runTest {
+        coEvery { movieKoreanTitleCacheDao.find(603) } returns
+            com.choo.moviefinder.data.local.entity.MovieKoreanTitleCacheEntity(603, "매트릭스", 0L)
+
+        val result = repository.getKoreanTitle(603)
+
+        assertEquals("매트릭스", result)
+        coVerify(exactly = 0) { apiService.getMovieDetail(any(), any()) }
+    }
+
+    @Test
+    fun `getKoreanTitle fetches ko-KR from API and caches it on cache miss`() = runTest {
+        coEvery { movieKoreanTitleCacheDao.find(603) } returns null
+        coEvery { apiService.getMovieDetail(603, "ko-KR") } returns
+            testMovieDetailDto.copy(id = 603, title = "매트릭스")
+        val upserted = slot<com.choo.moviefinder.data.local.entity.MovieKoreanTitleCacheEntity>()
+        coEvery { movieKoreanTitleCacheDao.upsert(capture(upserted)) } returns Unit
+
+        val result = repository.getKoreanTitle(603)
+
+        assertEquals("매트릭스", result)
+        assertEquals(603, upserted.captured.movieId)
+        assertEquals("매트릭스", upserted.captured.koreanTitle)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `getKoreanTitle throws on invalid movieId`() = runTest {
+        repository.getKoreanTitle(0)
+    }
+
+    // --- invalidateHomeMovieCache ---
+
+    @Test
+    fun `invalidateHomeMovieCache clears now playing and popular categories`() = runTest {
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            @Suppress("UNCHECKED_CAST")
+            (secondArg<suspend () -> Any?>()).invoke()
+        }
+        coEvery { cachedMovieDao.clearByCategory(any()) } returns Unit
+        coEvery { remoteKeyDao.clearByCategory(any()) } returns Unit
+
+        repository.invalidateHomeMovieCache()
+
+        coVerify { cachedMovieDao.clearByCategory(MovieRemoteMediator.CATEGORY_NOW_PLAYING) }
+        coVerify { cachedMovieDao.clearByCategory(MovieRemoteMediator.CATEGORY_POPULAR) }
+        coVerify { remoteKeyDao.clearByCategory(MovieRemoteMediator.CATEGORY_NOW_PLAYING) }
+        coVerify { remoteKeyDao.clearByCategory(MovieRemoteMediator.CATEGORY_POPULAR) }
     }
 
     @Test

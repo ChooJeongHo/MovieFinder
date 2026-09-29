@@ -13,6 +13,7 @@ import com.choo.moviefinder.domain.usecase.ImportUserDataUseCase
 import com.choo.moviefinder.domain.usecase.RevokeTmdbAuthUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
+import com.choo.moviefinder.domain.usecase.InvalidateHomeMovieCacheUseCase
 import com.choo.moviefinder.domain.usecase.SyncTmdbAccountUseCase
 import androidx.lifecycle.SavedStateHandle
 import com.choo.moviefinder.util.CoroutineTestBase
@@ -42,6 +43,7 @@ class SettingsViewModelTest : CoroutineTestBase() {
     private lateinit var getTmdbRequestTokenUseCase: GetTmdbRequestTokenUseCase
     private lateinit var revokeTmdbAuthUseCase: RevokeTmdbAuthUseCase
     private lateinit var syncTmdbAccountUseCase: SyncTmdbAccountUseCase
+    private lateinit var invalidateHomeMovieCacheUseCase: InvalidateHomeMovieCacheUseCase
 
     @Before
     fun setup() {
@@ -56,6 +58,8 @@ class SettingsViewModelTest : CoroutineTestBase() {
         getTmdbRequestTokenUseCase = mockk()
         revokeTmdbAuthUseCase = mockk()
         syncTmdbAccountUseCase = mockk()
+        invalidateHomeMovieCacheUseCase = mockk()
+        coEvery { invalidateHomeMovieCacheUseCase() } returns Unit
         every { getTmdbAccessTokenUseCase() } returns flowOf(null)
     }
 
@@ -76,7 +80,8 @@ class SettingsViewModelTest : CoroutineTestBase() {
             getTmdbAccessTokenUseCase,
             getTmdbRequestTokenUseCase,
             revokeTmdbAuthUseCase,
-            syncTmdbAccountUseCase
+            syncTmdbAccountUseCase,
+            invalidateHomeMovieCacheUseCase
         )
     }
 
@@ -213,7 +218,8 @@ class SettingsViewModelTest : CoroutineTestBase() {
             getTmdbAccessTokenUseCase,
             getTmdbRequestTokenUseCase,
             revokeTmdbAuthUseCase,
-            syncTmdbAccountUseCase
+            syncTmdbAccountUseCase,
+            invalidateHomeMovieCacheUseCase
         )
     }
 

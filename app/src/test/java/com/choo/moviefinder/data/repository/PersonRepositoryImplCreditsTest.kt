@@ -1,10 +1,12 @@
 package com.choo.moviefinder.data.repository
 
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.MovieDto
 import com.choo.moviefinder.data.remote.dto.PersonCreditsResponse
 import com.choo.moviefinder.domain.model.DomainException
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -37,7 +39,10 @@ class PersonRepositoryImplCreditsTest {
     @Before
     fun setUp() {
         apiService = mockk()
-        repository = PersonRepositoryImpl(apiService)
+        val appLanguageProvider = mockk<AppLanguageProvider> {
+            every { currentApiLanguage() } returns "ko-KR"
+        }
+        repository = PersonRepositoryImpl(apiService, appLanguageProvider)
     }
 
     // --- cast + crew merge ---

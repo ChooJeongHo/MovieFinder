@@ -188,7 +188,12 @@ class DetailViewModel @Inject constructor(
             updateSuccess { it.copy(watchProviders = providers) }
         }
         launch {
-            val koreanRating = loadOptionalNullable("koreanRating") { fetch.getKoreanRating(detail.title) }
+            // detail.title은 앱 언어를 따르므로(영어 모드에서 영문 제목), KMRB 매칭에는 항상
+            // 한국어 제목이 필요하다 - 실패 시 detail.title로 폴백(매칭 실패로 등급 없음 처리됨).
+            val koreanRating = loadOptionalNullable("koreanRating") {
+                val koreanTitle = fetch.getKoreanTitle(movieId) ?: detail.title
+                fetch.getKoreanRating(koreanTitle)
+            }
             updateSuccess { it.copy(koreanRating = koreanRating) }
         }
     }

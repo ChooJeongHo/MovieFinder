@@ -410,5 +410,21 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
     API 33 미만에서는 프로세스 종료 시 언어 선택이 유지되지 않을 수 있음(API 36 실기기로만 검증, 24~32 미검증).
     추가하면 API 33+에서 이미 고른 언어가 업데이트 후 첫 실행에 `[]`로 초기화되는 회귀를 실기기(SM-S926N)에서
     재현·확인함(2026-09-21, 서비스 유무 통제 실험). 해결하려면 33+ 초기화를 피하는 방법(예: 저장소 값 사전 시딩)을 별도 검토.
-  - TMDB `language` 파라미터는 `ko-KR` 고정 — 앱 언어를 English로 바꿔도 영화 제목/줄거리는 한국어(UI 문구만 바뀜)
+  - **TMDB 언어 연동(2026-09-28, 실기기 SM-S926N 검증 완료)**: `AppLanguageProvider`(core/util)가 앱 언어를
+    TMDB `language` 코드로 변환해 제공. 상세/배우/트렌딩/discover/개봉예정/홈(현재상영작·인기) 목록은 앱 언어를
+    따르도록 전환 완료 — 영어 모드에서 제목/줄거리가 영어로 표시됨.
+    - **검색 결과는 여전히 ko-KR 고정** (원래 한계 유지, 의도적 롤백): 검색 화면도 앱 언어를 따르게 구현했었으나,
+      KMRB 등급 필터(`FilterMoviesByKoreanRatingUseCase`)가 `movie.title`로 직접 매칭하는 구조라 title이
+      영어가 되면 매칭이 깨짐 → movieId 기준 한국어 제목을 추가 조회하는 방식(`GetKoreanTitleUseCase`, Room
+      영구 캐시)으로 우회했으나, 필터를 처음 켤 때(캐시 없음, 초기 60개 항목) 항목당 요청이 2배가 되어 약
+      68초가 걸림을 실기기에서 확인, 되돌림. `GetKoreanTitleUseCase` 자체는 상세 화면의 KMRB 매칭용으로는
+      계속 사용 중(영화당 1회 조회라 부담 적음).
+    - 박스오피스 매칭(`MatchBoxOfficeWithTmdbUseCase`)의 TMDB 폴백 검색(`searchMoviesOnce`)은 앱 언어와
+      무관하게 항상 ko-KR 고정 — KOFIC 영화명(한국어)과의 매칭 정확도 유지 목적. 홈 캐시(`cached_movies`)가
+      영어로 바뀌면 박스오피스의 로컬 캐시 우선 매칭(082일차 최적화)이 캐시 미스로 네트워크 폴백에 더 자주
+      의존하게 되나, 정확도 자체는 영향 없음(실기기에서 위젯 포함 정상 매칭 확인).
+    - 앱 언어 변경 시 홈 캐시(`cached_movies`/`remote_keys`)를 즉시 무효화(`InvalidateHomeMovieCacheUseCase`,
+      `SettingsFragment`에서 언어 변경 직후 호출)해 이전 언어 데이터가 TTL(1시간) 동안 남지 않도록 함.
+    - 즐겨찾기/워치리스트/시청기록에 이미 저장된 제목은 추가 시점의 스냅샷이라 언어 변경과 무관하게 소급
+      갱신되지 않음(설계상 의도, 범위 밖).
 - **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)

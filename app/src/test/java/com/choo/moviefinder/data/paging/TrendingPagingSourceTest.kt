@@ -3,11 +3,13 @@ package com.choo.moviefinder.data.paging
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.MovieDto
 import com.choo.moviefinder.data.remote.dto.MovieListResponse
 import com.choo.moviefinder.domain.model.Movie
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -20,6 +22,7 @@ import java.io.IOException
 class TrendingPagingSourceTest {
 
     private lateinit var apiService: MovieApiService
+    private lateinit var appLanguageProvider: AppLanguageProvider
 
     private val testMovieDto = MovieDto(
         id = 1,
@@ -35,6 +38,9 @@ class TrendingPagingSourceTest {
     @Before
     fun setup() {
         apiService = mockk()
+        appLanguageProvider = mockk {
+            every { currentApiLanguage() } returns "ko-KR"
+        }
     }
 
     private fun createResponse(resultCount: Int = 20) = MovieListResponse(
@@ -46,9 +52,9 @@ class TrendingPagingSourceTest {
 
     @Test
     fun `load returns first page successfully`() = runTest {
-        coEvery { apiService.getTrendingMovies(1) } returns createResponse()
+        coEvery { apiService.getTrendingMovies(1, any()) } returns createResponse()
 
-        val pagingSource = TrendingPagingSource(apiService)
+        val pagingSource = TrendingPagingSource(apiService, appLanguageProvider)
         val result = pagingSource.load(
             PagingSource.LoadParams.Refresh(key = null, loadSize = 20, placeholdersEnabled = false)
         )
@@ -63,9 +69,9 @@ class TrendingPagingSourceTest {
 
     @Test
     fun `load returns error on exception`() = runTest {
-        coEvery { apiService.getTrendingMovies(1) } throws IOException("Network error")
+        coEvery { apiService.getTrendingMovies(1, any()) } throws IOException("Network error")
 
-        val pagingSource = TrendingPagingSource(apiService)
+        val pagingSource = TrendingPagingSource(apiService, appLanguageProvider)
         val result = pagingSource.load(
             PagingSource.LoadParams.Refresh(key = null, loadSize = 20, placeholdersEnabled = false)
         )
@@ -76,9 +82,9 @@ class TrendingPagingSourceTest {
 
     @Test
     fun `load returns next page`() = runTest {
-        coEvery { apiService.getTrendingMovies(2) } returns createResponse()
+        coEvery { apiService.getTrendingMovies(2, any()) } returns createResponse()
 
-        val pagingSource = TrendingPagingSource(apiService)
+        val pagingSource = TrendingPagingSource(apiService, appLanguageProvider)
         val result = pagingSource.load(
             PagingSource.LoadParams.Append(key = 2, loadSize = 20, placeholdersEnabled = false)
         )
@@ -96,9 +102,9 @@ class TrendingPagingSourceTest {
             page = 3, results = List(10) { testMovieDto.copy(id = it + 1) },
             totalPages = 3, totalResults = 50
         )
-        coEvery { apiService.getTrendingMovies(3) } returns lastPageResponse
+        coEvery { apiService.getTrendingMovies(3, any()) } returns lastPageResponse
 
-        val pagingSource = TrendingPagingSource(apiService)
+        val pagingSource = TrendingPagingSource(apiService, appLanguageProvider)
         val result = pagingSource.load(
             PagingSource.LoadParams.Append(key = 3, loadSize = 20, placeholdersEnabled = false)
         )
@@ -109,9 +115,9 @@ class TrendingPagingSourceTest {
 
     @Test
     fun `first page has null prevKey`() = runTest {
-        coEvery { apiService.getTrendingMovies(1) } returns createResponse()
+        coEvery { apiService.getTrendingMovies(1, any()) } returns createResponse()
 
-        val pagingSource = TrendingPagingSource(apiService)
+        val pagingSource = TrendingPagingSource(apiService, appLanguageProvider)
         val result = pagingSource.load(
             PagingSource.LoadParams.Refresh(key = null, loadSize = 20, placeholdersEnabled = false)
         )
@@ -136,14 +142,14 @@ class TrendingPagingSourceTest {
 
     @Test
     fun `getRefreshKey returns null when anchorPosition is null`() {
-        val pagingSource = TrendingPagingSource(apiService)
+        val pagingSource = TrendingPagingSource(apiService, appLanguageProvider)
         val state = pagingState(emptyList(), anchorPosition = null)
         assertNull(pagingSource.getRefreshKey(state))
     }
 
     @Test
     fun `getRefreshKey returns prevKey plus 1 when anchor page has prevKey`() {
-        val pagingSource = TrendingPagingSource(apiService)
+        val pagingSource = TrendingPagingSource(apiService, appLanguageProvider)
         val page = PagingSource.LoadResult.Page<Int, Movie>(
             data = listOf(testDomainMovie), prevKey = 1, nextKey = 3
         )
@@ -153,7 +159,7 @@ class TrendingPagingSourceTest {
 
     @Test
     fun `getRefreshKey falls back to nextKey minus 1 when prevKey is null`() {
-        val pagingSource = TrendingPagingSource(apiService)
+        val pagingSource = TrendingPagingSource(apiService, appLanguageProvider)
         val page = PagingSource.LoadResult.Page<Int, Movie>(
             data = listOf(testDomainMovie), prevKey = null, nextKey = 2
         )

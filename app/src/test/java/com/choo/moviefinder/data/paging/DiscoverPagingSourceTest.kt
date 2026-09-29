@@ -3,12 +3,14 @@ package com.choo.moviefinder.data.paging
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.MovieDto
 import com.choo.moviefinder.data.remote.dto.MovieListResponse
 import com.choo.moviefinder.domain.model.Movie
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -21,6 +23,7 @@ import java.io.IOException
 class DiscoverPagingSourceTest {
 
     private lateinit var apiService: MovieApiService
+    private lateinit var appLanguageProvider: AppLanguageProvider
 
     private val testMovieDto = MovieDto(
         id = 1,
@@ -36,6 +39,9 @@ class DiscoverPagingSourceTest {
     @Before
     fun setup() {
         apiService = mockk()
+        appLanguageProvider = mockk {
+            every { currentApiLanguage() } returns "ko-KR"
+        }
     }
 
     private fun createResponse(page: Int, totalPages: Int) = MovieListResponse(
@@ -51,7 +57,7 @@ class DiscoverPagingSourceTest {
             apiService.discoverMovies(1, "28", "popularity.desc", null, any())
         } returns createResponse(1, 3)
 
-        val source = DiscoverPagingSource(apiService, "28", "popularity.desc", null)
+        val source = DiscoverPagingSource(apiService, "28", "popularity.desc", null, appLanguageProvider)
         val result = source.load(
             PagingSource.LoadParams.Refresh(key = null, loadSize = 20, placeholdersEnabled = false)
         )
@@ -70,7 +76,7 @@ class DiscoverPagingSourceTest {
             apiService.discoverMovies(1, any(), any(), any(), any())
         } throws IOException("Network error")
 
-        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null)
+        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null, appLanguageProvider)
         val result = source.load(
             PagingSource.LoadParams.Refresh(key = null, loadSize = 20, placeholdersEnabled = false)
         )
@@ -84,7 +90,7 @@ class DiscoverPagingSourceTest {
             apiService.discoverMovies(1, "28,12", "vote_average.desc", 2024, any())
         } returns createResponse(1, 1)
 
-        val source = DiscoverPagingSource(apiService, "28,12", "vote_average.desc", 2024)
+        val source = DiscoverPagingSource(apiService, "28,12", "vote_average.desc", 2024, appLanguageProvider)
         source.load(
             PagingSource.LoadParams.Refresh(key = null, loadSize = 20, placeholdersEnabled = false)
         )
@@ -100,7 +106,7 @@ class DiscoverPagingSourceTest {
             apiService.discoverMovies(3, any(), any(), any(), any())
         } returns createResponse(3, 3)
 
-        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null)
+        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null, appLanguageProvider)
         val result = source.load(
             PagingSource.LoadParams.Append(key = 3, loadSize = 20, placeholdersEnabled = false)
         )
@@ -115,7 +121,7 @@ class DiscoverPagingSourceTest {
             apiService.discoverMovies(2, any(), any(), any(), any())
         } returns createResponse(2, 5)
 
-        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null)
+        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null, appLanguageProvider)
         val result = source.load(
             PagingSource.LoadParams.Append(key = 2, loadSize = 20, placeholdersEnabled = false)
         )
@@ -142,14 +148,14 @@ class DiscoverPagingSourceTest {
 
     @Test
     fun `getRefreshKey returns null when anchorPosition is null`() {
-        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null)
+        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null, appLanguageProvider)
         val state = pagingState(emptyList(), anchorPosition = null)
         assertNull(source.getRefreshKey(state))
     }
 
     @Test
     fun `getRefreshKey returns prevKey plus 1 when anchor page has prevKey`() {
-        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null)
+        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null, appLanguageProvider)
         val page = PagingSource.LoadResult.Page<Int, Movie>(
             data = listOf(testMovie), prevKey = 1, nextKey = 3
         )
@@ -159,7 +165,7 @@ class DiscoverPagingSourceTest {
 
     @Test
     fun `getRefreshKey falls back to nextKey minus 1 when prevKey is null`() {
-        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null)
+        val source = DiscoverPagingSource(apiService, null, "popularity.desc", null, appLanguageProvider)
         val page = PagingSource.LoadResult.Page<Int, Movie>(
             data = listOf(testMovie), prevKey = null, nextKey = 2
         )

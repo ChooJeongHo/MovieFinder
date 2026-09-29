@@ -1,5 +1,6 @@
 package com.choo.moviefinder.data.paging
 
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.data.remote.api.MovieApiService
 import com.choo.moviefinder.data.remote.dto.MovieListResponse
 
@@ -7,15 +8,17 @@ class DiscoverPagingSource(
     private val apiService: MovieApiService,
     private val genres: String?,
     private val sortBy: String,
-    private val year: Int?
+    private val year: Int?,
+    private val appLanguageProvider: AppLanguageProvider
 ) : BaseMoviePagingSource() {
 
-    // Discover API를 호출하여 장르/정렬 기반으로 영화 목록 조회
+    // Discover API를 호출하여 장르/정렬 기반으로 영화 목록 조회 (앱 언어를 따름)
     override suspend fun fetchPage(page: Int): MovieListResponse =
         apiService.discoverMovies(
             page = page,
             withGenres = genres,
             sortBy = sortBy,
-            year = year
+            year = year,
+            language = appLanguageProvider.currentApiLanguage()
         )
 }

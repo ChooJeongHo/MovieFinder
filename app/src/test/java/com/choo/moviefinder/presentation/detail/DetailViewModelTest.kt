@@ -13,6 +13,7 @@ import com.choo.moviefinder.domain.model.MovieDetail
 import com.choo.moviefinder.domain.model.Review
 import com.choo.moviefinder.domain.usecase.GetHelpfulReviewIdsUseCase
 import com.choo.moviefinder.domain.usecase.GetKoreanRatingUseCase
+import com.choo.moviefinder.domain.usecase.GetKoreanTitleUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCertificationUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieCreditsUseCase
 import com.choo.moviefinder.domain.usecase.GetMovieDetailUseCase
@@ -73,6 +74,7 @@ class DetailViewModelTest : CoroutineTestBase() {
     private lateinit var markTrailerWatchedUseCase: MarkTrailerWatchedUseCase
     private lateinit var getHelpfulReviewIdsUseCase: GetHelpfulReviewIdsUseCase
     private lateinit var getKoreanRatingUseCase: GetKoreanRatingUseCase
+    private lateinit var getKoreanTitleUseCase: GetKoreanTitleUseCase
     private lateinit var toggleReviewHelpfulUseCase: ToggleReviewHelpfulUseCase
     private lateinit var saveWatchHistoryUseCase: SaveWatchHistoryUseCase
     private lateinit var getUserRatingUseCase: com.choo.moviefinder.domain.usecase.GetUserRatingUseCase
@@ -168,6 +170,8 @@ class DetailViewModelTest : CoroutineTestBase() {
         coEvery { markTrailerWatchedUseCase(any(), any()) } returns Unit
         coEvery { getHelpfulReviewIdsUseCase(any()) } returns emptySet()
         coEvery { getKoreanRatingUseCase(any()) } returns null
+        getKoreanTitleUseCase = mockk()
+        coEvery { getKoreanTitleUseCase(any()) } returns null
         coEvery { toggleReviewHelpfulUseCase(any(), any(), any()) } returns Unit
     }
 
@@ -183,7 +187,8 @@ class DetailViewModelTest : CoroutineTestBase() {
             getMovieRecommendations = getMovieRecommendationsUseCase,
             getWatchProviders = getWatchProvidersUseCase,
             getHelpfulReviewIds = getHelpfulReviewIdsUseCase,
-            getKoreanRating = getKoreanRatingUseCase
+            getKoreanRating = getKoreanRatingUseCase,
+            getKoreanTitle = getKoreanTitleUseCase
         )
         val toggle = DetailToggleUseCases(
             toggleFavorite = toggleFavoriteUseCase,

@@ -3,6 +3,7 @@ package com.choo.moviefinder.di
 import android.content.Context
 import com.choo.moviefinder.BuildConfig
 import com.choo.moviefinder.core.util.DebugEventListener
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.core.util.addDebugLogging
 import com.choo.moviefinder.data.remote.api.KmrbApiService
@@ -161,6 +162,13 @@ object NetworkModule {
     @Singleton
     fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor {
         return NetworkMonitor(context)
+    }
+
+    // 현재 앱 언어(Per-App Language)를 TMDB API 언어 코드로 제공한다
+    @Provides
+    @Singleton
+    fun provideAppLanguageProvider(@ApplicationContext context: Context): AppLanguageProvider {
+        return AppLanguageProvider(context)
     }
 
     // v4 인증용 OkHttpClient (Bearer: read_access_token)

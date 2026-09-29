@@ -9,6 +9,7 @@ import com.choo.moviefinder.data.local.dao.CachedMovieDao
 import com.choo.moviefinder.data.local.dao.FavoriteMovieDao
 import com.choo.moviefinder.data.local.dao.HelpfulReviewDao
 import com.choo.moviefinder.data.local.dao.KoreanRatingCacheDao
+import com.choo.moviefinder.data.local.dao.MovieKoreanTitleCacheDao
 import com.choo.moviefinder.data.local.dao.MemoDao
 import com.choo.moviefinder.data.local.dao.MovieTagDao
 import com.choo.moviefinder.data.local.dao.RecentSearchDao
@@ -407,5 +408,12 @@ object DatabaseModule {
     @Singleton
     fun provideKoreanRatingCacheDao(database: MovieDatabase): KoreanRatingCacheDao {
         return database.koreanRatingCacheDao()
+    }
+
+    // KMRB 매칭용 한국어 제목 캐시 DAO를 제공한다
+    @Provides
+    @Singleton
+    fun provideMovieKoreanTitleCacheDao(database: MovieDatabase): MovieKoreanTitleCacheDao {
+        return database.movieKoreanTitleCacheDao()
     }
 }

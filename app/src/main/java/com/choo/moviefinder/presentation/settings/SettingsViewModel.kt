@@ -15,6 +15,7 @@ import com.choo.moviefinder.domain.usecase.GetThemeModeUseCase
 import com.choo.moviefinder.domain.usecase.GetTmdbAccessTokenUseCase
 import com.choo.moviefinder.domain.usecase.GetTmdbRequestTokenUseCase
 import com.choo.moviefinder.domain.usecase.ImportUserDataUseCase
+import com.choo.moviefinder.domain.usecase.InvalidateHomeMovieCacheUseCase
 import com.choo.moviefinder.domain.usecase.RevokeTmdbAuthUseCase
 import com.choo.moviefinder.domain.usecase.SetMonthlyWatchGoalUseCase
 import com.choo.moviefinder.domain.usecase.SetThemeModeUseCase
@@ -50,6 +51,7 @@ class SettingsViewModel @Inject constructor(
     private val getTmdbRequestTokenUseCase: GetTmdbRequestTokenUseCase,
     private val revokeTmdbAuthUseCase: RevokeTmdbAuthUseCase,
     private val syncTmdbAccountUseCase: SyncTmdbAccountUseCase,
+    private val invalidateHomeMovieCacheUseCase: InvalidateHomeMovieCacheUseCase,
 ) : ViewModel() {
 
     val currentThemeMode: StateFlow<ThemeMode> = getThemeModeUseCase()
@@ -112,6 +114,14 @@ class SettingsViewModel @Inject constructor(
     }
 
     // DataStore에 저장
+    // 앱 언어 변경 직후 호출된다 - AppCompatDelegate.setApplicationLocales()는 Activity를
+    // 재생성시키지만 viewModelScope는 그대로 살아있어 이 호출은 안전하게 끝까지 실행된다.
+    fun onLanguageChanged() = viewModelScope.launchWithErrorHandler(
+        onError = { Timber.w("앱 언어 변경에 따른 홈 캐시 무효화 실패: %s", it) }
+    ) {
+        invalidateHomeMovieCacheUseCase()
+    }
+
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launchWithErrorHandler(
         onError = {
             Timber.e("테마 모드를 %s로 설정 실패", mode)

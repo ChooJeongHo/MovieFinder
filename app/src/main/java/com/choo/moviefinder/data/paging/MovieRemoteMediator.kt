@@ -5,6 +5,7 @@ import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
+import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.core.util.NetworkMonitor
 import com.choo.moviefinder.core.util.withExponentialBackoff
 import com.choo.moviefinder.data.local.MovieDatabase
@@ -25,7 +26,8 @@ class MovieRemoteMediator(
     private val cachedMovieDao: CachedMovieDao,
     private val remoteKeyDao: RemoteKeyDao,
     private val category: String,
-    private val networkMonitor: NetworkMonitor
+    private val networkMonitor: NetworkMonitor,
+    private val appLanguageProvider: AppLanguageProvider
 ) : RemoteMediator<Int, CachedMovieEntity>() {
 
     // 캐시 만료 여부를 확인하여 초기 새로고침 필요 여부 결정
@@ -99,11 +101,12 @@ class MovieRemoteMediator(
         }
     }
 
-    // API 카테고리에 따라 적절한 엔드포인트를 호출한다
+    // API 카테고리에 따라 적절한 엔드포인트를 호출한다 (앱 언어를 따름)
     private suspend fun fetchMovies(page: Int) = withExponentialBackoff {
+        val language = appLanguageProvider.currentApiLanguage()
         when (category) {
-            CATEGORY_NOW_PLAYING -> apiService.getNowPlayingMovies(page)
-            CATEGORY_POPULAR -> apiService.getPopularMovies(page)
+            CATEGORY_NOW_PLAYING -> apiService.getNowPlayingMovies(page, language)
+            CATEGORY_POPULAR -> apiService.getPopularMovies(page, language)
             else -> throw IllegalArgumentException("Unknown category: $category")
         }
     }
