@@ -24,7 +24,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.paging.CombinedLoadStates
-import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.choo.moviefinder.R
@@ -447,28 +446,28 @@ class SearchFragment : Fragment() {
         binding.emptyInitial.layoutEmpty.isVisible = false
         binding.errorView.layoutError.isVisible = false
 
-        when (val refreshState = loadStates.refresh) {
-            is LoadState.Loading -> {
+        when (val pane = resolveSearchResultsPane(loadStates.refresh, loadStates.append, itemCount)) {
+            SearchResultsPane.Loading -> {
                 binding.shimmerView.shimmerLayout.startShimmer()
                 binding.shimmerView.shimmerLayout.isVisible = true
                 binding.composeSearchResults.isVisible = false
                 binding.noResultsSection.isVisible = false
             }
-            is LoadState.NotLoading -> {
+            SearchResultsPane.Results, SearchResultsPane.NoResults -> {
                 binding.shimmerView.shimmerLayout.stopShimmer()
                 binding.shimmerView.shimmerLayout.isVisible = false
-                val isEmpty = itemCount == 0
+                val isEmpty = pane == SearchResultsPane.NoResults
                 binding.noResultsSection.isVisible = isEmpty
                 binding.composeSearchResults.isVisible = !isEmpty
                 if (isEmpty) showWatchHistorySuggestions() else hideWatchHistorySuggestions()
             }
-            is LoadState.Error -> {
+            is SearchResultsPane.Error -> {
                 binding.shimmerView.shimmerLayout.stopShimmer()
                 binding.shimmerView.shimmerLayout.isVisible = false
                 binding.noResultsSection.isVisible = false
                 binding.composeSearchResults.isVisible = false
                 binding.errorView.layoutError.isVisible = true
-                val errorType = ErrorMessageProvider.getErrorType(refreshState.error)
+                val errorType = ErrorMessageProvider.getErrorType(pane.cause)
                 binding.errorView.tvErrorMessage.text =
                     ErrorMessageProvider.getMessage(requireContext(), errorType)
                 binding.errorView.btnRetry.setOnClickListener {

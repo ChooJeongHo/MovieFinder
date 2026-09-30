@@ -120,7 +120,7 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── home/              # HomeFragment, HomeViewModel (3탭, RemoteMediator)
 │   ├── onboarding/        # OnboardingFragment(전체 Compose, ComposeView) + OnboardingScreen/OnboardingPage
 │   ├── person/            # PersonDetailFragment, PersonDetailViewModel
-│   ├── search/            # SearchFragment(XML+ComposeView 2곳), SearchViewModel (필터, SavedStateHandle), SearchComposables.kt
+│   ├── search/            # SearchFragment(XML+ComposeView 2곳), SearchViewModel (필터, SavedStateHandle), SearchComposables.kt, SearchResultsPane.kt (결과 영역 판정)
 │   ├── settings/          # SettingsFragment, SettingsViewModel (테마/캐시/목표/백업/TMDB 계정 연동)
 │   ├── stats/             # StatsFragment, StatsViewModel (통계 카드 9개)
 │   └── widget/            # PopularMoviesWidget(RemoteViewsService/Factory) + BoxOfficeWidget(Glance, 2x2) — 위젯 2종이 서로 다른 기술 스택
@@ -190,7 +190,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (916개)
+### 유닛 테스트 (931개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -274,8 +274,14 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   차단(`exit 2`)하고, 판단이 필요한 리뷰는 정보 제공(`allow` + `additionalContext`)으로 남긴다.
 - Bash 권한은 `--allowedTools "Read,Grep,Glob,Bash(./gradlew :app:compileDebugKotlin:*)"`로 제한 —
   프롬프트 규칙이 깨져도 툴 레이어에서 이중으로 막도록 함.
-- **알려진 제약**: 훅은 세션 시작 시에만 로드된다. 훅 설정/스크립트를 수정하면 Claude Code를 재시작해야
-  반영된다. macOS 기본 환경엔 GNU `timeout`이 없어 순수 bash(`sleep N && kill`)로 타임아웃을 구현함.
+- **알려진 제약**: 훅 *설정*(`settings.json`)은 세션 시작 시에만 로드되어 수정하면 Claude Code를 재시작해야
+  반영된다(스크립트 파일 자체는 매 호출마다 새로 실행되므로 수정이 재시작 없이 바로 반영됨 — 2026-09-30 확인).
+  macOS 기본 환경엔 GNU `timeout`이 없어 순수 bash(`sleep N && kill`)로 타임아웃을 구현함.
+- **워처 stdio 누수(2026-09-30 수정)**: 타임아웃 워처 `( sleep 240; kill ... ) &`가 훅의 stdout(하네스로 가는 파이프)을
+  물려받고, `kill $watcher_pid`는 서브셸만 죽여 자식 `sleep 240`이 고아로 남아 파이프를 최대 240초 붙잡았다. 그러면
+  하네스가 `stdio went quiet before end-of-stream`으로 훅 출력을 거부해 `domain/`·`*ViewModel.kt` 편집이 전부 막혔다
+  (리뷰 대상이 아닌 파일은 워처를 띄우기 전에 종료해 영향 없음). 워처에 `>/dev/null 2>&1`을 붙이고 `stop_watcher`가
+  `pkill -P`로 자식까지 정리하도록 고쳤다. 같은 패턴(백그라운드 서브셸 + 물려받은 stdout)은 다른 훅에도 주의할 것.
 
 ### Stop 테스트 페어링 강제 훅
 - 위치: `.claude/hooks/stop-test-coverage-guard.sh` + `.claude/hooks/lib/check_test_pairing.py`,
@@ -432,11 +438,25 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
       한계: 표시 제목이 한국어→영어로 약 0.5초 뒤 교체됨, 포스터는 ko-KR 기준, 검색 매칭/정렬은 ko-KR 기준.
     - **KMRB 필터 자체의 한계(언어와 무관, 미해결)**: 항목당 순차 호출(콜드 0.4~0.55초/건)이고 `PagingData.filter`가
       페이지 단위로 원자적이라 첫 결과까지 한 페이지(20건) 분량이 걸린다(약 10~11초). 통과 항목이 적은 조합은 Paging이
-      페이지를 연쇄 로드한다(실측: knight + 15+ → 15페이지·307건·138초). 반대로 통과 0건이면 UI가 접근할 항목이 없어
-      다음 페이지가 로드되지 않는다(`dragon`+12세이상, `night`+전체관람가에서 "검색 결과 없음", 뒤 페이지 미조회 —
-      095일차 "페이지 기아"가 실제 재현됨). 근본 해결은 필터를 PagingSource 레벨(작은 청크 + 목표 매칭 수 충족까지
-      로드)로 옮기는 별도 리팩터이며 아직 하지 않았다. 참고: `initialLoadSize=60`은 `BaseMoviePagingSource.load()`가
-      `params.loadSize`를 무시하므로 실제 첫 로드는 TMDB 1페이지(20건)이다("60건"은 연쇄 로드 결과).
+      페이지를 연쇄 로드한다(실측: knight + 15+ → 15페이지·307건·138초, night+전체관람가 → 13페이지·KMRB 215건·94초).
+      이 연쇄에는 상한이 없다. 근본 해결(필터를 PagingSource 레벨로 옮겨 청크·상한 도입)은 아직 하지 않았다.
+      참고: `initialLoadSize=60`은 `BaseMoviePagingSource.load()`가 `params.loadSize`를 무시하므로 실제 첫 로드는
+      TMDB 1페이지(20건)이다("60건"은 연쇄 로드 결과).
+    - **"페이지 기아" 해결(2026-09-30, JVM 검증만 — 실기기 재검증 미완)**: 예전엔 등급 필터가 `cachedIn` *뒤*(`combine`)에
+      결합돼서, **2페이지 이상이 이미 로드된 상태에서 등급 칩을 골라 전부 걸러지면 Paging이 이어 로드를 멈췄다**(1페이지만
+      로드된 경우엔 초기 힌트(뒤쪽 표시 항목 0 < prefetchDistance)로 스스로 이어 로드해 재현되지 않음). 이제
+      `SearchViewModel.searchResults`는 `combine(searchParams, 등급)` → `filter`(검색어·장르 둘 다 비면 통과 못 함) →
+      `flatMapLatest { 검색 + 필터 }` → `cachedIn` 순서라 **등급이 바뀌면 재검색(새 Pager)** 하고 초기 로드 힌트부터 다시
+      시작한다. `PagingEmptyStateRegressionTest`(6개, 2페이지 선로드 포함)와 `SearchViewModelTest`("재검색 정확히 1회 +
+      새 등급이 필터에 전달", "검색어 없이 등급만 바꾸면 검색 없음")가 고정한다 — **필터를 다시 cachedIn 뒤로 옮기지 말 것.**
+      대가: 등급 변경마다 TMDB 재검색 + 목록 refresh(shimmer). KMRB 등급 조회는 Room 캐시라 재조회 비용은 작다.
+      실기기(SM-S926N) 재검증은 KMRB HTTP 429(당일 호출 약 600건+) 때문에 한도 초기화 후로 미뤘다.
+    - 116일차에 본 "검색 결과 없음"은 **로딩 중 빈 상태 오판**이었다: `SearchFragment.handleLoadStates`가 `refresh=NotLoading &&
+      itemCount==0`이면 append를 안 보고 바로 "결과 없음"을 띄웠다(`night`+전체관람가엔 실제 결과가 있었다). 이제
+      `resolveSearchResultsPane`(`SearchResultsPane.kt`)이 `append.endOfPaginationReached` 이후에만 "결과 없음"을,
+      그 전엔 shimmer를, append 실패 시엔 오류 화면(재시도)을 보인다. 이 판정은 "Paging이 빈 페이지 뒤에도 자동으로
+      이어 로드한다"는 전제에 기대므로 전제가 깨지면 오판 대신 무한 shimmer가 된다(위 구조에선 2페이지 선로드에서도 전제 유지).
+      대가: 통과가 뒤 페이지에만 있는 조합은 콜드 캐시에서 첫 결과까지 shimmer가 길다(night+전체관람가 약 86초).
     - 박스오피스 매칭(`MatchBoxOfficeWithTmdbUseCase`)의 TMDB 폴백 검색(`searchMoviesOnce`)은 앱 언어와
       무관하게 항상 ko-KR 고정 — KOFIC 영화명(한국어)과의 매칭 정확도 유지 목적. 홈 캐시(`cached_movies`)가
       영어로 바뀌면 박스오피스의 로컬 캐시 우선 매칭(082일차 최적화)이 캐시 미스로 네트워크 폴백에 더 자주

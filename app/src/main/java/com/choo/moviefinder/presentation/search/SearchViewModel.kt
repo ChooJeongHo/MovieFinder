@@ -125,29 +125,32 @@ class SearchViewModel @Inject constructor(
 
     // 타이핑 중 자동 검색: 300ms debounce
     // 명시적 검색 액션: 즉시 실행 (merge)
-    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-    private val baseSearchResults: Flow<PagingData<Movie>> = merge(
+    @OptIn(FlowPreview::class)
+    private val searchParams: Flow<SearchParams> = merge(
         combine(_searchQuery, _selectedYear, _selectedGenres, _sortBy) { query, year, genres, sort ->
             SearchParams(query, year, genres, sort)
         }.debounce(SEARCH_DEBOUNCE_MS).distinctUntilChanged(),
         _immediateSearch
     )
-        .filter { it.query.isNotBlank() || it.genres.isNotEmpty() }
-        .flatMapLatest { params ->
-            if (params.query.isNotBlank()) {
-                searchMoviesUseCase(params.query, params.year)
-            } else {
-                discoverMoviesUseCase(params.genres, params.sort.apiValue, params.year)
-            }
-        }
-        .cachedIn(viewModelScope)
 
-    // 등급 필터는 서버 쿼리가 아닌 결과 후처리이므로 cachedIn 이후에 결합한다 — 등급 변경 시
-    // TMDB 재검색 없이 캐시된 PagingData에 필터만 재적용된다.
+    // 등급 필터는 cachedIn *앞*에 두고, 등급이 바뀌면 재검색한다(새 Pager). 필터를 cachedIn 뒤에 결합하면
+    // 이미 2페이지 이상 로드된 base에 필터가 걸려 전부 걸러질 때 Paging이 이어 로드 힌트를 잃고 멈춘다
+    // (PagingEmptyStateRegressionTest "two pages already loaded"). 새 Pager는 초기 로드 힌트부터 다시 시작한다.
+    // 대가: 등급 변경마다 TMDB 재검색(KMRB 등급은 Room 캐시라 재조회 비용 작음).
+    // filter가 combine 뒤라서 검색어가 빈 상태의 등급 변경은 재검색을 일으키지 않는다.
+    @OptIn(ExperimentalCoroutinesApi::class)
     val searchResults: Flow<PagingData<Movie>> =
-        combine(baseSearchResults, _selectedRatingGrade) { pagingData, grade ->
-            filterMoviesByKoreanRatingUseCase(pagingData, grade)
-        }
+        combine(searchParams, _selectedRatingGrade) { params, grade -> params to grade }
+            .filter { (params, _) -> params.query.isNotBlank() || params.genres.isNotEmpty() }
+            .flatMapLatest { (params, grade) ->
+                val results = if (params.query.isNotBlank()) {
+                    searchMoviesUseCase(params.query, params.year)
+                } else {
+                    discoverMoviesUseCase(params.genres, params.sort.apiValue, params.year)
+                }
+                results.map { filterMoviesByKoreanRatingUseCase(it, grade) }
+            }
+            .cachedIn(viewModelScope)
 
     init {
         loadGenres()

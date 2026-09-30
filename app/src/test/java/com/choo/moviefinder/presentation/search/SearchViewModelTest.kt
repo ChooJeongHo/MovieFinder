@@ -429,23 +429,23 @@ class SearchViewModelTest : CoroutineTestBase() {
         assertEquals(KoreanRatingGrade.FIFTEEN_AND_UP, viewModel.selectedRatingGrade.value)
     }
 
-    // 회귀 방지 핵심: 등급 필터만 변경해도 TMDB 재검색이 발생하면 안 된다 (cachedIn 이후 결합 검증)
+    // 회귀 방지 핵심: 필터는 cachedIn 앞에 있어야 하므로 등급을 바꾸면 재검색(새 Pager)이 일어나고, 새 등급이 필터에 전달된다.
+    // cachedIn 뒤에 결합하면 2페이지 선로드 후 전부 걸러질 때 이어 로드가 멈춘다(PagingEmptyStateRegressionTest 참고).
     @Test
-    fun `changing rating grade after search does not trigger a new TMDB search`() = runTest {
+    fun `changing rating grade after search re-searches once and filters with the new grade`() = runTest {
         val movies = listOf(Movie(1, "테스트 영화", null, null, "overview", "2024-01-01", 7.5, 100))
-        coEvery { saveSearchQueryUseCase(any()) } returns Unit
         coEvery { searchMoviesUseCase("avengers", null) } returns flowOf(PagingData.from(movies))
 
         val viewModel = createViewModel()
 
         viewModel.searchResults.test {
-            // 컬렉터가 실제로 구독을 마칠 때까지 스케줄러를 먼저 비운다 — 그렇지 않으면
-            // onSearch()의 _immediateSearch.tryEmit()이 구독 이전에 발생해 유실된다
-            // (replay=0 SharedFlow).
-            runCurrent()
-            viewModel.onSearch("avengers")
+            // 실제 사용 흐름대로 타이핑(debounce)으로 검색한다. onSearch()만 단독 호출하면 _searchQuery가 비어 있어
+            // 뒤늦게 도착하는 debounce의 빈 초기 파라미터가 '최신 파라미터'를 덮어쓴다(앱은 항상 쿼리를 먼저 갱신함).
+            viewModel.onSearchQueryChange("avengers")
             advanceUntilIdle()
             awaitItem()
+            coVerify(exactly = 1) { searchMoviesUseCase(any(), any()) }
+            coVerify(exactly = 1) { filterMoviesByKoreanRatingUseCase(any(), null) }
 
             viewModel.onRatingGradeSelected(KoreanRatingGrade.FIFTEEN_AND_UP)
             advanceUntilIdle()
@@ -454,7 +454,28 @@ class SearchViewModelTest : CoroutineTestBase() {
             cancelAndIgnoreRemainingEvents()
         }
 
-        coVerify(exactly = 1) { searchMoviesUseCase(any(), any()) }
+        coVerify(exactly = 2) { searchMoviesUseCase("avengers", null) }
+        coVerify(exactly = 1) { filterMoviesByKoreanRatingUseCase(any(), KoreanRatingGrade.FIFTEEN_AND_UP) }
+    }
+
+    // 검색어/장르가 없는 상태의 등급 변경은 검색할 대상이 없으므로 재검색(=KMRB/TMDB 호출)을 일으키면 안 된다
+    @Test
+    fun `changing rating grade without a query or genres does not trigger a search`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.searchResults.test {
+            runCurrent()
+            advanceUntilIdle() // debounce된 초기 빈 파라미터가 filter에서 걸러질 시간을 준다
+
+            viewModel.onRatingGradeSelected(KoreanRatingGrade.FIFTEEN_AND_UP)
+            advanceUntilIdle()
+
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 0) { searchMoviesUseCase(any(), any()) }
+        coVerify(exactly = 0) { discoverMoviesUseCase(any(), any(), any()) }
     }
 
     // 표시 제목은 목록(ko-KR title)이 아닌 UseCase 결과를 그대로 노출해야 한다 — 필터는 ko-KR title에 의존하므로
