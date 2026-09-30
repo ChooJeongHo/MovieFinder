@@ -450,12 +450,13 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
       시작한다. `PagingEmptyStateRegressionTest`(6개, 2페이지 선로드 포함)와 `SearchViewModelTest`("재검색 정확히 1회 +
       새 등급이 필터에 전달", "검색어 없이 등급만 바꾸면 검색 없음")가 고정한다 — **필터를 다시 cachedIn 뒤로 옮기지 말 것.**
       대가: 등급 변경마다 TMDB 재검색 + 목록 refresh(shimmer). KMRB 등급 조회는 Room 캐시라 재조회 비용은 작다.
-      실기기(SM-S926N, 2026-09-30) 부분 검증: `zombie` 2페이지 선로드 후 `전체관람가` 선택 시 TMDB 1·2페이지 재요청(재검색) 뒤
-      3→18페이지 연쇄 로드를 관측했다(옛 구조는 3페이지 요청 자체가 없었음). 단 KMRB가 여전히 429(322건 전부)라 필터를 통과한
-      결과 화면은 못 봤다 — 통과 항목이 있는 조합으로 한도 초기화 후 재확인 필요. 참고: `GetKoreanRatingUseCase`가 429 같은 실패를
+      실기기(SM-S926N) 검증 완료(2026-09-30 부분, 2026-10-01 완료): `zombie` 2페이지 선로드 후 등급 칩 선택 시 TMDB 1페이지부터
+      재요청(재검색) 뒤 이어 로드가 계속된다(옛 구조는 3페이지 요청 자체가 없었음). 10/01 KMRB 429가 풀린 뒤 `15세이상` 선택으로
+      **필터를 통과한 결과가 실제로 화면에 표시됨**(약 10초 시점 shimmer → 48초 시점 결과, KMRB 118건 전부 200·약 0.4~0.5초/건,
+      TMDB 1→6페이지) — 첫 결과가 뜬 정확한 시점은 45초 상한 때문에 미측정. 참고: `GetKoreanRatingUseCase`가 429 같은 실패를
       null로 흡수해 필터에선 "전부 걸러짐"이 되므로, **KMRB 장애/한도 소진 중 등급 칩을 고르면 전 페이지를 연쇄 로드하며 KMRB를
-      계속 호출한다**(약 20초에 323건, 칩을 `전체`로 되돌리면 즉시 멈춤). 캐시 오염은 없다(Repository가 예외 시 upsert 전에 전파).
-      연쇄에 상한이 없다는 기존 한계의 증폭이며 이번 변경 이전부터 있던 동작이다.
+      계속 호출한다**(9/30 약 20초에 323건, 칩을 `전체`로 되돌리면 즉시 멈춤). 캐시 오염은 없다(Repository가 예외 시 upsert 전에
+      전파). 연쇄에 상한이 없다는 기존 한계의 증폭이며 이번 변경 이전부터 있던 동작이다(미해결).
     - 116일차에 본 "검색 결과 없음"은 **로딩 중 빈 상태 오판**이었다: `SearchFragment.handleLoadStates`가 `refresh=NotLoading &&
       itemCount==0`이면 append를 안 보고 바로 "결과 없음"을 띄웠다(`night`+전체관람가엔 실제 결과가 있었다). 이제
       `resolveSearchResultsPane`(`SearchResultsPane.kt`)이 `append.endOfPaginationReached` 이후에만 "결과 없음"을,
