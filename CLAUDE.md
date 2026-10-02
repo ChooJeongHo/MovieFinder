@@ -190,7 +190,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (931개)
+### 유닛 테스트 (941개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -463,6 +463,9 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
       그 전엔 shimmer를, append 실패 시엔 오류 화면(재시도)을 보인다. 이 판정은 "Paging이 빈 페이지 뒤에도 자동으로
       이어 로드한다"는 전제에 기대므로 전제가 깨지면 오판 대신 무한 shimmer가 된다(위 구조에선 2페이지 선로드에서도 전제 유지).
       대가: 통과가 뒤 페이지에만 있는 조합은 콜드 캐시에서 첫 결과까지 shimmer가 길다(night+전체관람가 약 86초).
+    - **즉시 검색/debounce 중복 호출 제거(2026-10-02, 실기기 검증 완료)**: `searchParams`의 `distinctUntilChanged`를 merge *뒤*로
+      옮기고 타이핑 경로도 `trim()` — 엔터·칩 클릭·장르 확인이 자동 검색과 같은 조건을 두 번 내던 것이 2건→1건(실측).
+      같은 조건으로 이미 검색한 뒤의 엔터는 재검색하지 않는다(재시도는 화면 버튼). **dedupe를 가지별로 되돌리지 말 것.**
     - 박스오피스 매칭(`MatchBoxOfficeWithTmdbUseCase`)의 TMDB 폴백 검색(`searchMoviesOnce`)은 앱 언어와
       무관하게 항상 ko-KR 고정 — KOFIC 영화명(한국어)과의 매칭 정확도 유지 목적. 홈 캐시(`cached_movies`)가
       영어로 바뀌면 박스오피스의 로컬 캐시 우선 매칭(082일차 최적화)이 캐시 미스로 네트워크 폴백에 더 자주
@@ -471,4 +474,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
       `SettingsFragment`에서 언어 변경 직후 호출)해 이전 언어 데이터가 TTL(1시간) 동안 남지 않도록 함.
     - 즐겨찾기/워치리스트/시청기록에 이미 저장된 제목은 추가 시점의 스냅샷이라 언어 변경과 무관하게 소급
       갱신되지 않음(설계상 의도, 범위 밖).
+- **검색 화면 "최근 검색어" 목록이 비어 보이는 현상(2026-10-02 관찰, 원인 미조사, 미해결)**: 입력창 X로 검색어를 지운 직후나
+  최근 검색어 항목을 삭제한 직후에 "최근 검색어" 제목만 보이고 목록이 비어 있다가, 다른 탭에 갔다 돌아오면 복구된다(실기기
+  SM-S926N, UI 덤프·스크린샷으로 확인). 중복 검색 수정 *이전* 빌드에서도 같은 현상이 나왔으므로 **그 수정과 무관**하다.
 - **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)
