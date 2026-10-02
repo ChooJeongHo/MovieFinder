@@ -25,6 +25,8 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -476,6 +478,194 @@ class SearchViewModelTest : CoroutineTestBase() {
 
         coVerify(exactly = 0) { searchMoviesUseCase(any(), any()) }
         coVerify(exactly = 0) { discoverMoviesUseCase(any(), any(), any()) }
+    }
+
+    // ── 즉시 검색과 debounce 검색의 중복 방지 ──────────────────────────────────────────────────────────
+    // 두 경로(타이핑 debounce / 엔터·칩 클릭 즉시)가 같은 조건을 연달아 내보내면 flatMapLatest가 새 Pager를 두 번
+    // 만들어 목록 새로고침과 TMDB/KMRB 호출이 중복된다. dedupe는 merge 뒤(합류 지점)에 있어야 가지 사이의 중복까지
+    // 막히고, 검색어는 두 경로 모두 trim해서 비교해야 "batman "과 "batman"이 같은 검색으로 취급된다.
+    // 아래 호출 순서는 SearchFragment의 실제 핸들러(칩 클릭 / IME 검색 / 장르 다이얼로그 확인)를 그대로 따른다.
+
+    private val dedupeFixtureMovies = listOf(Movie(1, "테스트 영화", null, null, "overview", "2024-01-01", 7.5, 100))
+
+    private fun stubSearchAndDiscover() {
+        coEvery { searchMoviesUseCase(any(), any()) } returns flowOf(PagingData.from(dedupeFixtureMovies))
+        coEvery { discoverMoviesUseCase(any(), any(), any()) } returns flowOf(PagingData.from(dedupeFixtureMovies))
+        coEvery { saveSearchQueryUseCase(any()) } returns Unit
+    }
+
+    // searchResults를 구독해야 검색 파이프라인이 돈다. 구독 직후(초기 debounce 이전)에서 block을 실행한다.
+    private suspend fun TestScope.collectingSearchResults(
+        viewModel: SearchViewModel,
+        block: suspend TestScope.() -> Unit
+    ) {
+        val scope = this
+        viewModel.searchResults.test {
+            scope.runCurrent()
+            scope.block()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `chip click searches once even though query change and immediate search both fire`() = runTest {
+        stubSearchAndDiscover()
+        val viewModel = createViewModel()
+
+        collectingSearchResults(viewModel) {
+            viewModel.onSearchQueryChange("batman")
+            viewModel.onSearch("batman")
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 1) { searchMoviesUseCase(any(), any()) }
+        coVerify(exactly = 1) { searchMoviesUseCase("batman", null) }
+    }
+
+    @Test
+    fun `enter within the debounce window searches once`() = runTest {
+        stubSearchAndDiscover()
+        val viewModel = createViewModel()
+
+        collectingSearchResults(viewModel) {
+            viewModel.onSearchQueryChange("batman")
+            advanceTimeBy(100) // debounce(300ms) 만료 전
+            viewModel.onSearch("batman")
+            advanceUntilIdle() // 뒤늦게 만료되는 debounce가 같은 조건을 또 내보내는 구간
+        }
+
+        coVerify(exactly = 1) { searchMoviesUseCase(any(), any()) }
+    }
+
+    @Test
+    fun `enter after the debounce search already fired searches once`() = runTest {
+        stubSearchAndDiscover()
+        val viewModel = createViewModel()
+
+        collectingSearchResults(viewModel) {
+            viewModel.onSearchQueryChange("batman")
+            advanceTimeBy(1_000) // 자동 검색이 이미 발화
+            viewModel.onSearch("batman")
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 1) { searchMoviesUseCase(any(), any()) }
+    }
+
+    @Test
+    fun `query with trailing space is searched once and always trimmed`() = runTest {
+        stubSearchAndDiscover()
+        val viewModel = createViewModel()
+
+        collectingSearchResults(viewModel) {
+            viewModel.onSearchQueryChange("batman ")
+            advanceTimeBy(1_000)
+            viewModel.onSearch("batman ")
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 1) { searchMoviesUseCase(any(), any()) }
+        coVerify(exactly = 1) { searchMoviesUseCase("batman", null) }
+    }
+
+    @Test
+    fun `genre dialog confirm with blank query discovers once`() = runTest {
+        stubSearchAndDiscover()
+        val viewModel = createViewModel()
+
+        collectingSearchResults(viewModel) {
+            viewModel.onGenresSelected(setOf(28))
+            viewModel.onDiscoverWithFilters()
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 1) { discoverMoviesUseCase(any(), any(), any()) }
+        coVerify(exactly = 1) { discoverMoviesUseCase(setOf(28), any(), any()) }
+    }
+
+    // 아래 대조군: 중복 제거가 과해서 정당한 재검색까지 삼키면 안 된다
+
+    @Test
+    fun `different queries in a row still search each time`() = runTest {
+        stubSearchAndDiscover()
+        val viewModel = createViewModel()
+
+        collectingSearchResults(viewModel) {
+            viewModel.onSearchQueryChange("batman")
+            advanceUntilIdle()
+            viewModel.onSearchQueryChange("superman")
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 1) { searchMoviesUseCase("batman", null) }
+        coVerify(exactly = 1) { searchMoviesUseCase("superman", null) }
+    }
+
+    @Test
+    fun `same query typed again after being cleared searches again`() = runTest {
+        stubSearchAndDiscover()
+        val viewModel = createViewModel()
+
+        collectingSearchResults(viewModel) {
+            viewModel.onSearchQueryChange("batman")
+            advanceUntilIdle()
+            viewModel.onSearchQueryChange("")
+            advanceUntilIdle()
+            viewModel.onSearchQueryChange("batman")
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 2) { searchMoviesUseCase("batman", null) }
+    }
+
+    @Test
+    fun `changing the year after a search re-searches with the new year`() = runTest {
+        stubSearchAndDiscover()
+        val viewModel = createViewModel()
+
+        collectingSearchResults(viewModel) {
+            viewModel.onSearchQueryChange("batman")
+            advanceUntilIdle()
+            viewModel.onYearSelected(2022)
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 1) { searchMoviesUseCase("batman", null) }
+        coVerify(exactly = 1) { searchMoviesUseCase("batman", 2022) }
+    }
+
+    @Test
+    fun `enter with a different query than the auto search runs both searches`() = runTest {
+        stubSearchAndDiscover()
+        val viewModel = createViewModel()
+
+        collectingSearchResults(viewModel) {
+            viewModel.onSearchQueryChange("bat")
+            advanceUntilIdle()
+            viewModel.onSearchQueryChange("batman")
+            viewModel.onSearch("batman")
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 1) { searchMoviesUseCase("bat", null) }
+        coVerify(exactly = 1) { searchMoviesUseCase("batman", null) }
+    }
+
+    // 엔터가 재검색을 일으키지 않더라도 최근 검색어 저장은 검색 emit과 분리돼 있어 그대로 동작해야 한다
+    @Test
+    fun `enter on an already searched query still saves it to recent searches`() = runTest {
+        stubSearchAndDiscover()
+        val viewModel = createViewModel()
+
+        collectingSearchResults(viewModel) {
+            viewModel.onSearchQueryChange("batman")
+            advanceUntilIdle()
+            viewModel.onSearch("batman")
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 1) { searchMoviesUseCase(any(), any()) }
+        coVerify(exactly = 1) { saveSearchQueryUseCase("batman") }
     }
 
     // 표시 제목은 목록(ko-KR title)이 아닌 UseCase 결과를 그대로 노출해야 한다 — 필터는 ko-KR title에 의존하므로

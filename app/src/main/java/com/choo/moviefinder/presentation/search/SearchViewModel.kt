@@ -125,13 +125,17 @@ class SearchViewModel @Inject constructor(
 
     // 타이핑 중 자동 검색: 300ms debounce
     // 명시적 검색 액션: 즉시 실행 (merge)
+    // 두 경로가 같은 조건을 연달아 내보내면(칩 클릭, 300ms 안의 엔터, 자동 검색 뒤 엔터 등) 새 Pager가 두 번
+    // 만들어져 목록 새로고침과 TMDB/KMRB 호출이 중복된다. distinctUntilChanged는 가지마다 따로 두면 가지 사이의
+    // 중복을 못 막으므로 합류 지점(merge 뒤)에 한 번만 둔다. 검색어는 두 경로 모두 trim해서 비교한다
+    // ("batman "과 "batman"은 같은 검색). 대가: 이미 같은 조건으로 검색한 뒤의 엔터는 재검색하지 않는다.
     @OptIn(FlowPreview::class)
     private val searchParams: Flow<SearchParams> = merge(
         combine(_searchQuery, _selectedYear, _selectedGenres, _sortBy) { query, year, genres, sort ->
-            SearchParams(query, year, genres, sort)
-        }.debounce(SEARCH_DEBOUNCE_MS).distinctUntilChanged(),
+            SearchParams(query.trim(), year, genres, sort)
+        }.debounce(SEARCH_DEBOUNCE_MS),
         _immediateSearch
-    )
+    ).distinctUntilChanged()
 
     // 등급 필터는 cachedIn *앞*에 두고, 등급이 바뀌면 재검색한다(새 Pager). 필터를 cachedIn 뒤에 결합하면
     // 이미 2페이지 이상 로드된 base에 필터가 걸려 전부 걸러질 때 Paging이 이어 로드 힌트를 잃고 멈춘다
