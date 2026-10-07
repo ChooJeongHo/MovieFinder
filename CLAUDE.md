@@ -6,7 +6,7 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ## 기술 스택
 
 ### 빌드 환경
-- **AGP**: 9.4.0 (Android Gradle Plugin, Kotlin 2.3.21 내장)
+- **AGP**: 9.4.1 (Android Gradle Plugin, Kotlin 2.3.21 내장)
 - **Gradle**: 9.7.1
 - **compileSdk**: 37 (Android 17)
 - **minSdk**: 24 / **targetSdk**: 36
@@ -307,7 +307,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `android.disallowKotlinSourceSets=false` 필요 (KSP 호환)
 - `Theme.MaterialComponents.DayNight.NoActionBar` 사용
 - Hilt 2.59.2 이상 필요 (2.59.2 기준 Kotlin 2.4.0 미지원 — kotlin-metadata-jvm max 2.3.0)
-- **Dependabot 호환성**: core-ktx 1.19.0은 compileSdk 37을 요구했고 compileSdk가 37로 올라가면서 해소되어 현재 적용 중; Kotlin 2.4.0은 Hilt 호환 이슈로 여전히 보류; Kotlin 2.4.x(2.4.10 포함)는 현재 AGP/Lint에서도 `Can't initialize detector com.android.tools.lint.checks.InferredThreadDetector` 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패함 (PR #92, #110에서 확인, 2026-07-27) — Hilt 이슈와 별개로 이 조합 자체가 보류 대상. 이후 재확인 필요 시 실제 lintAnalyzeDebug 재실행으로 검증할 것(이 오류가 AGP 9.4.0에서도 재현되는지는 미확인)
+- **Dependabot 호환성**: core-ktx 1.19.0은 compileSdk 37을 요구했고 compileSdk가 37로 올라가면서 해소되어 현재 적용 중; Kotlin 2.4.0은 Hilt 호환 이슈로 여전히 보류; Kotlin 2.4.x(2.4.10·2.4.20 포함)는 현재 AGP/Lint에서도 `Can't initialize detector com.android.tools.lint.checks.InferredThreadDetector` 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패함 (PR #92, #110에서 확인, 2026-07-27) — Hilt 이슈와 별개로 이 조합 자체가 보류 대상. 이후 재확인 필요 시 실제 lintAnalyzeDebug 재실행으로 검증할 것(AGP 9.4.1 + Kotlin 2.4.20에서도 동일 오류 재현 확인: PR #115, 2026-09-28 CI. AGP 9.4.1이 최신 정식판이라(9.5.0은 알파뿐, 2026-10-05) AGP 업그레이드로는 못 푼다 — 정식 AGP 신버전이 나오면 그때 재검증)
 
 ### Navigation
 - `nav_graph.xml`에 destination + argument + deepLink 정의

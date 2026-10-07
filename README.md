@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![minSdk](https://img.shields.io/badge/minSdk-24-brightgreen.svg)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF.svg?logo=kotlin&logoColor=white)
-![AGP](https://img.shields.io/badge/AGP-9.4.0-green.svg)
+![AGP](https://img.shields.io/badge/AGP-9.4.1-green.svg)
 
 Clean Architecture + MVVM 패턴 기반으로, 오프라인 캐시, 다크 모드, 페이징, 딥링크 등 실무 수준의 기능을 구현했습니다.
 
@@ -41,7 +41,7 @@ Clean Architecture + MVVM 패턴 기반으로, 오프라인 캐시, 다크 모�
 | Category | Stack |
 |----------|-------|
 | Language | Kotlin 2.3.21 |
-| Build | AGP 9.4.0, Gradle 9.7.1, KSP 2.3.12 |
+| Build | AGP 9.4.1, Gradle 9.7.1, KSP 2.3.12 |
 | UI | XML Layouts + ViewBinding (대부분 화면), Jetpack Compose(검색 결과 화면 일부 + 온보딩 화면), Jetpack Glance(박스오피스 위젯), Material Components 1.14.0 |
 | Architecture | Clean Architecture, MVVM |
 | DI | Hilt 2.60.1 |
