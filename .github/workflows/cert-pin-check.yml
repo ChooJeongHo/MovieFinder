@@ -76,12 +76,42 @@ jobs:
             body += 'Update certificate pins in `NetworkModule.kt` and/or `PopularMoviesRemoteViewsFactory.kt`.\n';
             body += 'See CLAUDE.md for the openssl command to get new pin hashes.\n';
 
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '🔒 Certificate Pin Mismatch Detected',
-              body: body,
-              labels: ['security', 'bug']
+            const { owner, repo } = context.repo;
+            const title = '🔒 Certificate Pin Mismatch Detected';
+
+            // 같은 제목의 열린 이슈가 있으면 새로 만들지 않는다 (매주 월요일 중복 생성 방지)
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+            const existing = openIssues.find(i => !i.pull_request && i.title === title);
+
+            if (!existing) {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body,
+                labels: ['security', 'bug']
+              });
+              return;
+            }
+
+            // 상태 표가 그대로면 아무것도 하지 않는다.
+            // 다른 서버가 새로 깨졌다면 열린 이슈에 묻히지 않도록 본문을 갱신하고 코멘트로 알린다.
+            const normalize = s => (s || '').replace(/\r\n/g, '\n').trim();
+            if (normalize(existing.body) === normalize(body)) {
+              core.info(`Issue #${existing.number} is already open with the same status; skipping.`);
+              return;
+            }
+            await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: existing.number,
+              body: '핀 상태가 변경되었습니다.\n\n' + body
             });
 
       - name: Summary
