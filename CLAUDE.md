@@ -344,6 +344,11 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - 위젯 OkHttp 싱글턴에도 CertificatePinner 적용 (Hilt 미사용)
 - `cert-pin-check.yml`은 OkHttp처럼 체인 중 하나라도 코드 핀과 일치하면 정상. `PIN_IMAGE_LEAF`는 LE 갱신마다 죽어서 중간 핀이 지탱
 
+### 디버그 로그 키 마스킹 (2026-10-07, 실기기 SM-S926N 검증)
+- 쿼리로 나가는 비밀값(`api_key`/`key`/`serviceKey`/`session_id`)은 `SecretQueryParams` 상수로만 이름을 쓴다 — 주입 인터셉터·`@Query`와 `addDebugLogging()`의 `redactQueryParams`가 같은 상수를 공유해야 마스킹이 조용히 풀리지 않는다. **새 쿼리 비밀값을 추가하면 `ALL`에도 넣을 것.**
+- **인터셉터 순서를 바꿔도 안 막힌다**: `HttpLoggingInterceptor`의 응답 줄은 키가 주입된 최종 URL(`response.request.url`)을 찍어, 로깅을 키 주입 앞에 둔 TMDB v3도 응답 줄에서 노출됐다. `DebugEventListener.callFailed`는 원본 URL이라 주입 키는 없지만 `@Query`로 붙는 `session_id`는 있다(별도 `redactSecrets()`).
+- 테스트 `NetworkLogRedactionTest`(실제 `build*OkHttpClient` + 로컬 HttpServer, `testDebugUnitTest` 전용 — release는 로깅이 no-op이라 `assumeTrue`로 건너뜀). release 로깅 부재는 `src/release` no-op + `debugImplementation`으로 유지.
+
 ### 네트워크 복원력
 - **ExponentialBackoff**: `withExponentialBackoff()` (1s→2s→4s, CancellationException 안전)
 - **RateLimiter**: 재시도 버튼 2초 쿨다운 (`AtomicLong.compareAndSet`)

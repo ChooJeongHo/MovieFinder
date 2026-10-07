@@ -1,5 +1,6 @@
 package com.choo.moviefinder.data.remote.api
 
+import com.choo.moviefinder.core.util.SecretQueryParams
 import com.choo.moviefinder.data.remote.dto.RatingRequest
 import com.choo.moviefinder.data.remote.dto.RatingResponse
 import com.choo.moviefinder.data.remote.dto.SessionResponse
@@ -19,7 +20,7 @@ interface TmdbV3SessionApiService {
     @POST("movie/{movie_id}/rating")
     suspend fun rateMovie(
         @Path("movie_id") movieId: Int,
-        @Query("session_id") sessionId: String,
+        @Query(SecretQueryParams.TMDB_SESSION_ID) sessionId: String,
         @Body body: RatingRequest
     ): RatingResponse
 
@@ -27,6 +28,6 @@ interface TmdbV3SessionApiService {
     @DELETE("movie/{movie_id}/rating")
     suspend fun deleteMovieRating(
         @Path("movie_id") movieId: Int,
-        @Query("session_id") sessionId: String
+        @Query(SecretQueryParams.TMDB_SESSION_ID) sessionId: String
     ): RatingResponse
 }
