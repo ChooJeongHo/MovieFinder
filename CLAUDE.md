@@ -377,6 +377,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   echo | openssl s_client -connect api.themoviedb.org:443 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
   ```
 - 위젯 OkHttp 싱글턴에도 CertificatePinner 적용 (Hilt 미사용)
+- `cert-pin-check.yml`은 OkHttp처럼 체인 중 하나라도 코드 핀과 일치하면 정상. `PIN_IMAGE_LEAF`는 LE 갱신마다 죽어서 중간 핀이 지탱
 
 ### 네트워크 복원력
 - **ExponentialBackoff**: `withExponentialBackoff()` (1s→2s→4s, CancellationException 안전)

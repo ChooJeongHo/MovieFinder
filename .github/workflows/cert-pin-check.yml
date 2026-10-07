@@ -14,47 +14,76 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # 판정 기준은 OkHttp CertificatePinner와 같다: 서버가 보낸 체인(leaf/중간/루트) 중 하나라도
+      # 코드에 선언된 핀과 일치하면 정상. leaf만 비교하면 Let's Encrypt 갱신 때마다 오탐이 난다.
+      - name: Collect certificate chain pins
+        run: |
+          chain_pins() {
+            echo | openssl s_client -connect "$1:443" -servername "$1" -showcerts 2>/dev/null |
+              awk -v cmd="openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64" '
+                /BEGIN CERTIFICATE/ { buf = "" }
+                { buf = buf $0 "\n" }
+                /END CERTIFICATE/ { printf "%s", buf | cmd; close(cmd) }'
+          }
+          # openssl 실패가 pipefail로 이 줄에서 조용히 스크립트를 죽이지 않도록 || true, 실패 여부는 아래에서 파일이 비었는지로 판단한다
+          chain_pins api.themoviedb.org > "$RUNNER_TEMP/api.chain" || true
+          chain_pins image.tmdb.org > "$RUNNER_TEMP/image.chain" || true
+
+          for host in api image; do
+            if [ ! -s "$RUNNER_TEMP/$host.chain" ]; then
+              # 체인을 못 가져온 것은 핀 불일치가 아니라 점검 불가 — 가짜 보안 이슈를 만들지 않고 실행을 실패시킨다
+              echo "::error::$host 서버의 인증서 체인을 가져오지 못했습니다 (네트워크/openssl 오류). 핀 불일치가 아닙니다."
+              exit 1
+            fi
+            echo "$host chain pins:"
+            sed 's#^#  sha256/#' "$RUNNER_TEMP/$host.chain"
+          done
+
       - name: Check api.themoviedb.org pins
         id: check-api
         run: |
-          ACTUAL_PIN=$(echo | openssl s_client -connect api.themoviedb.org:443 -servername api.themoviedb.org 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64)
-          echo "Actual API pin: $ACTUAL_PIN"
+          grep -E 'PIN_API_(LEAF|INTER) *=' app/src/main/java/com/choo/moviefinder/di/NetworkModule.kt \
+            | grep -oE 'sha256/[A-Za-z0-9+/=]+' | sed 's#^sha256/##' > "$RUNNER_TEMP/api.declared"
+          MATCHED=$(grep -Fxf "$RUNNER_TEMP/api.declared" "$RUNNER_TEMP/api.chain" || true)
 
-          if grep -q "sha256/$ACTUAL_PIN" app/src/main/java/com/choo/moviefinder/di/NetworkModule.kt; then
-            echo "✅ api.themoviedb.org pin matches"
+          if [ -n "$MATCHED" ]; then
+            echo "✅ api.themoviedb.org pin matches (체인에서 일치한 핀:)"
+            echo "$MATCHED" | sed 's#^#  sha256/#'
             echo "api_status=ok" >> $GITHUB_OUTPUT
           else
-            echo "❌ api.themoviedb.org pin MISMATCH!"
-            echo "Expected pin not found in NetworkModule.kt"
-            echo "Actual pin: sha256/$ACTUAL_PIN"
+            echo "❌ api.themoviedb.org pin MISMATCH! 체인의 어떤 인증서도 NetworkModule.kt의 PIN_API_*와 일치하지 않음"
             echo "api_status=mismatch" >> $GITHUB_OUTPUT
           fi
 
       - name: Check image.tmdb.org pins
         id: check-image
         run: |
-          ACTUAL_PIN=$(echo | openssl s_client -connect image.tmdb.org:443 -servername image.tmdb.org 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64)
-          echo "Actual Image pin: $ACTUAL_PIN"
+          grep -E 'PIN_IMAGE_(LEAF|INTER) *=' app/src/main/java/com/choo/moviefinder/di/NetworkModule.kt \
+            | grep -oE 'sha256/[A-Za-z0-9+/=]+' | sed 's#^sha256/##' > "$RUNNER_TEMP/image.declared"
+          MATCHED=$(grep -Fxf "$RUNNER_TEMP/image.declared" "$RUNNER_TEMP/image.chain" || true)
 
-          if grep -q "sha256/$ACTUAL_PIN" app/src/main/java/com/choo/moviefinder/di/NetworkModule.kt; then
-            echo "✅ image.tmdb.org pin matches"
+          if [ -n "$MATCHED" ]; then
+            echo "✅ image.tmdb.org pin matches (체인에서 일치한 핀:)"
+            echo "$MATCHED" | sed 's#^#  sha256/#'
             echo "image_status=ok" >> $GITHUB_OUTPUT
           else
-            echo "❌ image.tmdb.org pin MISMATCH!"
-            echo "Actual pin: sha256/$ACTUAL_PIN"
+            echo "❌ image.tmdb.org pin MISMATCH! 체인의 어떤 인증서도 NetworkModule.kt의 PIN_IMAGE_*와 일치하지 않음"
             echo "image_status=mismatch" >> $GITHUB_OUTPUT
           fi
 
       - name: Check widget pins
         id: check-widget
         run: |
-          ACTUAL_PIN=$(echo | openssl s_client -connect api.themoviedb.org:443 -servername api.themoviedb.org 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64)
+          grep -oE 'sha256/[A-Za-z0-9+/=]+' app/src/main/java/com/choo/moviefinder/presentation/widget/PopularMoviesRemoteViewsFactory.kt \
+            | sed 's#^sha256/##' > "$RUNNER_TEMP/widget.declared"
+          MATCHED=$(grep -Fxf "$RUNNER_TEMP/widget.declared" "$RUNNER_TEMP/api.chain" || true)
 
-          if grep -q "sha256/$ACTUAL_PIN" app/src/main/java/com/choo/moviefinder/presentation/widget/PopularMoviesRemoteViewsFactory.kt; then
-            echo "✅ Widget pin matches"
+          if [ -n "$MATCHED" ]; then
+            echo "✅ Widget pin matches (api 체인에서 일치한 핀:)"
+            echo "$MATCHED" | sed 's#^#  sha256/#'
             echo "widget_status=ok" >> $GITHUB_OUTPUT
           else
-            echo "❌ Widget pin MISMATCH!"
+            echo "❌ Widget pin MISMATCH! api 체인의 어떤 인증서도 위젯 파일의 핀과 일치하지 않음"
             echo "widget_status=mismatch" >> $GITHUB_OUTPUT
           fi
 
