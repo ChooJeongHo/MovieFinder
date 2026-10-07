@@ -5,6 +5,7 @@ import com.choo.moviefinder.BuildConfig
 import com.choo.moviefinder.core.util.DebugEventListener
 import com.choo.moviefinder.core.util.AppLanguageProvider
 import com.choo.moviefinder.core.util.NetworkMonitor
+import com.choo.moviefinder.core.util.SecretQueryParams
 import com.choo.moviefinder.core.util.addDebugLogging
 import com.choo.moviefinder.data.remote.api.KmrbApiService
 import com.choo.moviefinder.data.remote.api.KoficApiService
@@ -74,8 +75,13 @@ object NetworkModule {
     // API 통신용 OkHttpClient를 인증서 피닝과 API 키 인터셉터를 포함하여 제공한다
     @Provides
     @Singleton
-    fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
-        val cache = Cache(File(context.cacheDir, "http_cache"), HTTP_CACHE_SIZE)
+    fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient =
+        buildTmdbOkHttpClient(File(context.cacheDir, "http_cache"), BuildConfig.TMDB_API_KEY)
+
+    // 가짜 키로 실제 인터셉터 조립 순서를 테스트할 수 있도록 @Provides 밖으로 분리한 빌더
+    // (Hilt @Provides는 기본 인자를 쓸 수 없다)
+    internal fun buildTmdbOkHttpClient(cacheDir: File, apiKey: String): OkHttpClient {
+        val cache = Cache(cacheDir, HTTP_CACHE_SIZE)
 
         return OkHttpClient.Builder()
             .cache(cache)
@@ -97,7 +103,7 @@ object NetworkModule {
             .addInterceptor { chain ->
                 val original = chain.request()
                 val url = original.url.newBuilder()
-                    .addQueryParameter("api_key", BuildConfig.TMDB_API_KEY)
+                    .addQueryParameter(SecretQueryParams.TMDB_API_KEY, apiKey)
                     .build()
                 chain.proceed(original.newBuilder().url(url).build())
             }
@@ -175,11 +181,14 @@ object NetworkModule {
     @Provides
     @Singleton
     @TmdbV4OkHttpClient
-    fun provideTmdbV4OkHttpClient(): OkHttpClient {
+    fun provideTmdbV4OkHttpClient(): OkHttpClient =
+        buildTmdbV4OkHttpClient(BuildConfig.TMDB_READ_ACCESS_TOKEN)
+
+    internal fun buildTmdbV4OkHttpClient(readAccessToken: String): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .addHeader("Authorization", "Bearer ${BuildConfig.TMDB_READ_ACCESS_TOKEN}")
+                    .addHeader("Authorization", "Bearer $readAccessToken")
                     .addHeader("Content-Type", "application/json")
                     .build()
                 chain.proceed(request)
@@ -223,12 +232,14 @@ object NetworkModule {
     @Provides
     @Singleton
     @KoficOkHttpClient
-    fun provideKoficOkHttpClient(): OkHttpClient {
+    fun provideKoficOkHttpClient(): OkHttpClient = buildKoficOkHttpClient(BuildConfig.KOFIC_API_KEY)
+
+    internal fun buildKoficOkHttpClient(apiKey: String): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val original = chain.request()
                 val url = original.url.newBuilder()
-                    .addQueryParameter("key", BuildConfig.KOFIC_API_KEY)
+                    .addQueryParameter(SecretQueryParams.KOFIC_KEY, apiKey)
                     .build()
                 chain.proceed(original.newBuilder().url(url).build())
             }
@@ -260,12 +271,14 @@ object NetworkModule {
     @Provides
     @Singleton
     @KmrbOkHttpClient
-    fun provideKmrbOkHttpClient(): OkHttpClient {
+    fun provideKmrbOkHttpClient(): OkHttpClient = buildKmrbOkHttpClient(BuildConfig.KMRB_API_KEY)
+
+    internal fun buildKmrbOkHttpClient(apiKey: String): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val original = chain.request()
                 val url = original.url.newBuilder()
-                    .addQueryParameter("serviceKey", BuildConfig.KMRB_API_KEY)
+                    .addQueryParameter(SecretQueryParams.KMRB_SERVICE_KEY, apiKey)
                     .build()
                 chain.proceed(original.newBuilder().url(url).build())
             }
