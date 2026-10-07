@@ -70,25 +70,10 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ```
 app/src/main/java/com/choo/moviefinder/
 ├── core/                  # 공유 유틸리티
-│   ├── startup/
-│   │   ├── TimberInitializer.kt
-│   │   └── StrictModeInitializer.kt
-│   ├── notification/
-│   │   ├── ReleaseNotificationScheduler.kt
-│   │   ├── ReleaseNotificationWorker.kt
-│   │   └── WatchGoalNotificationHelper.kt
-│   └── util/
-│       ├── DateUtils.kt
-│       ├── ImageUrlProvider.kt
-│       ├── ErrorMessageProvider.kt
-│       ├── NetworkMonitor.kt
-│       ├── CoroutineExt.kt
-│       ├── ExponentialBackoff.kt
-│       ├── RateLimiter.kt
-│       ├── DebugHealthCheck.kt
-│       ├── DebugEventListener.kt
-│       ├── FileLoggingTree.kt
-│       └── AnrWatchdog.kt
+│   ├── startup/           # TimberInitializer, StrictModeInitializer
+│   ├── notification/      # ReleaseNotificationScheduler/Worker, WatchGoalNotificationHelper
+│   └── util/              # DateUtils, ImageUrlProvider, ErrorMessageProvider, NetworkMonitor, CoroutineExt,
+│                          # ExponentialBackoff, RateLimiter, DebugHealthCheck/DebugEventListener/FileLoggingTree/AnrWatchdog
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 ├── data/                  # 데이터 레이어
 │   ├── local/
@@ -185,7 +170,7 @@ TMDB_API_KEY=여기에_API_키_입력
 | GET boxoffice/searchWeeklyBoxOfficeList.json | 주간 박스오피스 TOP 10 (`targetDt`, `weekGb`(0=주간/1=주말/2=주중), `itemPerPage`) — 개별 아이템 필드는 일별과 100% 동일, `KoficBoxOfficeItemDto` 공용 |
 
 - TMDB와 완전히 분리된 `@KoficOkHttpClient`/`@KoficRetrofit`/`KoficApiService` (`NetworkModule.kt`) — 별도 baseUrl(`BuildConfig.KOFIC_BASE_URL`), 인증 키를 헤더가 아닌 쿼리 파라미터(`key`)로 주입, TMDB `CertificatePinner` 미적용
-- `MatchBoxOfficeWithTmdbUseCase`: KOFIC `movieName`을 TMDB와 제목 문자열 매칭(ID 체계가 달라 직접 연결 불가) — 매 항목마다 TMDB 검색을 날리면 N+1이 되므로, 로컬 캐시(`MovieQueryRepository.getCachedMoviesSnapshot()`, now_playing+popular 스냅샷)를 요청당 1회만 조회해 우선 매칭하고 캐시 미스만 `searchMoviesOnce()` 네트워크 폴백 (TOP 50 기준 실측 약 1.6s → 0.3s, `MatchBoxOfficeWithTmdbPerformanceTest`) — `GetDailyBoxOfficeWithTmdbMatchUseCase`/`GetWeeklyBoxOfficeWithTmdbMatchUseCase`가 이 매처를 공유(협력자 추출, "가져오기"와 "매칭"의 관심사 분리)
+- `MatchBoxOfficeWithTmdbUseCase`: KOFIC `movieName`을 TMDB와 제목 문자열 매칭(ID 체계가 달라 직접 연결 불가) — 항목마다 TMDB 검색을 날리면 N+1이므로 로컬 캐시(`MovieQueryRepository.getCachedMoviesSnapshot()`, now_playing+popular 스냅샷)를 요청당 1회만 조회해 우선 매칭하고 캐시 미스만 `searchMoviesOnce()` 네트워크 폴백(TOP 50 기준 약 1.6s → 0.3s, `MatchBoxOfficeWithTmdbPerformanceTest`). `GetDailyBoxOfficeWithTmdbMatchUseCase`/`GetWeeklyBoxOfficeWithTmdbMatchUseCase`가 이 매처를 공유
 - 홈 화면 박스오피스 섹션은 ChipGroup(일별/주간)으로 기간 전환, 선택은 `SavedStateHandle`에 보존, 전환 시 이전 `Job` 취소로 늦게 도착한 응답이 최신 상태를 덮지 않음 (`HomeViewModel.loadBoxOffice()`)
 
 ## 테스트
@@ -233,13 +218,9 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 | `pr-coverage.yml` | PR → main | JaCoCo 커버리지 PR 코멘트 자동 게시 |
 
 - Pre-commit Hook: Detekt + 컴파일 체크 (`.githooks/pre-commit`)
-- Pre-push Hook: 유닛 테스트 전체 + `:app:lintDebug` (`.githooks/pre-push`) — Lint는 원래 CI에서만 돌아 push 후에야
-  실패가 드러났다 (159a0dc/184f5f5 NewApi로 main CI 연속 실패, 2026-09-29에 push 전 검사로 이동)
-- Hooks 활성화: `git config core.hooksPath .githooks` — **클론마다 필요하고 조용히 풀릴 수 있다.** 2026-09-29에
-  `core.hooksPath`가 `.git/hooks`(샘플뿐)로 잡혀 있어 pre-commit/pre-push가 전혀 안 돌던 것을 발견했다. 훅이
-  돈다고 가정하지 말고 `git config core.hooksPath`로 확인할 것
-- `Claude Code Review`(claude-code-review.yml)는 Dependabot PR을 제외한다 (`allowed_bots` 미설정이라 봇이 시작한
-  워크플로우가 항상 실패했고, Dependabot PR은 `claude-pr-review.yml`이 이미 리뷰함)
+- Pre-push Hook: 유닛 테스트 전체 + `:app:lintDebug` (`.githooks/pre-push`) — Lint가 CI에서만 돌면 push 후에야 실패가 드러나 push 전 검사로 이동(2026-09-29, NewApi로 main CI 연속 실패)
+- Hooks 활성화: `git config core.hooksPath .githooks` — **클론마다 필요하고 조용히 풀릴 수 있다**(2026-09-29에 `.git/hooks`로 잡혀 훅이 전혀 안 돌던 것을 발견). 훅이 돈다고 가정하지 말고 `git config core.hooksPath`로 확인할 것
+- `Claude Code Review`(claude-code-review.yml)는 Dependabot PR 제외 — `allowed_bots` 미설정이라 봇이 시작한 워크플로우가 항상 실패했고, Dependabot PR은 `claude-pr-review.yml`이 이미 리뷰함
 - GitHub Secrets: `TMDB_API_KEY` 필요 — `KOFIC_API_KEY`는 CI에 미주입(로컬 전용); 없어도 빌드/유닛 테스트는
   통과하지만 실기기 박스오피스 API는 인증 오류 (`ONBOARDING.md` 참고)
 - Dependabot: 라이브러리 자동 버전 업데이트
@@ -251,9 +232,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 
 ### kotlin-architecture-reviewer 서브에이전트
 - 위치: `.claude/agents/kotlin-architecture-reviewer.md` (model: opus, tools: Read/Grep/Glob/Bash)
-- 스코프: Kotlin 코루틴/Flow 안전성(체크리스트 B) + Clean Architecture 레이어 규칙(체크리스트 A) +
-  Paging/RemoteMediator(C) + UI 상태 설계(D)만 리뷰. 스타일/네이밍/OWASP 보안/접근성/테스트 커버리지는
-  스코프 밖 — 관련 스킬(android-security-reviewer, accessibility-checker, testing-pyramid 등)의 몫.
+- 스코프: 코루틴/Flow 안전성(체크리스트 B) + Clean Architecture 레이어 규칙(A) + Paging/RemoteMediator(C) + UI 상태 설계(D)만. 스타일/네이밍/OWASP 보안/접근성/테스트 커버리지는 스코프 밖(관련 스킬의 몫).
 - **오탐 방지 규칙**: `@OptIn`/experimental API 관련 지적을 하려면 보고 전에 반드시
   `./gradlew :app:compileDebugKotlin`으로 검증하고, 컴파일이 성공하면 그 지적은 보고서에서 완전히
   제외한다 (레이어 위반·코루틴 안전성 등 컴파일과 무관한 항목엔 적용 안 됨).
@@ -267,21 +246,13 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - 동작: `tool_input`(old_string/new_string 또는 content)으로 "적용 예정" 파일 내용을 임시 경로에
   재구성 → `claude --agent kotlin-architecture-reviewer -p`로 헤드리스 호출 → 결과를
   `hookSpecificOutput.additionalContext`로 Claude Code에 전달.
-- **비-차단 설계**: `permissionDecision`은 항상 `"allow"` — 이 훅은 어떤 경우에도 편집을 막지 않는다.
-  이유: 이 리뷰는 opus의 판단(의견)이지 `domain-android-import-guard.sh`(android/androidx import
-  차단, 결정론적 grep) 같은 100% 확정적 규칙이 아니다. 판단에는 오판 가능성이 있고, 리뷰 자체가
-  2분 이상 걸릴 수 있어 매 Edit마다 강제로 차단하면 개발 흐름이 망가진다. 결정론적·항상-참 규칙만
-  차단(`exit 2`)하고, 판단이 필요한 리뷰는 정보 제공(`allow` + `additionalContext`)으로 남긴다.
+- **비-차단 설계**: `permissionDecision`은 항상 `"allow"` — 어떤 경우에도 편집을 막지 않는다. 이 리뷰는 opus의 판단(오판 가능)이고 2분 이상 걸릴 수 있어 매 Edit마다 차단하면 개발 흐름이 망가진다. 결정론적·항상-참 규칙(`domain-android-import-guard.sh`의 android/androidx import grep 등)만 차단(`exit 2`)하고, 판단이 필요한 리뷰는 정보 제공(`allow` + `additionalContext`)으로 남긴다.
 - Bash 권한은 `--allowedTools "Read,Grep,Glob,Bash(./gradlew :app:compileDebugKotlin:*)"`로 제한 —
   프롬프트 규칙이 깨져도 툴 레이어에서 이중으로 막도록 함.
 - **알려진 제약**: 훅 *설정*(`settings.json`)은 세션 시작 시에만 로드되어 수정하면 Claude Code를 재시작해야
   반영된다(스크립트 파일 자체는 매 호출마다 새로 실행되므로 수정이 재시작 없이 바로 반영됨 — 2026-09-30 확인).
   macOS 기본 환경엔 GNU `timeout`이 없어 순수 bash(`sleep N && kill`)로 타임아웃을 구현함.
-- **워처 stdio 누수(2026-09-30 수정)**: 타임아웃 워처 `( sleep 240; kill ... ) &`가 훅의 stdout(하네스로 가는 파이프)을
-  물려받고, `kill $watcher_pid`는 서브셸만 죽여 자식 `sleep 240`이 고아로 남아 파이프를 최대 240초 붙잡았다. 그러면
-  하네스가 `stdio went quiet before end-of-stream`으로 훅 출력을 거부해 `domain/`·`*ViewModel.kt` 편집이 전부 막혔다
-  (리뷰 대상이 아닌 파일은 워처를 띄우기 전에 종료해 영향 없음). 워처에 `>/dev/null 2>&1`을 붙이고 `stop_watcher`가
-  `pkill -P`로 자식까지 정리하도록 고쳤다. 같은 패턴(백그라운드 서브셸 + 물려받은 stdout)은 다른 훅에도 주의할 것.
+- **워처 stdio 누수(2026-09-30 수정)**: 타임아웃 워처 `( sleep 240; kill ... ) &`가 훅 stdout(하네스 파이프)을 물려받고 `kill $watcher_pid`는 서브셸만 죽여, 고아 `sleep 240`이 파이프를 최대 240초 붙잡았다 → 하네스가 `stdio went quiet before end-of-stream`으로 훅 출력을 거부해 `domain/`·`*ViewModel.kt` 편집이 전부 막혔다(리뷰 대상이 아닌 파일은 워처 전에 종료해 영향 없음). 워처에 `>/dev/null 2>&1`을 붙이고 `stop_watcher`가 `pkill -P`로 자식까지 정리하도록 수정. 같은 패턴(백그라운드 서브셸 + 물려받은 stdout)은 다른 훅에도 주의할 것.
 
 ### Stop 테스트 페어링 강제 훅
 - 위치: `.claude/hooks/stop-test-coverage-guard.sh` + `.claude/hooks/lib/check_test_pairing.py`,
@@ -289,16 +260,10 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - 트리거 조건: 이번 세션 transcript에서 `domain/*.kt` 또는 `presentation/**/*ViewModel.kt` (`src/main`
   한정) 파일을 Edit/Write/MultiEdit 했는데, 대응 테스트 파일(`app/src/test/.../XxxTest.kt`)이 같은
   세션에서 한 번도 Edit/Write/MultiEdit 되지 않은 경우.
-- **차단 설계**: exit 2로 세션 종료를 막는다 — PreToolUse 훅과 정반대. 이유: "같은 세션에서 테스트
-  파일이 건드려졌는가"는 transcript를 기계적으로 훑는 사실 확인이라 100% 결정론적이고 오탐 가능성이
-  없다. 판단이 필요 없는 항상-참 규칙이므로 위 PreToolUse 훅의 원칙("결정론적 규칙만 차단")을 그대로
-  따르면 차단이 맞다.
+- **차단 설계**: exit 2로 세션 종료를 막는다 — PreToolUse 훅과 정반대. "같은 세션에서 테스트 파일이 건드려졌는가"는 transcript를 기계적으로 훑는 100% 결정론적 사실 확인이라 오탐이 없고, "결정론적 규칙만 차단" 원칙에 따르면 차단이 맞다.
 - 무한 루프 방지: 훅 입력의 `stop_hook_active`가 true면(이미 한 번 이 훅에 막혔다가 재개했다는 뜻)
   다시 막지 않고 통과시킨다 — 한 번은 스스로 고치거나 사유를 설명할 기회를 주되 영원히 막지는 않는다.
-- **알려진 제약**: 서브에이전트(Agent 도구로 위임한 작업)가 만든 Edit/Write는 메인 세션 transcript에
-  안 잡힌다 — 서브에이전트 자신의 별도 transcript에만 기록되기 때문. 즉 이 훅은 **메인 루프가 직접
-  수정한 파일만** 감지하고, "구현자 서브에이전트에게 위임해서 만든 파일"은 놓친다. 서브에이전트가
-  주도하는 워크플로우(예: feature-implementer 파이프라인)에서는 이 한계를 감안할 것.
+- **알려진 제약**: 서브에이전트(Agent 도구 위임)의 Edit/Write는 자신의 별도 transcript에만 기록돼 메인 세션 transcript에 안 잡힌다 — 이 훅은 **메인 루프가 직접 수정한 파일만** 감지하고 구현자 서브에이전트가 만든 파일은 놓친다(feature-implementer 파이프라인 같은 서브에이전트 주도 워크플로우에서 감안할 것).
 
 ## 주의사항
 
@@ -307,7 +272,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `android.disallowKotlinSourceSets=false` 필요 (KSP 호환)
 - `Theme.MaterialComponents.DayNight.NoActionBar` 사용
 - Hilt 2.59.2 이상 필요 (2.59.2 기준 Kotlin 2.4.0 미지원 — kotlin-metadata-jvm max 2.3.0)
-- **Dependabot 호환성**: core-ktx 1.19.0은 compileSdk 37을 요구했고 compileSdk가 37로 올라가면서 해소되어 현재 적용 중; Kotlin 2.4.0은 Hilt 호환 이슈로 여전히 보류; Kotlin 2.4.x(2.4.10·2.4.20 포함)는 현재 AGP/Lint에서도 `Can't initialize detector com.android.tools.lint.checks.InferredThreadDetector` 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패함 (PR #92, #110에서 확인, 2026-07-27) — Hilt 이슈와 별개로 이 조합 자체가 보류 대상. 이후 재확인 필요 시 실제 lintAnalyzeDebug 재실행으로 검증할 것(AGP 9.4.1 + Kotlin 2.4.20에서도 동일 오류 재현 확인: PR #115, 2026-09-28 CI. AGP 9.4.1이 최신 정식판이라(9.5.0은 알파뿐, 2026-10-05) AGP 업그레이드로는 못 푼다 — 정식 AGP 신버전이 나오면 그때 재검증)
+- **Dependabot 호환성**: core-ktx 1.19.0은 compileSdk 37 요구 → 37로 올라가 해소(현재 적용 중). Kotlin 2.4.x는 보류: 2.4.0은 Hilt 호환 이슈(위 참고), 2.4.10·2.4.20은 AGP/Lint의 `Can't initialize detector com.android.tools.lint.checks.InferredThreadDetector` 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패(PR #92·#110·#115, AGP 9.4.1에서도 재현 확인 2026-09-28). AGP 9.4.1이 최신 정식판(9.5.0은 알파뿐, 2026-10-05)이라 AGP 업그레이드로는 못 푼다 — 정식 신버전이 나오면 lintAnalyzeDebug 재실행으로 재검증
 
 ### Navigation
 - `nav_graph.xml`에 destination + argument + deepLink 정의
@@ -360,8 +325,8 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `onDestroyView()`: `_binding = null` + Shimmer `stopShimmer()`
 
 ### Compose 부분 도입 & Glance 위젯
-- 앱 전체는 여전히 XML/ViewBinding 기반이며, Compose는 두 곳에만 국한: `OnboardingFragment`(Fragment 전체를 `ComposeView`로 대체)와 `SearchFragment`(XML 레이아웃 안에 `composeSearchInput`/`composeSearchResults` 2개 `ComposeView`만 임베드하는 하이브리드) — 새 화면을 Compose로 만들지 XML로 만들지는 케이스 바이 케이스이므로 임의로 전체 마이그레이션 시도 금지
-- `BoxOfficeWidget`(Glance, 2x2)은 `PopularMoviesWidget`(RemoteViews)과 기술 스택이 다름 — Glance의 `provideGlance()`는 재구성마다 호출될 수 있어 여기서 네트워크/DB I/O를 하면 안 됨(호출 반복 위험). 데이터 획득은 전적으로 `BoxOfficeWidgetWorker`가 맡고, `provideGlance()`는 `PreferencesGlanceStateDefinition`에 저장된 스냅샷을 읽어 그리기만 함
+- Compose는 `OnboardingFragment`(Fragment 전체가 `ComposeView`)와 `SearchFragment`(XML 안에 `composeSearchInput`/`composeSearchResults` 2개 `ComposeView` 임베드) 두 곳뿐이고 나머지는 XML/ViewBinding — 새 화면을 Compose로 만들지는 케이스 바이 케이스이므로 임의로 전체 마이그레이션 시도 금지
+- `BoxOfficeWidget`(Glance, 2x2)은 `PopularMoviesWidget`(RemoteViews)과 기술 스택이 다름 — `provideGlance()`는 재구성마다 호출될 수 있어 여기서 네트워크/DB I/O 금지. 데이터 획득은 `BoxOfficeWidgetWorker`가 맡고, `provideGlance()`는 `PreferencesGlanceStateDefinition`에 저장된 스냅샷을 읽어 그리기만 함
 
 ### DataStore
 - Typed `DataStore<UserSettings>` (kotlinx.serialization JSON)
@@ -411,8 +376,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - **PopularMoviesWidget**: OkHttp 싱글턴 + kotlinx.serialization 직접 호출, `response.use {}` 패턴 (RemoteViews 방식 — Glance 기반 `BoxOfficeWidget`은 위 "Compose 부분 도입 & Glance 위젯" 절 참고)
 - **WatchGoalNotificationHelper**: `Mutex.withLock()` 원자적 달성 체크, `lastGoalNotifiedMonth`로 월 1회 제한
 - **BackupRepository**: `UserDataBackup` @Serializable — favorites/watchlist/ratings/memos/tags/watchHistory 6종; `WatchHistoryDao.getAllHistoryOnce()` 백업용 일회성 쿼리; `restoreWatchHistory()`에서 `watchedAt.toYearMonth()` (kotlinx-datetime) 재계산
-- **StrictMode**: `src/debug/java/` 소스셋 분리 — release 빌드에 클래스 자체 미포함, debug manifest에 meta-data 등록
-- **디버그 도구**: DebugHealthCheck/FileLoggingTree/AnrWatchdog — `BuildConfig.DEBUG` 가드; `DebugEventListener` — `src/debug/` 소스셋 분리 (릴리스 바이너리에 로깅 코드 미포함, `src/release/`에 no-op 존재); `StrictModeInitializer` — `src/debug/` 소스셋 분리 (release 빌드에 클래스 자체 미포함, lintVitalRelease 통과)
+- **디버그 도구**: DebugHealthCheck/FileLoggingTree/AnrWatchdog — `BuildConfig.DEBUG` 가드; `DebugEventListener`/`StrictModeInitializer` — `src/debug/java/` 소스셋 분리(release 바이너리에 클래스 미포함, debug manifest에 meta-data 등록, lintVitalRelease 통과; `DebugEventListener`는 `src/release/`에 no-op 존재)
 - **R8 Full Mode**: `android.enableR8.fullMode=true` — serialization 클래스 ProGuard keep 필수
 - **Predictive Back**: `android:enableOnBackInvokedCallback="true"` (Android 14+)
 - **Edge-to-Edge**: `enableEdgeToEdge()` (Android 15 필수)
@@ -432,45 +396,34 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
       `/movie/{id}?language=en-US` 지연 조회한다(`SearchComposables.kt`의 `rememberDisplayTitle`).
       **왜 이 방향인가**: 필터 판정은 목록 멤버십을 결정해 전체 항목의 결과가 필요하므로 "보이는 항목만"으로 지연할 수
       없다(보이려면 통과해야 하는데 통과 여부를 알려면 조회해야 하는 순환). 표시 문자열은 멤버십과 무관해 지연 가능.
-      이전(115일차) 방식(필터 안에서 `GetKoreanTitleUseCase`로 항목마다 제목 추가 조회)은 필터 경로가 항목당 2배 호출이라
-      약 68초(60건 ≈ 1.13초/건) → 롤백. 이번 방식은 필터 경로에 추가 호출이 0건이다.
-      실측: 영어 모드 첫 화면 4카드=조회 4건(평균 247ms), 62개 항목을 플링해 지나가는 동안 조회 25건(스쳐간 구간은
-      조회 없음, 중복 0), ko-KR 제목 조회 0건. `GetKoreanTitleUseCase`는 상세 화면 KMRB 매칭용으로만 사용.
+      필터 안에서 항목마다 제목을 추가 조회하던 이전 방식은 60건에 약 68초라 롤백. `GetKoreanTitleUseCase`는 상세 화면 KMRB 매칭용으로만 사용.
       한계: 표시 제목이 한국어→영어로 약 0.5초 뒤 교체됨, 포스터는 ko-KR 기준, 검색 매칭/정렬은 ko-KR 기준.
     - **KMRB 필터 자체의 한계(언어와 무관, 미해결)**: 항목당 순차 호출(콜드 0.4~0.55초/건)이고 `PagingData.filter`가
-      페이지 단위로 원자적이라 첫 결과까지 한 페이지(20건) 분량이 걸린다(약 10~11초). 통과 항목이 적은 조합은 Paging이
-      페이지를 연쇄 로드한다(실측: knight + 15+ → 15페이지·307건·138초, night+전체관람가 → 13페이지·KMRB 215건·94초).
-      이 연쇄에는 상한이 없다. 근본 해결(필터를 PagingSource 레벨로 옮겨 청크·상한 도입)은 아직 하지 않았다.
-      참고: `initialLoadSize=60`은 `BaseMoviePagingSource.load()`가 `params.loadSize`를 무시하므로 실제 첫 로드는
-      TMDB 1페이지(20건)이다("60건"은 연쇄 로드 결과).
-    - **"페이지 기아" 해결(2026-09-30, JVM 검증만 — 실기기 재검증 미완)**: 예전엔 등급 필터가 `cachedIn` *뒤*(`combine`)에
+      페이지 단위로 원자적이라 첫 결과까지 약 10초. 통과 항목이 적은 조합은 Paging이 페이지를 연쇄 로드한다(실측: knight + 15+ →
+      15페이지·138초, night+전체관람가 → 13페이지·94초). 연쇄에 상한이 없고 근본 해결(필터를 PagingSource 레벨로 옮겨 청크·상한
+      도입)은 미실시. `initialLoadSize=60`은 `BaseMoviePagingSource.load()`가 `params.loadSize`를 무시하므로 실제 첫 로드는
+      TMDB 1페이지(20건).
+    - **"페이지 기아" 해결(2026-09-30, 실기기 SM-S926N 검증 완료 10/01)**: 예전엔 등급 필터가 `cachedIn` *뒤*(`combine`)에
       결합돼서, **2페이지 이상이 이미 로드된 상태에서 등급 칩을 골라 전부 걸러지면 Paging이 이어 로드를 멈췄다**(1페이지만
-      로드된 경우엔 초기 힌트(뒤쪽 표시 항목 0 < prefetchDistance)로 스스로 이어 로드해 재현되지 않음). 이제
-      `SearchViewModel.searchResults`는 `combine(searchParams, 등급)` → `filter`(검색어·장르 둘 다 비면 통과 못 함) →
-      `flatMapLatest { 검색 + 필터 }` → `cachedIn` 순서라 **등급이 바뀌면 재검색(새 Pager)** 하고 초기 로드 힌트부터 다시
-      시작한다. `PagingEmptyStateRegressionTest`(6개, 2페이지 선로드 포함)와 `SearchViewModelTest`("재검색 정확히 1회 +
-      새 등급이 필터에 전달", "검색어 없이 등급만 바꾸면 검색 없음")가 고정한다 — **필터를 다시 cachedIn 뒤로 옮기지 말 것.**
+      로드된 경우엔 초기 힌트로 스스로 이어 로드해 재현 안 됨). 이제 `SearchViewModel.searchResults`는
+      `combine(searchParams, 등급)` → `filter`(검색어·장르 둘 다 비면 통과 못 함) → `flatMapLatest { 검색 + 필터 }` →
+      `cachedIn` 순서라 **등급이 바뀌면 재검색(새 Pager)** 한다. `PagingEmptyStateRegressionTest`(6개, 2페이지 선로드 포함)와
+      `SearchViewModelTest`가 고정한다 — **필터를 다시 cachedIn 뒤로 옮기지 말 것.**
       대가: 등급 변경마다 TMDB 재검색 + 목록 refresh(shimmer). KMRB 등급 조회는 Room 캐시라 재조회 비용은 작다.
-      실기기(SM-S926N) 검증 완료(2026-09-30 부분, 2026-10-01 완료): `zombie` 2페이지 선로드 후 등급 칩 선택 시 TMDB 1페이지부터
-      재요청(재검색) 뒤 이어 로드가 계속된다(옛 구조는 3페이지 요청 자체가 없었음). 10/01 KMRB 429가 풀린 뒤 `15세이상` 선택으로
-      **필터를 통과한 결과가 실제로 화면에 표시됨**(약 10초 시점 shimmer → 48초 시점 결과, KMRB 118건 전부 200·약 0.4~0.5초/건,
-      TMDB 1→6페이지) — 첫 결과가 뜬 정확한 시점은 45초 상한 때문에 미측정. 참고: `GetKoreanRatingUseCase`가 429 같은 실패를
-      null로 흡수해 필터에선 "전부 걸러짐"이 되므로, **KMRB 장애/한도 소진 중 등급 칩을 고르면 전 페이지를 연쇄 로드하며 KMRB를
-      계속 호출한다**(9/30 약 20초에 323건, 칩을 `전체`로 되돌리면 즉시 멈춤). 캐시 오염은 없다(Repository가 예외 시 upsert 전에
-      전파). 연쇄에 상한이 없다는 기존 한계의 증폭이며 이번 변경 이전부터 있던 동작이다(미해결).
+      미해결: `GetKoreanRatingUseCase`가 429 같은 실패를 null로 흡수해 필터에선 "전부 걸러짐"이 되므로, **KMRB 장애/한도 소진 중
+      등급 칩을 고르면 전 페이지를 연쇄 로드하며 KMRB를 계속 호출한다**(9/30 약 20초에 323건, 칩을 `전체`로 되돌리면 즉시 멈춤).
+      캐시 오염은 없다(Repository가 예외 시 upsert 전에 전파). 연쇄에 상한이 없다는 위 한계의 증폭이다.
     - 116일차에 본 "검색 결과 없음"은 **로딩 중 빈 상태 오판**이었다: `SearchFragment.handleLoadStates`가 `refresh=NotLoading &&
-      itemCount==0`이면 append를 안 보고 바로 "결과 없음"을 띄웠다(`night`+전체관람가엔 실제 결과가 있었다). 이제
-      `resolveSearchResultsPane`(`SearchResultsPane.kt`)이 `append.endOfPaginationReached` 이후에만 "결과 없음"을,
-      그 전엔 shimmer를, append 실패 시엔 오류 화면(재시도)을 보인다. 이 판정은 "Paging이 빈 페이지 뒤에도 자동으로
-      이어 로드한다"는 전제에 기대므로 전제가 깨지면 오판 대신 무한 shimmer가 된다(위 구조에선 2페이지 선로드에서도 전제 유지).
+      itemCount==0`이면 append를 안 보고 바로 "결과 없음"을 띄웠다. 이제 `resolveSearchResultsPane`(`SearchResultsPane.kt`)이
+      `append.endOfPaginationReached` 이후에만 "결과 없음"을, 그 전엔 shimmer를, append 실패 시엔 오류 화면(재시도)을 보인다.
+      "Paging이 빈 페이지 뒤에도 자동으로 이어 로드한다"는 전제에 기대므로 전제가 깨지면 오판 대신 무한 shimmer가 된다.
       대가: 통과가 뒤 페이지에만 있는 조합은 콜드 캐시에서 첫 결과까지 shimmer가 길다(night+전체관람가 약 86초).
     - **즉시 검색/debounce 중복 호출 제거(2026-10-02, 실기기 검증 완료)**: `searchParams`의 `distinctUntilChanged`를 merge *뒤*로
       옮기고 타이핑 경로도 `trim()` — 엔터·칩 클릭·장르 확인이 자동 검색과 같은 조건을 두 번 내던 것이 2건→1건(실측).
       같은 조건으로 이미 검색한 뒤의 엔터는 재검색하지 않는다(재시도는 화면 버튼). **dedupe를 가지별로 되돌리지 말 것.**
-    - 박스오피스 매칭(`MatchBoxOfficeWithTmdbUseCase`)의 TMDB 폴백 검색(`searchMoviesOnce`)은 앱 언어와
-      무관하게 항상 ko-KR 고정 — KOFIC 영화명(한국어)과의 매칭 정확도 유지 목적. 홈 캐시(`cached_movies`)가
-      영어로 바뀌면 박스오피스의 로컬 캐시 우선 매칭(082일차 최적화)이 캐시 미스로 네트워크 폴백에 더 자주
-      의존하게 되나, 정확도 자체는 영향 없음(실기기에서 위젯 포함 정상 매칭 확인).
+    - 박스오피스 매칭(`MatchBoxOfficeWithTmdbUseCase`)의 TMDB 폴백 검색(`searchMoviesOnce`)은 앱 언어와 무관하게 항상 ko-KR 고정 —
+      KOFIC 영화명(한국어) 매칭 정확도 유지 목적. 홈 캐시(`cached_movies`)가 영어면 로컬 캐시 우선 매칭이 캐시 미스로 네트워크
+      폴백에 더 자주 의존하나 정확도엔 영향 없음.
     - 앱 언어 변경 시 홈 캐시(`cached_movies`/`remote_keys`)를 즉시 무효화(`InvalidateHomeMovieCacheUseCase`,
       `SettingsFragment`에서 언어 변경 직후 호출)해 이전 언어 데이터가 TTL(1시간) 동안 남지 않도록 함.
     - 즐겨찾기/워치리스트/시청기록에 이미 저장된 제목은 추가 시점의 스냅샷이라 언어 변경과 무관하게 소급
