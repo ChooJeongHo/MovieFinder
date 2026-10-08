@@ -105,7 +105,7 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── home/              # HomeFragment, HomeViewModel (3탭, RemoteMediator)
 │   ├── onboarding/        # OnboardingFragment(전체 Compose, ComposeView) + OnboardingScreen/OnboardingPage
 │   ├── person/            # PersonDetailFragment, PersonDetailViewModel
-│   ├── search/            # SearchFragment(XML+ComposeView 2곳), SearchViewModel (필터, SavedStateHandle), SearchComposables.kt, SearchResultsPane.kt (결과 영역 판정)
+│   ├── search/            # SearchFragment(XML+ComposeView 2곳), SearchViewModel (필터, SavedStateHandle), SearchComposables.kt, SearchResultsPane.kt (결과 영역 판정), RecentSearchesPane.kt (최근 검색어 영역 판정)
 │   ├── settings/          # SettingsFragment, SettingsViewModel (테마/캐시/목표/백업/TMDB 계정 연동)
 │   ├── stats/             # StatsFragment, StatsViewModel (통계 카드 9개)
 │   └── widget/            # PopularMoviesWidget(RemoteViewsService/Factory) + BoxOfficeWidget(Glance, 2x2) — 위젯 2종이 서로 다른 기술 스택
@@ -175,7 +175,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (941개)
+### 유닛 테스트 (961개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -433,7 +433,16 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
       `SettingsFragment`에서 언어 변경 직후 호출)해 이전 언어 데이터가 TTL(1시간) 동안 남지 않도록 함.
     - 즐겨찾기/워치리스트/시청기록에 이미 저장된 제목은 추가 시점의 스냅샷이라 언어 변경과 무관하게 소급
       갱신되지 않음(설계상 의도, 범위 밖).
-- **검색 화면 "최근 검색어" 목록이 비어 보이는 현상(2026-10-02 관찰, 원인 미조사, 미해결)**: 입력창 X로 검색어를 지운 직후나
-  최근 검색어 항목을 삭제한 직후에 "최근 검색어" 제목만 보이고 목록이 비어 있다가, 다른 탭에 갔다 돌아오면 복구된다(실기기
-  SM-S926N, UI 덤프·스크린샷으로 확인). 중복 검색 수정 *이전* 빌드에서도 같은 현상이 나왔으므로 **그 수정과 무관**하다.
+- **검색 화면 "최근 검색어" 목록이 비어 보이던 현상(2026-10-02 관찰 → 10/08 원인 확정·수정, 실기기 SM-S926N)**: UI 층 문제였다(Room/Flow 정상).
+  `handleRecentSearches`가 Flow emit 때만 *필터된* 목록을 어댑터에 넣고, X로 지울 때 `updateVisibility`는 영역 가시성만 바꿔 필터된 목록이
+  남았으며, 필터 결과가 비어도 영역을 안 숨겼다. 이제 `resolveRecentSearchesPane`(`RecentSearchesPane.kt`, 순수 함수, `RecentSearchesPaneTest`)이
+  목록·영역 처리를 정하고 collector와 `updateVisibility`의 blank 분기가 같은 판정을 쓴다. **연결부(apply 호출, `submitList`)는 JVM 테스트로 못 잡으므로
+  `SearchFragment`를 고칠 땐 실기기 시나리오로 확인할 것.** 필터본→전체본 교체 시 RecyclerView가 기존 첫 항목에 스크롤을 고정해 최신 검색어가 가려지므로
+  `pendingScrollToTop`을 non-blank→blank 전이에서만 세우고 모든 제출의 commit 콜백이 소비한다(`AsyncListDiffer`는 세대가 밀린 이전 제출의 콜백을
+  버리므로 콜백 인자가 아니라 필드에 둔다; 호출 경로로 구분하면 STARTED 재진입에서 스크롤이 리셋됐다).
+  - **남은 한계(미해결)**: ① 가로 모드: `recent_searches_section` 높이 173px라 `rv_recent_searches` 높이 0(루트 `LinearLayout`, 스크롤 없음) — 레이아웃 문제,
+    별도 건. ② 배우 모드 가드 없음 — 영화 모드 검색→배우 모드에서 X→영화 모드 복귀 시 스크롤 고정이 남을 수 있다는 건 코드 추론이고 재현 안 됨(별도 이슈).
+    ③ 제출 직후 `Filtered`가 결과 위로 목록을 다시 보이게 할 수 있음(기존). ④ 장르 칩 해제는 `updateVisibility`를 안 불러 blank+장르 해제 직후 목록/초기 안내
+    전환이 안 될 수 있음(기존). ⑤ 새 ViewModel 초기값 `emptyList()`의 초기 안내 깜빡임은 **확인 못 함**. ⑥ 수정 후 `star wars` 제출→X 11회 중 1회
+    `OTHER`(목록·초기 안내 둘 다 아님), 원인 **확인 못 함**.
 - **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)
