@@ -79,6 +79,10 @@ class SearchFragment : Fragment() {
     private var retryAction: (() -> Unit)? = null
     private var scrollToTopAction: (() -> Unit)? = null
 
+    // 검색어가 non-blank에서 blank로 바뀐 직후의 첫 최근 검색어 목록 반영에서만 맨 위로 되돌리는 플래그.
+    // 필터본에서 전체본으로 바뀔 때 RecyclerView가 기존 첫 항목에 스크롤을 고정해 최신 항목이 위쪽에 가려지기 때문이다.
+    private var pendingScrollToTop = false
+
     private val yearFilterItems: Array<String> by lazy {
         val currentYear = Clock.System.todayIn(TimeZone.currentSystemDefault()).year
         arrayOf(getString(R.string.filter_year_all)) +
@@ -174,6 +178,7 @@ class SearchFragment : Fragment() {
 
     // 검색어 입력 변경 시 호출 — 모드(영화/배우)에 따라 다른 ViewModel 함수로 라우팅
     private fun onSearchQueryTextChanged(text: String) {
+        val wasBlank = searchQueryState.value.isBlank()
         searchQueryState.value = text
         if (viewModel.searchMode.value == SearchMode.PERSON) {
             viewModel.onPersonSearch(text)
@@ -181,6 +186,8 @@ class SearchFragment : Fragment() {
             viewModel.onSearchQueryChange(text)
             if (text.isBlank()) {
                 viewModel.clearOfflineResults()
+                // blank에서 blank로(공백만 더하거나 지움)는 전이가 아니므로 스크롤해 둔 목록을 건드리지 않는다
+                if (!wasBlank) pendingScrollToTop = true
             }
             updateVisibility(text)
         }
@@ -422,18 +429,28 @@ class SearchFragment : Fragment() {
     }
 
     private fun handleRecentSearches(searches: List<String>) {
-        val query = searchQueryState.value.trim()
-        if (query.isBlank()) {
-            recentSearchAdapter.submitList(searches)
-            if (viewModel.selectedGenres.value.isEmpty() && searches.isNotEmpty()) {
-                showRecentSearches()
-            } else if (viewModel.selectedGenres.value.isEmpty()) {
-                showInitialState()
+        // Flow emit 경로는 pendingScrollToTop을 세우지 않으므로 사용자의 스크롤 위치를 건드리지 않는다
+        applyRecentSearchesPane(
+            resolveRecentSearchesPane(searches, searchQueryState.value, viewModel.selectedGenres.value.isNotEmpty())
+        )
+    }
+
+    // 어댑터 목록은 항상 먼저 갱신하고, 영역 처리는 sealed 전체를 다뤄 새 변형이 생기면 컴파일 오류로 드러나게 한다
+    // 모든 제출에 같은 콜백을 붙여, 연속 제출로 앞 콜백이 버려져도 마지막으로 반영되는 제출이 pendingScrollToTop을 소비한다
+    // (콜백은 뷰 파괴 뒤에 돌 수 있어 _binding으로만 접근)
+    private fun applyRecentSearchesPane(pane: RecentSearchesPane) {
+        recentSearchAdapter.submitList(pane.items) {
+            if (pendingScrollToTop) {
+                pendingScrollToTop = false
+                _binding?.rvRecentSearches?.scrollToPosition(0)
             }
-        } else {
-            val filtered = searches.filter { it.contains(query, ignoreCase = true) && it != query }
-            recentSearchAdapter.submitList(filtered)
-            if (filtered.isNotEmpty()) binding.recentSearchesSection.isVisible = true
+        }
+        when (pane) {
+            is RecentSearchesPane.Recent -> showRecentSearches()
+            RecentSearchesPane.Initial -> showInitialState()
+            is RecentSearchesPane.KeepVisibility -> Unit
+            is RecentSearchesPane.Filtered -> binding.recentSearchesSection.isVisible = true
+            RecentSearchesPane.Hidden -> binding.recentSearchesSection.isVisible = false
         }
     }
 
@@ -754,18 +771,15 @@ class SearchFragment : Fragment() {
     // 검색어가 비면 결과/shimmer를 숨기고 최근검색어 또는 초기 안내 화면을 표시
     private fun updateVisibility(query: String) {
         updateDiscoverModeChip()
-        if (query.isBlank() && viewModel.selectedGenres.value.isEmpty()) {
-            binding.composeSearchResults.isVisible = false
-            binding.shimmerView.shimmerLayout.stopShimmer()
-            binding.shimmerView.shimmerLayout.isVisible = false
-            binding.noResultsSection.isVisible = false
-
-            val searches = viewModel.recentSearches.value
-            if (searches.isNotEmpty()) {
-                showRecentSearches()
-            } else {
-                showInitialState()
+        if (query.isBlank()) {
+            val hasGenreFilter = viewModel.selectedGenres.value.isNotEmpty()
+            if (!hasGenreFilter) {
+                binding.composeSearchResults.isVisible = false
+                binding.shimmerView.shimmerLayout.stopShimmer()
+                binding.shimmerView.shimmerLayout.isVisible = false
+                binding.noResultsSection.isVisible = false
             }
+            applyRecentSearchesPane(resolveRecentSearchesPane(viewModel.recentSearches.value, query, hasGenreFilter))
         }
     }
 
