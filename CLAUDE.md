@@ -252,7 +252,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - **알려진 제약**: 훅 *설정*(`settings.json`)은 세션 시작 시에만 로드되어 수정하면 Claude Code를 재시작해야
   반영된다(스크립트 파일 자체는 매 호출마다 새로 실행되므로 수정이 재시작 없이 바로 반영됨 — 2026-09-30 확인).
   macOS 기본 환경엔 GNU `timeout`이 없어 순수 bash(`sleep N && kill`)로 타임아웃을 구현함.
-- **워처 stdio 누수(2026-09-30 수정)**: 타임아웃 워처 `( sleep 240; kill ... ) &`가 훅 stdout(하네스 파이프)을 물려받고 `kill $watcher_pid`는 서브셸만 죽여, 고아 `sleep 240`이 파이프를 최대 240초 붙잡았다 → 하네스가 `stdio went quiet before end-of-stream`으로 훅 출력을 거부해 `domain/`·`*ViewModel.kt` 편집이 전부 막혔다(리뷰 대상이 아닌 파일은 워처 전에 종료해 영향 없음). 워처에 `>/dev/null 2>&1`을 붙이고 `stop_watcher`가 `pkill -P`로 자식까지 정리하도록 수정. 같은 패턴(백그라운드 서브셸 + 물려받은 stdout)은 다른 훅에도 주의할 것.
+- **워처 stdio 누수(2026-09-30 수정)**: 타임아웃 워처 `( sleep 240; kill ... ) &`가 훅 stdout(하네스 파이프)을 물려받고 `kill $watcher_pid`는 서브셸만 죽여, 고아 `sleep 240`이 파이프를 최대 240초 붙잡아 하네스가 `stdio went quiet before end-of-stream`으로 훅 출력을 거부했다. 워처에 `>/dev/null 2>&1`을 붙이고 `stop_watcher`가 `pkill -P`로 자식까지 정리하도록 수정. 같은 패턴(백그라운드 서브셸 + 물려받은 stdout)은 다른 훅에도 주의할 것.
 
 ### Stop 테스트 페어링 강제 훅
 - 위치: `.claude/hooks/stop-test-coverage-guard.sh` + `.claude/hooks/lib/check_test_pairing.py`,
@@ -440,9 +440,12 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   `SearchFragment`를 고칠 땐 실기기 시나리오로 확인할 것.** 필터본→전체본 교체 시 RecyclerView가 기존 첫 항목에 스크롤을 고정해 최신 검색어가 가려지므로
   `pendingScrollToTop`을 non-blank→blank 전이에서만 세우고 모든 제출의 commit 콜백이 소비한다(`AsyncListDiffer`는 세대가 밀린 이전 제출의 콜백을
   버리므로 콜백 인자가 아니라 필드에 둔다; 호출 경로로 구분하면 STARTED 재진입에서 스크롤이 리셋됐다).
-  - **남은 한계(미해결)**: ① 가로 모드: `recent_searches_section` 높이 173px라 `rv_recent_searches` 높이 0(루트 `LinearLayout`, 스크롤 없음) — 레이아웃 문제,
-    별도 건. ② 배우 모드 가드 없음 — 영화 모드 검색→배우 모드에서 X→영화 모드 복귀 시 스크롤 고정이 남을 수 있다는 건 코드 추론이고 재현 안 됨(별도 이슈).
+  - **남은 한계(미해결)**: ① 가로 모드: 해결(아래). ② 배우 모드 가드 없음 — 영화 모드 검색→배우 모드에서 X→영화 모드 복귀 시 스크롤 고정이 남을 수 있다는 건 코드 추론이고 재현 안 됨.
     ③ 제출 직후 `Filtered`가 결과 위로 목록을 다시 보이게 할 수 있음(기존). ④ 장르 칩 해제는 `updateVisibility`를 안 불러 blank+장르 해제 직후 목록/초기 안내
     전환이 안 될 수 있음(기존). ⑤ 새 ViewModel 초기값 `emptyList()`의 초기 안내 깜빡임은 **확인 못 함**. ⑥ 수정 후 `star wars` 제출→X 11회 중 1회
     `OTHER`(목록·초기 안내 둘 다 아님), 원인 **확인 못 함**.
+- **가로 모드 검색(123일차, 실기기 1440x3120/560dpi/3버튼)**: 가로 콘텐츠 영역이 173px(고정 스택이 높이의 86%)라 최근 검색어 `rv`=0·결과도 173px였다.
+  `layout-land/fragment_search.xml`(왼쪽 320dp 스크롤 패널에 toolbar·입력창·칩, 오른쪽 콘텐츠)로 1139px/`rv` 915px. **가로 루트 `baselineAligned="false"` 필수**: 기본값이면 weight 자식이 UNSPECIFIED
+  높이로 선측정돼 결과 `LazyVerticalGrid`가 가로 검색어 입력 시 크래시. id·뷰 클래스·루트는 세로와 같게, 구조용 컨테이너엔 id 금지(`SearchLayoutConsistencyTest`; 속성 차이는 못 잡으니 세로를 고치면 가로도).
+  **한계**: 결과 그리드 4열 유지(창 폭 기준); 키보드 올림 시 `fitsSystemWindows`가 `bottom_nav` 높이만큼 과다 패딩(세로 `rv` 113px); 다른 탭 가로·다른 크기/태블릿/제스처 내비 미측정.
 - **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)

@@ -44,6 +44,7 @@
 
     <!-- 검색 -->
     <dimen name="search_bar_height">56dp</dimen>
+    <dimen name="search_land_side_pane_width">320dp</dimen>
 
     <!-- 아이콘 -->
     <dimen name="icon_size_small">24dp</dimen>

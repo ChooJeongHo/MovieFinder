@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 가로 전용: 고정 높이 스택(툴바·입력창·칩)이 세로 길이를 다 먹어 결과 영역이 173px이던 문제로 좌(조건)/우(결과)로 나눈다.
+     id·뷰 클래스·include 대상·루트 클래스는 layout/fragment_search.xml과 같아야 한다(SearchLayoutConsistencyTest).
+     구조용 컨테이너(NestedScrollView·내부 LinearLayout·우측 FrameLayout)에는 id를 붙이지 말 것.
+     baselineAligned=false: 기본값(true)이면 width=0dp+weight인 우측 패널이 UNSPECIFIED 높이로 선측정돼 안의
+     ComposeView/LazyVerticalGrid가 무한 높이를 받아 크래시한다. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:baselineAligned="false"
+    android:fitsSystemWindows="true"
+    android:orientation="horizontal">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="@dimen/search_land_side_pane_width"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:title="@string/nav_search" />
+
+            <!-- XML TextInputLayout(search_input_layout) + TextInputEditText(et_search) → Compose로 이전 -->
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/compose_search_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/spacing_md"
+                android:layout_marginBottom="@dimen/spacing_sm" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chip_group_search_mode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="@dimen/spacing_md"
+                android:paddingBottom="@dimen/spacing_xs"
+                app:singleLine="true"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_mode_movie"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/search_mode_movie"
+                    android:checked="true" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_mode_person"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/search_mode_person" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chip_group_filters"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="@dimen/spacing_md"
+                android:paddingBottom="@dimen/spacing_xs"
+                app:singleLine="false">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_year"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/filter_year"
+                    android:checkable="false"
+                    app:closeIconVisible="false" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_genre"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/filter_genre"
+                    android:checkable="false"
+                    app:closeIconVisible="false" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_sort"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/filter_sort"
+                    android:checkable="false"
+                    app:closeIconVisible="false" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+            <HorizontalScrollView
+                android:id="@+id/rating_filter_scroll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:paddingStart="@dimen/spacing_sm"
+                android:paddingEnd="@dimen/spacing_sm"
+                android:paddingBottom="@dimen/spacing_xs">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group_rating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:singleLine="true"
+                    app:singleSelection="true"
+                    app:selectionRequired="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_rating_all"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/filter_rating_any"
+                        android:checked="true" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_rating_all_ages"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/filter_rating_all_ages" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_rating_12"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/filter_rating_12" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_rating_15"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/filter_rating_15" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_rating_restricted"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/filter_rating_restricted" />
+
+                </com.google.android.material.chip.ChipGroup>
+
+            </HorizontalScrollView>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_discover_mode"
+                style="@style/Widget.MaterialComponents.Chip.Action"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_md"
+                android:text="@string/discover_mode"
+                android:visibility="gone"
+                app:chipIcon="@drawable/ic_movie"
+                app:chipIconTint="?attr/colorPrimary"
+                app:chipBackgroundColor="?attr/colorControlHighlight" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+
+        <!-- 최근 검색어 영역 -->
+        <LinearLayout
+            android:id="@+id/recent_searches_section"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/spacing_md"
+                android:paddingVertical="@dimen/spacing_sm">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/recent_searches"
+                    android:textAppearance="?attr/textAppearanceSubtitle1"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_clear_all"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/clear_all"
+                    android:textAppearance="?attr/textAppearanceCaption" />
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_recent_searches"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="none" />
+
+        </LinearLayout>
+
+        <!-- 배우 검색 결과 -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_person_results"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <!-- 검색 결과: XML RecyclerView(rv_search_results) + MoviePagingAdapter → Compose로 이전 -->
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/compose_search_results"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <!-- 로딩 Shimmer -->
+        <include
+            android:id="@+id/shimmer_view"
+            layout="@layout/layout_shimmer_grid"
+            android:visibility="gone" />
+
+        <!-- 에러 상태 - 재시도 버튼 포함 -->
+        <include
+            android:id="@+id/error_view"
+            layout="@layout/layout_error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <!-- 빈 상태 - 초기 화면 -->
+        <include
+            android:id="@+id/empty_initial"
+            layout="@layout/layout_empty_state" />
+
+        <!-- 빈 상태 - 검색 결과 없음 -->
+        <LinearLayout
+            android:id="@+id/no_results_section"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <include
+                android:id="@+id/empty_no_results"
+                layout="@layout/layout_empty_state" />
+
+            <TextView
+                android:id="@+id/tv_suggestions_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_md"
+                android:text="@string/search_suggestions_label"
+                android:textAppearance="?attr/textAppearanceSubtitle2"
+                android:alpha="0.7" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupSuggestions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:layout_gravity="center"
+                android:gravity="center"
+                app:chipSpacingHorizontal="8dp" />
+
+            <TextView
+                android:id="@+id/tvWatchHistorySuggestion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/search_watch_history_suggestion"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSuggestionHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        </LinearLayout>
+
+        <!-- 오프라인 검색 결과 영역 -->
+        <LinearLayout
+            android:id="@+id/offline_results_section"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_offline_banner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/colorSurface"
+                android:paddingHorizontal="@dimen/spacing_md"
+                android:paddingVertical="@dimen/spacing_sm"
+                android:text="@string/offline_local_search_banner"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurface" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_offline_results"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:padding="@dimen/spacing_sm" />
+
+        </LinearLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_scroll_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="@dimen/spacing_md"
+            android:layout_marginBottom="@dimen/spacing_md"
+            android:src="@drawable/ic_arrow_up"
+            android:contentDescription="@string/cd_scroll_to_top"
+            android:visibility="gone"
+            app:fabSize="mini" />
+
+    </FrameLayout>
+
+</LinearLayout>
