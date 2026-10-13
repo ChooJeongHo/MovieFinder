@@ -28,167 +28,198 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <LinearLayout
-        android:id="@+id/box_office_section"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_md"
-            android:layout_marginBottom="@dimen/spacing_xs"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/tv_box_office_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/spacing_md"
-                android:text="@string/box_office_title"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:textStyle="bold" />
-
-            <ProgressBar
-                android:id="@+id/progress_box_office"
-                style="?android:attr/progressBarStyleSmall"
-                android:layout_width="@dimen/box_office_progress_size"
-                android:layout_height="@dimen/box_office_progress_size"
-                android:layout_marginStart="@dimen/spacing_sm"
-                android:contentDescription="@string/cd_box_office_loading"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chip_group_box_office_period"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="@dimen/spacing_md"
-            android:paddingBottom="@dimen/spacing_xs"
-            app:singleLine="true"
-            app:selectionRequired="true"
-            app:singleSelection="true">
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_box_office_daily"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/box_office_period_daily" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_box_office_weekly"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/box_office_period_weekly" />
-
-        </com.google.android.material.chip.ChipGroup>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_box_office"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clipToPadding="false"
-            android:paddingStart="@dimen/spacing_md"
-            android:paddingEnd="@dimen/spacing_md"
-            android:paddingBottom="@dimen/spacing_sm" />
-
-        <TextView
-            android:id="@+id/tv_box_office_error"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_md"
-            android:layout_marginEnd="@dimen/spacing_md"
-            android:layout_marginBottom="@dimen/spacing_sm"
-            android:text="@string/box_office_error"
-            android:textAppearance="?attr/textAppearanceCaption"
-            android:visibility="gone" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/watch_history_section"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <TextView
-            android:id="@+id/tv_watch_history_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_md"
-            android:layout_marginTop="@dimen/spacing_md"
-            android:layout_marginBottom="@dimen/spacing_sm"
-            android:text="@string/watch_history_title"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textStyle="bold" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_watch_history"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clipToPadding="false"
-            android:paddingStart="@dimen/spacing_md"
-            android:paddingEnd="@dimen/spacing_md"
-            android:paddingBottom="@dimen/spacing_sm" />
-
-    </LinearLayout>
-
-    <FrameLayout
+    <!-- 박스오피스·시청기록 섹션을 접히는 앱바 안에 둬서, 섹션이 높이를 다 차지해도 아래 목록에 스크롤로 닿을 수 있게 한다.
+         루트는 LinearLayout 그대로 둔다(baseline-prof.txt가 FragmentHomeBinding.getRoot() 타입을 고정). -->
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/home_sections_coordinator"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipe_refresh"
+        <!-- 이전처럼 섹션이 윈도우 배경 위에 평평하게 그려지도록 Material 기본 앱바의 배경(colorSurface)·그림자·lift를 끈다.
+             fitsSystemWindows는 위쪽 앱바가 이미 처리하므로 넣지 않는다(인셋 이중 적용 방지).
+             wrap_content 앱바는 자식을 UNSPECIFIED 높이로 측정하므로 안에 match_parent 높이 뷰를 두지 말 것. -->
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/app_bar_home_sections"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:elevation="0dp"
+            android:stateListAnimator="@null"
+            app:liftOnScroll="false">
+
+            <LinearLayout
+                android:id="@+id/box_office_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                app:layout_scrollFlags="scroll">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_md"
+                    android:layout_marginBottom="@dimen/spacing_xs"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_box_office_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/spacing_md"
+                        android:text="@string/box_office_title"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textStyle="bold" />
+
+                    <ProgressBar
+                        android:id="@+id/progress_box_office"
+                        style="?android:attr/progressBarStyleSmall"
+                        android:layout_width="@dimen/box_office_progress_size"
+                        android:layout_height="@dimen/box_office_progress_size"
+                        android:layout_marginStart="@dimen/spacing_sm"
+                        android:contentDescription="@string/cd_box_office_loading"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group_box_office_period"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="@dimen/spacing_md"
+                    android:paddingBottom="@dimen/spacing_xs"
+                    app:singleLine="true"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_box_office_daily"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/box_office_period_daily" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_box_office_weekly"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/box_office_period_weekly" />
+
+                </com.google.android.material.chip.ChipGroup>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_box_office"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:paddingStart="@dimen/spacing_md"
+                    android:paddingEnd="@dimen/spacing_md"
+                    android:paddingBottom="@dimen/spacing_sm" />
+
+                <TextView
+                    android:id="@+id/tv_box_office_error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_md"
+                    android:layout_marginEnd="@dimen/spacing_md"
+                    android:layout_marginBottom="@dimen/spacing_sm"
+                    android:text="@string/box_office_error"
+                    android:textAppearance="?attr/textAppearanceCaption"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/watch_history_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                app:layout_scrollFlags="scroll">
+
+                <TextView
+                    android:id="@+id/tv_watch_history_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_md"
+                    android:layout_marginTop="@dimen/spacing_md"
+                    android:layout_marginBottom="@dimen/spacing_sm"
+                    android:text="@string/watch_history_title"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textStyle="bold" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_watch_history"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:paddingStart="@dimen/spacing_md"
+                    android:paddingEnd="@dimen/spacing_md"
+                    android:paddingBottom="@dimen/spacing_sm" />
+
+            </LinearLayout>
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:contentDescription="@string/cd_swipe_refresh">
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_movies"
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipe_refresh"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:layoutAnimation="@anim/layout_animation_fall_down"
-                android:padding="@dimen/spacing_sm" />
+                android:contentDescription="@string/cd_swipe_refresh">
 
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_movies"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:layoutAnimation="@anim/layout_animation_fall_down"
+                    android:padding="@dimen/spacing_sm" />
 
-        <include
-            android:id="@+id/shimmer_view"
-            layout="@layout/layout_shimmer_grid" />
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <include
-            android:id="@+id/error_view"
-            layout="@layout/layout_error"
-            android:visibility="gone" />
+            <include
+                android:id="@+id/shimmer_view"
+                layout="@layout/layout_shimmer_grid" />
 
-        <include
-            android:id="@+id/empty_view"
-            layout="@layout/layout_empty_state"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
+            <!-- 이 컨테이너는 섹션 앱바 높이만큼 아래로 밀려 배치되므로, 화면 중앙(match_parent+center)이 아니라 컨테이너 위쪽에 붙인다 -->
+            <include
+                android:id="@+id/error_view"
+                layout="@layout/layout_error"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top"
+                android:visibility="gone" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_scroll_top"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_marginEnd="@dimen/spacing_md"
-            android:layout_marginBottom="@dimen/spacing_md"
-            android:src="@drawable/ic_arrow_up"
-            android:contentDescription="@string/cd_scroll_to_top"
-            android:visibility="gone"
-            app:fabSize="mini" />
+            <include
+                android:id="@+id/empty_view"
+                layout="@layout/layout_empty_state"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top"
+                android:visibility="gone" />
 
-    </FrameLayout>
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab_scroll_top"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="@dimen/spacing_md"
+                android:layout_marginBottom="@dimen/spacing_md"
+                android:src="@drawable/ic_arrow_up"
+                android:contentDescription="@string/cd_scroll_to_top"
+                android:visibility="gone"
+                app:fabSize="mini" />
+
+        </FrameLayout>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 </LinearLayout>

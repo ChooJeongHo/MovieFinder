@@ -15,36 +15,17 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ### 핵심 라이브러리
 | 라이브러리 | 용도 |
 |---|---|
-| AppCompat | Android 하위 호환성 |
-| Material Components | Material Design XML 컴포넌트 |
+| AppCompat, Material Components, Fragment KTX, ConstraintLayout, RecyclerView, Lifecycle(+Process), Splash Screen API, SwipeRefreshLayout, Facebook Shimmer, Timber, App Startup, kotlinx-datetime, Window, ProfileInstaller, Benchmark Macro | 기본 UI/생명주기/유틸 — 버전은 `gradle/libs.versions.toml` |
 | Navigation (Fragment) | Safe Args 기반 Fragment 네비게이션 |
-| Fragment KTX | Fragment 확장 함수 |
-| ConstraintLayout | 유연한 레이아웃 |
-| RecyclerView | 리스트/그리드 표시 |
 | Hilt | 의존성 주입 (DI) |
-| Room | 로컬 SQLite 데이터베이스 |
-| Room Paging | Room + Paging 3 통합 (RemoteMediator) |
-| Paging 3 | 무한 스크롤 페이징 |
-| Retrofit 3 | REST API 통신 |
-| OkHttp 5 | HTTP 클라이언트 + 로깅 + 응답 캐시 (kotlin.time.Duration API) |
-| kotlinx.serialization | JSON 직렬화/역직렬화 |
+| Room + Room Paging + Paging 3 | 로컬 SQLite, RemoteMediator, 무한 스크롤 페이징 |
+| Retrofit 3 + OkHttp 5 + kotlinx.serialization | REST 통신, 로깅 + 응답 캐시 (kotlin.time.Duration API), JSON 직렬화 |
 | Coil 3 | 이미지 로딩 (View 버전, 메모리+디스크 캐시) |
-| Facebook Shimmer | 로딩 Shimmer 애니메이션 |
-| Lifecycle | 생명주기 인식 컴포넌트 |
-| Splash Screen API | 스플래시 화면 |
-| SwipeRefreshLayout | 당겨서 새로고침 |
 | DataStore (Typed) | kotlinx.serialization JSON 기반 타입 안전 설정 저장 |
-| Lifecycle Process | ProcessLifecycleOwner (앱 수준 생명주기) |
-| ProfileInstaller | Baseline Profiles 설치 |
-| Benchmark Macro | Baseline Profile 생성 |
-| Timber | 구조화 로깅 |
-| App Startup | 초기화 최적화 (Timber 등) |
 | WorkManager | 개봉일 알림 스케줄링 |
-| kotlinx-datetime | 멀티플랫폼 날짜/시간 API |
-| Window | 윈도우 레이아웃 API |
 | android-youtube-player | YouTube 예고편 외부 연결 (임베드 제한으로 인해 앱 외부 실행) |
-| Jetpack Compose (부분 도입) | 검색 결과 화면(`SearchComposables.kt`, XML Fragment 안에 `ComposeView` 2곳 임베드)과 온보딩 화면(`OnboardingFragment.kt`, Fragment 전체가 `ComposeView`) — 이 두 곳 외 나머지 화면은 여전히 XML/ViewBinding |
-| Jetpack Glance | 홈 화면 위젯 `BoxOfficeWidget`(2x2, 박스오피스 TOP3) — 기존 `PopularMoviesWidget`(RemoteViewsService/Factory)과 별개로, 위젯 2종이 서로 다른 기술(RemoteViews vs Glance)로 공존함 |
+| Jetpack Compose (부분 도입) | 검색 결과·온보딩 두 곳뿐, 나머지는 XML/ViewBinding — 아래 "Compose 부분 도입 & Glance 위젯" 참고 |
+| Jetpack Glance | `BoxOfficeWidget`(2x2) — `PopularMoviesWidget`(RemoteViews)과 위젯 2종이 서로 다른 기술로 공존 |
 
 ### 개발/디버그 도구
 | 도구 | 용도 |
@@ -175,7 +156,7 @@ TMDB_API_KEY=여기에_API_키_입력
 
 ## 테스트
 
-### 유닛 테스트 (961개)
+### 유닛 테스트 (987개)
 ```bash
 ./gradlew testDebugUnitTest
 ```
@@ -394,58 +375,49 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   - **TMDB 언어 연동(2026-09-28, 실기기 SM-S926N 검증 완료)**: `AppLanguageProvider`(core/util)가 앱 언어를
     TMDB `language` 코드로 변환해 제공. 상세/배우/트렌딩/discover/개봉예정/홈(현재상영작·인기) 목록은 앱 언어를
     따르도록 전환 완료 — 영어 모드에서 제목/줄거리가 영어로 표시됨.
-    - **검색 결과 데이터는 ko-KR 고정, 표시 제목만 앱 언어를 따름** (2026-09-29, 실기기 SM-S926N 검증): KMRB
-      등급 필터(`FilterMoviesByKoreanRatingUseCase`)가 `movie.title`로 직접 매칭하므로 `MoviePagingSource`/
-      discover는 ko-KR을 유지한다. 앱 언어가 영어일 때만 **화면에 컴포즈된 카드의 제목**을 `GetLocalizedTitleUseCase`
-      → `LocalizedTitleRepositoryImpl`(메모리 LRU 500 + OkHttp HTTP 캐시, 동시 4개, 150ms 디바운스)로
-      `/movie/{id}?language=en-US` 지연 조회한다(`SearchComposables.kt`의 `rememberDisplayTitle`).
-      **왜 이 방향인가**: 필터 판정은 목록 멤버십을 결정해 전체 항목의 결과가 필요하므로 "보이는 항목만"으로 지연할 수
-      없다(보이려면 통과해야 하는데 통과 여부를 알려면 조회해야 하는 순환). 표시 문자열은 멤버십과 무관해 지연 가능.
-      필터 안에서 항목마다 제목을 추가 조회하던 이전 방식은 60건에 약 68초라 롤백. `GetKoreanTitleUseCase`는 상세 화면 KMRB 매칭용으로만 사용.
-      한계: 표시 제목이 한국어→영어로 약 0.5초 뒤 교체됨, 포스터는 ko-KR 기준, 검색 매칭/정렬은 ko-KR 기준.
-    - **KMRB 필터 자체의 한계(언어와 무관, 미해결)**: 항목당 순차 호출(콜드 0.4~0.55초/건)이고 `PagingData.filter`가
-      페이지 단위로 원자적이라 첫 결과까지 약 10초. 통과 항목이 적은 조합은 Paging이 페이지를 연쇄 로드한다(실측: knight + 15+ →
-      15페이지·138초, night+전체관람가 → 13페이지·94초). 연쇄에 상한이 없고 근본 해결(필터를 PagingSource 레벨로 옮겨 청크·상한
-      도입)은 미실시. `initialLoadSize=60`은 `BaseMoviePagingSource.load()`가 `params.loadSize`를 무시하므로 실제 첫 로드는
-      TMDB 1페이지(20건).
-    - **"페이지 기아" 해결(2026-09-30, 실기기 SM-S926N 검증 완료 10/01)**: 예전엔 등급 필터가 `cachedIn` *뒤*(`combine`)에
-      결합돼서, **2페이지 이상이 이미 로드된 상태에서 등급 칩을 골라 전부 걸러지면 Paging이 이어 로드를 멈췄다**(1페이지만
-      로드된 경우엔 초기 힌트로 스스로 이어 로드해 재현 안 됨). 이제 `SearchViewModel.searchResults`는
-      `combine(searchParams, 등급)` → `filter`(검색어·장르 둘 다 비면 통과 못 함) → `flatMapLatest { 검색 + 필터 }` →
-      `cachedIn` 순서라 **등급이 바뀌면 재검색(새 Pager)** 한다. `PagingEmptyStateRegressionTest`(6개, 2페이지 선로드 포함)와
-      `SearchViewModelTest`가 고정한다 — **필터를 다시 cachedIn 뒤로 옮기지 말 것.**
-      대가: 등급 변경마다 TMDB 재검색 + 목록 refresh(shimmer). KMRB 등급 조회는 Room 캐시라 재조회 비용은 작다.
-      미해결: `GetKoreanRatingUseCase`가 429 같은 실패를 null로 흡수해 필터에선 "전부 걸러짐"이 되므로, **KMRB 장애/한도 소진 중
-      등급 칩을 고르면 전 페이지를 연쇄 로드하며 KMRB를 계속 호출한다**(9/30 약 20초에 323건, 칩을 `전체`로 되돌리면 즉시 멈춤).
-      캐시 오염은 없다(Repository가 예외 시 upsert 전에 전파). 연쇄에 상한이 없다는 위 한계의 증폭이다.
-    - 116일차에 본 "검색 결과 없음"은 **로딩 중 빈 상태 오판**이었다: `SearchFragment.handleLoadStates`가 `refresh=NotLoading &&
-      itemCount==0`이면 append를 안 보고 바로 "결과 없음"을 띄웠다. 이제 `resolveSearchResultsPane`(`SearchResultsPane.kt`)이
-      `append.endOfPaginationReached` 이후에만 "결과 없음"을, 그 전엔 shimmer를, append 실패 시엔 오류 화면(재시도)을 보인다.
-      "Paging이 빈 페이지 뒤에도 자동으로 이어 로드한다"는 전제에 기대므로 전제가 깨지면 오판 대신 무한 shimmer가 된다.
-      대가: 통과가 뒤 페이지에만 있는 조합은 콜드 캐시에서 첫 결과까지 shimmer가 길다(night+전체관람가 약 86초).
-    - **즉시 검색/debounce 중복 호출 제거(2026-10-02, 실기기 검증 완료)**: `searchParams`의 `distinctUntilChanged`를 merge *뒤*로
-      옮기고 타이핑 경로도 `trim()` — 엔터·칩 클릭·장르 확인이 자동 검색과 같은 조건을 두 번 내던 것이 2건→1건(실측).
+    - **검색 결과 데이터는 ko-KR 고정, 표시 제목만 앱 언어를 따름** (2026-09-29, 실기기 검증): KMRB 등급 필터(`FilterMoviesByKoreanRatingUseCase`)가
+      `movie.title`로 매칭하므로 `MoviePagingSource`/discover는 ko-KR을 유지한다. 영어일 때만 **화면에 컴포즈된 카드의 제목**을
+      `GetLocalizedTitleUseCase`로 지연 조회한다(`SearchComposables.kt`의 `rememberDisplayTitle`). 필터 판정은 목록 멤버십을 정해 전체 항목이 필요하므로
+      "보이는 항목만"으로 지연할 수 없다(순환). 필터 안에서 제목을 추가 조회하던 방식은 60건 약 68초라 롤백. `GetKoreanTitleUseCase`는 상세 화면 KMRB 매칭 전용.
+      한계: 표시 제목이 약 0.5초 뒤 교체, 포스터·매칭·정렬은 ko-KR 기준.
+    - **KMRB 필터 자체의 한계(언어와 무관, 미해결)**: 항목당 순차 호출(콜드 0.4~0.55초/건), `PagingData.filter`가 페이지 단위 원자적이라 첫 결과까지 약 10초.
+      통과 항목이 적은 조합은 페이지를 연쇄 로드한다(최대 실측 138초). 연쇄 상한 없음, 필터를 PagingSource 레벨로 옮기는 근본 해결은 미실시.
+      **KMRB 장애/한도 소진 중 등급 칩을 고르면 전 페이지를 연쇄 로드하며 KMRB를 계속 호출한다**(`GetKoreanRatingUseCase`가 429를 null로 흡수 → "전부 걸러짐";
+      칩을 `전체`로 되돌리면 멈춤, 캐시 오염 없음).
+    - **"페이지 기아" 해결(2026-09-30, 실기기 검증 10/01)**: 필터가 `cachedIn` *뒤*(`combine`)에 있으면 2페이지 이상 로드된 뒤 등급 칩으로 전부 걸러질 때 Paging이 이어 로드를 멈췄다.
+      이제 `SearchViewModel.searchResults`는 `combine(searchParams, 등급)` → `filter` → `flatMapLatest { 검색 + 필터 }` → `cachedIn` 순서라 등급이 바뀌면 재검색(새 Pager)한다
+      (대가: 등급 변경마다 재검색 + shimmer). `PagingEmptyStateRegressionTest`·`SearchViewModelTest`가 고정한다 — **필터를 다시 cachedIn 뒤로 옮기지 말 것.**
+    - **"결과 없음" 판정**: `resolveSearchResultsPane`(`SearchResultsPane.kt`)이 `append.endOfPaginationReached` 이후에만 "결과 없음", 그 전엔 shimmer, append 실패 시 오류 화면(재시도)을 보인다.
+      "Paging이 빈 페이지 뒤에도 이어 로드한다"는 전제에 기대므로 깨지면 오판 대신 무한 shimmer가 된다.
+    - **즉시 검색/debounce 중복 호출 제거(2026-10-02)**: `searchParams`의 `distinctUntilChanged`를 merge *뒤*로 옮기고 타이핑 경로도 `trim()`(2건→1건 실측).
       같은 조건으로 이미 검색한 뒤의 엔터는 재검색하지 않는다(재시도는 화면 버튼). **dedupe를 가지별로 되돌리지 말 것.**
-    - 박스오피스 매칭(`MatchBoxOfficeWithTmdbUseCase`)의 TMDB 폴백 검색(`searchMoviesOnce`)은 앱 언어와 무관하게 항상 ko-KR 고정 —
-      KOFIC 영화명(한국어) 매칭 정확도 유지 목적. 홈 캐시(`cached_movies`)가 영어면 로컬 캐시 우선 매칭이 캐시 미스로 네트워크
-      폴백에 더 자주 의존하나 정확도엔 영향 없음.
-    - 앱 언어 변경 시 홈 캐시(`cached_movies`/`remote_keys`)를 즉시 무효화(`InvalidateHomeMovieCacheUseCase`,
-      `SettingsFragment`에서 언어 변경 직후 호출)해 이전 언어 데이터가 TTL(1시간) 동안 남지 않도록 함.
-    - 즐겨찾기/워치리스트/시청기록에 이미 저장된 제목은 추가 시점의 스냅샷이라 언어 변경과 무관하게 소급
-      갱신되지 않음(설계상 의도, 범위 밖).
-- **검색 화면 "최근 검색어" 목록이 비어 보이던 현상(2026-10-02 관찰 → 10/08 원인 확정·수정, 실기기 SM-S926N)**: UI 층 문제였다(Room/Flow 정상).
-  `handleRecentSearches`가 Flow emit 때만 *필터된* 목록을 어댑터에 넣고, X로 지울 때 `updateVisibility`는 영역 가시성만 바꿔 필터된 목록이
-  남았으며, 필터 결과가 비어도 영역을 안 숨겼다. 이제 `resolveRecentSearchesPane`(`RecentSearchesPane.kt`, 순수 함수, `RecentSearchesPaneTest`)이
-  목록·영역 처리를 정하고 collector와 `updateVisibility`의 blank 분기가 같은 판정을 쓴다. **연결부(apply 호출, `submitList`)는 JVM 테스트로 못 잡으므로
-  `SearchFragment`를 고칠 땐 실기기 시나리오로 확인할 것.** 필터본→전체본 교체 시 RecyclerView가 기존 첫 항목에 스크롤을 고정해 최신 검색어가 가려지므로
-  `pendingScrollToTop`을 non-blank→blank 전이에서만 세우고 모든 제출의 commit 콜백이 소비한다(`AsyncListDiffer`는 세대가 밀린 이전 제출의 콜백을
-  버리므로 콜백 인자가 아니라 필드에 둔다; 호출 경로로 구분하면 STARTED 재진입에서 스크롤이 리셋됐다).
-  - **남은 한계(미해결)**: ① 가로 모드: 해결(아래). ② 배우 모드 가드 없음 — 영화 모드 검색→배우 모드에서 X→영화 모드 복귀 시 스크롤 고정이 남을 수 있다는 건 코드 추론이고 재현 안 됨.
-    ③ 제출 직후 `Filtered`가 결과 위로 목록을 다시 보이게 할 수 있음(기존). ④ 장르 칩 해제는 `updateVisibility`를 안 불러 blank+장르 해제 직후 목록/초기 안내
-    전환이 안 될 수 있음(기존). ⑤ 새 ViewModel 초기값 `emptyList()`의 초기 안내 깜빡임은 **확인 못 함**. ⑥ 수정 후 `star wars` 제출→X 11회 중 1회
-    `OTHER`(목록·초기 안내 둘 다 아님), 원인 **확인 못 함**.
+    - 박스오피스 매칭(`MatchBoxOfficeWithTmdbUseCase`)의 TMDB 폴백 검색은 앱 언어와 무관하게 ko-KR 고정(KOFIC 한국어 영화명 매칭 정확도). 앱 언어 변경 시 홈 캐시는
+      `InvalidateHomeMovieCacheUseCase`로 즉시 무효화. 즐겨찾기/워치리스트/시청기록의 저장 제목은 추가 시점 스냅샷이라 소급 갱신되지 않는다(의도).
+- **검색 "최근 검색어" 목록이 비어 보이던 현상(10/08 수정, 실기기 SM-S926N)**: UI 층 문제(Room/Flow 정상) — X로 지운 뒤에도 *필터된* 목록이 어댑터에 남았다.
+  `resolveRecentSearchesPane`(`RecentSearchesPane.kt`, 순수 함수, `RecentSearchesPaneTest`)이 목록·영역 처리를 정하고 collector와 `updateVisibility`의 blank 분기가 같은 판정을 쓴다.
+  **연결부(apply 호출, `submitList`)는 JVM 테스트로 못 잡으니 `SearchFragment`를 고칠 땐 실기기 시나리오로 확인할 것.** 필터본→전체본 교체 시 스크롤 고정으로 최신 검색어가 가려지므로
+  `pendingScrollToTop`을 non-blank→blank 전이에서만 세우고 모든 제출의 commit 콜백이 소비한다(콜백 인자가 아닌 필드: `AsyncListDiffer`는 세대가 밀린 제출의 콜백을 버린다).
+  - **남은 한계(미해결)**: 배우 모드 가드 없음(코드 추론, 재현 안 됨) / 제출 직후 `Filtered`가 목록을 다시 보이게 할 수 있음 / 장르 칩 해제가 `updateVisibility`를 안 불러 전환이 안 될 수 있음 /
+    초기 안내 깜빡임과 `star wars` 제출→X 11회 중 1회 `OTHER`는 **확인 못 함**.
 - **가로 모드 검색(123일차, 실기기 1440x3120/560dpi/3버튼)**: 가로 콘텐츠 영역이 173px(고정 스택이 높이의 86%)라 최근 검색어 `rv`=0·결과도 173px였다.
   `layout-land/fragment_search.xml`(왼쪽 320dp 스크롤 패널에 toolbar·입력창·칩, 오른쪽 콘텐츠)로 1139px/`rv` 915px. **가로 루트 `baselineAligned="false"` 필수**: 기본값이면 weight 자식이 UNSPECIFIED
   높이로 선측정돼 결과 `LazyVerticalGrid`가 가로 검색어 입력 시 크래시. id·뷰 클래스·루트는 세로와 같게, 구조용 컨테이너엔 id 금지(`SearchLayoutConsistencyTest`; 속성 차이는 못 잡으니 세로를 고치면 가로도).
   **한계**: 결과 그리드 4열 유지(창 폭 기준); 키보드 올림 시 `fitsSystemWindows`가 `bottom_nav` 높이만큼 과다 패딩(세로 `rv` 113px); 다른 탭 가로·다른 크기/태블릿/제스처 내비 미측정.
+- **다른 탭 가로 점검과 홈 1단계 수정(124일차, 실기기 SM-S926N 1440x3120/560dpi/3버튼, 보조 AVD는 같은 해상도·dpi)**:
+  - **측정 요약(가로, 콘텐츠 영역 px / 세로)**: 사용 불가였던 건 홈뿐 — `rv_movies`가 세로·가로 모두 0px(스크롤 없는 LinearLayout 루트 + wrap_content 섹션 2개가 높이를 다 씀, 시청기록 행 유무에 이진 의존).
+    통계·설정(다이얼로그 3종 포함)·알림 기록(빈 상태만) 943/2265, 검색 1139/1495(123일차 재현)는 정상. 상세·인물·컬렉션·즐겨찾기는 가로에서 좁지만 도달 가능
+    (상세 앱바 980px→첫 화면 본문 460px, 즐겨찾기 가로 목록 579px로 자연 높이 1353px의 41%만 보임).
+  - **홈 수정 = 1단계(섹션 접기)**: 섹션 영역을 `CoordinatorLayout` + 섹션 전용 `AppBarLayout`(`app_bar_home_sections`, 박스오피스·시청기록 `scroll`)으로 감싸고 목록에 `appbar_scrolling_view_behavior`.
+    루트는 LinearLayout 유지(`baseline-prof.txt`가 `FragmentHomeBinding.getRoot()`를 LinearLayout로 고정). "맨 위로"(FAB·상단 탭/하단 내비 재선택)는 섹션도 펼친다
+    (`HomeFragment.scrollHomeToTop`, `MainActivity.scrollCurrentTabToTop`). `HomeLayoutStructureTest`(DOM 파싱 22개)가 구조를 고정하지만 **높이 값 자체는 JVM이 못 잡으니 레이아웃을 고치면 실기기로 확인할 것.**
+    섹션을 접은 뒤 목록 가시 높이: 실기기 세로 2265px·가로 775px.
+  - **목록은 도달 가능해졌지만 첫 화면에서는 여전히 안 보이고, 밀어야 한다는 단서가 없다. 첫 화면 노출은 별도 제품 결정이 필요하다.**
+    (첫 화면 목록: 시청기록이 있으면 세로·가로 0px. 시청기록이 없을 때 세로 약 923px·가로 0px은 AVD 보조 측정이며 실기기 측정이 아니다.)
+  - **R1 재정의**: 변경 전 시청기록 섹션 937px·가로 박스오피스 775px는 마지막 wrap_content 자식이 남은 높이(AT_MOST)에 맞춰 **잘린 값**이었다(제목이 포스터에 겹침).
+    접히는 앱바 안에서는 UNSPECIFIED라 자연 높이(1024px/1328px)가 된다. 1px도 안 바뀐 것은 툴바·탭 491px와 세로 박스오피스 1328px.
+  - **동작 변화**: 섹션이 접힌 상태에서 아래로 당기면 첫 당김은 섹션을 펼치고(스피너 없음), 새로고침은 그다음 당김부터다.
+  - **`HomeFragmentTest`(androidTest)는 `rv_movies` `isDisplayed`를 검사해 이 기기에서 이미 실패할 가능성이 크다 — 124일차에 수정·실행하지 않았고 CI도 androidTest를 돌리지 않는다.**
+  - **후보(미수정)**: 상세·인물 가로 backdrop 280dp 고정(`values-land`), 그리드 열 수가 너비(WindowSizeClass)만 기준(가로 4열: 홈·검색·즐겨찾기), 상세 FAB가 가로 3버튼 내비와 겹침,
+    상세 메모 입력란이 세로 키보드에 가려짐, 컬렉션 가로 앱바 700px, 오프라인+트렌딩 빈 화면(변경 전부터), 홈 가로 왼쪽 컷아웃 인셋(126px) 미적용,
+    온보딩 "다음" 버튼이 내비 바와 겹침(AVD만), `baseline-prof.txt`의 `FragmentHomeBinding.<init>` 줄 stale. **미측정**: 다크 모드·TalkBack·다른 크기/태블릿·프로세스 종료 후 접힘 복원.
 - **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)

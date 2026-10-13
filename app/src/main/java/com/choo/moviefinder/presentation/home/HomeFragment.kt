@@ -32,6 +32,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+@Suppress("TooManyFunctions")
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
 
@@ -218,10 +219,14 @@ class HomeFragment : Fragment() {
             }
         })
 
-        binding.fabScrollTop.setOnClickListener {
-            binding.rvMovies.scrollToPosition(0)
-            binding.fabScrollTop.hide()
-        }
+        binding.fabScrollTop.setOnClickListener { scrollHomeToTop() }
+    }
+
+    // FAB·상단 탭 재선택 공용 "맨 위로": 목록을 맨 위로 올리고, 위로 접혀 있던 섹션 앱바도 다시 펼친다
+    private fun scrollHomeToTop() {
+        binding.rvMovies.scrollToPosition(0)
+        binding.appBarHomeSections.setExpanded(true, true)
+        binding.fabScrollTop.hide()
     }
 
     private fun setupTabs() {
@@ -240,7 +245,7 @@ class HomeFragment : Fragment() {
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {
-                binding.rvMovies.scrollToPosition(0)
+                scrollHomeToTop()
             }
         })
     }
