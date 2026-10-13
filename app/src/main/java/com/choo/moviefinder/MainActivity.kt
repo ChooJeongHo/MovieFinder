@@ -32,6 +32,7 @@ import com.choo.moviefinder.databinding.ActivityMainBinding
 import com.choo.moviefinder.domain.usecase.ExchangeTmdbTokenUseCase
 import com.choo.moviefinder.presentation.detail.DetailFragmentArgs
 import com.choo.moviefinder.presentation.settings.SettingsViewModel
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -203,7 +204,10 @@ class MainActivity : AppCompatActivity() {
             val rv = rvIds.firstNotNullOfOrNull { view.findViewById<RecyclerView>(it) }
             val composeSearchResults = view.findViewById<View>(R.id.compose_search_results)
             when {
-                rv != null -> rv.scrollToPosition(0)
+                rv != null -> {
+                    rv.scrollToPosition(0)
+                    view.findViewById<AppBarLayout>(R.id.app_bar_home_sections)?.setExpanded(true, true)
+                }
                 // SearchFragment의 검색 결과는 Compose LazyColumn/LazyVerticalGrid라 RecyclerView가 없다.
                 // fab_scroll_top 클릭 리스너가 이미 Compose 스크롤 상태와 연결되어 있으므로 그대로 재사용한다.
                 composeSearchResults != null ->
