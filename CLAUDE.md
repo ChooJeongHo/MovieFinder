@@ -262,19 +262,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `NavigationUI.setupWithNavController()` + Detail에서 BottomNav 자동 숨김
 - Detail self-navigation: `launchSingleTop="true"` (백스택 중복 방지)
 - 딥링크: `moviefinder://movie/{id}`, `moviefinder://person/{id}`, `moviefinder://stats`
-- **Predictive Back Gesture**: `enableOnBackInvokedCallback="true"` + targetSdk 36 + Fragment
-  1.9.0/Navigation 2.9.8로 플러밍은 이미 갖춰져 있음. 앱 종료(홈으로 나가기)는 OS 레벨이라 자동으로
-  스크러빙 애니메이션이 나오지만, **인앱 Fragment 전환은 `nav_graph.xml` 액션에 걸린 애니메이션
-  리소스가 `res/animator/`(Animator, seek 가능)여야만 스와이프 진행률에 맞춰 미리보기가 나온다** —
-  `res/anim/`(레거시 View Animation, `<translate>`/`<alpha>`)는 손을 뗄 때까지 아무 변화 없다가
-  순간이동하는 것처럼 보임(2026-09-01 실기기 SM-S926N 검증으로 확인, 커스텀 `OnBackPressedCallback`
-  코드 없이도 이 차이만으로 재현됨). `slide_in_right`/`slide_out_right`/`fade_in`/`fade_out` 4개를
-  `res/animator/`로 전환 완료, translationX 값은 런타임 화면 너비를 알 수 없어
-  `@dimen/nav_transition_slide_distance`(480dp) 고정 근사치 사용. **DetailFragment의 공유 요소
-  전환(`ChangeBounds`+`ChangeTransform`+`ChangeImageTransform`, `android.transition.TransitionSet`)은
-  레거시 플랫폼 Transition이라 predictive back 미리보기가 여전히 안 됨** — androidx.transition으로
-  마이그레이션하면 가능하지만 500ms `postponeEnterTransition` + Coil 리스너 흐름을 건드려야 해서
-  리스크 대비 보류 중.
+- **Predictive Back Gesture**: `enableOnBackInvokedCallback="true"` + targetSdk 36 + Fragment 1.9.0/Navigation 2.9.8로 플러밍은 갖춰져 있음. 앱 종료(홈으로 나가기)는 OS 레벨이라 스크러빙 애니메이션이 자동으로 나오지만, **인앱 Fragment 전환은 `nav_graph.xml` 액션의 애니메이션 리소스가 `res/animator/`(Animator, seek 가능)여야만 스와이프 진행률에 맞춰 미리보기가 나온다** — `res/anim/`(레거시 View Animation)은 손을 뗄 때까지 변화 없다가 순간이동처럼 보임(2026-09-01 실기기 SM-S926N, 커스텀 `OnBackPressedCallback` 없이 이 차이만으로 재현). `slide_in_right`/`slide_out_right`/`fade_in`/`fade_out` 4개를 `res/animator/`로 전환 완료(translationX는 `@dimen/nav_transition_slide_distance` 480dp 고정 근사치). **DetailFragment 공유 요소 전환(플랫폼 `android.transition.TransitionSet`)은 레거시라 predictive back 미리보기가 여전히 안 됨** — androidx.transition 마이그레이션은 500ms `postponeEnterTransition` + Coil 리스너 흐름을 건드려 리스크 대비 보류.
 - MaterialAlertDialogBuilder 다이얼로그도 predictive back 스와이프로 닫히긴 하나 진행률 미리보기는
   없음(실기기 검증, 원인 미조사) — 다이얼로그 predictive back 애니메이션이 필요하면 별도 조사 필요.
 
@@ -403,21 +391,17 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   `layout-land/fragment_search.xml`(왼쪽 320dp 스크롤 패널에 toolbar·입력창·칩, 오른쪽 콘텐츠)로 1139px/`rv` 915px. **가로 루트 `baselineAligned="false"` 필수**: 기본값이면 weight 자식이 UNSPECIFIED
   높이로 선측정돼 결과 `LazyVerticalGrid`가 가로 검색어 입력 시 크래시. id·뷰 클래스·루트는 세로와 같게, 구조용 컨테이너엔 id 금지(`SearchLayoutConsistencyTest`; 속성 차이는 못 잡으니 세로를 고치면 가로도).
   **한계**: 결과 그리드 4열 유지(창 폭 기준); 키보드 올림 시 `fitsSystemWindows`가 `bottom_nav` 높이만큼 과다 패딩(세로 `rv` 113px); 다른 탭 가로·다른 크기/태블릿/제스처 내비 미측정.
-- **다른 탭 가로 점검과 홈 1단계 수정(124일차, 실기기 SM-S926N 1440x3120/560dpi/3버튼, 보조 AVD는 같은 해상도·dpi)**:
-  - **측정 요약(가로, 콘텐츠 영역 px / 세로)**: 사용 불가였던 건 홈뿐 — `rv_movies`가 세로·가로 모두 0px(스크롤 없는 LinearLayout 루트 + wrap_content 섹션 2개가 높이를 다 씀, 시청기록 행 유무에 이진 의존).
-    통계·설정(다이얼로그 3종 포함)·알림 기록(빈 상태만) 943/2265, 검색 1139/1495(123일차 재현)는 정상. 상세·인물·컬렉션·즐겨찾기는 가로에서 좁지만 도달 가능
-    (상세 앱바 980px→첫 화면 본문 460px, 즐겨찾기 가로 목록 579px로 자연 높이 1353px의 41%만 보임).
-  - **홈 수정 = 1단계(섹션 접기)**: 섹션 영역을 `CoordinatorLayout` + 섹션 전용 `AppBarLayout`(`app_bar_home_sections`, 박스오피스·시청기록 `scroll`)으로 감싸고 목록에 `appbar_scrolling_view_behavior`.
-    루트는 LinearLayout 유지(`baseline-prof.txt`가 `FragmentHomeBinding.getRoot()`를 LinearLayout로 고정). "맨 위로"(FAB·상단 탭/하단 내비 재선택)는 섹션도 펼친다
-    (`HomeFragment.scrollHomeToTop`, `MainActivity.scrollCurrentTabToTop`). `HomeLayoutStructureTest`(DOM 파싱 22개)가 구조를 고정하지만 **높이 값 자체는 JVM이 못 잡으니 레이아웃을 고치면 실기기로 확인할 것.**
-    섹션을 접은 뒤 목록 가시 높이: 실기기 세로 2265px·가로 775px.
-  - **목록은 도달 가능해졌지만 첫 화면에서는 여전히 안 보이고, 밀어야 한다는 단서가 없다. 첫 화면 노출은 별도 제품 결정이 필요하다.**
-    (첫 화면 목록: 시청기록이 있으면 세로·가로 0px. 시청기록이 없을 때 세로 약 923px·가로 0px은 AVD 보조 측정이며 실기기 측정이 아니다.)
-  - **R1 재정의**: 변경 전 시청기록 섹션 937px·가로 박스오피스 775px는 마지막 wrap_content 자식이 남은 높이(AT_MOST)에 맞춰 **잘린 값**이었다(제목이 포스터에 겹침).
-    접히는 앱바 안에서는 UNSPECIFIED라 자연 높이(1024px/1328px)가 된다. 1px도 안 바뀐 것은 툴바·탭 491px와 세로 박스오피스 1328px.
-  - **동작 변화**: 섹션이 접힌 상태에서 아래로 당기면 첫 당김은 섹션을 펼치고(스피너 없음), 새로고침은 그다음 당김부터다.
-  - **`HomeFragmentTest`(androidTest)는 `rv_movies` `isDisplayed`를 검사해 이 기기에서 이미 실패할 가능성이 크다 — 124일차에 수정·실행하지 않았고 CI도 androidTest를 돌리지 않는다.**
-  - **후보(미수정)**: 상세·인물 가로 backdrop 280dp 고정(`values-land`), 그리드 열 수가 너비(WindowSizeClass)만 기준(가로 4열: 홈·검색·즐겨찾기), 상세 FAB가 가로 3버튼 내비와 겹침,
-    상세 메모 입력란이 세로 키보드에 가려짐, 컬렉션 가로 앱바 700px, 오프라인+트렌딩 빈 화면(변경 전부터), 홈 가로 왼쪽 컷아웃 인셋(126px) 미적용,
-    온보딩 "다음" 버튼이 내비 바와 겹침(AVD만), `baseline-prof.txt`의 `FragmentHomeBinding.<init>` 줄 stale. **미측정**: 다크 모드·TalkBack·다른 크기/태블릿·프로세스 종료 후 접힘 복원.
+- **다른 탭 가로 점검과 홈 1단계 수정(124일차, 실기기 SM-S926N 1440x3120/560dpi/3버튼)**:
+  - **측정(가로 콘텐츠 영역 px / 세로)**: 사용 불가는 홈뿐 — `rv_movies`가 세로·가로 모두 0px(스크롤 없는 LinearLayout 루트 + wrap_content 섹션이 높이를 다 씀, 시청기록 유무에 이진 의존). 통계·설정·알림 기록 943/2265, 검색 1139/1495 정상. 상세·인물·컬렉션·즐겨찾기는 가로에서 좁지만 도달 가능(즐겨찾기 가로 목록은 자연 높이의 41%만 보임).
+  - **홈 수정 = 1단계(섹션 접기)**: 섹션을 `CoordinatorLayout` + `AppBarLayout`(`app_bar_home_sections`, `scroll`)으로 감싸고 목록에 `appbar_scrolling_view_behavior`. 루트는 LinearLayout 유지(`baseline-prof.txt`가 `FragmentHomeBinding.getRoot()`를 고정). "맨 위로"(FAB·탭 재선택)는 섹션도 펼침(`HomeFragment.scrollHomeToTop`, `MainActivity.scrollCurrentTabToTop`). `HomeLayoutStructureTest`가 구조를 고정하나 **높이 값은 JVM이 못 잡으니 레이아웃을 고치면 실기기로 확인.** 접은 뒤 목록 가시 높이 세로 2265px·가로 775px.
+  - **첫 화면에서는 목록이 여전히 안 보이고(시청기록 있으면 0px) 밀어야 한다는 단서가 없다 — 별도 제품 결정 필요.**
+  - **R1 재정의**: 변경 전 시청기록 937px·가로 박스오피스 775px는 마지막 wrap_content 자식이 남은 높이에 맞춰 **잘린 값**이었다. 접히는 앱바 안에서는 자연 높이(1024/1328px). 불변은 툴바·탭 491px와 세로 박스오피스 1328px.
+  - **동작 변화**: 섹션이 접힌 상태에서 아래로 당기면 첫 당김은 섹션을 펼치고(스피너 없음) 새로고침은 그다음부터.
+  - **`HomeFragmentTest`(androidTest)는 `rv_movies` `isDisplayed`를 검사해 이 기기에서 이미 실패할 가능성이 크다 — 미수정·미실행, CI도 androidTest 안 돌림.**
+  - **후보(미수정)**: 상세·인물 가로 backdrop 280dp 고정, 그리드 열 수가 너비만 기준(가로 4열), 상세 FAB가 가로 3버튼 내비와 겹침, 컬렉션 가로 앱바 700px, 오프라인+트렌딩 빈 화면, 홈 가로 왼쪽 컷아웃 인셋 126px 미적용, 온보딩 "다음" 버튼이 내비 바와 겹침(AVD만), `baseline-prof.txt`의 `FragmentHomeBinding.<init>` 줄 stale. **미측정**: 다크 모드·TalkBack·다른 크기/태블릿·프로세스 종료 후 접힘 복원.
+- **상세 메모 입력란 키보드 가림 수정(125일차, 실기기 SM-S926N 3버튼)**: 키보드를 올리면 입력란이 IME 뒤로 가렸고(25회 이상 가시 0px) 메모 0개면 스크롤로도 못 닿았다(입력란 아래 콘텐츠 1068px < IME 1326px).
+  - **원인(설정 아닌 구조)**: `DetailFragment`의 `nestedScroll` 인셋 리스너가 `navigationBars`만 반영하고 IME를 무시, `enableEdgeToEdge`라 창이 안 줄어든다. `windowSoftInputMode`는 이미 `adjust=resize`라 원인 아님.
+  - **수정(`DetailFragment.kt` 1개, +22/-2)**: 패딩=`max(nav, ime)`, IME가 올라오고 `et_memo` 포커스면 `scrollMemoAboveIme()`가 입력란 아래 끝을 IME 위(+8dp)로 스크롤, 입력란 높이 변화(1→4줄)도 재보정. IME가 없으면 수정 전과 같다.
+  - **R6 재정의**: "닫힘은 수정 전과 같을 것"은 포커스 해제·키보드 닫힘 동작이고 닫힌 뒤 스크롤 위치는 대상 아님 — 닫히면 스크롤 끝으로 clamp(A −147~−161px, C −875px, 프레임상 깜빡임·빈 화면 없음).
+  - **한계**: 키보드 연 채 세로→가로→세로 회전 시 657px 과다 스크롤(전부 보임), 프로세스 복원+키보드 복원 시 자동 스크롤 안 됨(스크롤하면 닿음), 저장 직후 메모 목록 미표시(0/6, 별개 결함·원인 미확인, `setHasFixedSize` 가설 지지 안 됨). 상세 외 화면 IME는 미측정.
 - **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)
