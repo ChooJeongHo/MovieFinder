@@ -21,6 +21,7 @@ import android.widget.TextView
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
@@ -114,10 +115,13 @@ class DetailFragment : Fragment() {
         setupMemoInput()
         observeViewModelFlows()
 
-        // edge-to-edge: 하단 네비게이션 바 인셋 처리 (상단은 fitsSystemWindows로 처리됨)
+        // edge-to-edge: 하단 내비게이션 바/IME 인셋 처리 (상단은 fitsSystemWindows로 처리됨)
         ViewCompat.setOnApplyWindowInsetsListener(binding.nestedScroll) { v, insets ->
             val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            v.updatePadding(bottom = navBar.bottom)
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            // IME 인셋 bottom에는 내비 바 높이가 이미 포함돼 있어 합이 아닌 최댓값을 쓴다
+            v.updatePadding(bottom = maxOf(navBar.bottom, ime.bottom))
+            if (ime.bottom > 0 && _binding?.etMemo?.hasFocus() == true) v.doOnLayout { scrollMemoAboveIme() }
             insets
         }
         val favOriginalBottom =
@@ -667,6 +671,10 @@ class DetailFragment : Fragment() {
             }
         }
         binding.tilMemo.setEndIconOnClickListener { saveMemoAction() }
+        // 입력 줄이 늘어 입력란 높이가 바뀌면 다시 IME 위로 스크롤 (IME가 없으면 함수 쪽 가드로 무시됨)
+        binding.tilMemo.addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
+            if (bottom - top != oldBottom - oldTop) scrollMemoAboveIme()
+        }
         binding.etMemo.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
                 saveMemoAction()
@@ -675,6 +683,18 @@ class DetailFragment : Fragment() {
                 false
             }
         }
+    }
+
+    // IME가 메모 입력란을 가리면 입력란 아래 끝이 IME 위로 오도록 스크롤 (이미 보이면 움직이지 않음)
+    private fun scrollMemoAboveIme() {
+        val b = _binding ?: return
+        val ime = ViewCompat.getRootWindowInsets(b.nestedScroll)?.getInsets(WindowInsetsCompat.Type.ime())
+        if (ime == null || ime.bottom == 0 || !b.etMemo.hasFocus()) return
+        val imeTop = b.nestedScroll.rootView.height - ime.bottom
+        val location = IntArray(2)
+        b.tilMemo.getLocationInWindow(location)
+        val delta = location[1] + b.tilMemo.height + resources.getDimensionPixelSize(R.dimen.spacing_sm) - imeTop
+        if (delta > 0) b.nestedScroll.smoothScrollBy(0, delta)
     }
 
     // 메모 수정 다이얼로그 표시
