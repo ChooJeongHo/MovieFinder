@@ -249,7 +249,7 @@ class DetailFragment : Fragment() {
         binding.rvMemos.apply {
             layoutManager = LinearLayoutManager(requireContext())
             itemAnimator = null
-            setHasFixedSize(true)
+            // 메모 수·내용에 따라 wrap_content 높이가 바뀌므로 setHasFixedSize(true)를 쓰지 않는다
             adapter = memoAdapter
         }
     }
