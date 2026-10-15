@@ -363,22 +363,11 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   - **TMDB 언어 연동(2026-09-28, 실기기 SM-S926N 검증 완료)**: `AppLanguageProvider`(core/util)가 앱 언어를
     TMDB `language` 코드로 변환해 제공. 상세/배우/트렌딩/discover/개봉예정/홈(현재상영작·인기) 목록은 앱 언어를
     따르도록 전환 완료 — 영어 모드에서 제목/줄거리가 영어로 표시됨.
-    - **검색 결과 데이터는 ko-KR 고정, 표시 제목만 앱 언어를 따름** (2026-09-29, 실기기 검증): KMRB 등급 필터(`FilterMoviesByKoreanRatingUseCase`)가
-      `movie.title`로 매칭하므로 `MoviePagingSource`/discover는 ko-KR을 유지한다. 영어일 때만 **화면에 컴포즈된 카드의 제목**을
-      `GetLocalizedTitleUseCase`로 지연 조회한다(`SearchComposables.kt`의 `rememberDisplayTitle`). 필터 판정은 목록 멤버십을 정해 전체 항목이 필요하므로
-      "보이는 항목만"으로 지연할 수 없다(순환). 필터 안에서 제목을 추가 조회하던 방식은 60건 약 68초라 롤백. `GetKoreanTitleUseCase`는 상세 화면 KMRB 매칭 전용.
-      한계: 표시 제목이 약 0.5초 뒤 교체, 포스터·매칭·정렬은 ko-KR 기준.
-    - **KMRB 필터 자체의 한계(언어와 무관, 미해결)**: 항목당 순차 호출(콜드 0.4~0.55초/건), `PagingData.filter`가 페이지 단위 원자적이라 첫 결과까지 약 10초.
-      통과 항목이 적은 조합은 페이지를 연쇄 로드한다(최대 실측 138초). 연쇄 상한 없음, 필터를 PagingSource 레벨로 옮기는 근본 해결은 미실시.
-      **KMRB 장애/한도 소진 중 등급 칩을 고르면 전 페이지를 연쇄 로드하며 KMRB를 계속 호출한다**(`GetKoreanRatingUseCase`가 429를 null로 흡수 → "전부 걸러짐";
-      칩을 `전체`로 되돌리면 멈춤, 캐시 오염 없음).
-    - **"페이지 기아" 해결(2026-09-30, 실기기 검증 10/01)**: 필터가 `cachedIn` *뒤*(`combine`)에 있으면 2페이지 이상 로드된 뒤 등급 칩으로 전부 걸러질 때 Paging이 이어 로드를 멈췄다.
-      이제 `SearchViewModel.searchResults`는 `combine(searchParams, 등급)` → `filter` → `flatMapLatest { 검색 + 필터 }` → `cachedIn` 순서라 등급이 바뀌면 재검색(새 Pager)한다
-      (대가: 등급 변경마다 재검색 + shimmer). `PagingEmptyStateRegressionTest`·`SearchViewModelTest`가 고정한다 — **필터를 다시 cachedIn 뒤로 옮기지 말 것.**
-    - **"결과 없음" 판정**: `resolveSearchResultsPane`(`SearchResultsPane.kt`)이 `append.endOfPaginationReached` 이후에만 "결과 없음", 그 전엔 shimmer, append 실패 시 오류 화면(재시도)을 보인다.
-      "Paging이 빈 페이지 뒤에도 이어 로드한다"는 전제에 기대므로 깨지면 오판 대신 무한 shimmer가 된다.
-    - **즉시 검색/debounce 중복 호출 제거(2026-10-02)**: `searchParams`의 `distinctUntilChanged`를 merge *뒤*로 옮기고 타이핑 경로도 `trim()`(2건→1건 실측).
-      같은 조건으로 이미 검색한 뒤의 엔터는 재검색하지 않는다(재시도는 화면 버튼). **dedupe를 가지별로 되돌리지 말 것.**
+    - **검색 결과 데이터는 ko-KR 고정, 표시 제목만 앱 언어를 따름** (2026-09-29): KMRB 등급 필터(`FilterMoviesByKoreanRatingUseCase`)가 `movie.title`로 매칭하므로 `MoviePagingSource`/discover는 ko-KR 유지. 영어일 때만 **화면에 컴포즈된 카드의 제목**을 `GetLocalizedTitleUseCase`로 지연 조회(`SearchComposables.kt`의 `rememberDisplayTitle`) — 필터 판정은 전체 항목이 필요해 "보이는 항목만"으로 지연 불가(순환), 필터 안 추가 조회는 60건 약 68초라 롤백. `GetKoreanTitleUseCase`는 상세 KMRB 매칭 전용. 한계: 표시 제목이 약 0.5초 뒤 교체, 포스터·매칭·정렬은 ko-KR 기준.
+    - **KMRB 필터 한계(미해결)**: 항목당 순차 호출(콜드 0.4~0.55초/건), `PagingData.filter`가 페이지 단위 원자적이라 첫 결과까지 약 10초, 통과 항목이 적으면 페이지를 연쇄 로드(최대 138초, 상한 없음). **KMRB 장애/한도 소진 중 등급 칩을 고르면 전 페이지를 연쇄 로드하며 KMRB를 계속 호출**(429를 null로 흡수 → "전부 걸러짐", `전체`로 되돌리면 멈춤).
+    - **"페이지 기아" 해결(2026-09-30)**: 필터가 `cachedIn` 뒤(`combine`)면 등급 칩으로 전부 걸러질 때 Paging이 이어 로드를 멈췄다. 이제 `combine(searchParams, 등급)` → `filter` → `flatMapLatest { 검색 + 필터 }` → `cachedIn` 순서(등급 변경 시 재검색 + shimmer). `PagingEmptyStateRegressionTest`·`SearchViewModelTest`가 고정 — **필터를 다시 cachedIn 뒤로 옮기지 말 것.**
+    - **"결과 없음" 판정**: `resolveSearchResultsPane`이 `append.endOfPaginationReached` 이후에만 "결과 없음", 그 전엔 shimmer, append 실패 시 오류 화면. "Paging이 빈 페이지 뒤에도 이어 로드한다"는 전제라 깨지면 무한 shimmer.
+    - **즉시 검색/debounce 중복 제거(2026-10-02)**: `searchParams`의 `distinctUntilChanged`를 merge *뒤*로, 타이핑 경로도 `trim()`(2건→1건 실측). 같은 조건 재엔터는 재검색 안 함(재시도는 화면 버튼). **dedupe를 가지별로 되돌리지 말 것.**
     - 박스오피스 매칭(`MatchBoxOfficeWithTmdbUseCase`)의 TMDB 폴백 검색은 앱 언어와 무관하게 ko-KR 고정(KOFIC 한국어 영화명 매칭 정확도). 앱 언어 변경 시 홈 캐시는
       `InvalidateHomeMovieCacheUseCase`로 즉시 무효화. 즐겨찾기/워치리스트/시청기록의 저장 제목은 추가 시점 스냅샷이라 소급 갱신되지 않는다(의도).
 - **검색 "최근 검색어" 목록이 비어 보이던 현상(10/08 수정, 실기기 SM-S926N)**: UI 층 문제(Room/Flow 정상) — X로 지운 뒤에도 *필터된* 목록이 어댑터에 남았다.
@@ -392,16 +381,19 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   높이로 선측정돼 결과 `LazyVerticalGrid`가 가로 검색어 입력 시 크래시. id·뷰 클래스·루트는 세로와 같게, 구조용 컨테이너엔 id 금지(`SearchLayoutConsistencyTest`; 속성 차이는 못 잡으니 세로를 고치면 가로도).
   **한계**: 결과 그리드 4열 유지(창 폭 기준); 키보드 올림 시 `fitsSystemWindows`가 `bottom_nav` 높이만큼 과다 패딩(세로 `rv` 113px); 다른 탭 가로·다른 크기/태블릿/제스처 내비 미측정.
 - **다른 탭 가로 점검과 홈 1단계 수정(124일차, 실기기 SM-S926N 1440x3120/560dpi/3버튼)**:
-  - **측정(가로 콘텐츠 영역 px / 세로)**: 사용 불가는 홈뿐 — `rv_movies`가 세로·가로 모두 0px(스크롤 없는 LinearLayout 루트 + wrap_content 섹션이 높이를 다 씀, 시청기록 유무에 이진 의존). 통계·설정·알림 기록 943/2265, 검색 1139/1495 정상. 상세·인물·컬렉션·즐겨찾기는 가로에서 좁지만 도달 가능(즐겨찾기 가로 목록은 자연 높이의 41%만 보임).
-  - **홈 수정 = 1단계(섹션 접기)**: 섹션을 `CoordinatorLayout` + `AppBarLayout`(`app_bar_home_sections`, `scroll`)으로 감싸고 목록에 `appbar_scrolling_view_behavior`. 루트는 LinearLayout 유지(`baseline-prof.txt`가 `FragmentHomeBinding.getRoot()`를 고정). "맨 위로"(FAB·탭 재선택)는 섹션도 펼침(`HomeFragment.scrollHomeToTop`, `MainActivity.scrollCurrentTabToTop`). `HomeLayoutStructureTest`가 구조를 고정하나 **높이 값은 JVM이 못 잡으니 레이아웃을 고치면 실기기로 확인.** 접은 뒤 목록 가시 높이 세로 2265px·가로 775px.
+  - **측정**: 사용 불가는 홈뿐 — `rv_movies`가 세로·가로 모두 0px(스크롤 없는 LinearLayout 루트 + wrap_content 섹션이 높이를 다 씀). 통계·설정·알림 기록 943/2265, 검색 1139/1495 정상.
+  - **홈 수정 = 1단계(섹션 접기)**: 섹션을 `CoordinatorLayout` + `AppBarLayout`(`app_bar_home_sections`, `scroll`)으로 감싸고 목록에 `appbar_scrolling_view_behavior`. 루트는 LinearLayout 유지(`baseline-prof.txt`가 `FragmentHomeBinding.getRoot()`를 고정). "맨 위로"는 섹션도 펼침(`HomeFragment.scrollHomeToTop`, `MainActivity.scrollCurrentTabToTop`). `HomeLayoutStructureTest`가 구조를 고정하나 **높이 값은 JVM이 못 잡으니 레이아웃을 고치면 실기기로 확인.** 접은 뒤 목록 가시 높이 세로 2265px·가로 775px.
   - **첫 화면에서는 목록이 여전히 안 보이고(시청기록 있으면 0px) 밀어야 한다는 단서가 없다 — 별도 제품 결정 필요.**
-  - **R1 재정의**: 변경 전 시청기록 937px·가로 박스오피스 775px는 마지막 wrap_content 자식이 남은 높이에 맞춰 **잘린 값**이었다. 접히는 앱바 안에서는 자연 높이(1024/1328px). 불변은 툴바·탭 491px와 세로 박스오피스 1328px.
-  - **동작 변화**: 섹션이 접힌 상태에서 아래로 당기면 첫 당김은 섹션을 펼치고(스피너 없음) 새로고침은 그다음부터.
+  - **R1 재정의**: 변경 전 시청기록 937px·가로 박스오피스 775px는 마지막 wrap_content 자식이 남은 높이에 맞춰 **잘린 값**이었다(접히는 앱바 안에서는 자연 높이 1024/1328px). 불변은 툴바·탭 491px와 세로 박스오피스 1328px. 동작 변화: 섹션이 접힌 상태에서 아래로 당기면 첫 당김은 섹션을 펼치고 새로고침은 그다음부터.
   - **`HomeFragmentTest`(androidTest)는 `rv_movies` `isDisplayed`를 검사해 이 기기에서 이미 실패할 가능성이 크다 — 미수정·미실행, CI도 androidTest 안 돌림.**
-  - **후보(미수정)**: 상세·인물 가로 backdrop 280dp 고정, 그리드 열 수가 너비만 기준(가로 4열), 상세 FAB가 가로 3버튼 내비와 겹침, 컬렉션 가로 앱바 700px, 오프라인+트렌딩 빈 화면, 홈 가로 왼쪽 컷아웃 인셋 126px 미적용, 온보딩 "다음" 버튼이 내비 바와 겹침(AVD만), `baseline-prof.txt`의 `FragmentHomeBinding.<init>` 줄 stale. **미측정**: 다크 모드·TalkBack·다른 크기/태블릿·프로세스 종료 후 접힘 복원.
+  - **후보(미수정)**: 상세·인물 가로 backdrop 280dp 고정, 그리드 열 수가 너비만 기준(가로 4열), 상세 FAB가 가로 3버튼 내비와 겹침, 컬렉션 가로 앱바 700px, 오프라인+트렌딩 빈 화면, 홈 가로 왼쪽 컷아웃 인셋 미적용, 온보딩 "다음" 버튼이 내비 바와 겹침(AVD만), `baseline-prof.txt`의 `FragmentHomeBinding.<init>` 줄 stale. **미측정**: 다크 모드·TalkBack·다른 크기/태블릿·프로세스 종료 후 접힘 복원.
 - **상세 메모 입력란 키보드 가림 수정(125일차, 실기기 SM-S926N 3버튼)**: 키보드를 올리면 입력란이 IME 뒤로 가렸고(25회 이상 가시 0px) 메모 0개면 스크롤로도 못 닿았다(입력란 아래 콘텐츠 1068px < IME 1326px).
   - **원인(설정 아닌 구조)**: `DetailFragment`의 `nestedScroll` 인셋 리스너가 `navigationBars`만 반영하고 IME를 무시, `enableEdgeToEdge`라 창이 안 줄어든다. `windowSoftInputMode`는 이미 `adjust=resize`라 원인 아님.
   - **수정(`DetailFragment.kt` 1개, +22/-2)**: 패딩=`max(nav, ime)`, IME가 올라오고 `et_memo` 포커스면 `scrollMemoAboveIme()`가 입력란 아래 끝을 IME 위(+8dp)로 스크롤, 입력란 높이 변화(1→4줄)도 재보정. IME가 없으면 수정 전과 같다.
   - **R6 재정의**: "닫힘은 수정 전과 같을 것"은 포커스 해제·키보드 닫힘 동작이고 닫힌 뒤 스크롤 위치는 대상 아님 — 닫히면 스크롤 끝으로 clamp(A −147~−161px, C −875px, 프레임상 깜빡임·빈 화면 없음).
-  - **한계**: 키보드 연 채 세로→가로→세로 회전 시 657px 과다 스크롤(전부 보임), 프로세스 복원+키보드 복원 시 자동 스크롤 안 됨(스크롤하면 닿음), 저장 직후 메모 목록 미표시(0/6, 별개 결함·원인 미확인, `setHasFixedSize` 가설 지지 안 됨). 상세 외 화면 IME는 미측정.
+  - **한계**: 키보드 연 채 세로→가로→세로 회전 시 657px 과다 스크롤(전부 보임), 프로세스 복원+키보드 복원 시 자동 스크롤 안 됨(스크롤하면 닿음), 저장 직후 메모 목록 미표시(126일차에 수정). 상세 외 화면 IME는 미측정.
+- **상세 메모 저장 후 목록 미표시 수정(126일차, 실기기 SM-S926N)**: 저장해도 `rv_memos`가 안 그려졌다(수정 전 0/40: 메모 0개면 높이 0px, 2개면 새 메모가 위쪽 밖. 새로 열면 18/20).
+  - **원인·수정**: `setHasFixedSize(true)`+`wrap_content`라 어댑터가 바뀌어도 requestLayout이 생략돼 높이가 굳는다. `DetailFragment.kt` 한 줄 삭제(+1/-1)로 40/40, 재진입 20/20. 한 줄만 바꾼 전/후라 **확정**(별도 빌드, 바이너리 동일성 미검증), 개입 전엔 "강하게 시사". **`setHasFixedSize(true)`를 되돌리지 말 것.**
+  - **불변**: 125일차 입력란 가시 217/217px·1~4줄 48/48·콜드 diff 0.
+  - **한계**: `rvReviews`·가로 목록(`setupHorizontal`)의 같은 호출 미점검. 스크롤 끝에서 높은 목록 맨 위가 화면 밖인 건 일반 스크롤. 삭제 직후 uiautomator 덤프 실패(원인 미확인)로 키보드 연 채 삭제는 스크린샷 4/4로만 확인.
 - **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)
