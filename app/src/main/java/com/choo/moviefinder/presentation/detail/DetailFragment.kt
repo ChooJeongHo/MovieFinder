@@ -231,7 +231,7 @@ class DetailFragment : Fragment() {
         binding.rvReviews.apply {
             layoutManager = LinearLayoutManager(requireContext())
             itemAnimator = null
-            setHasFixedSize(true)
+            // 데이터가 늦게 도착해 wrap_content 높이가 바뀌므로 setHasFixedSize(true)를 쓰지 않는다
             adapter = reviewAdapter
         }
 
@@ -560,7 +560,7 @@ class DetailFragment : Fragment() {
     // 가로 스크롤 RecyclerView 공통 설정 헬퍼
     private fun RecyclerView.setupHorizontal(rvAdapter: RecyclerView.Adapter<*>) {
         layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        setHasFixedSize(true)
+        // 데이터가 늦게 도착해 wrap_content 높이가 바뀌므로 setHasFixedSize(true)를 쓰지 않는다
         itemAnimator = null
         adapter = rvAdapter
     }

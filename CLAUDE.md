@@ -151,7 +151,7 @@ TMDB_API_KEY=여기에_API_키_입력
 | GET boxoffice/searchWeeklyBoxOfficeList.json | 주간 박스오피스 TOP 10 (`targetDt`, `weekGb`(0=주간/1=주말/2=주중), `itemPerPage`) — 개별 아이템 필드는 일별과 100% 동일, `KoficBoxOfficeItemDto` 공용 |
 
 - TMDB와 완전히 분리된 `@KoficOkHttpClient`/`@KoficRetrofit`/`KoficApiService` (`NetworkModule.kt`) — 별도 baseUrl(`BuildConfig.KOFIC_BASE_URL`), 인증 키를 헤더가 아닌 쿼리 파라미터(`key`)로 주입, TMDB `CertificatePinner` 미적용
-- `MatchBoxOfficeWithTmdbUseCase`: KOFIC `movieName`을 TMDB와 제목 문자열 매칭(ID 체계가 달라 직접 연결 불가) — 항목마다 TMDB 검색을 날리면 N+1이므로 로컬 캐시(`MovieQueryRepository.getCachedMoviesSnapshot()`, now_playing+popular 스냅샷)를 요청당 1회만 조회해 우선 매칭하고 캐시 미스만 `searchMoviesOnce()` 네트워크 폴백(TOP 50 기준 약 1.6s → 0.3s, `MatchBoxOfficeWithTmdbPerformanceTest`). `GetDailyBoxOfficeWithTmdbMatchUseCase`/`GetWeeklyBoxOfficeWithTmdbMatchUseCase`가 이 매처를 공유
+- `MatchBoxOfficeWithTmdbUseCase`: KOFIC `movieName`을 TMDB와 제목 문자열 매칭(ID 체계가 달라 직접 연결 불가) — 항목마다 TMDB 검색을 날리면 N+1이므로 로컬 캐시(`MovieQueryRepository.getCachedMoviesSnapshot()`, now_playing+popular)를 요청당 1회만 조회해 우선 매칭하고 캐시 미스만 `searchMoviesOnce()`로 폴백(TOP 50 기준 약 1.6s → 0.3s, `MatchBoxOfficeWithTmdbPerformanceTest`). Daily/Weekly 유스케이스가 이 매처를 공유
 - 홈 화면 박스오피스 섹션은 ChipGroup(일별/주간)으로 기간 전환, 선택은 `SavedStateHandle`에 보존, 전환 시 이전 `Job` 취소로 늦게 도착한 응답이 최신 상태를 덮지 않음 (`HomeViewModel.loadBoxOffice()`)
 
 ## 테스트
@@ -213,7 +213,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 
 ### kotlin-architecture-reviewer 서브에이전트
 - 위치: `.claude/agents/kotlin-architecture-reviewer.md` (model: opus, tools: Read/Grep/Glob/Bash)
-- 스코프: 코루틴/Flow 안전성(체크리스트 B) + Clean Architecture 레이어 규칙(A) + Paging/RemoteMediator(C) + UI 상태 설계(D)만. 스타일/네이밍/OWASP 보안/접근성/테스트 커버리지는 스코프 밖(관련 스킬의 몫).
+- 스코프: 코루틴/Flow 안전성(체크리스트 B) + Clean Architecture 레이어 규칙(A) + Paging/RemoteMediator(C) + UI 상태 설계(D)만. 스타일/네이밍/OWASP 보안/접근성/테스트 커버리지는 스코프 밖.
 - **오탐 방지 규칙**: `@OptIn`/experimental API 관련 지적을 하려면 보고 전에 반드시
   `./gradlew :app:compileDebugKotlin`으로 검증하고, 컴파일이 성공하면 그 지적은 보고서에서 완전히
   제외한다 (레이어 위반·코루틴 안전성 등 컴파일과 무관한 항목엔 적용 안 됨).
@@ -227,13 +227,13 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - 동작: `tool_input`(old_string/new_string 또는 content)으로 "적용 예정" 파일 내용을 임시 경로에
   재구성 → `claude --agent kotlin-architecture-reviewer -p`로 헤드리스 호출 → 결과를
   `hookSpecificOutput.additionalContext`로 Claude Code에 전달.
-- **비-차단 설계**: `permissionDecision`은 항상 `"allow"` — 어떤 경우에도 편집을 막지 않는다. 이 리뷰는 opus의 판단(오판 가능)이고 2분 이상 걸릴 수 있어 매 Edit마다 차단하면 개발 흐름이 망가진다. 결정론적·항상-참 규칙(`domain-android-import-guard.sh`의 android/androidx import grep 등)만 차단(`exit 2`)하고, 판단이 필요한 리뷰는 정보 제공(`allow` + `additionalContext`)으로 남긴다.
+- **비-차단 설계**: `permissionDecision`은 항상 `"allow"` — 편집을 막지 않는다. 이 리뷰는 opus의 판단(오판 가능)이고 2분 이상 걸려 매 Edit마다 차단하면 흐름이 망가진다. 결정론적·항상-참 규칙(`domain-android-import-guard.sh`의 android/androidx import grep 등)만 차단(`exit 2`)하고, 판단이 필요한 리뷰는 정보 제공(`allow` + `additionalContext`)으로 남긴다.
 - Bash 권한은 `--allowedTools "Read,Grep,Glob,Bash(./gradlew :app:compileDebugKotlin:*)"`로 제한 —
   프롬프트 규칙이 깨져도 툴 레이어에서 이중으로 막도록 함.
 - **알려진 제약**: 훅 *설정*(`settings.json`)은 세션 시작 시에만 로드되어 수정하면 Claude Code를 재시작해야
   반영된다(스크립트 파일 자체는 매 호출마다 새로 실행되므로 수정이 재시작 없이 바로 반영됨 — 2026-09-30 확인).
   macOS 기본 환경엔 GNU `timeout`이 없어 순수 bash(`sleep N && kill`)로 타임아웃을 구현함.
-- **워처 stdio 누수(2026-09-30 수정)**: 타임아웃 워처 `( sleep 240; kill ... ) &`가 훅 stdout(하네스 파이프)을 물려받고 `kill $watcher_pid`는 서브셸만 죽여, 고아 `sleep 240`이 파이프를 최대 240초 붙잡아 하네스가 `stdio went quiet before end-of-stream`으로 훅 출력을 거부했다. 워처에 `>/dev/null 2>&1`을 붙이고 `stop_watcher`가 `pkill -P`로 자식까지 정리하도록 수정. 같은 패턴(백그라운드 서브셸 + 물려받은 stdout)은 다른 훅에도 주의할 것.
+- **워처 stdio 누수(2026-09-30 수정)**: 타임아웃 워처 `( sleep 240; kill ... ) &`가 훅 stdout(하네스 파이프)을 물려받고 `kill $watcher_pid`는 서브셸만 죽여, 고아 `sleep 240`이 파이프를 최대 240초 붙잡아 하네스가 훅 출력을 거부했다(`stdio went quiet before end-of-stream`). 워처에 `>/dev/null 2>&1`을 붙이고 `stop_watcher`가 `pkill -P`로 자식까지 정리하도록 수정. 같은 패턴(백그라운드 서브셸 + 물려받은 stdout)은 다른 훅에도 주의할 것.
 
 ### Stop 테스트 페어링 강제 훅
 - 위치: `.claude/hooks/stop-test-coverage-guard.sh` + `.claude/hooks/lib/check_test_pairing.py`,
@@ -241,7 +241,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - 트리거 조건: 이번 세션 transcript에서 `domain/*.kt` 또는 `presentation/**/*ViewModel.kt` (`src/main`
   한정) 파일을 Edit/Write/MultiEdit 했는데, 대응 테스트 파일(`app/src/test/.../XxxTest.kt`)이 같은
   세션에서 한 번도 Edit/Write/MultiEdit 되지 않은 경우.
-- **차단 설계**: exit 2로 세션 종료를 막는다 — PreToolUse 훅과 정반대. "같은 세션에서 테스트 파일이 건드려졌는가"는 transcript를 기계적으로 훑는 100% 결정론적 사실 확인이라 오탐이 없고, "결정론적 규칙만 차단" 원칙에 따르면 차단이 맞다.
+- **차단 설계**: exit 2로 세션 종료를 막는다 — PreToolUse 훅과 정반대. "같은 세션에서 테스트 파일이 건드려졌는가"는 transcript를 기계적으로 훑는 100% 결정론적 확인이라 오탐이 없어 "결정론적 규칙만 차단" 원칙상 차단이 맞다.
 - 무한 루프 방지: 훅 입력의 `stop_hook_active`가 true면(이미 한 번 이 훅에 막혔다가 재개했다는 뜻)
   다시 막지 않고 통과시킨다 — 한 번은 스스로 고치거나 사유를 설명할 기회를 주되 영원히 막지는 않는다.
 - **알려진 제약**: 서브에이전트(Agent 도구 위임)의 Edit/Write는 자신의 별도 transcript에만 기록돼 메인 세션 transcript에 안 잡힌다 — 이 훅은 **메인 루프가 직접 수정한 파일만** 감지하고 구현자 서브에이전트가 만든 파일은 놓친다(feature-implementer 파이프라인 같은 서브에이전트 주도 워크플로우에서 감안할 것).
@@ -253,7 +253,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `android.disallowKotlinSourceSets=false` 필요 (KSP 호환)
 - `Theme.MaterialComponents.DayNight.NoActionBar` 사용
 - Hilt 2.59.2 이상 필요 (2.59.2 기준 Kotlin 2.4.0 미지원 — kotlin-metadata-jvm max 2.3.0)
-- **Dependabot 호환성**: core-ktx 1.19.0은 compileSdk 37 요구 → 37로 올라가 해소(현재 적용 중). Kotlin 2.4.x는 보류: 2.4.0은 Hilt 호환 이슈(위 참고), 2.4.10·2.4.20은 AGP/Lint의 `Can't initialize detector com.android.tools.lint.checks.InferredThreadDetector` 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패(PR #92·#110·#115, AGP 9.4.1에서도 재현 확인 2026-09-28). AGP 9.4.1이 최신 정식판(9.5.0은 알파뿐, 2026-10-05)이라 AGP 업그레이드로는 못 푼다 — 정식 신버전이 나오면 lintAnalyzeDebug 재실행으로 재검증
+- **Dependabot 호환성**: Kotlin 2.4.x는 보류: 2.4.0은 Hilt 호환 이슈(위 참고), 2.4.10·2.4.20은 AGP/Lint의 `InferredThreadDetector` 초기화 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패(PR #92·#110·#115, AGP 9.4.1에서도 재현 2026-09-28). AGP 9.4.1이 최신 정식판(9.5.0은 알파뿐, 2026-10-05)이라 AGP 업그레이드로는 못 푼다 — 정식 신버전이 나오면 lintAnalyzeDebug 재실행으로 재검증
 
 ### Navigation
 - `nav_graph.xml`에 destination + argument + deepLink 정의
@@ -262,7 +262,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `NavigationUI.setupWithNavController()` + Detail에서 BottomNav 자동 숨김
 - Detail self-navigation: `launchSingleTop="true"` (백스택 중복 방지)
 - 딥링크: `moviefinder://movie/{id}`, `moviefinder://person/{id}`, `moviefinder://stats`
-- **Predictive Back Gesture**: `enableOnBackInvokedCallback="true"` + targetSdk 36 + Fragment 1.9.0/Navigation 2.9.8로 플러밍은 갖춰져 있음. 앱 종료(홈으로 나가기)는 OS 레벨이라 스크러빙 애니메이션이 자동으로 나오지만, **인앱 Fragment 전환은 `nav_graph.xml` 액션의 애니메이션 리소스가 `res/animator/`(Animator, seek 가능)여야만 스와이프 진행률에 맞춰 미리보기가 나온다** — `res/anim/`(레거시 View Animation)은 손을 뗄 때까지 변화 없다가 순간이동처럼 보임(2026-09-01 실기기 SM-S926N, 커스텀 `OnBackPressedCallback` 없이 이 차이만으로 재현). `slide_in_right`/`slide_out_right`/`fade_in`/`fade_out` 4개를 `res/animator/`로 전환 완료(translationX는 `@dimen/nav_transition_slide_distance` 480dp 고정 근사치). **DetailFragment 공유 요소 전환(플랫폼 `android.transition.TransitionSet`)은 레거시라 predictive back 미리보기가 여전히 안 됨** — androidx.transition 마이그레이션은 500ms `postponeEnterTransition` + Coil 리스너 흐름을 건드려 리스크 대비 보류.
+- **Predictive Back Gesture**: `enableOnBackInvokedCallback="true"` + targetSdk 36 + Fragment 1.9.0/Navigation 2.9.8로 플러밍은 갖춰져 있음. 앱 종료는 OS 레벨이라 스크러빙이 자동이지만, **인앱 Fragment 전환은 `nav_graph.xml` 액션의 애니메이션 리소스가 `res/animator/`(seek 가능)여야만 스와이프 진행률에 맞춰 미리보기가 나온다** — `res/anim/`(레거시 View Animation)은 손을 뗄 때까지 변화 없다가 순간이동처럼 보임(2026-09-01 실기기 SM-S926N). `slide_in_right`/`slide_out_right`/`fade_in`/`fade_out` 4개를 `res/animator/`로 전환 완료(translationX는 `@dimen/nav_transition_slide_distance` 480dp 고정). **DetailFragment 공유 요소 전환(플랫폼 `android.transition.TransitionSet`)은 레거시라 미리보기 안 됨** — androidx.transition 마이그레이션은 500ms `postponeEnterTransition` + Coil 리스너 흐름을 건드려 보류.
 - MaterialAlertDialogBuilder 다이얼로그도 predictive back 스와이프로 닫히긴 하나 진행률 미리보기는
   없음(실기기 검증, 원인 미조사) — 다이얼로그 predictive back 애니메이션이 필요하면 별도 조사 필요.
 
@@ -294,7 +294,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `onDestroyView()`: `_binding = null` + Shimmer `stopShimmer()`
 
 ### Compose 부분 도입 & Glance 위젯
-- Compose는 `OnboardingFragment`(Fragment 전체가 `ComposeView`)와 `SearchFragment`(XML 안에 `composeSearchInput`/`composeSearchResults` 2개 `ComposeView` 임베드) 두 곳뿐이고 나머지는 XML/ViewBinding — 새 화면을 Compose로 만들지는 케이스 바이 케이스이므로 임의로 전체 마이그레이션 시도 금지
+- Compose는 `OnboardingFragment`(전체가 `ComposeView`)와 `SearchFragment`(XML 안에 `composeSearchInput`/`composeSearchResults` 2개 임베드) 두 곳뿐이고 나머지는 XML/ViewBinding — 새 화면 Compose화는 케이스 바이 케이스이므로 임의로 전체 마이그레이션 시도 금지
 - `BoxOfficeWidget`(Glance, 2x2)은 `PopularMoviesWidget`(RemoteViews)과 기술 스택이 다름 — `provideGlance()`는 재구성마다 호출될 수 있어 여기서 네트워크/DB I/O 금지. 데이터 획득은 `BoxOfficeWidgetWorker`가 맡고, `provideGlance()`는 `PreferencesGlanceStateDefinition`에 저장된 스냅샷을 읽어 그리기만 함
 
 ### DataStore
@@ -312,6 +312,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   ```
 - 위젯 OkHttp 싱글턴에도 CertificatePinner 적용 (Hilt 미사용)
 - `cert-pin-check.yml`은 OkHttp처럼 체인 중 하나라도 코드 핀과 일치하면 정상. `PIN_IMAGE_LEAF`는 LE 갱신마다 죽어서 중간 핀이 지탱
+- **image.tmdb.org 중간 인증서는 경로마다 다름(2026-10-16 실측, 미수정)**: 이 맥/에뮬레이터는 YR1(`LoMHBot…`)을 받는데 앱 핀은 YR2(`nWN7P…`)+낡은 leaf뿐이라 핀 실패 810건·이미지 전부 회색(폰은 YR2라 정상). YR1·루트 핀은 별도 결정.
 
 ### 디버그 로그 키 마스킹 (2026-10-07, 실기기 SM-S926N 검증)
 - 쿼리로 나가는 비밀값(`api_key`/`key`/`serviceKey`/`session_id`)은 `SecretQueryParams` 상수로만 이름을 쓴다 — 주입 인터셉터·`@Query`와 `addDebugLogging()`의 `redactQueryParams`가 같은 상수를 공유해야 마스킹이 조용히 풀리지 않는다. **새 쿼리 비밀값을 추가하면 `ALL`에도 넣을 것.**
@@ -363,7 +364,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   - **TMDB 언어 연동(2026-09-28, 실기기 SM-S926N 검증 완료)**: `AppLanguageProvider`(core/util)가 앱 언어를
     TMDB `language` 코드로 변환해 제공. 상세/배우/트렌딩/discover/개봉예정/홈(현재상영작·인기) 목록은 앱 언어를
     따르도록 전환 완료 — 영어 모드에서 제목/줄거리가 영어로 표시됨.
-    - **검색 결과 데이터는 ko-KR 고정, 표시 제목만 앱 언어를 따름** (2026-09-29): KMRB 등급 필터(`FilterMoviesByKoreanRatingUseCase`)가 `movie.title`로 매칭하므로 `MoviePagingSource`/discover는 ko-KR 유지. 영어일 때만 **화면에 컴포즈된 카드의 제목**을 `GetLocalizedTitleUseCase`로 지연 조회(`SearchComposables.kt`의 `rememberDisplayTitle`) — 필터 판정은 전체 항목이 필요해 "보이는 항목만"으로 지연 불가(순환), 필터 안 추가 조회는 60건 약 68초라 롤백. `GetKoreanTitleUseCase`는 상세 KMRB 매칭 전용. 한계: 표시 제목이 약 0.5초 뒤 교체, 포스터·매칭·정렬은 ko-KR 기준.
+    - **검색 결과 데이터는 ko-KR 고정, 표시 제목만 앱 언어를 따름** (2026-09-29): KMRB 등급 필터(`FilterMoviesByKoreanRatingUseCase`)가 `movie.title`로 매칭하므로 `MoviePagingSource`/discover는 ko-KR 유지. 영어일 때만 화면에 컴포즈된 카드의 제목을 `GetLocalizedTitleUseCase`로 지연 조회(`rememberDisplayTitle`) — 필터는 전체 항목 판정이 필요해 "보이는 항목만"으로 지연 불가(순환), 필터 안 추가 조회는 60건 약 68초라 롤백. `GetKoreanTitleUseCase`는 상세 KMRB 매칭 전용. 한계: 표시 제목 약 0.5초 뒤 교체, 포스터·매칭·정렬은 ko-KR 기준.
     - **KMRB 필터 한계(미해결)**: 항목당 순차 호출(콜드 0.4~0.55초/건), `PagingData.filter`가 페이지 단위 원자적이라 첫 결과까지 약 10초, 통과 항목이 적으면 페이지를 연쇄 로드(최대 138초, 상한 없음). **KMRB 장애/한도 소진 중 등급 칩을 고르면 전 페이지를 연쇄 로드하며 KMRB를 계속 호출**(429를 null로 흡수 → "전부 걸러짐", `전체`로 되돌리면 멈춤).
     - **"페이지 기아" 해결(2026-09-30)**: 필터가 `cachedIn` 뒤(`combine`)면 등급 칩으로 전부 걸러질 때 Paging이 이어 로드를 멈췄다. 이제 `combine(searchParams, 등급)` → `filter` → `flatMapLatest { 검색 + 필터 }` → `cachedIn` 순서(등급 변경 시 재검색 + shimmer). `PagingEmptyStateRegressionTest`·`SearchViewModelTest`가 고정 — **필터를 다시 cachedIn 뒤로 옮기지 말 것.**
     - **"결과 없음" 판정**: `resolveSearchResultsPane`이 `append.endOfPaginationReached` 이후에만 "결과 없음", 그 전엔 shimmer, append 실패 시 오류 화면. "Paging이 빈 페이지 뒤에도 이어 로드한다"는 전제라 깨지면 무한 shimmer.
@@ -382,18 +383,18 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   **한계**: 결과 그리드 4열 유지(창 폭 기준); 키보드 올림 시 `fitsSystemWindows`가 `bottom_nav` 높이만큼 과다 패딩(세로 `rv` 113px); 다른 탭 가로·다른 크기/태블릿/제스처 내비 미측정.
 - **다른 탭 가로 점검과 홈 1단계 수정(124일차, 실기기 SM-S926N 1440x3120/560dpi/3버튼)**:
   - **측정**: 사용 불가는 홈뿐 — `rv_movies`가 세로·가로 모두 0px(스크롤 없는 LinearLayout 루트 + wrap_content 섹션이 높이를 다 씀). 통계·설정·알림 기록 943/2265, 검색 1139/1495 정상.
-  - **홈 수정 = 1단계(섹션 접기)**: 섹션을 `CoordinatorLayout` + `AppBarLayout`(`app_bar_home_sections`, `scroll`)으로 감싸고 목록에 `appbar_scrolling_view_behavior`. 루트는 LinearLayout 유지(`baseline-prof.txt`가 `FragmentHomeBinding.getRoot()`를 고정). "맨 위로"는 섹션도 펼침(`HomeFragment.scrollHomeToTop`, `MainActivity.scrollCurrentTabToTop`). `HomeLayoutStructureTest`가 구조를 고정하나 **높이 값은 JVM이 못 잡으니 레이아웃을 고치면 실기기로 확인.** 접은 뒤 목록 가시 높이 세로 2265px·가로 775px.
+  - **홈 수정 = 1단계(섹션 접기)**: 섹션을 `CoordinatorLayout` + `AppBarLayout`(`app_bar_home_sections`, `scroll`)으로 감싸고 목록에 `appbar_scrolling_view_behavior`. 루트는 LinearLayout 유지(`baseline-prof.txt`가 `FragmentHomeBinding.getRoot()`를 고정). "맨 위로"는 섹션도 펼침(`HomeFragment.scrollHomeToTop`). `HomeLayoutStructureTest`가 구조를 고정하나 **높이 값은 JVM이 못 잡으니 레이아웃을 고치면 실기기로 확인.** 접은 뒤 목록 가시 높이 세로 2265px·가로 775px.
   - **첫 화면에서는 목록이 여전히 안 보이고(시청기록 있으면 0px) 밀어야 한다는 단서가 없다 — 별도 제품 결정 필요.**
-  - **R1 재정의**: 변경 전 시청기록 937px·가로 박스오피스 775px는 마지막 wrap_content 자식이 남은 높이에 맞춰 **잘린 값**이었다(접히는 앱바 안에서는 자연 높이 1024/1328px). 불변은 툴바·탭 491px와 세로 박스오피스 1328px. 동작 변화: 섹션이 접힌 상태에서 아래로 당기면 첫 당김은 섹션을 펼치고 새로고침은 그다음부터.
+  - **R1 재정의**: 변경 전 시청기록 937px·가로 박스오피스 775px는 마지막 wrap_content 자식이 남은 높이에 맞춰 **잘린 값**이었다(접히는 앱바 안에서는 자연 높이 1024/1328px). 불변은 툴바·탭 491px·세로 박스오피스 1328px. 접힌 상태에서 아래로 당기면 첫 당김은 섹션을 펼치고 새로고침은 그다음.
   - **`HomeFragmentTest`(androidTest)는 `rv_movies` `isDisplayed`를 검사해 이 기기에서 이미 실패할 가능성이 크다 — 미수정·미실행, CI도 androidTest 안 돌림.**
-  - **후보(미수정)**: 상세·인물 가로 backdrop 280dp 고정, 그리드 열 수가 너비만 기준(가로 4열), 상세 FAB가 가로 3버튼 내비와 겹침, 컬렉션 가로 앱바 700px, 오프라인+트렌딩 빈 화면, 홈 가로 왼쪽 컷아웃 인셋 미적용, 온보딩 "다음" 버튼이 내비 바와 겹침(AVD만), `baseline-prof.txt`의 `FragmentHomeBinding.<init>` 줄 stale. **미측정**: 다크 모드·TalkBack·다른 크기/태블릿·프로세스 종료 후 접힘 복원.
-- **상세 메모 입력란 키보드 가림 수정(125일차, 실기기 SM-S926N 3버튼)**: 키보드를 올리면 입력란이 IME 뒤로 가렸고(25회 이상 가시 0px) 메모 0개면 스크롤로도 못 닿았다(입력란 아래 콘텐츠 1068px < IME 1326px).
+  - **후보(미수정)**: 상세·인물 가로 backdrop 280dp 고정, 그리드 열 수가 너비만 기준(가로 4열), 상세 FAB가 가로 3버튼 내비와 겹침, 컬렉션 가로 앱바 700px, 오프라인+트렌딩 빈 화면, 홈 가로 왼쪽 컷아웃 인셋 미적용, 온보딩 "다음" 버튼이 내비 바와 겹침(AVD만), `baseline-prof.txt`의 `FragmentHomeBinding.<init>` 줄 stale. **미측정**: 다크 모드·TalkBack·태블릿·프로세스 종료 후 접힘 복원.
+- **상세 메모 입력란 키보드 가림 수정(125일차, 실기기 SM-S926N 3버튼)**: 키보드를 올리면 입력란이 IME 뒤로 가렸고(가시 0px) 메모 0개면 스크롤로도 못 닿았다.
   - **원인(설정 아닌 구조)**: `DetailFragment`의 `nestedScroll` 인셋 리스너가 `navigationBars`만 반영하고 IME를 무시, `enableEdgeToEdge`라 창이 안 줄어든다. `windowSoftInputMode`는 이미 `adjust=resize`라 원인 아님.
   - **수정(`DetailFragment.kt` 1개, +22/-2)**: 패딩=`max(nav, ime)`, IME가 올라오고 `et_memo` 포커스면 `scrollMemoAboveIme()`가 입력란 아래 끝을 IME 위(+8dp)로 스크롤, 입력란 높이 변화(1→4줄)도 재보정. IME가 없으면 수정 전과 같다.
-  - **R6 재정의**: "닫힘은 수정 전과 같을 것"은 포커스 해제·키보드 닫힘 동작이고 닫힌 뒤 스크롤 위치는 대상 아님 — 닫히면 스크롤 끝으로 clamp(A −147~−161px, C −875px, 프레임상 깜빡임·빈 화면 없음).
-  - **한계**: 키보드 연 채 세로→가로→세로 회전 시 657px 과다 스크롤(전부 보임), 프로세스 복원+키보드 복원 시 자동 스크롤 안 됨(스크롤하면 닿음), 저장 직후 메모 목록 미표시(126일차에 수정). 상세 외 화면 IME는 미측정.
-- **상세 메모 저장 후 목록 미표시 수정(126일차, 실기기 SM-S926N)**: 저장해도 `rv_memos`가 안 그려졌다(수정 전 0/40: 메모 0개면 높이 0px, 2개면 새 메모가 위쪽 밖. 새로 열면 18/20).
-  - **원인·수정**: `setHasFixedSize(true)`+`wrap_content`라 어댑터가 바뀌어도 requestLayout이 생략돼 높이가 굳는다. `DetailFragment.kt` 한 줄 삭제(+1/-1)로 40/40, 재진입 20/20. 한 줄만 바꾼 전/후라 **확정**(별도 빌드, 바이너리 동일성 미검증), 개입 전엔 "강하게 시사". **`setHasFixedSize(true)`를 되돌리지 말 것.**
-  - **불변**: 125일차 입력란 가시 217/217px·1~4줄 48/48·콜드 diff 0.
-  - **한계**: `rvReviews`·가로 목록(`setupHorizontal`)의 같은 호출 미점검. 스크롤 끝에서 높은 목록 맨 위가 화면 밖인 건 일반 스크롤. 삭제 직후 uiautomator 덤프 실패(원인 미확인)로 키보드 연 채 삭제는 스크린샷 4/4로만 확인.
+  - **R6 재정의**: 닫힘 비교 대상은 포커스 해제·키보드 닫힘 동작이고 닫힌 뒤 스크롤 위치는 아님(스크롤 끝으로 clamp, 깜빡임·빈 화면 없음).
+  - **한계**: 키보드 연 채 세로→가로→세로 회전 시 과다 스크롤(전부 보임), 프로세스 복원+키보드 복원 시 자동 스크롤 안 됨(스크롤하면 닿음), 저장 직후 메모 목록 미표시(126일차에 수정). 상세 외 화면 IME 미측정.
+- **상세 `wrap_content` 목록의 `setHasFixedSize(true)` 제거(126일차 메모, 127일차 출연진·비슷한·추천·리뷰)**: 같은 원인으로 목록이 높이 0에 굳었다. 126: 저장해도 `rv_memos`가 안 그려짐(0/40 → 40/40, 실기기). 127: 네 목록이 제목만 있고 비었음(수정 전 BUGSIG: 폰 103/104·에뮬레이터 3종 104/104 → 수정 후 폰·에뮬레이터 3종 104/104 SHOWN).
+  - **원인(확정)**: 고정 크기는 어댑터 변경 때 `requestLayout`을 건너뛴다(`RecyclerView.triggerUpdateProcessor` 1.4.0 소스). 127 목록은 `GONE`→`VISIBLE`과 비동기 `submitList`가 같은 `render()`라 빈 채 높이 0으로 재어진 뒤 삽입된다. `DetailFragment.kt` 호출 삭제 전/후로 확정. **`setHasFixedSize(true)`를 되돌리지 말 것**(wrap_content 목록).
+  - **불변**: 125일차 입력란 가시(폰·에뮬레이터 12/12)·126 저장 직후 표시 5/5.
+  - **한계·새 발견(미수정)**: 수정으로 처음 보이는 리뷰 카드 글자가 유독 작다(`item_review.xml`이 Material3 이름 `textAppearanceBodyMedium`/`LabelSmall`을 쓰는데 테마는 Material2, 원인 추정; 3개 레이아웃도 같은 패턴). 키보드 연 채 목록이 늦게 도착하면 입력란이 밀릴 수 있음(미확인). `PersonDetailFragment.rv_filmography` 같은 모양(미측정). 이미지·성능: 에뮬레이터는 판단 불가, 폰도 일부 포스터 회색(핀 추정).
 - **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)
