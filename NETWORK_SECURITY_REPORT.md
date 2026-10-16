@@ -1,6 +1,6 @@
 # Network Security Report — MovieFinder
 
-> Generated: 2026-06-30 (최종 갱신: 2026-09-16 — 아래 "2026-09-16" 절 참고)
+> Generated: 2026-06-30 (최종 갱신: 2026-10-16 — 아래 "2026-09-16", "2026-10-07" 절과 "잔여 고려 사항" 참고)
 
 ---
 
@@ -24,7 +24,8 @@ MovieFinder는 TMDB API(`api.themoviedb.org`) 및 이미지 서버(`image.tmdb.o
 | API 키 URL 직접 포함 방지 | OkHttp Interceptor로 query param 주입 | ✅ |
 | 429 Rate-Limit 재시도 | `Retry-After` 헤더 존중, 최대 5초 대기 후 1회 재시도 | ✅ |
 | 지수 백오프 | `RemoteMediator` API 호출에 `withExponentialBackoff()` 적용 | ✅ |
-| 인증서 핀 만료 모니터링 | `cert-pin-check.yml` CI 워크플로우 (매주 월요일 cron) | ✅ |
+| 디버그 로그 쿼리 비밀값 마스킹 | `SecretQueryParams` + `addDebugLogging()`의 `redactQueryParams` + `DebugEventListener` (2026-10-07, 아래 절) | ✅ |
+| 인증서 핀 만료 모니터링 | `cert-pin-check.yml` CI 워크플로우 (매주 월요일 cron) — 2026-10-07부터 "서버 체인의 인증서 중 하나라도 코드 핀과 일치하면 정상" 기준(OkHttp `CertificatePinner`와 같음), 같은 제목의 열린 이슈가 있으면 새로 만들지 않음 | ✅ |
 
 ---
 
@@ -106,7 +107,7 @@ MovieFinder는 TMDB API(`api.themoviedb.org`) 및 이미지 서버(`image.tmdb.o
   └─ ApiKey Interceptor                      → 쿼리 파라미터 주입 (URL 직접 포함 금지)
 
 [ Logging Layer ]
-  ├─ Debug: HEADERS 레벨, Authorization 마스킹
+  ├─ Debug: HEADERS 레벨, Authorization 헤더 + 쿼리 비밀값(api_key/key/serviceKey/session_id) 마스킹
   └─ Release: 로깅 없음 (no-op OkHttpDebugPlugin)
 ```
 
@@ -261,12 +262,29 @@ leaf만 피닝했다면 이번에도 091일차와 동일한 전면 이미지 로
 
 ---
 
+## 2026-10-07 디버그 로그 쿼리 비밀값 마스킹
+
+위 "이번 세션 개선 사항 2"는 `Authorization` 헤더만 가렸고, 쿼리스트링으로 나가는 비밀값은 디버그 로그에 그대로 남아 있었다(아래 "잔여 고려 사항"에 있던 항목). 2026-10-07(PR #158)에 수정했고 실기기(SM-S926N)에서 검증했다.
+
+### 증상
+- `HttpLoggingInterceptor`가 쿼리스트링의 키(KMRB `serviceKey`, KOFIC `key`, TMDB `api_key`)와 `session_id`를 요청/응답 줄에 그대로 출력했다.
+- **인터셉터 순서를 바꿔도 막히지 않는다**: TMDB v3는 로깅이 키 주입보다 먼저 등록돼 있어도, 응답 줄이 키가 주입된 최종 URL(`response.request.url`)을 찍어 노출됐다.
+- `DebugEventListener.callFailed`도 `@Query`로 붙는 `session_id`를 원본 URL 그대로 출력했다(주입 키는 원본 URL에 없다).
+
+### 수정
+- `SecretQueryParams`(`core/util`): 비밀 쿼리 파라미터 이름 상수. 키 주입 인터셉터·`@Query`와 마스킹 목록이 같은 상수를 공유한다. **새 쿼리 비밀값을 추가하면 `ALL`에도 넣어야 마스킹이 조용히 풀리지 않는다.**
+- `addDebugLogging()`(debug 소스셋): `redactQueryParams(*SecretQueryParams.ALL)`로 요청/응답/실패 줄의 값을 가린다. release는 로깅이 no-op이라 그대로.
+- `DebugEventListener`: 호출 실패 로그 URL에서 같은 목록을 같은 마스크(`██`)로 가린다(`redactSecrets()`).
+- 테스트: `NetworkLogRedactionTest` — 실제 `build*OkHttpClient` + 로컬 HttpServer로 조립 순서까지 검증하며 `testDebugUnitTest` 전용이다(release 변형은 `assumeTrue`로 건너뜀).
+
+---
+
 ## 잔여 고려 사항
 
 | 항목 | 내용 | 우선순위 |
 |---|---|---|
 | 위젯 핀 상수 중복 | `PopularMoviesRemoteViewsFactory`의 핀이 `NetworkModule` 상수와 별도 관리 | 낮음 (기능 영향 없음) |
-| API 키 query param 로그 | debug HEADERS 레벨에서 URL에 `api_key=xxx` 노출 (debug 전용, READ_LOGS 권한 필요) | 낮음 |
+| API 키 query param 로그 | **해결됨(2026-10-07)** — 위 절. 이전 상태: debug HEADERS 레벨에서 URL에 `api_key=xxx` 노출(debug 전용, READ_LOGS 권한 필요) | — |
 | `TMDB_READ_ACCESS_TOKEN` ProGuard | BuildConfig 필드로 release APK에 포함 — 서버 측 rate limiting으로 대응 권장 | 정보 |
-| `image.tmdb.org` leaf 핀 stale | 2026-09-16 재검증에서 leaf 로테이션 확인(위 절), intermediate 덕에 무중단이나 값 자체는 갱신 필요 | 낮음(정보성, 안 깨짐) |
-| `image.tmdb.org` pin-set 만료 임박 | `expiration="2026-11-10"` — 약 2달 남음, 다음 인증서 핀 갱신 시 같이 연장 필요 | 중간(만료 시 OS 레벨 핀만 fail-open, 앱 레벨은 별개) |
+| `image.tmdb.org` leaf 핀 stale | 2026-09-16 재검증에서 leaf 로테이션 확인(위 절), intermediate 덕에 무중단이나 값 자체는 갱신 필요. 2026-10-07부터 `cert-pin-check`가 이 상태를 불일치로 보고하지 않는다(체인 중 하나라도 일치하면 정상) | 낮음(정보성, 안 깨짐) |
+| `image.tmdb.org` pin-set 만료 임박 | `expiration="2026-11-10"` — **2026-10-16 기준 25일 남음**, 2026-09-16 이후 연장되지 않았다(`network_security_config.xml` 재확인; `themoviedb.org`/`tmdb.org` 쪽은 `2027-06-30`). 다음 인증서 핀 갱신 시 같이 연장 필요 | 중간(만료 시 OS 레벨 핀만 fail-open, 앱 레벨은 별개) |

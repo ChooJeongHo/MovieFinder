@@ -1,9 +1,9 @@
 # MovieFinder i18n 감사 보고서
 
-**감사 일시:** 2026-06-26 (최종 재검증: 2026-09-16)  
+**감사 일시:** 2026-06-26 (최종 재검증: 2026-10-16)  
 **대상:** `values/strings.xml` (KO, 기준) ↔ `values-en/strings.xml` (EN)  
-**총 키:** KO 336개 / EN 336개 (2026-09-16 재계산, 완전 일치 — 06-26 이후 박스오피스/KMRB 등급 등
-신규 기능 문자열 35개가 양쪽 로케일에 함께 추가됨. 누락 키 0건)
+**총 키:** KO 338개 / EN 338개 (2026-10-16 재계산, 완전 일치 — 06-26 이후 박스오피스/KMRB 등급 등
+신규 기능 문자열 37개가 양쪽 로케일에 함께 추가됨(09-16까지 35개 + 위젯 기간 전환 2개). 누락 키 0건)
 
 ---
 
@@ -143,3 +143,19 @@
 - `locales_config.xml`: `ko`/`en` 2개 로케일 등록 그대로, Per-App Language 설정과 일치.
 - R-2(`person_known_for_format` 중복 영어 표현)와 R-3(`filter_year_value` 단위 표시 없음)는
   둘 다 "선택적 개선/허용 범위" 권고였고 실제로 미적용 상태 그대로 — 회귀는 아님.
+
+---
+
+## 2026-10-16 재검증
+
+2026-09-16과 같은 방식(`grep`으로 키 개수, `comm`으로 키 이름 양방향 diff)으로 다시 계산했다. **키 이름만 비교했고, 번역 값의 품질이나 `%d`/`%s` 자리표시자 일치는 이번에도 검토하지 않았다.**
+
+- **문자열 키**: KO 338개 / EN 338개 — 이름까지 완전 일치(양방향 diff 0건). 줄 수는 KO 449줄 / EN 459줄(9/16 447/457).
+  2026-09-16 이후 `strings.xml`을 건드린 커밋은 `d8eec4b`(박스오피스 위젯 일별/주간 토글, 2026-09-18) 하나이고, 추가된 키는
+  `widget_box_office_title_weekly`, `cd_widget_period_toggle` 2개 — 양쪽 로케일에 함께 들어갔다.
+- **앱 언어 연동(2026-09-29)과 문자열 리소스**: TMDB 데이터를 앱 언어로 받는 변경(`184f5f5`)과 검색 표시 제목 지연 조회(`af76e33`)는
+  문자열 키를 추가하지 않았다 — 영화 제목·줄거리는 리소스가 아니라 TMDB 응답이라 이 보고서의 키 일치 검사 대상이 아니다.
+- **복수형(plurals.xml)**: `values/plurals.xml` ↔ `values-en/plurals.xml` 6개 키(`stats_count_format`, `stats_genre_item`,
+  `stats_share_total`, `stats_share_monthly`, `genre_count`, `reminder_count`) 이름이 양쪽에서 동일 — R-1 항목이 퇴행 없이 유지됨.
+- `locales_config.xml`: `ko`/`en` 2개 로케일 등록 그대로.
+- R-2·R-3는 값을 다시 읽어 미적용 상태임을 확인했다(`person_known_for_format` EN `Known for: %s`, `filter_year_value` EN `%d`) — 회귀는 아님.

@@ -23,8 +23,8 @@
 |------|------|------|
 | **Android Studio** | Meerkat 이상 권장 | |
 | **JDK** | **21** (필수) | AGP 9.x는 JDK 17로는 빌드 안 됨 |
-| **Gradle** | 9.7.1 | Wrapper로 자동 설치됨 |
-| **AGP** | 9.4.0 | Kotlin 2.3.21 내장 |
+| **Gradle** | 9.8.1 | Wrapper로 자동 설치됨 |
+| **AGP** | 9.4.1 | Kotlin 2.3.21 내장 |
 
 > Android Studio → Settings → Build → Gradle JDK 를 **JDK 21**로 설정하세요.
 
@@ -82,9 +82,10 @@ git config core.hooksPath .githooks
 | Hook | 실행 시점 | 내용 |
 |------|----------|------|
 | `pre-commit` | `git commit` 직전 | Detekt 정적 분석 + Kotlin 컴파일 체크 |
-| `pre-push` | `git push` 직전 | 전체 유닛 테스트 실행 |
+| `pre-push` | `git push` 직전 | 전체 유닛 테스트 + `:app:lintDebug` |
 
-> `pre-push`는 509개 테스트를 실행하므로 **1~3분** 소요됩니다. 정상입니다.
+> `pre-push`는 유닛 테스트 987개와 Lint를 실행합니다. 소스가 바뀌었거나 Gradle 캐시가 없으면 시간이 걸리는 것이 정상이고, 캐시가 맞으면 수 초 만에 끝납니다(2026-10-15 실측 9초).
+> 훅이 실제로 도는지는 `git config core.hooksPath`가 `.githooks`인지로 확인하세요. 클론마다 설정이 필요하고 조용히 풀릴 수 있습니다.
 
 ---
 
@@ -120,7 +121,7 @@ Presentation  →  Domain  ←  Data
   (ViewModel)   (UseCase / Repository Interface)
 ```
 
-- **Domain 레이어**: 순수 Kotlin. Android 프레임워크 미사용. 49개 UseCase.
+- **Domain 레이어**: 순수 Kotlin. Android 프레임워크 미사용(Paging 예외). 78개 UseCase.
 - **Data 레이어**: API 통신(Retrofit), 로컬 DB(Room), Repository 구현체.
 - **Presentation 레이어**: Fragment + ViewModel. Domain UseCase만 참조. Data 레이어 직접 참조 금지.
 - **Core**: 모든 레이어에서 사용하는 유틸리티.
@@ -131,28 +132,33 @@ Presentation  →  Domain  ←  Data
 app/src/main/java/com/choo/moviefinder/
 ├── core/
 │   ├── notification/     # 개봉일·워치리스트·목표 알림
+│   ├── shortcut/         # App Shortcuts (정적 + 최근 시청 동적)
 │   ├── startup/          # App Startup (Timber, StrictMode 초기화)
 │   └── util/             # 공통 유틸 (RateLimiter, ExponentialBackoff, CoroutineExt 등)
 ├── data/
-│   ├── local/            # Room DB (version 21), DAO 8개, Entity 11개
-│   ├── paging/           # PagingSource 4개 + RemoteMediator
-│   ├── remote/           # Retrofit API Service + DTO
-│   └── repository/       # Repository 구현체 9개
-├── di/                   # Hilt 모듈 (Database, DataStore, Network, Repository)
+│   ├── local/            # Room DB (version 25), DAO 14개, Entity 15개
+│   ├── paging/           # PagingSource 4개(+ 공통 BaseMoviePagingSource) + RemoteMediator
+│   ├── remote/           # Retrofit API Service + DTO (TMDB / KOFIC / KMRB)
+│   └── repository/       # Repository 구현체 17개
+├── di/                   # Hilt 모듈 (Database, DataStore, Network, Repository, MovieRepository)
 ├── domain/
 │   ├── model/            # 도메인 모델 (순수 Kotlin data class)
-│   ├── repository/       # Repository 인터페이스 11개
-│   └── usecase/          # UseCase 49개 (각 파일 1개 UseCase)
+│   ├── repository/       # Repository 인터페이스 21개
+│   └── usecase/          # UseCase 78개 (각 파일 1개 UseCase)
 └── presentation/
-    ├── adapter/          # RecyclerView 어댑터 8개
+    ├── adapter/          # RecyclerView 어댑터 9종 + LoadStateAdapter
+    ├── collection/       # 영화 시리즈(컬렉션)
     ├── common/           # 커스텀 뷰 (CircularRatingView, PieChartView 등)
     ├── detail/           # 영화 상세 (DetailFragment + ViewModel + Delegates)
     ├── favorite/         # 즐겨찾기·워치리스트 탭
-    ├── home/             # 홈 (현재 상영작·인기·트렌딩 탭)
+    ├── home/             # 홈 (현재 상영작·인기·트렌딩 탭, 박스오피스 섹션)
+    ├── onboarding/       # 첫 실행 온보딩 (전체 Compose)
+    ├── person/           # 배우 상세
+    ├── reminder/         # 예약된 개봉일 알림 목록
     ├── search/           # 영화·배우 검색 + 필터
     ├── settings/         # 테마·언어·목표·백업 설정
     ├── stats/            # 시청 통계 (차트 4종)
-    └── widget/           # 홈 화면 위젯 3종
+    └── widget/           # 홈 화면 위젯 4종
 ```
 
 ### 2-3. 핵심 파일 빠른 참조
@@ -207,11 +213,11 @@ open app/build/reports/detekt/detekt.html
 ### 3-3. 푸시
 
 ```bash
-# pre-push hook 자동 실행 (전체 유닛 테스트)
+# pre-push hook 자동 실행 (전체 유닛 테스트 + Lint)
 git push origin feat/your-feature-name
 ```
 
-테스트 실패 시 push가 차단됩니다.
+테스트나 Lint가 실패하면 push가 차단됩니다. Lint 리포트는 `app/build/reports/lint-results-debug.html`에 있습니다.
 
 ---
 
@@ -236,6 +242,7 @@ PR 전에 직접 확인하세요:
 
 - [ ] `./gradlew :app:detekt` 통과
 - [ ] `./gradlew testDebugUnitTest` 통과
+- [ ] `./gradlew :app:lintDebug` 통과 (pre-push가 실행하지만 먼저 확인하면 빠릅니다)
 - [ ] 새 기능에 유닛 테스트 추가
 - [ ] Presentation 레이어에서 Data 레이어를 직접 import하지 않음
 - [ ] `CancellationException` 재전파 처리
@@ -349,14 +356,17 @@ android {
 
 ### ❌ 실수 8: Room 새 Entity 추가 시 DB 버전 미증가
 
-현재 DB 버전: **21**. Entity나 컬럼을 추가/변경하면:
+현재 DB 버전: **25**. Entity나 컬럼을 추가/변경하면:
 
 1. `MovieDatabase.kt`의 `version` 증가
-2. `migrations/` 에 `Migration(old, new)` 객체 추가
-3. `app/schemas/` 에 스키마 파일 자동 생성 확인 (`./gradlew generateDebugRoomSchemas`)
+2. `di/DatabaseModule.kt`에 `MIGRATION_25_26`처럼 `Migration(old, new)` 객체를 만들고 `ALL_MIGRATIONS` 배열에 추가
+3. 빌드하면 Room Gradle 플러그인(`room { schemaDirectory }`)이 `app/schemas/`에 새 버전 스키마 JSON을 내보냅니다. `git status`로 새 `NN.json`이 생겼는지 확인하세요 (`copyRoomSchemas`가 `assembleDebug`에 포함됩니다)
 
 > 마이그레이션 없이 버전만 올리면 `fallbackToDestructiveMigration()`으로 데이터가 초기화됩니다.  
 > 개발 중에는 괜찮지만 릴리스 빌드에서는 사용자 데이터 손실이 발생합니다.
+>
+> **현재 상태(2026-10-16 코드 확인)**: `ALL_MIGRATIONS`는 23→24까지이고 DB 버전은 25입니다. 24→25(테이블 `movie_korean_title_cache` 추가, 2026-09-29)는 `Migration`도 `AutoMigration`도 없이 올라갔습니다.
+> 따라서 v24 DB는 destructive fallback으로 초기화될 것으로 보입니다(코드로만 확인했고 실제 업그레이드는 실행해 보지 않았습니다).
 
 ---
 
@@ -448,10 +458,10 @@ launch { viewModel.snackbarEvent.collect { showSnackbar(it) } }
 private val loadingMutex = Mutex()
 
 fun loadMovieDetail() {
-    if (!loadingMutex.tryLock()) return   // 이미 로딩 중이면 즉시 리턴
     viewModelScope.launch {
+        if (!loadingMutex.tryLock()) return@launch   // 이미 로딩 중이면 즉시 리턴
+        _uiState.value = UiState.Loading
         try {
-            _uiState.value = UiState.Loading
             // ... API 호출
         } finally {
             loadingMutex.unlock()   // 에러 후에도 재시도 가능하도록 항상 해제
@@ -461,7 +471,8 @@ fun loadMovieDetail() {
 ```
 
 > `if (isLoading) return` 방식은 코루틴 환경에서 체크-후-세트 경쟁 조건이 생깁니다.  
-> `Mutex.tryLock()`은 원자적으로 잠금을 획득하므로 안전합니다.
+> `Mutex.tryLock()`은 원자적으로 잠금을 획득하므로 안전합니다.  
+> **`tryLock()`은 반드시 `viewModelScope.launch {}` 안에서 호출하세요.** launch 밖에서 잠그면 launch가 시작되기 전에 스코프가 취소될 때 `finally`가 실행되지 않아 잠금이 영구히 남을 수 있습니다 (`DetailViewModel.loadMovieDetail()`, `PersonDetailViewModel` 참고).
 
 ---
 
@@ -496,8 +507,12 @@ val isFavorite: StateFlow<Boolean> = toggle.isFavorite(movieId)
     //                        ↑ 구독자가 없어도 5초간 업스트림 유지 (화면 회전 대응)
 ```
 
-> 항상 `WhileSubscribed5s`를 사용하세요. `Eagerly`는 ViewModel 생존 기간 내내 Flow를 구독해  
-> 불필요한 DB 쿼리가 계속 실행됩니다.
+> 기본은 `WhileSubscribed5s`입니다. `Eagerly`는 ViewModel 생존 기간 내내 Flow를 구독해  
+> 불필요한 DB 쿼리가 계속 실행됩니다.  
+> **예외 2건**: (1) `StatsViewModel`의 `stateIn`은 재진입 시 Loading 플래시를 막으려고 `SharingStarted.Lazily`를 씁니다  
+> (`WhileSubscribed`는 백스택 복귀 시 재구독이 일어나 Loading이 다시 보입니다). (2) `FavoriteViewModel.selectedTag`는 `Eagerly`입니다 —  
+> `WhileSubscribed5s`는 구독자가 없으면 업스트림 매핑을 멈춰서, ViewModel 안에서 파생 StateFlow의 `.value`를 직접 읽으면 stale 값이 나오기 때문입니다(커밋 `13229d0`).  
+> 새 StateFlow를 만들 땐 이 예외를 따라 하지 말고 기본값을 쓰고, `.value`로 파생 값을 읽어야 한다면 그때 (2)를 참고하세요.
 
 ---
 
@@ -574,4 +589,4 @@ override suspend fun load(...): MediatorResult {
 
 ---
 
-*최종 업데이트: 2026-09-16 | 프로젝트 기준 버전: Room DB v24, AGP 9.4.0*
+*최종 업데이트: 2026-10-16 | 프로젝트 기준 버전: Room DB v25, AGP 9.4.1, Gradle 9.8.1*
