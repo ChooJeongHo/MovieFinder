@@ -7,7 +7,7 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 
 ### 빌드 환경
 - **AGP**: 9.4.1 (Android Gradle Plugin, Kotlin 2.3.21 내장)
-- **Gradle**: 9.7.1
+- **Gradle**: 9.8.1
 - **compileSdk**: 37 (Android 17)
 - **minSdk**: 24 / **targetSdk**: 36
 - **KSP**: 2.3.12 (Kotlin Symbol Processing)
@@ -58,9 +58,9 @@ app/src/main/java/com/choo/moviefinder/
 ├── baselineprofile/       # Baseline Profile 생성 모듈
 ├── data/                  # 데이터 레이어
 │   ├── local/
-│   │   ├── MovieDatabase.kt       # Room DB (version 24)
-│   │   ├── dao/                   # DAO 15개 (FavoriteMovieDao, WatchlistDao: abstract class)
-│   │   └── entity/                # Room Entity 14개
+│   │   ├── MovieDatabase.kt       # Room DB (version 25)
+│   │   ├── dao/                   # DAO 14개 (FavoriteMovieDao, WatchlistDao: abstract class)
+│   │   └── entity/                # Room Entity 15개
 │   ├── paging/
 │   │   ├── MoviePagingSource.kt
 │   │   ├── DiscoverPagingSource.kt
@@ -162,7 +162,7 @@ TMDB_API_KEY=여기에_API_키_입력
 ```
 주요 커버: ViewModel 5종, Repository 9종, UseCase 5종, PagingSource 3종, 유틸/워커 다수.
 
-### Espresso UI 테스트 (29개)
+### Espresso UI 테스트 (34개)
 ```bash
 ./gradlew connectedDebugAndroidTest
 ```
@@ -267,10 +267,10 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   없음(실기기 검증, 원인 미조사) — 다이얼로그 predictive back 애니메이션이 필요하면 별도 조사 필요.
 
 ### Room DB
-- 버전: 24, 이름: `movie_finder_db`, 스키마: `app/schemas/`
-- Entity 14개: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity, MemoEntity, ScheduledReminderEntity 외
+- 버전: 25, 이름: `movie_finder_db`, 스키마: `app/schemas/`
+- Entity 15개: FavoriteMovieEntity, RecentSearchEntity, CachedMovieEntity, RemoteKeyEntity, WatchHistoryEntity, WatchlistEntity, UserRatingEntity, MemoEntity, ScheduledReminderEntity 외
 - `FavoriteMovieDao`, `WatchlistDao`, `WatchHistoryDao`: `abstract class` — `@Transaction` wrapper 메서드 (toggleFavorite/toggleWatchlist, insertWithGenres/clearAllWithGenres)
-- Destructive migration fallback 적용 (개발 환경)
+- Destructive migration fallback 적용 (개발 환경). **24→25 Migration 없음**(코드 확인·미실행) — v24 DB는 초기화될 것
 - Room의 `withTransaction`은 MockK로 모킹 어려움 → `@Transaction` on abstract DAO 사용
 
 ### Coil 이미지 캐시
@@ -334,7 +334,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 
 ### FavoriteViewModel / FavoriteFragment 패턴
 - `FavoriteViewModel`: `SavedStateHandle`로 선택 탭(`_selectedTab`) 프로세스 종료 후 복원 — `savedStateHandle["selectedTab"] = tab.name`
-- `StatsViewModel` 포함 전체 stats/favorite StateFlow: `SharingStarted.Lazily` 사용 (재진입 시 Loading 플래시 방지; `WhileSubscribed`는 백스택 복귀 시 재구독 트리거)
+- `stateIn` 기본은 `WhileSubscribed5s`. 예외: `StatsViewModel` `Lazily`(재진입 시 Loading 플래시 방지; `WhileSubscribed`는 백스택 복귀 시 재구독 트리거), `FavoriteViewModel.selectedTag` `Eagerly`(`.value` stale 방지)
 - **탭 태그 패턴**: `TabLayout` 탭에 `tab.tag = HomeTab/FavoriteTab` 설정 → `onTabSelected`에서 `tab.tag as HomeTab` 캐스팅 (enum `entries[position]` 인덱스 의존 제거)
 - **FavoriteFragment retry loop**: `Channel<Unit>` + `while(true)` 패턴으로 collect 재시작 — `CancellationException`은 반드시 rethrow
 - **resume 스크롤 방지**: `initialEmit` 플래그로 StateFlow 첫 emit(resume 재방출) 시 `scrollToPosition(0)` 스킵

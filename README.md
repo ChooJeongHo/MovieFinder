@@ -18,10 +18,10 @@ Clean Architecture + MVVM 패턴 기반으로, 오프라인 캐시, 다크 모�
 
 | 실험 내용 | 도구 | Before | After |
 |---|---|---|---|
-| 시청 통계 기능 전체 설계 및 구현 | Claude Code | 기능 없음 | UseCase 49개, Repository 11개 인터페이스 |
+| 시청 통계 기능 전체 설계 및 구현 | Claude Code | 기능 없음 | UseCase 49개, Repository 11개 인터페이스 (작성 시점 값 — 현재는 UseCase 78개, Repository 인터페이스 21개) |
 | PR 코드 리뷰 자동화 | GitHub Actions + Claude API | 수동 리뷰 | PR 생성 시 자동 리뷰 코멘트 게시 |
-| 테스트 커버리지 개선 | Claude Code + JaCoCo | 미측정 (0%) | Line **75%** / Branch **70%** 달성 |
-| 유닛 테스트 작성 | Claude Code | 0개 | **856개** 자동 작성 |
+| 테스트 커버리지 개선 | Claude Code + JaCoCo | 미측정 (0%) | Line **78%** / Branch **72%** 달성 |
+| 유닛 테스트 작성 | Claude Code | 0개 | **987개** 자동 작성 |
 | 라이브러리 보안 취약점 분석 | Exa MCP | 미점검 | 실시간 웹 검색으로 실제 버그 발견 |
 | think / ultra think 프롬프트 비교 | Claude Code | 단일 분석 | 4에이전트 병렬, **30개+ 이슈** 자동 발견 |
 
@@ -41,19 +41,19 @@ Clean Architecture + MVVM 패턴 기반으로, 오프라인 캐시, 다크 모�
 | Category | Stack |
 |----------|-------|
 | Language | Kotlin 2.3.21 |
-| Build | AGP 9.4.1, Gradle 9.7.1, KSP 2.3.12 |
+| Build | AGP 9.4.1, Gradle 9.8.1, KSP 2.3.12 |
 | UI | XML Layouts + ViewBinding (대부분 화면), Jetpack Compose(검색 결과 화면 일부 + 온보딩 화면), Jetpack Glance(박스오피스 위젯), Material Components 1.14.0 |
 | Architecture | Clean Architecture, MVVM |
 | DI | Hilt 2.60.1 |
 | Network | Retrofit 3.0.0, OkHttp 5.5.0, kotlinx.serialization 1.11.0 |
 | Database | Room 2.8.5, Typed DataStore 1.2.1 |
 | Async | Coroutines, Flow, StateFlow, Channel |
-| Paging | Paging 3.5.1, RemoteMediator |
-| Image | Coil 3.6.2 |
-| Navigation | Navigation Component 2.10.1, Safe Args |
+| Paging | Paging 3.5.2, RemoteMediator |
+| Image | Coil 3.6.3 |
+| Navigation | Navigation Component 2.10.2, Safe Args |
 | Security | Certificate Pinning (OkHttp), EncryptedSharedPreferences |
-| Background | WorkManager 2.11.2 |
-| Test | JUnit 4, MockK 1.14.11, Turbine 1.2.1 (856개 유닛 + 29개 Espresso) |
+| Background | WorkManager 2.12.0 |
+| Test | JUnit 4, MockK 1.14.11, Turbine 1.2.1 (987개 유닛 + 34개 Espresso) |
 | CI/CD | GitHub Actions (Build / Test / Coverage / Cert Pinning / Claude 자동 리뷰 / Auto-merge) |
 | Static Analysis | Detekt 2.0.0-alpha.6 + KtLint |
 
@@ -69,7 +69,7 @@ API/DB  →  Repository  →  UseCase  →  ViewModel  →  Fragment (XML UI, �
 app/src/main/java/com/choo/moviefinder/
 ├── core/           # 공유 유틸리티 (ErrorMessageProvider, NetworkMonitor, 알림)
 ├── data/           # 데이터 레이어 (Room, Retrofit, PagingSource, RemoteMediator)
-├── domain/         # 도메인 레이어 (Model, Repository 인터페이스, UseCase 49개)
+├── domain/         # 도메인 레이어 (Model, Repository 인터페이스, UseCase 78개)
 ├── presentation/   # 프레젠테이션 레이어 (Fragment, ViewModel, Adapter)
 ├── di/             # Hilt DI 모듈
 ├── MainActivity.kt
@@ -79,7 +79,7 @@ app/src/main/java/com/choo/moviefinder/
 | 레이어 | 규칙 |
 |--------|------|
 | Domain | 순수 Kotlin, Android 프레임워크 의존성 없음 |
-| Repository | ISP 원칙 기반 도메인별 분리 (11개 인터페이스) |
+| Repository | ISP 원칙 기반 도메인별 분리 (21개 인터페이스) |
 | Presentation | Domain UseCase에만 의존, Data 레이어 직접 참조 금지 |
 
 ---
@@ -100,11 +100,12 @@ app/src/main/java/com/choo/moviefinder/
 | 알림 이력 | 예약된 개봉일 알림 목록 조회 및 취소 |
 
 **기타**
-- 홈 화면 위젯 2종: 인기 영화 Top 10(RemoteViewsService, 1시간 자동 갱신), 박스오피스(Jetpack Glance)
+- 홈 화면 위젯 4종: 인기 영화 Top 10(RemoteViewsService, 1시간 자동 갱신), 즐겨찾기, 시청 목표, 박스오피스(Jetpack Glance, 일별/주간 전환)
 - App Shortcuts: 검색 / 즐겨찾기 정적 단축키 + 최근 시청 영화 동적 단축키
 - 개봉일 알림 / 시청 목표 달성 알림 (WorkManager)
 - 딥링크: `moviefinder://movie/{id}`, `moviefinder://person/{id}`, `moviefinder://stats`
-- 한국어 + 영어 다국어 지원 (Per-App Language)
+- 한국어 + 영어 다국어 지원 (Per-App Language) — 영화 상세·목록의 TMDB 데이터도 앱 언어를 따릅니다 (검색 결과는 데이터는 한국어 기준이고 표시 제목만 앱 언어를 따름)
+- Material You 동적 색상 (Android 12+, XML 화면과 Compose 화면 모두)
 - Baseline Profiles
 - Predictive Back Gesture (Fragment 전환 스크러빙 미리보기)
 
@@ -155,14 +156,29 @@ KMRB에 일괄 조회 API가 없어 결과를 항목별로 조회해 걸러냅�
 - 키보드를 연 채 세로→가로→세로로 회전하면 입력란이 평소보다 657px 더 위로 스크롤됩니다 (입력란은 전부 보임). 가로→세로 방향은 정상입니다.
 - 프로세스 복원 직후 키보드가 복원되면 입력란이 키보드 뒤에 남습니다 (스크롤하면 닿음). 원인은 포커스 이벤트가 없어서로 추정할 뿐 확인하지 못했습니다.
 - 메모 수정 다이얼로그의 IME 상호작용은 확인하지 못했습니다 (다이얼로그가 떠 있는 동안 키보드가 뜨지 않았고, 열고 닫은 전후 스크롤 위치는 같았습니다).
-- 저장 직후 메모 목록이 그려지지 않는 별개 결함이 있습니다: 저장 직후 표시 0/6(수정 전과 같음), 새로 열어도 간헐적으로 안 그려집니다. 원인은 확인하지 못했고 `setHasFixedSize(true)` + `wrap_content` 가설은 개행으로 재측정을 일으키는 시험에서 지지되지 않았습니다. 이번 작업에서는 고치지 않았습니다.
+- 저장 직후 메모 목록이 그려지지 않는 별개 결함은 125일차 작업 시점에는 남아 있었고(저장 직후 표시 0/6, 새로 열어도 간헐적으로 안 그려짐, 당시 `setHasFixedSize(true)` + `wrap_content` 가설은 개행으로 재측정을 일으키는 시험에서 지지되지 않음), 126일차에 수정했습니다 — 아래 절.
 - 상세 외 화면(검색 등)의 키보드 처리는 측정하지 않았습니다. API 24~29와 제스처 내비는 검증하지 못했습니다.
+
+### 알려진 한계: 상세 화면 메모 목록 (수정)
+
+실기기(SM-S926N, 1440x3120, 3버튼)에서 메모를 저장해도 상세 화면의 메모 목록(`rv_memos`)이 그려지지 않았습니다. 수정 전 저장 직후 표시는 0/40이었습니다(메모가 0개면 목록 높이가 0px로 남았고, 2개가 있으면 새 메모가 위쪽 밖에 놓였습니다). 화면을 새로 열면 18/20으로 보였습니다. 원인은 `setHasFixedSize(true)`와 `wrap_content`의 조합입니다. 어댑터 내용이 바뀌어도 레이아웃 재요청이 생략돼 높이가 굳었습니다. `DetailFragment.kt`에서 그 호출 한 줄을 지웠습니다 (+1/−1, 이유를 적은 주석 포함).
+
+**해결됨**
+- 저장 직후 목록이 보입니다: 40/40, 화면을 새로 열면 20/20. 같은 코드에서 그 한 줄만 바꾼 전/후 비교라 원인을 확정했습니다. 다만 수정 전/후 APK를 따로 빌드해 비교했고, 두 바이너리가 그 한 줄 외에 같다는 것까지는 검증하지 않았습니다.
+- 125일차 결과는 그대로입니다: 키보드를 올렸을 때 입력란 가시 217/217px, 입력 1~4줄 48/48, 콜드 레이아웃 diff 0.
+
+**미해결 / 알아둘 점**
+- `rvReviews`(`DetailFragment.kt`)와 가로 목록(`setupHorizontal`)에도 같은 `setHasFixedSize(true)`가 남아 있지만, 같은 문제가 있는지는 점검하지 않았습니다.
+- 스크롤 끝에서 높은 목록의 맨 위가 화면 밖에 있는 것은 일반 스크롤 동작으로 판단했습니다. 저장 후 새 메모를 맨 위에 보이게 하는 별도 방안은 필요하다는 의견이 있을 때 검토합니다.
+- 삭제 직후에는 uiautomator 덤프가 idle 상태를 얻지 못해 실패했고(원인 미확인), 키보드를 연 채 삭제한 경우는 스크린샷 픽셀 측정 4/4로만 확인했습니다.
 
 ---
 
 ## Testing
 
-유닛 테스트 **856개** + Espresso UI 테스트 **29개** | Line Coverage **75%** | Branch Coverage **70%**
+유닛 테스트 **987개** + Espresso UI 테스트 **34개** | Line Coverage **78%** | Branch Coverage **72%**
+
+> 커버리지는 2026-10-16 `jacocoTestReport` 실측(유닛 테스트 기준): Line 78.48% / Branch 72.15% / Instruction 73.91%. Espresso 34개는 `@Test` 개수이며 CI는 androidTest를 실행하지 않습니다.
 
 ```bash
 # 유닛 테스트
@@ -189,7 +205,7 @@ KMRB에 일괄 조회 API가 없어 결과를 항목별로 조회해 걸러냅�
 | `auto-merge.yml` | PR | 조건 충족 시 자동 병합 |
 | `release.yml` | `v*.*.*` 태그 push | 릴리즈 자동화 |
 | Pre-commit Hook | git commit | Detekt + 컴파일 체크 |
-| Pre-push Hook | git push | 유닛 테스트 전체 실행 |
+| Pre-push Hook | git push | 유닛 테스트 전체 + `:app:lintDebug` |
 
 ---
 
@@ -231,7 +247,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 
 ## Requirements
 
-- Android Studio (AGP 9.4.0+)
+- Android Studio (AGP 9.4.1)
 - JDK 21+
 - compileSdk 37 / minSdk 24 / targetSdk 36
 
