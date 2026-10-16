@@ -124,12 +124,13 @@ adb -s R3CX80BS9MX shell dumpsys gfxinfo com.choo.moviefinder
 |---|---|---|
 | 커스텀 뷰 `onDraw` 내 객체 생성 | ✅ 없음 | `RectF`/`Paint` 모두 클래스 필드 선언 |
 | `onSizeChanged` 캐시 | ✅ 5곳 (2026-10-16 재확인, 2026-09-16과 같음, 이전 13곳) | 사전 계산 패턴 적용 |
-| `setHasFixedSize(true)` | ✅ 호출 7곳 / 6개 파일 (2026-10-16 재확인, 2026-09-16 8곳) | 2026-10-15에 `rv_memos` 호출 제거 — 아래 주의 참고 |
+| `setHasFixedSize(true)` | ✅ 호출 5곳 / 5개 파일 (2026-10-16 재확인, 2026-09-16 8곳) | 2026-10-15에 `rv_memos`, 2026-10-16에 `rvReviews`·`setupHorizontal` 호출 제거 — 아래 주의 참고 |
 | LinearLayout 포함 레이아웃 | ⚠️ `res/layout` 31개 파일 + `layout-land` 1개 = 32개 (2026-10-16 재확인, 2026-09-16 31개) | Overdraw 잠재적 위험 — 체감 영향은 낮음 |
 
-> **`setHasFixedSize(true)` 주의 (2026-10-15)**: `wrap_content` 높이의 RecyclerView에 쓰면 어댑터 내용이 바뀌어도 레이아웃 재요청이 생략돼 높이가 굳을 수 있다.
-> 상세 화면 `rv_memos`가 이 조합으로 저장 후 목록이 그려지지 않아 호출을 지웠다(저장 직후 표시 0/40 → 40/40, 실기기). 남은 호출 중
-> `rvReviews`(`DetailFragment.kt`)와 가로 목록(`setupHorizontal`)이 같은 조합인지는 점검하지 않았다.
+> **`setHasFixedSize(true)` 주의 (2026-10-15, 2026-10-16 갱신)**: `wrap_content` 높이의 RecyclerView에 쓰면 어댑터 내용이 바뀌어도 레이아웃 재요청이 생략돼 높이가 굳을 수 있다.
+> 상세 화면 `rv_memos`가 이 조합으로 저장 후 목록이 그려지지 않아 호출을 지웠다(저장 직후 표시 0/40 → 40/40, 실기기). 2026-10-16에는
+> `rvReviews`와 가로 목록(`setupHorizontal`: 출연진·비슷한 영화·추천 영화)도 같은 조합으로 높이 0에 굳어 있음을 확인해 호출을 지웠다(수정 전후 수치는 PR #168).
+> 남은 호출 5곳(Home·Collection·Favorite·PersonDetail·Search)이 같은 조합인지는 점검하지 않았다(`PersonDetailFragment`의 `rv_filmography`는 시작 `gone` + `wrap_content`로 같은 모양이나 미측정).
 
 **커스텀 뷰 5종 확인**: `BarChartView`, `CalendarHeatmapView`, `PieChartView`, `CircularRatingView`, `HistogramView` — `onDraw` 내 객체 할당 없음 ✅
 
