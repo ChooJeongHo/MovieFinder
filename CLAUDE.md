@@ -377,24 +377,19 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   `pendingScrollToTop`을 non-blank→blank 전이에서만 세우고 모든 제출의 commit 콜백이 소비한다(콜백 인자가 아닌 필드: `AsyncListDiffer`는 세대가 밀린 제출의 콜백을 버린다).
   - **남은 한계(미해결)**: 배우 모드 가드 없음(코드 추론, 재현 안 됨) / 제출 직후 `Filtered`가 목록을 다시 보이게 할 수 있음 / 장르 칩 해제가 `updateVisibility`를 안 불러 전환이 안 될 수 있음 /
     초기 안내 깜빡임과 `star wars` 제출→X 11회 중 1회 `OTHER`는 **확인 못 함**.
-- **가로 모드 검색(123일차, 실기기 1440x3120/560dpi/3버튼)**: 가로 콘텐츠 영역이 173px(고정 스택이 높이의 86%)라 최근 검색어 `rv`=0·결과도 173px였다.
-  `layout-land/fragment_search.xml`(왼쪽 320dp 스크롤 패널에 toolbar·입력창·칩, 오른쪽 콘텐츠)로 1139px/`rv` 915px. **가로 루트 `baselineAligned="false"` 필수**: 기본값이면 weight 자식이 UNSPECIFIED
+- **가로 모드 검색**:
+  `layout-land/fragment_search.xml`(왼쪽 320dp 스크롤 패널에 toolbar·입력창·칩, 오른쪽 콘텐츠). **가로 루트 `baselineAligned="false"` 필수**: 기본값이면 weight 자식이 UNSPECIFIED
   높이로 선측정돼 결과 `LazyVerticalGrid`가 가로 검색어 입력 시 크래시. id·뷰 클래스·루트는 세로와 같게, 구조용 컨테이너엔 id 금지(`SearchLayoutConsistencyTest`; 속성 차이는 못 잡으니 세로를 고치면 가로도).
-  **한계**: 결과 그리드 4열 유지(창 폭 기준); 키보드 올림 시 `fitsSystemWindows`가 `bottom_nav` 높이만큼 과다 패딩(세로 `rv` 113px); 다른 탭 가로·다른 크기/태블릿/제스처 내비 미측정.
-- **다른 탭 가로 점검과 홈 1단계 수정(124일차, 실기기 SM-S926N 1440x3120/560dpi/3버튼)**:
-  - **측정**: 사용 불가는 홈뿐 — `rv_movies`가 세로·가로 모두 0px(스크롤 없는 LinearLayout 루트 + wrap_content 섹션이 높이를 다 씀). 통계·설정·알림 기록 943/2265, 검색 1139/1495 정상.
-  - **홈 수정 = 1단계(섹션 접기)**: 섹션을 `CoordinatorLayout` + `AppBarLayout`(`app_bar_home_sections`, `scroll`)으로 감싸고 목록에 `appbar_scrolling_view_behavior`. 루트는 LinearLayout 유지(`baseline-prof.txt`가 `FragmentHomeBinding.getRoot()`를 고정). "맨 위로"는 섹션도 펼침(`HomeFragment.scrollHomeToTop`). `HomeLayoutStructureTest`가 구조를 고정하나 **높이 값은 JVM이 못 잡으니 레이아웃을 고치면 실기기로 확인.** 접은 뒤 목록 가시 높이 세로 2265px·가로 775px.
+  **한계**: 결과 그리드 4열 유지(창 폭 기준); 키보드 올림 시 `fitsSystemWindows`가 `bottom_nav` 높이만큼 과다 패딩; 다른 탭 가로·다른 크기/태블릿/제스처 내비 미측정.
+- **다른 탭 가로 점검과 홈 1단계 수정**:
+  - **홈 수정 = 1단계(섹션 접기)**: 섹션을 `CoordinatorLayout` + `AppBarLayout`(`app_bar_home_sections`, `scroll`)으로 감싸고 목록에 `appbar_scrolling_view_behavior`. 루트는 LinearLayout 유지(`baseline-prof.txt`가 `FragmentHomeBinding.getRoot()`를 고정). "맨 위로"는 섹션도 펼침(`HomeFragment.scrollHomeToTop`). `HomeLayoutStructureTest`가 구조를 고정하나 **높이 값은 JVM이 못 잡으니 레이아웃을 고치면 실기기로 확인.**
   - **첫 화면에서는 목록이 여전히 안 보이고(시청기록 있으면 0px) 밀어야 한다는 단서가 없다 — 별도 제품 결정 필요.**
-  - **R1 재정의**: 변경 전 시청기록 937px·가로 박스오피스 775px는 마지막 wrap_content 자식이 남은 높이에 맞춰 **잘린 값**이었다(접히는 앱바 안에서는 자연 높이 1024/1328px). 불변은 툴바·탭 491px·세로 박스오피스 1328px. 접힌 상태에서 아래로 당기면 첫 당김은 섹션을 펼치고 새로고침은 그다음.
+  - 접힌 상태에서 아래로 당기면 첫 당김은 섹션을 펼치고 새로고침은 그다음.
   - **`HomeFragmentTest`(androidTest)는 `rv_movies` `isDisplayed`를 검사해 이 기기에서 이미 실패할 가능성이 크다 — 미수정·미실행, CI도 androidTest 안 돌림.**
-  - **후보(미수정)**: 상세·인물 가로 backdrop 280dp 고정, 그리드 열 수가 너비만 기준(가로 4열), 상세 FAB가 가로 3버튼 내비와 겹침, 컬렉션 가로 앱바 700px, 오프라인+트렌딩 빈 화면, 홈 가로 왼쪽 컷아웃 인셋 미적용, 온보딩 "다음" 버튼이 내비 바와 겹침(AVD만), `baseline-prof.txt`의 `FragmentHomeBinding.<init>` 줄 stale. **미측정**: 다크 모드·TalkBack·태블릿·프로세스 종료 후 접힘 복원.
-- **상세 메모 입력란 키보드 가림 수정(125일차, 실기기 SM-S926N 3버튼)**: 키보드를 올리면 입력란이 IME 뒤로 가렸고(가시 0px) 메모 0개면 스크롤로도 못 닿았다.
+- **상세 메모 입력란 키보드 가림 수정**:
   - **원인(설정 아닌 구조)**: `DetailFragment`의 `nestedScroll` 인셋 리스너가 `navigationBars`만 반영하고 IME를 무시, `enableEdgeToEdge`라 창이 안 줄어든다. `windowSoftInputMode`는 이미 `adjust=resize`라 원인 아님.
-  - **수정(`DetailFragment.kt` 1개, +22/-2)**: 패딩=`max(nav, ime)`, IME가 올라오고 `et_memo` 포커스면 `scrollMemoAboveIme()`가 입력란 아래 끝을 IME 위(+8dp)로 스크롤, 입력란 높이 변화(1→4줄)도 재보정. IME가 없으면 수정 전과 같다.
-  - **R6 재정의**: 닫힘 비교 대상은 포커스 해제·키보드 닫힘 동작이고 닫힌 뒤 스크롤 위치는 아님(스크롤 끝으로 clamp, 깜빡임·빈 화면 없음).
   - **한계**: 키보드 연 채 세로→가로→세로 회전 시 과다 스크롤(전부 보임), 프로세스 복원+키보드 복원 시 자동 스크롤 안 됨(스크롤하면 닿음), 저장 직후 메모 목록 미표시(126일차에 수정). 상세 외 화면 IME 미측정.
-- **상세 `wrap_content` 목록의 `setHasFixedSize(true)` 제거(126일차 메모, 127일차 출연진·비슷한·추천·리뷰)**: 같은 원인으로 목록이 높이 0에 굳었다. 126: 저장해도 `rv_memos`가 안 그려짐(0/40 → 40/40, 실기기). 127: 네 목록이 제목만 있고 비었음(수정 전 BUGSIG: 폰 103/104·에뮬레이터 3종 104/104 → 수정 후 폰·에뮬레이터 3종 104/104 SHOWN).
-  - **원인(확정)**: 고정 크기는 어댑터 변경 때 `requestLayout`을 건너뛴다(`RecyclerView.triggerUpdateProcessor` 1.4.0 소스). 127 목록은 `GONE`→`VISIBLE`과 비동기 `submitList`가 같은 `render()`라 빈 채 높이 0으로 재어진 뒤 삽입된다. `DetailFragment.kt` 호출 삭제 전/후로 확정. **`setHasFixedSize(true)`를 되돌리지 말 것**(wrap_content 목록).
-  - **불변**: 125일차 입력란 가시(폰·에뮬레이터 12/12)·126 저장 직후 표시 5/5.
-  - **한계·새 발견(미수정)**: 수정으로 처음 보이는 리뷰 카드 글자가 유독 작다(`item_review.xml`이 Material3 이름 `textAppearanceBodyMedium`/`LabelSmall`을 쓰는데 테마는 Material2, 원인 추정; 3개 레이아웃도 같은 패턴). 키보드 연 채 목록이 늦게 도착하면 입력란이 밀릴 수 있음(미확인). `PersonDetailFragment.rv_filmography` 같은 모양(미측정). 이미지·성능: 에뮬레이터는 판단 불가, 폰도 일부 포스터 회색(핀 추정).
+- **상세 `wrap_content` 목록의 `setHasFixedSize(true)` 제거**:
+  - **원인(확정)**: 고정 크기는 어댑터 변경 때 `requestLayout`을 건너뛴다(`RecyclerView.triggerUpdateProcessor` 1.4.0 소스). 127 목록은 `GONE`→`VISIBLE`과 비동기 `submitList`가 같은 `render()`라 빈 채 높이 0으로 재어진 뒤 삽입된다. **`setHasFixedSize(true)`를 되돌리지 말 것**(wrap_content 목록).
 - **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)
+- **일별 기록**: 일차별 측정·실험 요약은 `DEVLOG.md`에 쓰고 이 파일에는 규칙·경고만 둔다(자동 로드되지 않는 파일이니 import로 다시 끌어오지 않는다).
