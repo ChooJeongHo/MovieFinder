@@ -352,17 +352,26 @@ object NetworkModule {
     private const val PIN_API_LEAF = "sha256/QfyoR20v8hyYX7L+ikLzM/euPGSDl67gFFcor/sROMs="
     private const val PIN_API_INTER = "sha256/G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c="
 
-    // image.tmdb.org는 Let's Encrypt 발급(리프 90일 이하 주기 로테이션) — api.themoviedb.org(Amazon)보다
-    // 훨씬 자주 갱신되므로 cert-pin-check.yml 알림 시 이 두 값을 우선 확인할 것 (2026-08-10 로테이션으로
-    // 기존 067일차 핀 무효화 확인, NETWORK_SECURITY_REPORT.md "2026-08-10 인증서 핀 불일치" 절 참고)
-    private const val PIN_IMAGE_LEAF = "sha256/ev7y32IIBYuHsfRofMyLOE2lRz/O49x1HjkJ2Ea/9Y4="
-    private const val PIN_IMAGE_INTER = "sha256/nWN7PSep5XDQdge5zK24CnCRXHr3KvzhKEGxsdqCX9E="
+    // image.tmdb.org는 Let's Encrypt 발급 — 리프는 발급마다 키가 바뀌고(8/10·9/14·10/14 모두 다름) 중간 CA는 YR1/YR2가
+    // 교대하며 YR3은 예고 없이 승격될 수 있는 백업이다(letsencrypt.org/certificates, 2026-07-08 갱신 문서).
+    // 그래서 리프 핀은 쓰지 않고 루트 공개키(ISRG Root X1·Root YR) + 활성/백업 중간 CA를 핀한다.
+    // network_security_config.xml의 image.tmdb.org <pin-set>과 같은 5개 값이어야 하며(cert-pin-check.yml이 비교),
+    // 값은 공식 PEM의 SPKI SHA-256이다. 경위·갱신 절차: NETWORK_SECURITY_REPORT.md "2026-10-22 image.tmdb.org 핀 재구성" 절
+    private const val PIN_IMAGE_ROOT_X1 = "sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M="
+    private const val PIN_IMAGE_ROOT_YR = "sha256/fk6IOKit1ild5647BH06ujSIq5XbCgqlbYl6ANhhi88="
+    private const val PIN_IMAGE_INTER_YR1 = "sha256/LoMHBotttiDko50Gi13uXW71eIy7LAttI+rYT8wXF4w="
+    private const val PIN_IMAGE_INTER_YR2 = "sha256/nWN7PSep5XDQdge5zK24CnCRXHr3KvzhKEGxsdqCX9E="
+    private const val PIN_IMAGE_INTER_YR3 = "sha256/UaqofZhLVZrGnpKfiIoCLYMuCJ/026CkErUQG8pLx5k="
 
     private fun buildApiCertPinner() = CertificatePinner.Builder()
         .add("api.themoviedb.org", PIN_API_LEAF, PIN_API_INTER)
         .build()
 
     private fun buildImageCertPinner() = CertificatePinner.Builder()
-        .add("image.tmdb.org", PIN_IMAGE_LEAF, PIN_IMAGE_INTER)
+        .add(
+            "image.tmdb.org",
+            PIN_IMAGE_ROOT_X1, PIN_IMAGE_ROOT_YR,
+            PIN_IMAGE_INTER_YR1, PIN_IMAGE_INTER_YR2, PIN_IMAGE_INTER_YR3
+        )
         .build()
 }
