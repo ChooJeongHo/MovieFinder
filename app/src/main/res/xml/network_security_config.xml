@@ -20,16 +20,24 @@
         </pin-set>
     </domain-config>
 
-    <!-- image.tmdb.org는 Let's Encrypt가 발급 — 리프/중간 인증서가 90일 이하 주기로 로테이션되므로
-         themoviedb.org(Amazon)와 별도 도메인/만료일로 분리. 067일차 최초 핀은 이 로테이션으로 인해
-         무효화되었음(2026-08-10 발견, NETWORK_SECURITY_REPORT.md "2026-08-10 인증서 핀 불일치" 절 참고). -->
+    <!-- image.tmdb.org는 Let's Encrypt가 발급(CDN 경유). 리프는 발급마다 키가 바뀌고(8/10·9/14·10/14 모두 다름)
+         중간 CA는 YR1/YR2가 교대하며 YR3은 예고 없이 승격될 수 있는 백업이라, 리프 핀은 쓰지 않고
+         루트 공개키 + 활성/백업 중간 CA를 핀한다(131일차, 2026-10-22 서버 체인 실측·공식 PEM 대조).
+         NetworkModule.kt의 PIN_IMAGE_* 5개와 같은 값이어야 하며 cert-pin-check.yml이 일치를 비교한다.
+         경위·갱신 절차: NETWORK_SECURITY_REPORT.md "2026-08-10 인증서 핀 불일치", "2026-10-22 image.tmdb.org 핀 재구성" 절 -->
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="false">image.tmdb.org</domain>
-        <pin-set expiration="2026-11-10">
-            <!-- image.tmdb.org leaf -->
-            <pin digest="SHA-256">ev7y32IIBYuHsfRofMyLOE2lRz/O49x1HjkJ2Ea/9Y4=</pin>
-            <!-- image.tmdb.org intermediate: Let's Encrypt YR2 -->
+        <pin-set expiration="2027-06-30">
+            <!-- ISRG Root X1 (기본 체인의 끝) -->
+            <pin digest="SHA-256">C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=</pin>
+            <!-- ISRG Root YR (자체서명·X1 교차서명 모두 같은 키) -->
+            <pin digest="SHA-256">fk6IOKit1ild5647BH06ujSIq5XbCgqlbYl6ANhhi88=</pin>
+            <!-- Let's Encrypt 중간 CA YR1 (2026-10-22 서버가 보내는 중간 CA) -->
+            <pin digest="SHA-256">LoMHBotttiDko50Gi13uXW71eIy7LAttI+rYT8wXF4w=</pin>
+            <!-- Let's Encrypt 중간 CA YR2 (활성, 기존 핀 값 그대로) -->
             <pin digest="SHA-256">nWN7PSep5XDQdge5zK24CnCRXHr3KvzhKEGxsdqCX9E=</pin>
+            <!-- Let's Encrypt 중간 CA YR3 (백업, 예고 없이 발급 시작 가능) -->
+            <pin digest="SHA-256">UaqofZhLVZrGnpKfiIoCLYMuCJ/026CkErUQG8pLx5k=</pin>
         </pin-set>
     </domain-config>
 

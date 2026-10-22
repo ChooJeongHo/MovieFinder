@@ -58,14 +58,30 @@ jobs:
       - name: Check image.tmdb.org pins
         id: check-image
         run: |
-          grep -E 'PIN_IMAGE_(LEAF|INTER) *=' app/src/main/java/com/choo/moviefinder/di/NetworkModule.kt \
+          grep -E 'PIN_IMAGE_[A-Z0-9_]+ *=' app/src/main/java/com/choo/moviefinder/di/NetworkModule.kt \
             | grep -oE 'sha256/[A-Za-z0-9+/=]+' | sed 's#^sha256/##' > "$RUNNER_TEMP/image.declared"
           MATCHED=$(grep -Fxf "$RUNNER_TEMP/image.declared" "$RUNNER_TEMP/image.chain" || true)
 
-          if [ -n "$MATCHED" ]; then
+          # OS 층(network_security_config.xml)과 앱 층(NetworkModule.kt)의 image.tmdb.org 핀 집합이 같은지도 확인한다.
+          # 체인 일치만 보면 한쪽 층이 낡은 채로 통과하기 때문이다(131일차).
+          python3 - > "$RUNNER_TEMP/image.nsc" <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse('app/src/main/res/xml/network_security_config.xml').getroot()
+          for dc in root.iter('domain-config'):
+              if any((d.text or '').strip() == 'image.tmdb.org' for d in dc.findall('domain')):
+                  for p in dc.iter('pin'):
+                      print((p.text or '').strip())
+          PY
+          DRIFT=0
+          if ! diff <(sort -u "$RUNNER_TEMP/image.declared") <(sort -u "$RUNNER_TEMP/image.nsc") > /dev/null; then DRIFT=1; fi
+
+          if [ -n "$MATCHED" ] && [ "$DRIFT" = "0" ]; then
             echo "✅ image.tmdb.org pin matches (체인에서 일치한 핀:)"
             echo "$MATCHED" | sed 's#^#  sha256/#'
             echo "image_status=ok" >> $GITHUB_OUTPUT
+          elif [ -n "$MATCHED" ]; then
+            echo "❌ image.tmdb.org: 체인과는 일치하지만 network_security_config.xml(OS 층)과 NetworkModule.kt(앱 층)의 핀 집합이 다름"
+            echo "image_status=mismatch" >> $GITHUB_OUTPUT
           else
             echo "❌ image.tmdb.org pin MISMATCH! 체인의 어떤 인증서도 NetworkModule.kt의 PIN_IMAGE_*와 일치하지 않음"
             echo "image_status=mismatch" >> $GITHUB_OUTPUT

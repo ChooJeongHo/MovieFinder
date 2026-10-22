@@ -125,18 +125,20 @@ echo | openssl s_client -connect api.themoviedb.org:443 2>/dev/null \
   | openssl dgst -sha256 -binary \
   | openssl enc -base64
 
-# image.tmdb.org 신규 핀 추출
-echo | openssl s_client -connect image.tmdb.org:443 2>/dev/null \
-  | openssl x509 -pubkey -noout \
-  | openssl pkey -pubin -outform der \
-  | openssl dgst -sha256 -binary \
-  | openssl enc -base64
+# image.tmdb.org 서버 체인의 모든 인증서 핀 추출 (cert-pin-check.yml과 같은 방식; 리프만 보면 안 된다)
+echo | openssl s_client -connect image.tmdb.org:443 -servername image.tmdb.org -showcerts 2>/dev/null |
+  awk -v cmd="openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64" '
+    /BEGIN CERTIFICATE/ { buf = "" }
+    { buf = buf $0 "\n" }
+    /END CERTIFICATE/ { printf "%s", buf | cmd; close(cmd) }'
 ```
 
+**image.tmdb.org 핀 선택 원칙 (131일차)**: 리프는 핀하지 않는다(발급마다 키가 바뀐다). 루트 공개키(ISRG Root X1·Root YR)와 활성 중간 CA(YR1·YR2), 백업 중간 CA(YR3)를 핀한다. 서버가 보낸 체인에서 계산한 값만 믿지 말고 Let's Encrypt 공식 PEM(letsencrypt.org/certificates 페이지의 `pem` 링크)의 SPKI 값과 전체 일치하는지 대조한다. 같은 페이지의 활성/백업 중간 CA 목록이 바뀌면(YR3 승격, 새 세대) 새 중간 CA 핀을 **추가**하고 기존 핀은 유지한다. 핀 5개는 OS 층(`network_security_config.xml`)과 앱 층(`NetworkModule.kt`)에서 같아야 하며 `cert-pin-check.yml`이 두 층의 일치와 서버 체인 일치를 함께 점검한다.
+
 갱신 시 수정 파일:
-- `NetworkModule.kt` — `PIN_API_LEAF`, `PIN_API_INTER`, `PIN_IMAGE_LEAF`, `PIN_IMAGE_INTER` 상수
+- `NetworkModule.kt` — `PIN_API_LEAF`, `PIN_API_INTER`, `PIN_IMAGE_ROOT_X1`, `PIN_IMAGE_ROOT_YR`, `PIN_IMAGE_INTER_YR1`, `PIN_IMAGE_INTER_YR2`, `PIN_IMAGE_INTER_YR3` 상수
 - `PopularMoviesRemoteViewsFactory.kt` — 위젯 OkHttpClient 내 인라인 핀 문자열
-- `network_security_config.xml` — `<pin-set>` 항목 및 `expiration` 날짜
+- `network_security_config.xml` — `<pin-set>` 항목 및 `expiration` 날짜(image 블록 `2027-06-30`, api 블록 `2027-06-30`)
 
 ---
 
@@ -279,6 +281,67 @@ leaf만 피닝했다면 이번에도 091일차와 동일한 전면 이미지 로
 
 ---
 
+## 2026-10-22 image.tmdb.org 핀 재구성 (131일차)
+
+### 증상
+- `image.tmdb.org`의 리프 인증서가 2026-10-14 08:02 GMT에 재발급됐다(리프 `7p4VXQnn…`, 만료 2027-01-12). 중간 CA는 YR2(`nWN7PSep…`)에서 **YR1**(`LoMHBott…`)로 바뀌었다. 미국 GitHub 러너의 `cert-pin-check`는 10/12에는 YR2 체인(통과), 10/19에는 YR1 체인(불일치 → 이슈 #173)을 봤다.
+- 2026-10-22 리졸버 8종(시스템·1.1.1.1·8.8.8.8·9.9.9.9·OpenDNS·KT·LG U+·SK브로드밴드)이 알려 준 엣지 IP 10곳이 모두 같은 체인을 보냈고 앱 핀(리프 `ev7y32II…`, YR2)과는 **0/10 불일치**였다. 도메인은 `tmdb-image-prod.b-cdn.net`으로 CNAME된다(Bunny CDN으로 추정).
+- 변경 전(main@45a40df) 기기 실측: 에뮬레이터(API 37)와 폰(SM-S926N, API 36) 모두 디버그·릴리스에서 이미지 호스트 TLS 핸드셰이크 성공이 0이었고, 디버그 로그의 핀 검증 실패는 폰 약 300줄/회, 에뮬레이터 약 120~140줄/회였다.
+- 정정: 10/16 기록의 "중간 인증서는 경로마다 다름 / 폰은 YR2라 정상"은 이번 실측으로 지지되지 않는다. 8종 리졸버·엣지 10곳, 폰 직접 측정, 10/12→10/19 CI 순서가 모두 10/14 재발급(시간차)으로 설명된다. 다만 10/16경 일부 엣지에 옛 인증서가 남았을 가능성은 배제하지 못한다(판정 불가).
+
+### 원인
+- Let's Encrypt 공식 "Chains of Trust"(2026-07-08 갱신): RSA 중간 CA는 YR1·YR2가 교대로 발급하고 **YR3은 예고 없이 발급을 시작할 수 있는 백업**이다. 기본 체인은 `리프 ← YR1 ← Root YR ← ISRG Root X1`이다. 그래서 리프 핀은 발급마다, 중간 CA 핀 1개는 중간 CA가 바뀔 때마다 깨진다(8/10, 9/14, 10/14 세 번째).
+- 핀은 두 층에서 따로 검사된다. OS 층(`network_security_config.xml`의 `pin-set`)과 앱 층(`NetworkModule.kt`의 `CertificatePinner`, release에서만 켜짐). **디버그 빌드도 OS 층 핀은 적용된다**: 공식 문서상 `debug-overrides`의 `overridePins`는 user CA로 서명된 체인에만 핀을 면제하고, 양성 대조 a(아래)에서 실측으로 확인했다. 앱 층에는 만료 개념이 없다.
+
+### 수정
+- **핀 5개**(두 층에서 같은 집합, 값은 공식 PEM의 SPKI SHA-256과 전체 일치):
+
+| 핀 | 앞 8자 | 처리 |
+|---|---|---|
+| ISRG Root X1 | `C5+lpZ7t…` | 추가 |
+| ISRG Root YR | `fk6IOKit…` | 추가 |
+| 중간 YR1 | `LoMHBott…` | 추가 |
+| 중간 YR2 | `nWN7PSep…` | 기존 값 유지 |
+| 중간 YR3(백업) | `UaqofZhL…` | 추가 |
+| 리프 | `ev7y32II…` | 제거(발급마다 키가 바뀜) |
+
+- `network_security_config.xml`: image 블록 `expiration` 2026-11-10 → 2027-06-30(api 블록과 같은 날).
+- `cert-pin-check.yml`: image 단계가 `PIN_IMAGE_*` 상수 전체를 읽고, OS 층 XML과 앱 층 코드의 핀 집합이 다르면 불일치로 보고한다. 로컬 시험: 정상 ok / XML 핀 1개 제거 → 불일치 / 체인 불일치 → 불일치 / 옛 스크립트는 지금 서버에서 불일치.
+- 변경하지 않은 것: `api.themoviedb.org` 핀·위젯 핀(아래 후속 후보), CLAUDE.md.
+
+### 검증 (2026-10-22, 같은 시나리오·같은 기기)
+시나리오: 앱 내 이미지 캐시 삭제 → 콜드 시작 → 홈 5화면 스크롤 → `iv_poster` 슬롯 판정(중앙 50% 영역의 95% 이상이 placeholder 색이면 실패). 이 판정은 오버레이 때문에 **가짜 OK를 4~14%** 냈다(기준선 디버그 로그의 진짜 성공은 0). 명확한 성공(비율 <0.5)은 기준선 0, 수정 후 전부.
+
+| 그룹 | 기준선 성공률 | 수정 후 성공률 |
+|---|---|---|
+| 에뮬레이터 디버그 | 4.7% (7/148, 3회) | 100% (144/144, 3회) |
+| 에뮬레이터 릴리스 | 10.7% (16/150, 3회) | 100% (150/150, 3회) |
+| 폰 디버그 | 10.8% (11/102, 2회) | 100% (99/99, 2회) |
+| 폰 릴리스 | 11.8% (12/102, 2회) | 100% (102/102, 2회) |
+
+- 디버그 로그: 핸드셰이크 성공 0 → 회당 5, 핀 검증 실패 줄 약 120~300 → 0, 디스크 캐시 파일 1 → 53~61. 폰 디버그의 이미지 호출 실패 2건은 `Canceled`(스크롤 취소)이며 핀과 무관하다.
+- 서버 체인 재실측: 수정 직전(12:21)·직후(12:22) 모두 엣지 10곳에서 새 핀 중 Root YR·Root X1·YR1이 일치했다.
+- 양성 대조(에뮬레이터, 임시 폴더 복사본): (a) 틀린 핀+미래 만료 디버그 → 성공률 4.2%, 핀 검증 실패 줄 134·116 / (b) 같은 틀린 핀+과거 만료 → 100%, 핀 실패 0(**만료 후 핀 검사가 꺼짐을 실측**, 에뮬레이터 API 37 디버그) / (c) NSC는 수정본, OkHttp 핀만 틀린 릴리스 → 10.4%(가짜 OK 포함), 앱 층만으로도 실패.
+- 빌드·테스트: 유닛 987개 0 실패, detekt 통과, lint 89건(Warning 88 + Hint 1). 기준선 lint는 83으로 알려졌으나 그것은 `lintAnalyzeDebug` 등이 `UP-TO-DATE`인 캐시 결과였고, 같은 조건 강제 재실행(`--rerun`)은 main 89·수정 후 89로 항목(규칙 id·파일·줄) 차이가 0이다. 83→89의 6건은 `NewerVersionAvailable` 6건과 개수가 같다는 추정이며 확인하지 못했다.
+- 다른 도메인: 핀 검증 실패 줄 0, api·KOFIC·KMRB 호출 실패 0. 기준선 2회차 이후와 비교하면 api·KOFIC 성공 수는 같고 KMRB는 양쪽 0이라 판정 불가(캐시, 확인 못 함).
+
+### 한계
+- 기기는 에뮬레이터 1대(API 37)와 폰 1대(API 36, 한국 경로)뿐이다. 다른 지역·망·OS 버전은 확인하지 못했다.
+- 릴리스 변형은 debug 서명 폴백 빌드이고 화면 판정으로만 쟀다(로그 없음). 서버 체인 일치는 SPKI 계산으로 확인했지만 실제 사용자 기기의 신뢰 저장소가 만드는 체인(Root YR 직접 신뢰 여부)은 확인하지 못했다.
+- CDN이 Let's Encrypt를 떠나면 이 핀 5개도 전부 불일치한다. 앱 층에는 만료가 없어 그 경우 앱 업데이트가 필요하다.
+
+### 다음 로테이션 일정
+| 일정 | 내용 |
+|---|---|
+| 2026-10-26 | 병합 후 첫 주간 `cert-pin-check`(통과 기대) |
+| 약 2026-12-13 | 현재 리프(만료 2027-01-12) 갱신 예상 — LE 권고(만료 30일 전) 기준 추정, CDN 구현은 불명. 갱신 후 첫 월요일 점검 확인 |
+| 2027-05-01 | `expiration` 갱신 착수 권장(제안) |
+| 2027-06-30 | NSC `expiration`(이후 OS 층은 핀 검사 꺼짐, 앱 층은 유지) |
+| 2028-09-02 | LE 중간 CA YR1·YR2·YR3 유효 종료 |
+| 2030-06-04 | LE 문서상 ISRG Root X1 신뢰 종료 예상(루트 프로그램 정책, 인증서 notAfter는 2035-06-04) |
+
+---
+
 ## 잔여 고려 사항
 
 | 항목 | 내용 | 우선순위 |
@@ -286,5 +349,7 @@ leaf만 피닝했다면 이번에도 091일차와 동일한 전면 이미지 로
 | 위젯 핀 상수 중복 | `PopularMoviesRemoteViewsFactory`의 핀이 `NetworkModule` 상수와 별도 관리 | 낮음 (기능 영향 없음) |
 | API 키 query param 로그 | **해결됨(2026-10-07)** — 위 절. 이전 상태: debug HEADERS 레벨에서 URL에 `api_key=xxx` 노출(debug 전용, READ_LOGS 권한 필요) | — |
 | `TMDB_READ_ACCESS_TOKEN` ProGuard | BuildConfig 필드로 release APK에 포함 — 서버 측 rate limiting으로 대응 권장 | 정보 |
-| `image.tmdb.org` leaf 핀 stale | 2026-09-16 재검증에서 leaf 로테이션 확인(위 절), intermediate 덕에 무중단이나 값 자체는 갱신 필요. 2026-10-07부터 `cert-pin-check`가 이 상태를 불일치로 보고하지 않는다(체인 중 하나라도 일치하면 정상) | 낮음(정보성, 안 깨짐) |
-| `image.tmdb.org` pin-set 만료 임박 | `expiration="2026-11-10"` — **2026-10-16 기준 25일 남음**, 2026-09-16 이후 연장되지 않았다(`network_security_config.xml` 재확인; `themoviedb.org`/`tmdb.org` 쪽은 `2027-06-30`). 다음 인증서 핀 갱신 시 같이 연장 필요 | 중간(만료 시 OS 레벨 핀만 fail-open, 앱 레벨은 별개) |
+| `image.tmdb.org` leaf 핀 stale · pin-set 만료 임박 | **해결됨(2026-10-22, 131일차)** — 리프 핀 제거, 루트 2개+중간 CA 3개로 재구성, `expiration` 2027-06-30. 위 "2026-10-22 image.tmdb.org 핀 재구성" 절 | — |
+| 앱 층 `CertificatePinner`에 만료 없음 | NSC `pin-set`은 만료 후 핀 검사가 꺼지지만(실측, 위 절 양성 대조 b) 앱 층 핀은 계속 남아, CDN이 인증서 체계를 바꾸면 앱 업데이트 전까지 이미지가 실패한다 | 중간(후속 후보) |
+| `api.themoviedb.org` 핀 | 10/19 재발급으로 리프 핀은 이미 불일치이고 Amazon 중간 CA(M04) 핀 1개로 버틴다. Amazon Trust Services는 핀닝을 권장하지 않으며 한다면 루트 공개키에 하라고 안내한다. 이번 범위 밖이라 0줄 변경 | 중간(후속 후보) |
+| `cert-pin-check` image 점검 | 2026-10-22부터 서버 체인 일치와 함께 OS 층 XML·앱 층 코드의 핀 집합 일치를 점검한다. api·위젯은 기존 방식 | — |
