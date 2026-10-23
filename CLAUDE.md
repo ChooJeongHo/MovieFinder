@@ -27,23 +27,7 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 | Jetpack Compose (부분 도입) | 검색 결과·온보딩 두 곳뿐, 나머지는 XML/ViewBinding — 아래 "Compose 부분 도입 & Glance 위젯" 참고 |
 | Jetpack Glance | `BoxOfficeWidget`(2x2) — `PopularMoviesWidget`(RemoteViews)과 위젯 2종이 서로 다른 기술로 공존 |
 
-### 개발/디버그 도구
-| 도구 | 용도 |
-|---|---|
-| Detekt | Kotlin 정적 분석 + KtLint 규칙 |
-| JaCoCo | 테스트 코드 커버리지 리포트 (최소 50% 기준) |
-| LeakCanary | 메모리 누수 감지 (debugImplementation) |
-
-### 테스트 라이브러리
-| 라이브러리 | 용도 |
-|---|---|
-| MockK | Kotlin 모킹 프레임워크 |
-| Turbine | Flow 테스트 유틸리티 |
-| Coroutines Test | 코루틴 테스트 디스패처 |
-| Paging Testing | PagingData 테스트 유틸리티 |
-| JUnit 4 | 유닛 테스트 프레임워크 |
-| Espresso | UI 테스트 프레임워크 (core + contrib) |
-| Hilt Testing | Hilt 의존성 주입 테스트 지원 |
+개발·테스트 도구(Detekt, JaCoCo, LeakCanary, MockK, Turbine, Espresso 등)는 `app/build.gradle.kts`·`gradle/libs.versions.toml`을 본다.
 
 ## 아키텍처
 
@@ -59,7 +43,7 @@ app/src/main/java/com/choo/moviefinder/
 ├── data/                  # 데이터 레이어
 │   ├── local/
 │   │   ├── MovieDatabase.kt       # Room DB (version 25)
-│   │   ├── dao/                   # DAO 14개 (FavoriteMovieDao, WatchlistDao: abstract class)
+│   │   ├── dao/                   # DAO 14개 (FavoriteMovieDao, WatchlistDao, WatchHistoryDao: abstract class)
 │   │   └── entity/                # Room Entity 15개
 │   ├── paging/
 │   │   ├── MoviePagingSource.kt
@@ -77,7 +61,7 @@ app/src/main/java/com/choo/moviefinder/
 ├── domain/                # 도메인 레이어 (순수 Kotlin)
 │   ├── model/             # 도메인 모델
 │   ├── repository/        # Repository 인터페이스 21개
-│   └── usecase/           # UseCase 78개
+│   └── usecase/           # UseCase 파일 78개
 ├── presentation/          # 프레젠테이션 레이어
 │   ├── adapter/           # RecyclerView 어댑터 10개 + MovieGridViewHolder + MovieListViewHolder
 │   ├── common/            # CircularRatingView, PieChartView, BarChartView, HistogramView, CalendarHeatmapView
@@ -91,7 +75,7 @@ app/src/main/java/com/choo/moviefinder/
 │   ├── stats/             # StatsFragment, StatsViewModel (통계 카드 9개)
 │   └── widget/            # PopularMoviesWidget(RemoteViewsService/Factory) + BoxOfficeWidget(Glance, 2x2) — 위젯 2종이 서로 다른 기술 스택
 ├── MainActivity.kt        # NavHostFragment + 딥링크 처리 + 네트워크 Snackbar
-└── MovieFinderApp.kt      # @HiltAndroidApp, Coil 캐시, CertificatePinner, NotificationChannel 2개
+└── MovieFinderApp.kt      # @HiltAndroidApp, Coil 캐시(핀 적용 @ImageOkHttpClient 주입), NotificationChannel 3개
 ```
 
 ### 레이어 규칙
@@ -108,7 +92,7 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI, 일부 Com
 - 홈 (오프라인): API → RemoteMediator → Room DB → PagingSource → PagingDataAdapter
 - 검색 (네트워크 전용): API → MoviePagingSource → PagingDataAdapter
 - 즐겨찾기: `Flow<List<Entity>>` → `stateIn()` → `repeatOnLifecycle` 수집
-- UI 상태: 하나의 `repeatOnLifecycle(STARTED)` 블록 안에서 여러 `launch { flow.collect {} }` 병렬 수집 (DetailFragment 6개, SearchFragment 9개)
+- UI 상태: 하나의 `repeatOnLifecycle(STARTED)` 블록 안에서 여러 `launch { flow.collect {} }` 병렬 수집 (DetailFragment 9개, SearchFragment 10개)
 - 즐겨찾기/워치리스트 정렬: 앱 레벨 `sortedBy` 대신 Room DAO `ORDER BY` 쿼리로 DB 레벨 처리 (`FavoriteSortOrder` → domain 레이어로 이동)
 - 홈 오프라인: Room 캐시 즉시 표시 (1시간 캐시 만료: `RemoteKeyEntity.lastUpdated`)
 
@@ -119,39 +103,20 @@ API/DB → Repository → UseCase → ViewModel → Fragment (XML UI, 일부 Com
 TMDB_API_KEY=여기에_API_키_입력
 ```
 
-| 엔드포인트 | 용도 |
-|---|---|
-| GET /movie/now_playing | 현재 상영작 (RemoteMediator) |
-| GET /movie/popular | 인기 영화 (RemoteMediator) |
-| GET /trending/movie/day | 일별 트렌딩 |
-| GET /search/movie | 검색 (year 필터) |
-| GET /discover/movie | 장르/정렬 탐색 |
-| GET /genre/movie/list | 장르 목록 |
-| GET /movie/{id} | 영화 상세 |
-| GET /movie/{id}/credits | 출연진 |
-| GET /movie/{id}/similar | 비슷한 영화 |
-| GET /movie/{id}/recommendations | 추천 영화 |
-| GET /movie/{id}/videos | 예고편 (YouTube 키) |
-| GET /movie/{id}/release_dates | 콘텐츠 등급 (KR→US 폴백) |
-| GET /movie/{id}/reviews | 리뷰 |
-| GET /person/{id} | 배우 상세 |
-| GET /person/{id}/movie_credits | 배우 출연작 |
+엔드포인트는 `data/remote/api/MovieApiService.kt`(`@GET`)에 정의돼 있다.
 
 - API 키: `BuildConfig` 주입 → OkHttp Interceptor로 자동 추가
 - HttpLoggingInterceptor: 디버그 빌드에서만 생성
-- CertificatePinner: `api.themoviedb.org` + `image.tmdb.org` leaf + intermediate SHA-256 핀
+- CertificatePinner(SHA-256 핀): `api.themoviedb.org`는 리프+중간 CA 2개, `image.tmdb.org`는 루트 2+중간 CA 3개(리프 핀 없음) — 아래 "Certificate Pinning" 참고
 - HTTP 응답 캐시: OkHttp Cache 10MB
 
 ### KOFIC 박스오피스 API
 `local.properties`에 `KOFIC_API_KEY` 추가 필요 (영화진흥위원회 Open API, TMDB와 별개 발급).
 
-| 엔드포인트 | 용도 |
-|---|---|
-| GET boxoffice/searchDailyBoxOfficeList.json | 일별 박스오피스 TOP 10 (`targetDt`, `itemPerPage`) |
-| GET boxoffice/searchWeeklyBoxOfficeList.json | 주간 박스오피스 TOP 10 (`targetDt`, `weekGb`(0=주간/1=주말/2=주중), `itemPerPage`) — 개별 아이템 필드는 일별과 100% 동일, `KoficBoxOfficeItemDto` 공용 |
+엔드포인트와 `weekGb` 매핑은 `data/remote/api/KoficApiService.kt`·`domain/model/BoxOfficeWeekType.kt`를 본다.
 
 - TMDB와 완전히 분리된 `@KoficOkHttpClient`/`@KoficRetrofit`/`KoficApiService` (`NetworkModule.kt`) — 별도 baseUrl(`BuildConfig.KOFIC_BASE_URL`), 인증 키를 헤더가 아닌 쿼리 파라미터(`key`)로 주입, TMDB `CertificatePinner` 미적용
-- `MatchBoxOfficeWithTmdbUseCase`: KOFIC `movieName`을 TMDB와 제목 문자열 매칭(ID 체계가 달라 직접 연결 불가) — 항목마다 TMDB 검색을 날리면 N+1이므로 로컬 캐시(`MovieQueryRepository.getCachedMoviesSnapshot()`, now_playing+popular)를 요청당 1회만 조회해 우선 매칭하고 캐시 미스만 `searchMoviesOnce()`로 폴백(TOP 50 기준 약 1.6s → 0.3s, `MatchBoxOfficeWithTmdbPerformanceTest`). Daily/Weekly 유스케이스가 이 매처를 공유
+- `MatchBoxOfficeWithTmdbUseCase`: KOFIC `movieName`을 TMDB와 제목 문자열 매칭(ID 체계가 달라 직접 연결 불가) — 항목마다 TMDB 검색을 날리면 N+1이므로 로컬 캐시(`MovieQueryRepository.getCachedMoviesSnapshot()`, now_playing+popular)를 요청당 1회만 조회해 우선 매칭하고 캐시 미스만 `searchMoviesOnce()`로 폴백. Daily/Weekly 유스케이스가 이 매처를 공유
 - 홈 화면 박스오피스 섹션은 ChipGroup(일별/주간)으로 기간 전환, 선택은 `SavedStateHandle`에 보존, 전환 시 이전 `Job` 취소로 늦게 도착한 응답이 최신 상태를 덮지 않음 (`HomeViewModel.loadBoxOffice()`)
 
 ## 테스트
@@ -160,7 +125,7 @@ TMDB_API_KEY=여기에_API_키_입력
 ```bash
 ./gradlew testDebugUnitTest
 ```
-주요 커버: ViewModel 5종, Repository 9종, UseCase 5종, PagingSource 3종, 유틸/워커 다수.
+주요 커버(테스트 파일 수): `*ViewModelTest` 9, `*Repository*Test` 21, `*UseCase*Test` 27, `*PagingSource*Test` 3, 유틸/워커 다수.
 
 ### Espresso UI 테스트 (34개)
 ```bash
@@ -252,8 +217,8 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `kotlinOptions` 블록 사용 불가 (Kotlin이 AGP에 내장)
 - `android.disallowKotlinSourceSets=false` 필요 (KSP 호환)
 - `Theme.MaterialComponents.DayNight.NoActionBar` 사용
-- Hilt 2.59.2 이상 필요 (2.59.2 기준 Kotlin 2.4.0 미지원 — kotlin-metadata-jvm max 2.3.0)
-- **Dependabot 호환성**: Kotlin 2.4.x는 보류: 2.4.0은 Hilt 호환 이슈(위 참고), 2.4.10·2.4.20은 AGP/Lint의 `InferredThreadDetector` 초기화 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패(PR #92·#110·#115, AGP 9.4.1에서도 재현 2026-09-28). AGP 9.4.1이 최신 정식판(9.5.0은 알파뿐, 2026-10-05)이라 AGP 업그레이드로는 못 푼다 — 정식 신버전이 나오면 lintAnalyzeDebug 재실행으로 재검증
+- Hilt 2.59.2 이상 필요 (2.59.2 기준 Kotlin 2.4.0 미지원 — kotlin-metadata-jvm max 2.3.0; 현재 2.60.1은 2.3.21이고 2.4.x 지원 여부는 미시험)
+- **Dependabot 호환성**: Kotlin 2.4.x는 보류: 2.4.0은 Hilt 호환 이슈(위 참고), 2.4.10·2.4.20은 AGP/Lint의 `InferredThreadDetector` 초기화 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패(PR #92·#110·#115, AGP 9.4.1에서도 재현 2026-09-28). AGP 9.4.1이 최신 정식판(9.5.0은 2026-10-23 기준 rc01까지만 있고 정식 없음)이라 AGP 업그레이드로는 못 푼다 — 정식 신버전이 나오면 lintAnalyzeDebug 재실행으로 재검증
 
 ### Navigation
 - `nav_graph.xml`에 destination + argument + deepLink 정의
@@ -262,7 +227,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `NavigationUI.setupWithNavController()` + Detail에서 BottomNav 자동 숨김
 - Detail self-navigation: `launchSingleTop="true"` (백스택 중복 방지)
 - 딥링크: `moviefinder://movie/{id}`, `moviefinder://person/{id}`, `moviefinder://stats`
-- **Predictive Back Gesture**: `enableOnBackInvokedCallback="true"` + targetSdk 36 + Fragment 1.9.0/Navigation 2.9.8로 플러밍은 갖춰져 있음. 앱 종료는 OS 레벨이라 스크러빙이 자동이지만, **인앱 Fragment 전환은 `nav_graph.xml` 액션의 애니메이션 리소스가 `res/animator/`(seek 가능)여야만 스와이프 진행률에 맞춰 미리보기가 나온다** — `res/anim/`(레거시 View Animation)은 손을 뗄 때까지 변화 없다가 순간이동처럼 보임(2026-09-01 실기기 SM-S926N). `slide_in_right`/`slide_out_right`/`fade_in`/`fade_out` 4개를 `res/animator/`로 전환 완료(translationX는 `@dimen/nav_transition_slide_distance` 480dp 고정). **DetailFragment 공유 요소 전환(플랫폼 `android.transition.TransitionSet`)은 레거시라 미리보기 안 됨** — androidx.transition 마이그레이션은 500ms `postponeEnterTransition` + Coil 리스너 흐름을 건드려 보류.
+- **Predictive Back Gesture**: `enableOnBackInvokedCallback="true"` + targetSdk 36 + Fragment 1.9.1/Navigation 2.10.2로 플러밍은 갖춰져 있음. 앱 종료는 OS 레벨이라 스크러빙이 자동이지만, **인앱 Fragment 전환은 `nav_graph.xml` 액션의 애니메이션 리소스가 `res/animator/`(seek 가능)여야만 스와이프 진행률에 맞춰 미리보기가 나온다** — `res/anim/`(레거시 View Animation)은 손을 뗄 때까지 변화 없다가 순간이동처럼 보임(2026-09-01 실기기 SM-S926N). `slide_in_right`/`slide_out_right`/`fade_in`/`fade_out` 4개를 `res/animator/`로 전환 완료(translationX는 `@dimen/nav_transition_slide_distance` 480dp 고정). **DetailFragment 공유 요소 전환(플랫폼 `android.transition.TransitionSet`)은 레거시라 미리보기 안 됨** — androidx.transition 마이그레이션은 500ms `postponeEnterTransition` + Coil 리스너 흐름을 건드려 보류.
 - MaterialAlertDialogBuilder 다이얼로그도 predictive back 스와이프로 닫히긴 하나 진행률 미리보기는
   없음(실기기 검증, 원인 미조사) — 다이얼로그 predictive back 애니메이션이 필요하면 별도 조사 필요.
 
@@ -278,10 +243,6 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `@ImageOkHttpClient`로 `image.tmdb.org` Certificate Pinning 적용
 - 모든 어댑터: `onViewRecycled()` → `dispose()`
 - 모든 어댑터 `load()` 블록: `size(ViewSizeResolver(imageView))` 명시 → 실제 표시 크기로 다운샘플링
-
-### 다크 모드
-- `values-night/colors.xml`: `icon_default`, `backdrop_overlay`
-- 29개 아이콘 drawable: `android:fillColor="@color/icon_default"`
 
 ### Shared Element Transition
 - `FragmentNavigatorExtras(posterView to "poster_$movieId")`
@@ -304,15 +265,15 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - Application에서 DI 없이 접근: `@EntryPoint` + `EntryPointAccessors.fromApplication()`
 
 ### Certificate Pinning
-- `NetworkModule.kt`의 `CertificatePinner` 설정 — 핀 상수 4개(`PIN_API_LEAF/INTER`, `PIN_IMAGE_LEAF/INTER`) + `buildApiCertPinner()` / `buildImageCertPinner()` helper로 3곳 중복 제거
-- 디버그 빌드에서는 핀 비활성화 (`if (!BuildConfig.DEBUG)`)
-- 인증서 갱신 시 핀 업데이트:
+- `NetworkModule.kt`의 `CertificatePinner` 설정 — 핀 상수 7개(`PIN_API_LEAF/INTER`, `PIN_IMAGE_ROOT_X1/ROOT_YR/INTER_YR1/INTER_YR2/INTER_YR3`) + `buildApiCertPinner()` / `buildImageCertPinner()` helper로 3곳 중복 제거
+- 핀은 두 층에서 따로 검사된다. 앱 층(OkHttp `CertificatePinner`)은 `if (!BuildConfig.DEBUG)`라 디버그에서 꺼지고 만료가 없다. OS 층(`network_security_config.xml`의 `pin-set`)은 **디버그에도 적용**된다(`debug-overrides`는 user CA 체인에만 핀 면제, 131일차 실측) — "디버그에서는 핀 비활성화"는 앱 층에만 맞다
+- 인증서 갱신 시 핀 업데이트(아래는 api 단일 인증서 추출; **image는 체인 전체**를 뽑아 루트·중간을 핀 — 절차는 `NETWORK_SECURITY_REPORT.md` "인증서 핀 갱신 절차"):
   ```bash
   echo | openssl s_client -connect api.themoviedb.org:443 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
   ```
 - 위젯 OkHttp 싱글턴에도 CertificatePinner 적용 (Hilt 미사용)
-- `cert-pin-check.yml`은 OkHttp처럼 체인 중 하나라도 코드 핀과 일치하면 정상. `PIN_IMAGE_LEAF`는 LE 갱신마다 죽어서 중간 핀이 지탱
-- **image.tmdb.org 중간 인증서는 경로마다 다름(2026-10-16 실측, 미수정)**: 이 맥/에뮬레이터는 YR1(`LoMHBot…`)을 받는데 앱 핀은 YR2(`nWN7P…`)+낡은 leaf뿐이라 핀 실패 810건·이미지 전부 회색(폰은 YR2라 정상). YR1·루트 핀은 별도 결정.
+- `cert-pin-check.yml`: api·위젯은 OkHttp처럼 체인 중 하나라도 코드 핀과 일치하면 정상이고, image는 거기에 더해 OS 층(`network_security_config.xml`)과 앱 층(`NetworkModule.kt`)의 핀 집합이 같아야 정상이다. 리프는 핀하지 않는다(LE 갱신·중간 CA 교대마다 깨짐)
+- **image.tmdb.org 핀**: 루트 2개(ISRG Root X1·Root YR) + 중간 CA 3개(YR1·YR2, YR3은 백업)를 OS 층·앱 층에서 같은 집합으로 핀한다. LE가 새 중간 CA를 쓰기 시작하면 **추가**하고 기존 핀은 유지한다. NSC `expiration`(2027-06-30) 뒤에는 OS 층 검사만 꺼지고 앱 층은 남는다. 경위·절차: `NETWORK_SECURITY_REPORT.md`
 
 ### 디버그 로그 키 마스킹 (2026-10-07, 실기기 SM-S926N 검증)
 - 쿼리로 나가는 비밀값(`api_key`/`key`/`serviceKey`/`session_id`)은 `SecretQueryParams` 상수로만 이름을 쓴다 — 주입 인터셉터·`@Query`와 `addDebugLogging()`의 `redactQueryParams`가 같은 상수를 공유해야 마스킹이 조용히 풀리지 않는다. **새 쿼리 비밀값을 추가하면 `ALL`에도 넣을 것.**
@@ -330,7 +291,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - **점진적 로딩**: 핵심 데이터(상세+등급) 먼저 `DetailUiState.Success` emit → 이후 출연진/비슷한 영화/리뷰/예고편/추천 각각 완료 시 `_uiState.update { it.copy(...) }` — `DetailUiState.Success`의 secondary 필드는 nullable (null = 로딩 중)
 - `saveWatchHistory`: 별도 `coroutineScope` fire-and-forget (UI 상태 영향 없음)
 - `launchWithErrorHandler`: 공통 에러 처리 (`core/util/CoroutineExt.kt`)
-- **MemoDelegate** / **UserRatingDelegate**: 생성자 의존성 19개 → 13개 (`snackbarChannel` 공유)
+- **MemoDelegate** / **UserRatingDelegate**: `snackbarChannel` 공유, `DetailViewModel` 생성자는 유스케이스 번들(`DetailFetch/Toggle/Memo/RatingUseCases`)로 9개
 - `Channel.CONFLATED` + `receiveAsFlow()`: Snackbar 일회성 이벤트 (모든 ViewModel 통일)
 
 ### FavoriteViewModel / FavoriteFragment 패턴
@@ -391,5 +352,5 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
   - **한계**: 키보드 연 채 세로→가로→세로 회전 시 과다 스크롤(전부 보임), 프로세스 복원+키보드 복원 시 자동 스크롤 안 됨(스크롤하면 닿음), 저장 직후 메모 목록 미표시(126일차에 수정). 상세 외 화면 IME 미측정.
 - **상세 `wrap_content` 목록의 `setHasFixedSize(true)` 제거**:
   - **원인(확정)**: 고정 크기는 어댑터 변경 때 `requestLayout`을 건너뛴다(`RecyclerView.triggerUpdateProcessor` 1.4.0 소스). 127 목록은 `GONE`→`VISIBLE`과 비동기 `submitList`가 같은 `render()`라 빈 채 높이 0으로 재어진 뒤 삽입된다. **`setHasFixedSize(true)`를 되돌리지 말 것**(wrap_content 목록).
-- **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0-alpha02` (AGP 9 호환)
+- **Baseline Profiles**: `:baselineprofile` 모듈 (minSdk 28), 플러그인 `1.5.0` (AGP 9 호환)
 - **일별 기록**: 일차별 측정·실험 요약은 `DEVLOG.md`에 쓰고 이 파일에는 규칙·경고만 둔다(자동 로드되지 않는 파일이니 import로 다시 끌어오지 않는다).
