@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![minSdk](https://img.shields.io/badge/minSdk-24-brightgreen.svg)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF.svg?logo=kotlin&logoColor=white)
-![AGP](https://img.shields.io/badge/AGP-9.4.1-green.svg)
+![AGP](https://img.shields.io/badge/AGP-9.5.1-green.svg)
 
 Clean Architecture + MVVM 패턴 기반으로, 오프라인 캐시, 다크 모드, 페이징, 딥링크 등 실무 수준의 기능을 구현했습니다.
 
@@ -41,14 +41,14 @@ Clean Architecture + MVVM 패턴 기반으로, 오프라인 캐시, 다크 모�
 | Category | Stack |
 |----------|-------|
 | Language | Kotlin 2.3.21 |
-| Build | AGP 9.4.1, Gradle 9.8.1, KSP 2.3.12 |
+| Build | AGP 9.5.1, Gradle 9.8.2, KSP 2.3.12 |
 | UI | XML Layouts + ViewBinding (대부분 화면), Jetpack Compose(검색 결과 화면 일부 + 온보딩 화면), Jetpack Glance(박스오피스 위젯), Material Components 1.14.0 |
 | Architecture | Clean Architecture, MVVM |
 | DI | Hilt 2.60.1 |
-| Network | Retrofit 3.0.0, OkHttp 5.5.0, kotlinx.serialization 1.11.0 |
-| Database | Room 2.8.5, Typed DataStore 1.2.1 |
+| Network | Retrofit 3.0.0, OkHttp 5.5.1, kotlinx.serialization 1.11.0 |
+| Database | Room 2.8.5, Typed DataStore 1.3.0 |
 | Async | Coroutines, Flow, StateFlow, Channel |
-| Paging | Paging 3.5.2, RemoteMediator |
+| Paging | Paging 3.5.3, RemoteMediator |
 | Image | Coil 3.6.3 |
 | Navigation | Navigation Component 2.10.2, Safe Args |
 | Security | Certificate Pinning (OkHttp), EncryptedSharedPreferences |
@@ -247,7 +247,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 
 ## Requirements
 
-- Android Studio (AGP 9.4.1)
+- Android Studio (AGP 9.5.1)
 - JDK 21+
 - compileSdk 37 / minSdk 24 / targetSdk 36
 
