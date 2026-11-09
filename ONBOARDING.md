@@ -23,8 +23,8 @@
 |------|------|------|
 | **Android Studio** | Meerkat 이상 권장 | |
 | **JDK** | **21** (필수) | AGP 9.x는 JDK 17로는 빌드 안 됨 |
-| **Gradle** | 9.8.1 | Wrapper로 자동 설치됨 |
-| **AGP** | 9.4.1 | Kotlin 2.3.21 내장 |
+| **Gradle** | 9.8.2 | Wrapper로 자동 설치됨 |
+| **AGP** | 9.5.1 | Kotlin 2.3.21 내장 |
 
 > Android Studio → Settings → Build → Gradle JDK 를 **JDK 21**로 설정하세요.
 
@@ -589,4 +589,4 @@ override suspend fun load(...): MediatorResult {
 
 ---
 
-*최종 업데이트: 2026-10-16 | 프로젝트 기준 버전: Room DB v25, AGP 9.4.1, Gradle 9.8.1*
+*최종 업데이트: 2026-10-16 | 프로젝트 기준 버전: Room DB v25, AGP 9.5.1, Gradle 9.8.2*

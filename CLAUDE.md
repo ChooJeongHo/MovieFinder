@@ -6,8 +6,8 @@ TMDB (The Movie Database) API를 활용한 영화 검색, 상세 정보 조회, 
 ## 기술 스택
 
 ### 빌드 환경
-- **AGP**: 9.4.1 (Android Gradle Plugin, Kotlin 2.3.21 내장)
-- **Gradle**: 9.8.1
+- **AGP**: 9.5.1 (Android Gradle Plugin, Kotlin 2.3.21 내장)
+- **Gradle**: 9.8.2
 - **compileSdk**: 37 (Android 17)
 - **minSdk**: 24 / **targetSdk**: 36
 - **KSP**: 2.3.12 (Kotlin Symbol Processing)
@@ -218,7 +218,7 @@ adb shell am start -a android.intent.action.VIEW -d "moviefinder://stats"
 - `android.disallowKotlinSourceSets=false` 필요 (KSP 호환)
 - `Theme.MaterialComponents.DayNight.NoActionBar` 사용
 - Hilt 2.59.2 이상 필요 (2.59.2 기준 Kotlin 2.4.0 미지원 — kotlin-metadata-jvm max 2.3.0; 현재 2.60.1은 2.3.21이고 2.4.x 지원 여부는 미시험)
-- **Dependabot 호환성**: Kotlin 2.4.x는 보류: 2.4.0은 Hilt 호환 이슈(위 참고), 2.4.10·2.4.20은 AGP/Lint의 `InferredThreadDetector` 초기화 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패(PR #92·#110·#115, AGP 9.4.1에서도 재현 2026-09-28). AGP 9.4.1이 최신 정식판(9.5.0은 2026-10-23 기준 rc01까지만 있고 정식 없음)이라 AGP 업그레이드로는 못 푼다 — 정식 신버전이 나오면 lintAnalyzeDebug 재실행으로 재검증
+- **Dependabot 호환성**: Kotlin 2.4.x는 보류: 2.4.0은 Hilt 호환 이슈(위 참고), 2.4.10·2.4.20은 AGP/Lint의 `InferredThreadDetector` 초기화 오류로 lintAnalyzeDebug 계열 3개 태스크가 전부 실패(PR #92·#110·#115, AGP 9.4.1에서도 재현 2026-09-28). AGP는 현재 9.5.1이며 9.5.1에서의 재현 여부는 미확인 — lintAnalyzeDebug 재실행으로 재검증
 
 ### Navigation
 - `nav_graph.xml`에 destination + argument + deepLink 정의
