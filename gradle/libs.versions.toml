@@ -44,7 +44,7 @@ viewpager2 = "1.1.0"
 youtubePlayer = "13.1.0"
 browser = "1.10.0"
 securityCrypto = "1.1.0"
-composeBom = "2026.09.00"
+composeBom = "2026.11.01"
 glance = "1.1.1"
 
 [libraries]
