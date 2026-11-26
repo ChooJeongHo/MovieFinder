@@ -229,3 +229,25 @@
 - **예측**: 5개를 실행 전에 `prediction145.json`(sha256 앞 8자리 `69ec7556`, 읽기 전용)으로 고정했다. `판정 5개 중 성립 4, 불성립 1`, 불성립 `P5 | 예측 180~720 (70%) | 실제 87 | 불성립`. 고정할 때의 가정은 빌드 `120~480초`·에뮬레이터 부팅 `40~180초 가정`이고 실측(초)은 `부팅 17 | gradle 70`이다. 로그는 `90 actionable tasks: 57 executed, 2 from cache, 31 up-to-date`이며 차이의 원인은 따로 측정하지 않았다.
 - **이탈·정정**: CLI가 단계 0의 `"claude_cli": "2.1.331"`에서 `claude=2.1.332 (Claude Code)`로 바뀌었다. 단계 0·1의 도구 호출(명령 줄·파일 쓰기 경로)에 계정명이 든 절대 경로가 화면에 표시됐다. 단계 1 보고에서 P5 불성립의 직접 이유를 빌드 캐시라고 한 것은 근거가 부족해 정정한다(`compileDebugAndroidTestKotlin` 등 androidTest 컴파일·dex·패키징 태스크는 실행됐고 앱 본체 컴파일 태스크는 `UP-TO-DATE`였다).
 - **정리**: 임시 테스트 1개(sha256 앞 8자리 `fb0a759f`)는 실행 뒤 삭제했고, 삭제 뒤(`after_delete`) git status는 `lines=0`이다. 앱 소스·기존 테스트는 수정하지 않았다.
+
+## 146일차 — 백업 복원 시 장르 행을 평소 저장 경로와 같은 규칙으로 생성하고, 141일차 지적 F3·F5를 에뮬레이터 임시 테스트로 실행했다
+
+- **변경**: `BackupRepositoryImpl.kt`에서 시청기록 복원 시 장르 행을 평소 저장 경로와 같은 규칙으로 생성한다(한 파일 +13/−1). 평소 저장 경로(`saveWatchHistoryWithGenres`)처럼 쉼표로 나누고 앞뒤 공백을 지우고 빈 값을 빼며, `insertAll`이 돌려준 값이 `rowId != -1L`인 행만 만든다. 중복 가져오기(141일차 F2) 동작은 바꾸지 않았다. 회귀 테스트 `BackupRestoreGenreTest`(androidTest, 메서드 2개, N = 3, 장르 토큰 6개(2 + 1 + 3), sha256 앞 8자리 `99bb7444`)를 추가했고, 단언은 평소 저장 경로의 장르 행 수와 복원 1회 후의 장르 행 수·장르별 개수·영화별 장르 연결이다.
+- **실행**: 에뮬레이터 1대(`device_api=36`)를 한 번 부팅해(`boot_start=2026-11-26 11:11:26`, `boot_completed=2026-11-26 11:11:42`) 같은 클래스 필터(회귀 테스트 + 임시 프로브)로 `connectedDebugAndroidTest`를 수정 전(A)·수정 후(B) 각 1회 실행했다. A는 `BUILD FAILED in 24s`·`GRADLE_EXIT_A1=1`, B는 `BUILD SUCCESSFUL in 11s`·`GRADLE_EXIT_B1=0`이고 컴파일 오류는 없었다. A의 실패 메시지는 결과 XML 원문으로 `java.lang.AssertionError: expected:&lt;6&gt; but was:&lt;0&gt;`(`BackupRestoreGenreTest.kt:81`)이다.
+- **A/B 결과**(회귀 테스트 XML과 `RESULT` 줄 원문):
+
+| 항목 | A(수정 전) | B(수정 후) |
+|---|---|---|
+| 회귀 테스트 2개의 결과 XML | `tests="2" failures="1" errors="0" skipped="0"` | `tests="2" failures="0" errors="0" skipped="0"` |
+| 복원 1회 후 장르 행 | `RESULT genre_rows_after_1=0` | `RESULT genre_rows_after_1=6` |
+| 장르별 개수 | `RESULT genre_counts_after_1=` | `RESULT genre_counts_after_1=Action:3;Adventure:2;Drama:1` |
+| 영화별 장르 연결 | `RESULT genre_links_after_1=` | `RESULT genre_links_after_1=101:Action;101:Adventure;102:Action;103:Action;103:Adventure;103:Drama` |
+| F2: 2회 가져오기 후 `watch_history` 행(불변) | `RESULT history_rows_after_2=6` | `RESULT history_rows_after_2=6` |
+| 2회 가져오기 후 장르 행 | `RESULT genre_rows_after_2=0` | `RESULT genre_rows_after_2=12` |
+
+- **141일차 F3·F5**: 실행 전에 `prediction146.json`(sha256 앞 8자리 `9c9ff479`)에 고정한 기준을 수정 전(A) 값에 적용했다. `F3: 재현됨 | A: f3_control_single_insert_stmts=1, f3_insert_all_stmts=3, f3_placeholders_per_stmt=[12], f3_history_rows=4`, `F5a: 재현됨 | A: f5_zone_at_record=UTC, f5_zone_at_restore=Asia/Seoul, f5_original_yearmonth=2026-01, f5_control_same_zone_yearmonth=2026-01, f5_other_zone_yearmonth=2026-02`, `F5b: 재현됨 | A: f5_negative_exception=(none), f5_negative_rows=1, f5_negative_yearmonth=1969-12`. 수정 후(B) 값에 적용해도 같은 판정이었다(참고). `재현됨`은 고정 기준을 적용한 결과이며 결함 판정이 아니고, 141일차 판정(F1~F5 모두 B)은 바꾸지 않았다. F4는 앱 소스를 임시로 바꿔야 실행 확인이 되어 제외했다(실행 시간은 재지 않았다).
+- **예측**: 11개를 코드를 읽은 뒤 실행 전에 고정했고(`prediction146.json`, 읽기 전용), F4를 제외해 P11은 세지 않았다. `판정 10개 중 성립 8, 불성립 2 (그중 판정 불가 0)`이다. 비독립으로 표시한 P1·P2·P4·P7은 모두 성립했고 독립 6개는 성립 4·불성립 2다. 불성립은 `P8 | 예측 40~200 (75%, 독립) | 실제 25 | 불성립`, `P9 | 예측 30~200 (75%, 독립) | 실제 12 | 불성립`이고 원인은 측정하지 않았다(로그: A `90 actionable tasks: 9 executed, 81 up-to-date`, B `86 actionable tasks: 14 executed, 72 up-to-date`).
+- **수정 후 검사**: `./gradlew testDebugUnitTest --rerun`에서 `UNIT_TESTS=987`·`UNIT_FAILURES=0`·`UNIT_ERRORS=0`, `./gradlew :app:lintDebug --rerun`은 `LINT_EXIT=0`, `./gradlew :app:detekt --rerun`은 `DETEKT_EXIT=0`이다.
+- **한계**: ① 같은 백업을 빈 DB에 2회 가져오면 장르 행이 수정 전 0, 수정 후 12다(`RESULT genre_rows_after_2=12`). ② 기존 기록 위에 자기 백업을 가져올 때의 영향은 **실행하지 않은 추론**이다: 코드를 읽으면 수정 전 코드에서는 시청 기록만 늘고 장르 통계는 그대로이며, 수정 후에는 장르 통계도 늘어난다. ③ rowId가 -1인 행을 건너뛰는 분기는 어떤 테스트도 지나가지 않았다. ④ CI는 androidTest를 실행하지 않는다(워크플로우에 해당 태스크가 없다). 로컬 `lintDebug`·`testDebugUnitTest`의 태스크 목록에는 `compileDebugAndroidTestKotlin`도 없었고, CI의 다른 빌드 태스크 목록은 확인하지 않았다. 회귀 테스트 결과는 에뮬레이터 1대에서의 로컬 실행(A·B 각 1회)이다. ⑤ detekt 설정의 검사 대상은 src/main/java와 src/test/java뿐이라 androidTest는 검사하지 않는다. ⑥ F5a의 원본 연-월은 평소 저장 경로로 만든 값이 아니라 테스트가 직접 넣은 값이다. ⑦ F3는 INSERT 실행 횟수만 확인했고 성능은 재지 않았다. ⑧ 시간 예측 P8·P9가 불성립한 원인은 측정하지 않았다.
+- **이탈**: 5건이다. C1 저장소 밖에서 가림 스크립트를 실행해 트레이스백에 계정명이 든 절대 경로가 표시됐다. C2 첫 도구 호출이 지시 수신보다 45초 늦었다(원인은 측정하지 않았다). C3 백그라운드 실행의 안내문·완료 알림에 계정명이 든 절대 경로가 표시됐다. C4 종료 뒤 `adb_devices_after=0`·`qemu_processes_after=0`였지만 adb 서버 데몬이 남았다(`adb_server_processes_after=1`). 지시서의 "adb 0" 표현이 기기와 데몬을 구분하지 않았다(지시 쪽 모호함). C5 이 절을 조립하는 스크립트의 단언 실패 트레이스백에 임시 폴더의 절대 경로가 표시됐다(계정명은 가림이 적용됐다).
+- **정리·자료**: 임시 프로브(sha256 앞 8자리 `3dc4b097`)는 실행 뒤 삭제했고 저장소에 넣지 않았다. 실행 결과·판정 스크립트·예측·테스트 사본·시각 기록의 가린 사본은 저장소 밖 보관 폴더 day146에 원본 sha256과 함께 두었다.
