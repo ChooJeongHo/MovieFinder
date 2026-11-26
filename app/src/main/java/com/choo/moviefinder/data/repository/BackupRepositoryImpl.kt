@@ -17,6 +17,7 @@ import com.choo.moviefinder.data.local.entity.MemoEntity
 import com.choo.moviefinder.data.local.entity.MovieTagEntity
 import com.choo.moviefinder.data.local.entity.UserRatingEntity
 import com.choo.moviefinder.data.local.entity.WatchHistoryEntity
+import com.choo.moviefinder.data.local.entity.WatchHistoryGenreEntity
 import com.choo.moviefinder.data.local.entity.WatchlistEntity
 import com.choo.moviefinder.data.local.entity.toBackupMovie
 import com.choo.moviefinder.domain.model.BackupMemo
@@ -165,7 +166,18 @@ class BackupRepositoryImpl @Inject constructor(
                 genres = item.genres
             )
         }
-        if (entities.isNotEmpty()) watchHistoryDao.insertAll(entities)
+        if (entities.isEmpty()) return
+        val rowIds = watchHistoryDao.insertAll(entities)
+        // 평소 저장 경로(saveWatchHistoryWithGenres)와 같은 분리 규칙. rowId -1(충돌로 무시됨)은 장르 행을 만들지 않는다
+        val genres = rowIds.zip(entities)
+            .filter { (rowId, _) -> rowId != -1L }
+            .flatMap { (rowId, entity) ->
+                entity.genres.split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                    .map { WatchHistoryGenreEntity(watchHistoryId = rowId, genreName = it) }
+            }
+        if (genres.isNotEmpty()) watchHistoryDao.insertGenres(genres)
     }
 }
 
