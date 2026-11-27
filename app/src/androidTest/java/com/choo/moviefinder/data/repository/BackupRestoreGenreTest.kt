@@ -83,6 +83,125 @@ class BackupRestoreGenreTest {
         assertEquals("101:Action;101:Adventure;102:Action;103:Action;103:Adventure;103:Drama", linkAfterOnce)
     }
 
+    // S1: 빈 DB 에 같은 백업을 두 번 가져온다
+    @Test
+    fun s1_sameBackupImportedTwice_storesEachEntryOnce() = runBlocking<Unit> {
+        val repository = backupRepository()
+        val backup = UserDataBackup(watchHistory = sampleItems())
+
+        repository.importUserData(backup)
+        repository.importUserData(backup)
+        logState("s1")
+
+        assertEachSampleStoredOnce()
+    }
+
+    // S2: 평소 저장 경로로 3건을 저장하고, 그 DB 에서 내보낸 백업을 같은 DB 에 가져온다
+    @Test
+    fun s2_ownExportImportedOverExistingHistory_addsNothing() = runBlocking<Unit> {
+        val historyRepository = WatchHistoryRepositoryImpl(db.watchHistoryDao())
+        samples.forEach { (movieId, genres) ->
+            historyRepository.saveWatchHistoryWithGenres(
+                Movie(
+                    id = movieId, title = "Movie $movieId", posterPath = null, backdropPath = null,
+                    overview = "", releaseDate = "", voteAverage = 0.0, voteCount = 0
+                ),
+                genres
+            )
+        }
+        val repository = backupRepository()
+        val exported = repository.exportUserData()
+        logState("s2_before")
+        log("s2_export_entries", exported.watchHistory.size)
+
+        repository.importUserData(exported)
+        logState("s2")
+
+        assertEquals(3, exported.watchHistory.size)
+        assertEachSampleStoredOnce()
+    }
+
+    // S3: 101 한 건을 먼저 가져온 뒤, 101·102·103 이 든 백업을 가져온다
+    @Test
+    fun s3_partlyOverlappingBackup_addsOnlyMissingEntries() = runBlocking<Unit> {
+        val repository = backupRepository()
+        repository.importUserData(UserDataBackup(watchHistory = sampleItems().take(1)))
+
+        repository.importUserData(UserDataBackup(watchHistory = sampleItems()))
+        logState("s3")
+
+        assertEachSampleStoredOnce()
+    }
+
+    // S4: 101 항목이 모든 필드까지 같게 두 번 든 백업을 빈 DB 에 가져온다
+    @Test
+    fun s4_repeatedEntryInsideBackup_isStoredOnce() = runBlocking<Unit> {
+        val items = sampleItems()
+
+        backupRepository().importUserData(UserDataBackup(watchHistory = items + items.first().copy()))
+        logState("s4")
+
+        assertEachSampleStoredOnce()
+    }
+
+    // S5: 101 을 가져온 뒤, 영화 ID 와 시청 시각은 같고 제목만 다른 101 항목을 가져온다
+    @Test
+    fun s5_sameMovieAndTimeWithOtherTitle_isStoredSeparately() = runBlocking<Unit> {
+        val repository = backupRepository()
+        val original = sampleItems().first()
+        repository.importUserData(UserDataBackup(watchHistory = listOf(original)))
+
+        repository.importUserData(UserDataBackup(watchHistory = listOf(original.copy(title = "Movie 101 other"))))
+        logState("s5")
+        log("s5_titles", titlesText())
+
+        assertEquals(2, countRows("watch_history"))
+        assertEquals(4, countRows("watch_history_genre"))
+        assertEquals("Movie 101;Movie 101 other", titlesText())
+    }
+
+    private fun backupRepository() = BackupRepositoryImpl(
+        db, db.favoriteMovieDao(), db.watchlistDao(), db.userRatingDao(),
+        db.memoDao(), db.movieTagDao(), db.watchHistoryDao()
+    )
+
+    private fun sampleItems(): List<BackupWatchHistory> = samples.map { (movieId, genres) ->
+        BackupWatchHistory(
+            movieId = movieId, title = "Movie $movieId",
+            watchedAt = 1_700_000_000_000L + movieId, genres = genres
+        )
+    }
+
+    // 단언보다 먼저 현재 상태를 RESULT 줄로 남긴다
+    private suspend fun logState(prefix: String) {
+        log("${prefix}_history_rows", countRows("watch_history"))
+        log("${prefix}_genre_rows", countRows("watch_history_genre"))
+        log("${prefix}_history_per_movie", historyPerMovieText())
+        log("${prefix}_genre_counts", genreCountsText())
+    }
+
+    // 표본 3건이 각각 한 번씩, 장르 연결까지 그대로 저장돼 있는지 확인한다
+    private suspend fun assertEachSampleStoredOnce() {
+        assertEquals(3, countRows("watch_history"))
+        assertEquals(6, countRows("watch_history_genre"))
+        assertEquals("101:1;102:1;103:1", historyPerMovieText())
+        assertEquals("Action:3;Adventure:2;Drama:1", genreCountsText())
+        assertEquals("101:Action;101:Adventure;102:Action;103:Action;103:Adventure;103:Drama", genreLinksText())
+    }
+
+    private fun historyPerMovieText(): String =
+        db.openHelper.readableDatabase.query(
+            "SELECT movieId, COUNT(*) FROM watch_history GROUP BY movieId ORDER BY movieId"
+        ).use { cursor ->
+            generateSequence { if (cursor.moveToNext()) "${cursor.getInt(0)}:${cursor.getInt(1)}" else null }
+                .joinToString(";")
+        }
+
+    private fun titlesText(): String =
+        db.openHelper.readableDatabase.query("SELECT title FROM watch_history ORDER BY title").use { cursor ->
+            generateSequence { if (cursor.moveToNext()) cursor.getString(0) else null }.joinToString(";")
+        }
+
     private fun countRows(table: String): Int =
         db.openHelper.readableDatabase.query("SELECT COUNT(*) FROM $table").use { cursor ->
             cursor.moveToFirst()

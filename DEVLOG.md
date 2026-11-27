@@ -251,3 +251,31 @@
 - **한계**: ① 같은 백업을 빈 DB에 2회 가져오면 장르 행이 수정 전 0, 수정 후 12다(`RESULT genre_rows_after_2=12`). ② 기존 기록 위에 자기 백업을 가져올 때의 영향은 **실행하지 않은 추론**이다: 코드를 읽으면 수정 전 코드에서는 시청 기록만 늘고 장르 통계는 그대로이며, 수정 후에는 장르 통계도 늘어난다. ③ rowId가 -1인 행을 건너뛰는 분기는 어떤 테스트도 지나가지 않았다. ④ CI는 androidTest를 실행하지 않는다(워크플로우에 해당 태스크가 없다). 로컬 `lintDebug`·`testDebugUnitTest`의 태스크 목록에는 `compileDebugAndroidTestKotlin`도 없었고, CI의 다른 빌드 태스크 목록은 확인하지 않았다. 회귀 테스트 결과는 에뮬레이터 1대에서의 로컬 실행(A·B 각 1회)이다. ⑤ detekt 설정의 검사 대상은 src/main/java와 src/test/java뿐이라 androidTest는 검사하지 않는다. ⑥ F5a의 원본 연-월은 평소 저장 경로로 만든 값이 아니라 테스트가 직접 넣은 값이다. ⑦ F3는 INSERT 실행 횟수만 확인했고 성능은 재지 않았다. ⑧ 시간 예측 P8·P9가 불성립한 원인은 측정하지 않았다.
 - **이탈**: 5건이다. C1 저장소 밖에서 가림 스크립트를 실행해 트레이스백에 계정명이 든 절대 경로가 표시됐다. C2 첫 도구 호출이 지시 수신보다 45초 늦었다(원인은 측정하지 않았다). C3 백그라운드 실행의 안내문·완료 알림에 계정명이 든 절대 경로가 표시됐다. C4 종료 뒤 `adb_devices_after=0`·`qemu_processes_after=0`였지만 adb 서버 데몬이 남았다(`adb_server_processes_after=1`). 지시서의 "adb 0" 표현이 기기와 데몬을 구분하지 않았다(지시 쪽 모호함). C5 이 절을 조립하는 스크립트의 단언 실패 트레이스백에 임시 폴더의 절대 경로가 표시됐다(계정명은 가림이 적용됐다).
 - **정리·자료**: 임시 프로브(sha256 앞 8자리 `3dc4b097`)는 실행 뒤 삭제했고 저장소에 넣지 않았다. 실행 결과·판정 스크립트·예측·테스트 사본·시각 기록의 가린 사본은 저장소 밖 보관 폴더 day146에 원본 sha256과 함께 두었다.
+
+## 147일차 — 백업 복원에서 같은 시청 기록의 중복 삽입을 건너뛰어, 같은 백업을 다시 가져와도 시청 기록·장르 행이 늘지 않게 했다
+
+- **선택**: 같은 시청 기록은 (`movieId`, `watchedAt`, `title`)이 모두 같은 것이다. 백업 안에서 같은 것이 겹치면 첫 항목만 삽입한다. 구현은 기존 `getAllHistoryOnce()`를 재사용한 사전 필터이고, 백업의 시청 기록이 비면 조회하지 않는다. 유니크 인덱스와 마이그레이션은 넣지 않았다.
+- **변경**: `BackupRepositoryImpl.kt`(+10/−2)와 `BackupRestoreGenreTest`(androidTest, +119/−0), 이 절이다. 장르 행 생성 코드는 146일차 그대로다. `BackupRepositoryImpl.kt`의 변경 중 `importUserData` 위의 한 줄은 주석만 고친 것으로, 시청 기록은 키가 같으면 덮어쓰지 않고 건너뛴다고 적었고 다른 항목의 설명은 건드리지 않았다. 테스트는 146일차의 2개 메서드를 그대로 두고 5개를 더해 7개다(N = 3, 장르 토큰 6개).
+- **실행**: 에뮬레이터 1대(`device_api=36`)를 한 번 부팅해(`boot_start=2026-11-27 13:01:00`, `boot_completed=2026-11-27 13:01:17`) 같은 클래스 필터로 `connectedDebugAndroidTest`를 수정 전(A)·수정 후(B) 각 1회 실행했다. A는 `BUILD FAILED in 27s`·`GRADLE_EXIT_A1=1`·`90 actionable tasks: 8 executed, 82 up-to-date`, B는 `BUILD SUCCESSFUL in 10s`·`GRADLE_EXIT_B1=0`·`86 actionable tasks: 13 executed, 73 up-to-date`이고, 컴파일 오류는 `COMPILE_ERROR_LINES_A1=0`·`COMPILE_ERROR_LINES_B1=0`이다.
+- **A/B 결과**(결과 XML과 `RESULT` 줄 원문, 값은 시청 기록 행과 장르 행):
+
+| 시나리오 | A(수정 전) | B(수정 후) |
+|---|---|---|
+| 결과 XML | `tests="7" failures="4" errors="0" skipped="0"` | `tests="7" failures="0" errors="0" skipped="0"` |
+| S1 빈 DB에 같은 백업 2회 | `RESULT s1_history_rows=6` / `RESULT s1_genre_rows=12` | `RESULT s1_history_rows=3` / `RESULT s1_genre_rows=6` |
+| S2 평소 저장 뒤, 가져오기 전 | `RESULT s2_before_history_rows=3` / `RESULT s2_before_genre_rows=6` | `RESULT s2_before_history_rows=3` / `RESULT s2_before_genre_rows=6` |
+| S2 그 DB의 내보내기를 가져온 뒤 | `RESULT s2_history_rows=6` / `RESULT s2_genre_rows=12` | `RESULT s2_history_rows=3` / `RESULT s2_genre_rows=6` |
+| S3 3건 중 1건이 DB에 있음 | `RESULT s3_history_rows=4` / `RESULT s3_genre_rows=8` | `RESULT s3_history_rows=3` / `RESULT s3_genre_rows=6` |
+| S4 백업 안에 같은 항목 2건 | `RESULT s4_history_rows=4` / `RESULT s4_genre_rows=8` | `RESULT s4_history_rows=3` / `RESULT s4_genre_rows=6` |
+| S5 제목만 다른 항목 | `RESULT s5_history_rows=2` / `RESULT s5_genre_rows=4` | `RESULT s5_history_rows=2` / `RESULT s5_genre_rows=4` |
+| 146일차 복원 테스트의 2회째 가져오기 | `RESULT history_rows_after_2=6` / `RESULT genre_rows_after_2=12` | `RESULT history_rows_after_2=3` / `RESULT genre_rows_after_2=6` |
+
+- **A의 실패 메시지**(결과 XML 원문 줄): S1 `java.lang.AssertionError: expected:&lt;3&gt; but was:&lt;6&gt;`, S2 `java.lang.AssertionError: expected:&lt;3&gt; but was:&lt;6&gt;`, S3 `java.lang.AssertionError: expected:&lt;3&gt; but was:&lt;4&gt;`, S4 `java.lang.AssertionError: expected:&lt;3&gt; but was:&lt;4&gt;`. 네 개 모두 `BackupRestoreGenreTest.kt:185`에서 멈췄다. A에서 S5와 146일차 2개는 통과했고, B에서는 7개가 모두 통과했다.
+- **146일차 F1 회귀 테스트**: `normalSavePath_createsGenreRows`와 `restore_createsGenreRowsLikeNormalSave`는 테스트 코드를 바꾸지 않았고 A·B 모두 통과했다.
+- **S5의 역할**: S5는 이번 정의에서 수정 전에도 통과하며, 정의의 경계(제목만 다르면 별도 기록)를 고정하는 용도다. 정의를 백업 필드 10개 전부 일치로 바꾸는 변화는 S5가 잡지 못한다.
+- **판정**: `prediction147.json`(sha256 앞 8자리 `afe1ec4c`)의 기준을 적용한 출력은 수정 적용 전의 `A_GATE=PASS`와 `[B 판정] 개선 확인`이다. 판정어(`재현됨`, `일치`, `개선 확인`)는 실행 전에 고정한 기준을 적용한 결과일 뿐 결함 판정이 아니며, 141일차 판정(F1~F5 모두 B)은 바꾸지 않았다. 판정 스크립트는 실행 전에 가짜 입력으로 점검했다(`checks=26 failed=0`).
+- **예측**: 코드를 읽은 뒤 실행 전에 고정했다. `값 예측 11개 중 성립 11, 불성립 0, 판정 불가 0`, `이번 단계 시간 예측 6개 중 성립 6, 불성립 0, 판정 불가 0`이다. P1·P6은 비독립이다. PR·CI 시간 예측 3개는 이 절을 쓴 시점에 재지 않았다.
+- **수정 후 검사**: `UNIT_TESTS=987`·`UNIT_FAILURES=0`·`UNIT_ERRORS=0`(`UNIT_CLASS_SplitRepositoryImplTest=tests 35, failures 0, errors 0`, `UNIT_CLASS_BackupRepositoryImplTest=tests 11, failures 0, errors 0`), `LINT_EXIT=0`, `DETEKT_EXIT=0`. 실행 B와 이 검사 뒤에 바뀐 앱·테스트 코드는 위의 주석 한 줄뿐이다(실행 B 시점 사본과 비교해 1줄, 줄 수 동일).
+- **한계**: ① 중복이 있던 DB의 백업은 빈 DB에 복원해도 키가 같은 행이 1건이 되어 원본과 행 수가 달라질 수 있다. S4는 직접 만든 백업의 중복을 확인한 것이고, 중복이 있는 DB를 내보내 복원하는 흐름은 실행하지 않았다. ② 제목만 다른 기록은 별도 기록으로 삽입한다. ③ `movieId`·`watchedAt`·`title`이 같고 장르 같은 다른 필드만 다른 항목은 같은 기록으로 보고 건너뛰며, 백업의 다른 값은 반영하지 않는다(코드로 확인, 이 경우는 실행하지 않았다). ④ 가져오기 안내 문구는 시청 기록을 모두 건너뛰어도 "데이터가 가져오기되었습니다"가 뜨고, 건너뛴 수를 알리지 않는다(코드로 확인). ⑤ 메모는 자동 생성 ID라 다시 가져오면 늘 것으로 보인다. 이번 수정 범위 밖이고 코드만 확인했다. ⑥ 가져올 때 시청 기록의 전체 행·전체 열을 메모리에 읽는 비용은 재지 않았다. ⑦ 이미 DB에 들어간 중복 기록은 정리하지 않는다. ⑧ 설정 화면 UI 경로는 검증하지 않았다. 테스트는 repository를 직접 호출한다. S2는 repository의 `exportUserData()`가 돌려준 객체를 그대로 가져오며 JSON 직렬화 왕복을 거치지 않는다(JSON 변환은 내보내기·가져오기 UseCase에 있고 테스트는 UseCase를 쓰지 않는다). ⑨ CI는 androidTest를 실행하지 않는다(워크플로에 해당 실행이 없다). 로컬 lint에서는 `lintAnalyzeDebugAndroidTest`가 실행됐지만 컴파일은 아니다. CI의 빌드 태스크 로그는 확인하지 않았다. ⑩ detekt는 androidTest를 검사하지 않는다. ⑪ 에뮬레이터 1대(API 36), N = 3, 실행 A·B 각 1회다. ⑫ S1~S4의 A 실패는 모두 시청 기록 행 수 단언(185행)에서 멈춰, 실패 메시지에는 장르 값이 없다. A의 장르 행은 `RESULT` 줄로만 확인했다. ⑬ 예측은 코드를 읽은 뒤에 세웠고, S2~S5의 A 예측은 같은 삽입 경로를 읽고 세워 서로 상관된다.
+- **이탈**(커밋 시점 기준 2건): D1 단계 0의 읽기 명령 8개에 앱 패키지명을 글자 그대로 적어 도구 호출 줄에 보였다(출력은 가렸고, 이후 명령에서는 실행 때 계산했다). D2 백그라운드 명령 2개의 하네스 시작 안내문과 완료 알림에 계정명이 든 절대 경로가 보였다.
+- **정리·자료**: 실행 결과·판정 스크립트·예측·테스트 사본·diff·시각 기록의 가린 사본은 저장소 밖 보관 폴더 day147에 원본 sha256과 함께 두었다. 커밋 시점의 가림 검증에서 계정명·홈 경로·이메일·저장소 소유자명·앱 패키지명은 원본 10개에서 검출됐고 사본에서는 0건이었다. 저장소에 넣은 임시 파일은 없다.
