@@ -85,7 +85,7 @@ class BackupRepositoryImpl @Inject constructor(
         )
     }
 
-    // 백업 데이터를 기존 데이터와 병합한다 (중복 시 덮어쓰기, 원자적 트랜잭션)
+    // 백업 데이터를 기존 데이터와 병합한다 (중복 시 덮어쓰기, 원자적 트랜잭션). 단, 시청 기록은 키(movieId, watchedAt, title)가 같으면 덮어쓰지 않고 건너뛴다
     override suspend fun importUserData(backup: UserDataBackup) {
         database.withTransaction {
             restoreFavorites(backup.favorites)
@@ -151,7 +151,15 @@ class BackupRepositoryImpl @Inject constructor(
     }
 
     private suspend fun restoreWatchHistory(history: List<BackupWatchHistory>) {
-        val entities = history.map { item ->
+        if (history.isEmpty()) return
+        // 같은 시청 기록(영화 ID·시청 시각·제목)의 중복 삽입을 건너뛴다. 백업 안에서 겹치면 첫 항목만 남긴다
+        val storedKeys = watchHistoryDao.getAllHistoryOnce()
+            .map { Triple(it.movieId, it.watchedAt, it.title) }
+            .toSet()
+        val newItems = history
+            .distinctBy { Triple(it.movieId, it.watchedAt, it.title) }
+            .filterNot { Triple(it.movieId, it.watchedAt, it.title) in storedKeys }
+        val entities = newItems.map { item ->
             WatchHistoryEntity(
                 movieId = item.movieId,
                 title = item.title,
